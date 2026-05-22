@@ -1,0 +1,10 @@
+.hermes/pi-symphony/state/
+.hermes/pi-symphony/logs/
+.hermes/pi-symphony/pi-sessions/
+.hermes/plans/
+.pytest_cache/
+__pycache__/
+*.pyc
+.pi-lens/
+htmlcov/
+.coverage
