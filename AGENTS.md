@@ -1,0 +1,41 @@
+# Agent Instructions
+
+Use this file as the first local guide for AI agents working in this repository.
+
+## Source of truth
+
+Follow guidance in this order:
+
+1. The assigned GitHub issue, especially its Scope, Owned files, TDD plan, visual-validation requirements, and Done definition.
+2. `AGENTS.md` for repository-wide agent behavior.
+3. `WORKFLOW.md` for runtime automation and safety policy.
+4. `docs/pyqtgraph-cpp-port-workflow.md` for the canonical C++ port specification.
+
+If these conflict, obey the narrower issue-owned scope and stop for human direction before expanding scope.
+
+## Porting rules
+
+- Build a native C++ library, not a Python wrapper.
+- Use Qt/C++ for GUI and rendering work.
+- Use OpenCV/C++ math and data structures instead of NumPy-style Python dependencies.
+- Keep PyQtGraph class names, object names, file names, folder hierarchy, and example names aligned with upstream unless the issue explicitly says otherwise.
+- Read the pinned upstream PyQtGraph source when behavior or naming matters.
+- If behavior is unclear, write or request a PyQtGraph oracle probe before guessing.
+
+## Owned files and TDD
+
+- Edit only files listed in the issue's Owned files section.
+- Do not touch `WORKFLOW.md`, automation policy, source, examples, reports, or other files unless the issue owns them.
+- For behavior changes, add or update a focused failing test before production implementation, then make it pass.
+- Run focused tests and the configured validation from `WORKFLOW.md` before handing off when practical.
+
+## Visual validation
+
+For pixel-affecting work, follow the visual-validation level in the issue and `docs/pyqtgraph-cpp-port-workflow.md`. Generate required artifacts and request GPT-5.5 semantic visual review when the workflow requires it. If required visual evidence cannot be produced inside owned files, stop and escalate.
+
+## Safety
+
+- Do not push to `main`.
+- Do not merge.
+- Do not commit manually unless explicitly instructed.
+- Keep changes narrow, issue-scoped, and reviewable.
