@@ -366,6 +366,94 @@ Screenshot comparison reports must include:
 
 Pixel-perfect equality is not required unless an issue explicitly declares it.
 
+### 9.1 Visual validation levels
+
+Every implementation issue whose result can affect pixels must declare a visual validation level in the issue body or `port_manifest.yaml`:
+
+```yaml
+validation:
+  numeric: required|optional|not_applicable
+  visual: required|optional|not_applicable
+  interaction: required|optional|not_applicable
+  gpt_visual_review: required_for_pr|optional|not_applicable
+```
+
+Recommended classification:
+
+- `not_applicable`: pure data structures, hierarchy-only skeletons, numeric helpers with no direct rendered output.
+- `optional`: color helpers, pen/brush helpers, LUT generation, early placeholders, or utilities where numeric tests remain authoritative but a visual swatch/gradient catches obvious regressions.
+- `required`: image conversion, painter paths, widgets, examples, interaction transforms, layout, axes, and anything where visual parity is part of correctness.
+
+### 9.2 Required visual artifact layout
+
+Visual checks must write reproducible artifacts under `reports/visual-diffs/<case>/`:
+
+```text
+reports/visual-diffs/<case>/
+  reference.png
+  actual.png
+  diff.png
+  metrics.json
+  gpt5_vision_review.md        # when gpt_visual_review != not_applicable
+```
+
+`metrics.json` must be machine-readable and include at least:
+
+```json
+{
+  "case": "SimplePlot",
+  "dimensions": [800, 600],
+  "mean_abs_delta": 1.8,
+  "max_delta": 33,
+  "changed_pixel_percent": 0.42,
+  "ssim": 0.992,
+  "tolerance": {
+    "max_changed_pixel_percent": 1.0,
+    "min_ssim": 0.98
+  },
+  "deterministic_verdict": "pass"
+}
+```
+
+### 9.3 AI-assisted semantic visual review
+
+For `gpt_visual_review: required_for_pr`, deterministic pixel metrics are necessary but not sufficient. A vision-capable reviewer such as GPT-5.5 must compare the reference screenshot, C++ screenshot, diff image, and metrics, and write a structured review:
+
+```yaml
+verdict: pass | fail | uncertain
+blocking_differences:
+  - <differences that must be fixed before PR readiness>
+non_blocking_differences:
+  - <acceptable antialiasing/font/platform differences>
+likely_causes:
+  - transform | color | antialiasing | layout | data | other
+recommendation: merge_ok | needs_fix | human_review
+```
+
+Use this prompt shape for the semantic review:
+
+```text
+Compare the pinned PyQtGraph reference screenshot and the C++ port screenshot.
+Check plot structure, axes, curve geometry, colors, spacing, labels, clipping, and obvious rendering artifacts.
+Ignore tiny antialiasing, font rasterization, and platform differences when metrics are within tolerance.
+Return verdict, blocking differences, non-blocking differences, likely causes, and recommendation.
+```
+
+If deterministic metrics fail but GPT-5.5 says the result looks acceptable, do not auto-approve; mark the issue `human-review`. If deterministic metrics pass but GPT-5.5 finds a semantic rendering error, block or request human review.
+
+### 9.4 Candidate taxonomy
+
+Prioritize visual validation for:
+
+1. `makeQImage` and image conversion helpers: RGB/BGR swaps, stride mistakes, alpha loss, flips, and contrast errors.
+2. `ColorMap` LUTs: gradient bars and stop markers in addition to numeric LUT fixtures.
+3. `mkColor`, `mkPen`, `mkBrush`: swatches, line-width/dash samples, fills, and alpha blending.
+4. `PlotCurveItem::paint`: line geometry, clipping, transforms, pen behavior, and empty-plot detection.
+5. `AxisItem`, `PlotItem`, `PlotWidget`, examples: layout, labels, ticks, spacing, and full-scene parity.
+6. `ViewBox` and interactions: before/after screenshots plus numeric range/transform fixtures.
+
+Do not use visual checks as the primary proof for `ArrayView`, `Point`, `Vector`, NaN min/max helpers, or hierarchy-only skeletons.
+
 ---
 
 ## 10. Issue format for this repository
@@ -401,6 +489,16 @@ Expected initial failure:
 Pass condition:
 - <observable condition>
 
+## Visual validation
+- Level: `required|optional|not_applicable`
+- GPT-5.5 semantic review: `required_for_pr|optional|not_applicable`
+- Required artifacts, if applicable:
+  - `reports/visual-diffs/<case>/reference.png`
+  - `reports/visual-diffs/<case>/actual.png`
+  - `reports/visual-diffs/<case>/diff.png`
+  - `reports/visual-diffs/<case>/metrics.json`
+  - `reports/visual-diffs/<case>/gpt5_vision_review.md`
+
 ## Validation commands
 ```bash
 <commands>
@@ -410,6 +508,7 @@ Pass condition:
 - [ ] tests fail before implementation where applicable
 - [ ] tests pass after implementation
 - [ ] affected examples pass required validation
+- [ ] visual artifacts and GPT-5.5 semantic review are present when visual validation requires them
 - [ ] names and paths match upstream where relevant
 - [ ] hierarchy check passes if inheritance changed
 - [ ] autoreview passed or findings resolved
@@ -482,6 +581,8 @@ Exit criteria:
 - PyQtGraph `SimplePlot` reference screenshot is generated.
 - C++ placeholder screenshot is generated.
 - Screenshot diff report is produced.
+- Visual diff reports follow the standard artifact layout and metrics schema.
+- GPT-5.5 semantic visual review is recorded for cases marked `gpt_visual_review: required_for_pr`.
 - Example validation can fail and pass deterministically.
 
 ### Phase D: Core data and utilities
@@ -549,6 +650,7 @@ Keep class names, file names, and hierarchy aligned with PyQtGraph.
 Use Qt/C++ for GUI and rendering.
 Use OpenCV or C++ math/data structures instead of NumPy.
 Validate affected examples.
+For any pixel-affecting work, declare the visual validation level, generate `reports/visual-diffs/<case>/` artifacts, and request GPT-5.5 semantic visual review when `gpt_visual_review` is `required_for_pr`.
 Do not push to `main`.
 Do not merge.
 Do not commit manually unless the issue specifically asks you to implement `scripts/agent_commit` behavior.
