@@ -8,6 +8,12 @@ The canonical project/port specification is:
 
 `WORKFLOW.md` is the machine-readable Pi Symphony automation runtime config; it is not the product specification.
 
+Agent and prompt guidance:
+
+- [`AGENTS.md`](AGENTS.md) gives repository-wide instructions for AI agents.
+- [`prompts/port-ticket.md`](prompts/port-ticket.md), [`prompts/review-ticket.md`](prompts/review-ticket.md), and [`prompts/fix-review-findings.md`](prompts/fix-review-findings.md) are reusable prompt templates, not automation wiring.
+- `docs/pyqtgraph-cpp-port-workflow.md` remains the canonical port spec; `WORKFLOW.md` remains the runtime configuration.
+
 This repo contains an operational GitHub issue-to-PR automation loop:
 
 - GitHub Issues are the source of truth.
