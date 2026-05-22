@@ -11,6 +11,10 @@ tracker:
 workspace:
   root: /home/michel/code/ai-workspaces/pyqtgraph_to_cpp
 pi:
+  provider: openai-codex
+  model: gpt-5.5
+  default_thinking: xhigh
+  implementation_thinking: xhigh
   use_subagents: true
 policy:
   auto_merge: false
@@ -44,8 +48,13 @@ def test_config_parser_reads_kanban_settings_from_workflow(tmp_path: Path):
     assert config.tracker.repo == "michelreifenrath/pyqtgraph_to_cpp"
     assert config.workspace.root == "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp"
     assert config.workspace.strategy == "git-worktree"
+    assert config.pi.provider == "openai-codex"
+    assert config.pi.model == "gpt-5.5"
+    assert config.pi.default_thinking == "xhigh"
+    assert config.pi.implementation_thinking == "xhigh"
     assert config.pi.use_subagents is True
     assert config.github.ready_label == "ai:ready"
+    assert config.github.merge_ready_label == "ai:merge-ready"
     assert config.policy.auto_merge is False
     assert config.policy.never_push_to_main is True
     assert config.autoreview.enabled is True
@@ -88,6 +97,7 @@ def test_workflow_defaults_are_production_safe():
         ({"workspace": {"root": "/tmp/ws"}}, "tracker.repo"),
         ({"tracker": {"repo": "owner/repo"}}, "workspace.root"),
         ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "pi": {"use_subagents": False}}, "pi.use_subagents"),
+        ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "pi": {"implementation_thinking": "maximum"}}, "pi.implementation_thinking"),
         ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "policy": {"auto_merge": True}}, "policy.auto_merge"),
         ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "policy": {"never_push_to_main": False}}, "policy.never_push_to_main"),
     ],

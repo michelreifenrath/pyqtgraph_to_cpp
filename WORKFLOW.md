@@ -16,8 +16,10 @@ agent:
   max_retry_backoff_ms: 300000
 pi:
   command: pi
-  default_thinking: medium
-  implementation_thinking: high
+  provider: openai-codex
+  model: gpt-5.5
+  default_thinking: xhigh
+  implementation_thinking: xhigh
   use_subagents: true
   session_root: /home/michel/code/ai-workspaces/pyqtgraph_to_cpp/.pi-sessions
 autoreview:
@@ -35,6 +37,7 @@ github:
   claimed_label: "ai:claimed"
   blocked_label: "ai:blocked"
   review_label: "ai:review"
+  merge_ready_label: "ai:merge-ready"
   failed_label: "ai:failed"
   done_label: "ai:done"
   ignore_label: "ai:ignore"

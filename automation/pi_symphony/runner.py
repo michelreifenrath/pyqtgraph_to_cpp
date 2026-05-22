@@ -300,7 +300,7 @@ def implement_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]
     )
     prompt = _pi_prompt(config, issue, branch)
     (issue_log_dir / "pi-prompt.md").write_text(prompt, encoding="utf-8")
-    pi_cmd = [config.pi.command, "--thinking", config.pi.implementation_thinking, "--print", "--no-session", prompt]
+    pi_cmd = _pi_command(config, thinking=config.pi.implementation_thinking, prompt=prompt)
     pi_result = run(pi_cmd, cwd=worktree, timeout=3600, check=False)
     (issue_log_dir / "pi-output.md").write_text(pi_result.combined_output + "\n", encoding="utf-8")
     if pi_result.returncode != 0:
@@ -311,12 +311,16 @@ def implement_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]
     if not status:
         raise GateFailure("Pi completed but left no git changes")
     validations = run_validations(config, worktree, issue_log_dir)
+    review_commit = _commit_worktree_changes_for_review(worktree, issue_number=issue.number)
     changed_files, changed_lines = diff_stats(worktree, config.autoreview.base)
+    if not changed_files:
+        raise GateFailure("review diff is empty after implementation commit; refusing to attest an empty branch diff")
     summary = {
         "status": "implemented",
         "issue": issue.number,
         "branch": branch,
         "worktree": str(worktree),
+        "review_commit": review_commit,
         "changed_files": changed_files,
         "changed_lines": changed_lines,
         "validations": validations,
@@ -325,6 +329,34 @@ def implement_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]
     (issue_log_dir / "implementation.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     update_issue(loaded.repo_root, issue.number, lambda item: item.update(summary))
     return summary
+
+
+def _pi_command(config: WorkflowConfig, *, thinking: str, prompt: str) -> list[str]:
+    cmd = [config.pi.command]
+    if config.pi.provider:
+        cmd.extend(["--provider", config.pi.provider])
+    if config.pi.model:
+        cmd.extend(["--model", config.pi.model])
+    cmd.extend(["--thinking", thinking, "--print", "--no-session", prompt])
+    return cmd
+
+
+def _commit_worktree_changes_for_review(worktree: Path, *, issue_number: int) -> str | None:
+    """Create the local review commit that branch-diff autoreview will inspect."""
+    if not git_status_short(worktree):
+        return None
+    run(["git", "add", "-A"], cwd=worktree, timeout=120)
+    commit_message = (
+        f"fix: address issue #{issue_number}\n\n"
+        "Automated Pi Symphony implementation.\n\n"
+        "Create a local review commit before autoreview so branch diffs include newly created files."
+    )
+    commit_result = run(["git", "commit", "-m", commit_message], cwd=worktree, timeout=300, check=False)
+    if commit_result.returncode != 0:
+        if "nothing to commit" in commit_result.combined_output.lower():
+            return None
+        raise GateFailure(f"git commit failed before review: {commit_result.combined_output}")
+    return run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
 
 
 def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
@@ -337,12 +369,15 @@ def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     issue_log_dir.mkdir(parents=True, exist_ok=True)
     validations = run_validations(config, worktree, issue_log_dir)
     changed_files, changed_lines = diff_stats(worktree, config.autoreview.base)
+    if not changed_files:
+        raise GateFailure("review diff is empty; refusing to run autoreview without branch changes")
     if len(changed_files) > config.policy.max_changed_files_without_human_review or changed_lines > config.policy.max_diff_lines_without_human_review:
         add_labels(config, issue.number, [config.github.human_review_label, config.github.blocked_label])
         raise GateFailure(
             f"diff too large for autonomous release: {len(changed_files)} files, {changed_lines} changed lines"
         )
     review = run_autoreview(config, worktree, issue_log_dir)
+    reviewed_head = run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
     summary = {
         "status": "reviewed",
         "issue": issue.number,
@@ -350,6 +385,7 @@ def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
         "changed_lines": changed_lines,
         "validations": validations,
         "autoreview": review,
+        "reviewed_head": reviewed_head,
         "reviewed_at": utc_now(),
     }
     (issue_log_dir / "review.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -373,11 +409,13 @@ def release_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     validations = run_validations(config, worktree, issue_log_dir)
     status = git_status_short(worktree)
     if status:
-        run(["git", "add", "-A"], cwd=worktree, timeout=120)
-        commit_message = f"fix: address issue #{issue.number}\n\nAutomated Pi Symphony implementation.\n\nCloses #{issue.number}"
-        commit_result = run(["git", "commit", "-m", commit_message], cwd=worktree, timeout=300, check=False)
-        if commit_result.returncode != 0 and "nothing to commit" not in commit_result.combined_output.lower():
-            raise GateFailure(f"git commit failed: {commit_result.combined_output}")
+        raise GateFailure(f"release found uncommitted changes after review; refusing to commit unreviewed changes:\n{status}")
+    reviewed_head = str(state.get("reviewed_head") or state.get("review_commit") or "")
+    if not reviewed_head:
+        raise GateFailure("release requires a recorded reviewed_head from the review phase")
+    current_head = run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
+    if current_head != reviewed_head:
+        raise GateFailure(f"release HEAD {current_head} does not match reviewed head {reviewed_head}; rerun review before release")
     run(["git", "push", "-u", "origin", branch], cwd=worktree, timeout=300)
     existing_pr = find_pr_for_branch(config, branch)
     if existing_pr is None:
@@ -385,6 +423,8 @@ def release_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
         pr = create_pr(config, branch=branch, title=f"fix: address issue #{issue.number} - {issue.title}", body=pr_body)
     else:
         pr = existing_pr
+    if pr.get("number"):
+        add_labels(config, int(pr["number"]), [config.github.merge_ready_label])
     add_labels(config, issue.number, [config.github.review_label])
     remove_labels(config, issue.number, [config.github.claimed_label, config.github.failed_label, config.github.blocked_label])
     comment_issue(config, issue.number, f"Pi Symphony opened/updated PR: {pr.get('url')}. Auto-merge is disabled; please review manually.")

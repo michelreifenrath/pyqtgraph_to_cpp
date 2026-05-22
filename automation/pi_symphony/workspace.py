@@ -43,9 +43,10 @@ def git_status_short(path: Path) -> str:
 
 
 def diff_stats(path: Path, base: str = "origin/main") -> tuple[list[str], int]:
-    files_out = run(["git", "diff", "--name-only", base, "--"], cwd=path, timeout=120, check=False).stdout
+    diff_ref = f"{base}...HEAD"
+    files_out = run(["git", "diff", "--name-only", diff_ref, "--"], cwd=path, timeout=120, check=False).stdout
     files = [line for line in files_out.splitlines() if line.strip()]
-    numstat = run(["git", "diff", "--numstat", base, "--"], cwd=path, timeout=120, check=False).stdout
+    numstat = run(["git", "diff", "--numstat", diff_ref, "--"], cwd=path, timeout=120, check=False).stdout
     changed_lines = 0
     for line in numstat.splitlines():
         parts = line.split("\t")

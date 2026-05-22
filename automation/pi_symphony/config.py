@@ -38,6 +38,8 @@ class AgentConfig:
 @dataclass(frozen=True)
 class PiConfig:
     command: str = "pi"
+    provider: str | None = None
+    model: str | None = None
     default_thinking: str = "medium"
     implementation_thinking: str = "high"
     use_subagents: bool = True
@@ -51,6 +53,7 @@ class GithubConfig:
     claimed_label: str = "ai:claimed"
     blocked_label: str = "ai:blocked"
     review_label: str = "ai:review"
+    merge_ready_label: str = "ai:merge-ready"
     failed_label: str = "ai:failed"
     done_label: str = "ai:done"
     ignore_label: str = "ai:ignore"
@@ -157,9 +160,16 @@ class WorkflowConfig:
         if self.agent.max_attempts < 1:
             raise ConfigError("agent.max_attempts must be >= 1")
         _require_text(self.pi.command, "pi.command")
+        if self.pi.provider is not None:
+            _require_text(self.pi.provider, "pi.provider")
+        if self.pi.model is not None:
+            _require_text(self.pi.model, "pi.model")
+        for name in ("default_thinking", "implementation_thinking"):
+            if getattr(self.pi, name) not in {"off", "minimal", "low", "medium", "high", "xhigh"}:
+                raise ConfigError(f"pi.{name} must be one of: off, minimal, low, medium, high, xhigh")
         if self.pi.use_subagents is not True:
             raise ConfigError("pi.use_subagents must be true")
-        for name in ("ready_label", "claimed_label", "blocked_label", "review_label", "failed_label", "done_label", "ignore_label"):
+        for name in ("ready_label", "claimed_label", "blocked_label", "review_label", "merge_ready_label", "failed_label", "done_label", "ignore_label"):
             _require_text(getattr(self.github, name), f"github.{name}")
         if self.policy.auto_merge is not False:
             raise ConfigError("policy.auto_merge must be false")
