@@ -123,6 +123,7 @@ def test_identical_images_pass_and_write_matching_metrics(tmp_path: Path) -> Non
         "changed_pixel_percentage",
         "diff_image_path",
         "dimensions",
+        "deterministic_verdict",
         "failed_tolerances",
         "max_delta",
         "mean_absolute_delta",
@@ -132,6 +133,7 @@ def test_identical_images_pass_and_write_matching_metrics(tmp_path: Path) -> Non
         "tolerances",
     }
     assert stdout_metrics["passed"] is True
+    assert stdout_metrics["deterministic_verdict"] == "pass"
     assert stdout_metrics["reason"] == "within_tolerance"
     assert stdout_metrics["dimensions"] == {
         "reference": {"width": 2, "height": 2},
@@ -213,6 +215,7 @@ def test_one_pixel_difference_fails_when_tolerance_is_exceeded(tmp_path: Path) -
     assert result.returncode == 1
     metrics = json.loads(result.stdout)
     assert metrics["passed"] is False
+    assert metrics["deterministic_verdict"] == "fail"
     assert metrics["reason"] == "tolerance_exceeded"
     assert metrics["failed_tolerances"] == ["max_delta"]
     assert metrics["max_delta"] == 11
@@ -232,6 +235,7 @@ def test_dimension_mismatch_fails_with_stable_metrics(tmp_path: Path) -> None:
     assert result.returncode == 1
     metrics = json.loads(result.stdout)
     assert metrics["passed"] is False
+    assert metrics["deterministic_verdict"] == "fail"
     assert metrics["reason"] == "dimension_mismatch"
     assert metrics["dimensions"] == {
         "reference": {"width": 2, "height": 1},

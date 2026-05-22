@@ -226,6 +226,7 @@ def compare_images(
         return {
             **base,
             "passed": False,
+            "deterministic_verdict": "fail",
             "reason": "dimension_mismatch",
             "failed_tolerances": ["dimensions"],
             "mean_absolute_delta": None,
@@ -296,6 +297,7 @@ def compare_images(
     return {
         **base,
         "passed": passed,
+        "deterministic_verdict": "pass" if passed else "fail",
         "reason": "within_tolerance" if passed else "tolerance_exceeded",
         "failed_tolerances": failed,
         "mean_absolute_delta": mean_delta,
