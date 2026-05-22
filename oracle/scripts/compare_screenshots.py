@@ -44,7 +44,7 @@ def _paeth(a: int, b: int, c: int) -> int:
     return c
 
 
-def read_png_rgba(path: Path) -> tuple[int, int, list[tuple[int, int, int, int]]]:
+def read_png_rgba(path: Path) -> tuple[int, int, bytes]:
     data = path.read_bytes()
     if not data.startswith(PNG_SIGNATURE):
         raise PngError("not a PNG file")
@@ -163,20 +163,20 @@ def read_png_rgba(path: Path) -> tuple[int, int, list[tuple[int, int, int, int]]
         rows.append(bytes(reconstructed))
         previous = reconstructed
 
-    pixels: list[tuple[int, int, int, int]] = []
+    rgba = bytearray()
     for row in rows:
         for x in range(0, len(row), bpp):
             if color_type == 0:
                 g = row[x]
-                pixels.append((g, g, g, 255))
+                rgba.extend((g, g, g, 255))
             elif color_type == 2:
-                pixels.append((row[x], row[x + 1], row[x + 2], 255))
+                rgba.extend((row[x], row[x + 1], row[x + 2], 255))
             elif color_type == 4:
                 g = row[x]
-                pixels.append((g, g, g, row[x + 1]))
+                rgba.extend((g, g, g, row[x + 1]))
             else:
-                pixels.append((row[x], row[x + 1], row[x + 2], row[x + 3]))
-    return width, height, pixels
+                rgba.extend((row[x], row[x + 1], row[x + 2], row[x + 3]))
+    return width, height, bytes(rgba)
 
 
 def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:
@@ -186,20 +186,15 @@ def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:
     )
 
 
-def write_png_rgba(
-    path: Path, width: int, height: int, pixels: Iterable[tuple[int, int, int, int]]
-) -> None:
+def write_png_rgba_bytes(path: Path, width: int, height: int, rgba: bytes) -> None:
+    if len(rgba) != width * height * 4:
+        raise ValueError("RGBA byte count does not match dimensions")
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = []
-    iterator = iter(pixels)
-    for _y in range(height):
-        row = bytearray([0])
-        for _x in range(width):
-            try:
-                row.extend(next(iterator))
-            except StopIteration as exc:
-                raise ValueError("not enough pixels for PNG") from exc
-        rows.append(bytes(row))
+    row_len = width * 4
+    for y in range(height):
+        start = y * row_len
+        rows.append(bytes([0]) + rgba[start : start + row_len])
     compressed = zlib.compress(b"".join(rows), level=9)
     ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
     path.write_bytes(
@@ -208,6 +203,19 @@ def write_png_rgba(
         + _png_chunk(b"IDAT", compressed)
         + _png_chunk(b"IEND", b"")
     )
+
+
+def write_png_rgba(
+    path: Path, width: int, height: int, pixels: Iterable[tuple[int, int, int, int]]
+) -> None:
+    rgba = bytearray()
+    iterator = iter(pixels)
+    for _ in range(width * height):
+        try:
+            rgba.extend(next(iterator))
+        except StopIteration as exc:
+            raise ValueError("not enough pixels for PNG") from exc
+    write_png_rgba_bytes(path, width, height, bytes(rgba))
 
 
 def _dimension(width: int, height: int) -> dict[str, int]:
@@ -235,7 +243,7 @@ def compare_images(
     }
 
     if (ref_w, ref_h) != (cand_w, cand_h):
-        write_png_rgba(diff_path, 1, 1, [(255, 0, 0, 255)])
+        write_png_rgba_bytes(diff_path, 1, 1, bytes((255, 0, 0, 255)))
         return {
             **base,
             "passed": False,
@@ -253,25 +261,27 @@ def compare_images(
     changed_pixels = 0
     min_x = min_y = None
     max_x = max_y = None
-    diff_pixels: list[tuple[int, int, int, int]] = []
+    diff_pixels = bytearray()
 
-    for idx, (ref_px, cand_px) in enumerate(zip(ref_pixels, cand_pixels, strict=True)):
+    for pixel_index, channel_index in enumerate(range(0, len(ref_pixels), 4)):
+        ref_px = ref_pixels[channel_index : channel_index + 4]
+        cand_px = cand_pixels[channel_index : channel_index + 4]
         deltas = [abs(a - b) for a, b in zip(ref_px, cand_px, strict=True)]
         pixel_max = max(deltas)
         total_delta += sum(deltas)
         max_delta = max(max_delta, pixel_max)
         if pixel_max > 0:
             changed_pixels += 1
-            x = idx % ref_w
-            y = idx // ref_w
+            x = pixel_index % ref_w
+            y = pixel_index // ref_w
             min_x = x if min_x is None else min(min_x, x)
             min_y = y if min_y is None else min(min_y, y)
             max_x = x if max_x is None else max(max_x, x)
             max_y = y if max_y is None else max(max_y, y)
             intensity = max(64, pixel_max)
-            diff_pixels.append((intensity, 0, 0, 255))
+            diff_pixels.extend((intensity, 0, 0, 255))
         else:
-            diff_pixels.append((0, 0, 0, 255))
+            diff_pixels.extend((0, 0, 0, 255))
 
     pixel_count = ref_w * ref_h
     channel_count = pixel_count * 4
@@ -293,7 +303,7 @@ def compare_images(
             }
         )
 
-    write_png_rgba(diff_path, ref_w, ref_h, diff_pixels)
+    write_png_rgba_bytes(diff_path, ref_w, ref_h, bytes(diff_pixels))
     passed = (
         mean_delta <= tolerances["max_mean_delta"]
         and max_delta <= tolerances["max_pixel_delta"]
