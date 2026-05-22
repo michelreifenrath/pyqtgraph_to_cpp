@@ -1,8 +1,14 @@
 # pyqtgraph_to_cpp
 
-Repository-owned Pi Symphony automation for translating pyqtgraph-oriented work toward C++.
+Repository-owned Pi Symphony automation for translating PyQtGraph into a native C++ library.
 
-This repo now contains an operational GitHub issue-to-PR automation loop:
+The canonical project/port specification is:
+
+- [`docs/pyqtgraph-cpp-port-workflow.md`](docs/pyqtgraph-cpp-port-workflow.md)
+
+`WORKFLOW.md` is the machine-readable Pi Symphony automation runtime config; it is not the product specification.
+
+This repo contains an operational GitHub issue-to-PR automation loop:
 
 - GitHub Issues are the source of truth.
 - Label an issue `ai:ready` to let automation claim it.
@@ -37,4 +43,13 @@ python3 -m pytest -q
 6. Hermes opens a PR and labels the issue `ai:review`.
 7. A human reviews and merges when satisfied.
 
-See `WORKFLOW.md` and `docs/ai-orchestration.md` for the full policy.
+See `WORKFLOW.md`, `docs/ai-orchestration.md`, and `docs/pyqtgraph-cpp-port-workflow.md` for the full policy.
+
+## Starting the C++ port
+
+The port is intentionally issue-driven and dependency-gated:
+
+1. Create fine-grained GitHub issues using the format in `docs/pyqtgraph-cpp-port-workflow.md`.
+2. Label only dependency-free work as `ai:ready`.
+3. Let automation create worktrees, run Pi, review, and open PRs.
+4. Promote the next issue only after its dependencies are merged or explicitly satisfied.

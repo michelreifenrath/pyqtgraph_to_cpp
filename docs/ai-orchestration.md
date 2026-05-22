@@ -2,6 +2,8 @@
 
 This repository implements a Symphony-style automation system using GitHub, Hermes Kanban, Hermes profiles, and Pi CLI/pi-subagents.
 
+For the PyQtGraph→C++ product/engineering specification, see `docs/pyqtgraph-cpp-port-workflow.md`. This file documents the automation layer only.
+
 ## Architecture
 
 ```text
