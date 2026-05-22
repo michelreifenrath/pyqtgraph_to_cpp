@@ -1,0 +1,36 @@
+name: AI-ready task
+description: Task template for Pi Symphony automation
+title: "[AI] "
+labels: ["ai:ready", "tenant:core"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for issues that Hermes/Pi Symphony may automate. Add `tag:docs`, `tag:parser`, or `tag:build` as appropriate.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be changed?
+      placeholder: Describe the desired outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How should the automation prove this is done?
+      placeholder: |
+        - Tests pass
+        - README section updated
+        - Behavior X works
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope boundaries
+      description: What should the agent avoid changing?
+      placeholder: Do not modify unrelated files, APIs, or build settings.
+    validations:
+      required: false
