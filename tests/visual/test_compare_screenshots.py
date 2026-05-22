@@ -249,6 +249,31 @@ def test_dimension_mismatch_fails_with_stable_metrics(tmp_path: Path) -> None:
     assert read_png_rgba(diff) == (1, 1, [(255, 0, 0, 255)])
 
 
+def test_oversized_png_is_rejected_before_unbounded_decompression(
+    tmp_path: Path,
+) -> None:
+    reference = tmp_path / "huge.png"
+    candidate = tmp_path / "candidate.png"
+    # Declares >256 MiB of decompressed scanline data but contains only a tiny
+    # zlib stream. The CLI must reject from IHDR-derived size limits, not try to
+    # inflate arbitrary crafted input first.
+    ihdr = struct.pack(">IIBBBBB", 70_000, 1_000, 8, 6, 0, 0, 0)
+    reference.write_bytes(
+        PNG_SIGNATURE
+        + _chunk(b"IHDR", ihdr)
+        + _chunk(b"IDAT", zlib.compress(b""))
+        + _chunk(b"IEND", b"")
+    )
+    write_png(candidate, 1, 1, [(0, 0, 0)])
+
+    result = run_compare(
+        reference, candidate, tmp_path / "diff.png", tmp_path / "metrics.json"
+    )
+
+    assert result.returncode == 2
+    assert "decompressed data would exceed limit" in result.stderr
+
+
 def test_missing_or_malformed_input_exits_two_with_useful_stderr(
     tmp_path: Path,
 ) -> None:

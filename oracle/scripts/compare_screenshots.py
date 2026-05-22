@@ -13,6 +13,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+MAX_DECOMPRESSED_BYTES = 256 * 1024 * 1024
 
 
 class PngError(ValueError):
@@ -109,14 +110,26 @@ def read_png_rgba(path: Path) -> tuple[int, int, list[tuple[int, int, int, int]]
     if not seen_iend:
         raise PngError("missing IEND chunk")
 
-    try:
-        raw = zlib.decompress(b"".join(idat_parts))
-    except zlib.error as exc:
-        raise PngError(f"invalid PNG zlib stream: {exc}") from exc
-
     bpp = _bytes_per_pixel(color_type)
     row_len = width * bpp
     expected = height * (row_len + 1)
+    if expected > MAX_DECOMPRESSED_BYTES:
+        raise PngError(
+            f"PNG decompressed data would exceed limit: {expected} > {MAX_DECOMPRESSED_BYTES} bytes"
+        )
+
+    try:
+        decompressor = zlib.decompressobj()
+        raw = decompressor.decompress(b"".join(idat_parts), expected + 1)
+        remaining = max(0, expected + 1 - len(raw))
+        raw += decompressor.flush(remaining)
+    except zlib.error as exc:
+        raise PngError(f"invalid PNG zlib stream: {exc}") from exc
+    if len(raw) > expected:
+        raise PngError("PNG decompressed data exceeds expected image size")
+    if not decompressor.eof:
+        raise PngError("PNG zlib stream exceeds expected image size or is truncated")
+
     if len(raw) != expected:
         raise PngError("unexpected decompressed image data length")
 
