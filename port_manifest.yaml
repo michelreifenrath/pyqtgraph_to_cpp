@@ -1,0 +1,5 @@
+reference:
+  repo: https://github.com/pyqtgraph/pyqtgraph
+  ref: pyqtgraph-0.14.0
+  pinned_commit: a20028b98294b9cc8770f2015a92eb342224b788
+  docs_url: https://pyqtgraph.readthedocs.io/
