@@ -21,6 +21,37 @@ class CommandResult:
         return (self.stdout + ("\n" if self.stdout and self.stderr else "") + self.stderr).strip()
 
 
+def _parse_dotenv(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not path.exists():
+        return values
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key or key.startswith("#"):
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        values[key] = value
+    return values
+
+
+def _subprocess_env(overrides: dict[str, str] | None = None) -> dict[str, str]:
+    merged_env = os.environ.copy()
+    hermes_home = Path(merged_env.get("HERMES_HOME") or Path.home() / ".hermes").expanduser()
+    for key, value in _parse_dotenv(hermes_home / ".env").items():
+        merged_env.setdefault(key, value)
+    if "GH_TOKEN" not in merged_env and "GITHUB_TOKEN" in merged_env:
+        merged_env["GH_TOKEN"] = merged_env["GITHUB_TOKEN"]
+    if overrides:
+        merged_env.update(overrides)
+    return merged_env
+
+
 def run(
     args: list[str] | str,
     *,
@@ -30,9 +61,6 @@ def run(
     env: dict[str, str] | None = None,
     shell: bool = False,
 ) -> CommandResult:
-    merged_env = os.environ.copy()
-    if env:
-        merged_env.update(env)
     completed = subprocess.run(
         args,
         cwd=str(cwd) if cwd is not None else None,
@@ -40,7 +68,7 @@ def run(
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        env=merged_env,
+        env=_subprocess_env(env),
         shell=shell,
     )
     result = CommandResult(args=args, returncode=completed.returncode, stdout=completed.stdout, stderr=completed.stderr)
