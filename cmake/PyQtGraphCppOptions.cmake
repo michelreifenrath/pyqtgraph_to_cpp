@@ -1,8 +1,8 @@
 include_guard(GLOBAL)
 
 function(pyqtgraph_cpp_configure_options)
-    option(PYQTGRAPH_CPP_REQUIRE_QT "Require Qt 6 Core and Test for the default PGBOOT-001 test baseline" ON)
-    option(PYQTGRAPH_CPP_REQUIRE_OPENCV "Require OpenCV 4.x for the default pyqtgraph-cpp baseline" ON)
+    option(PYQTGRAPH_CPP_REQUIRE_QT "Require Qt 6 Core and Test instead of allowing the dependency-free skeleton smoke target" OFF)
+    option(PYQTGRAPH_CPP_REQUIRE_OPENCV "Require OpenCV 4.x instead of allowing the dependency-free skeleton smoke target" OFF)
     set(PYQTGRAPH_CPP_QT_MAJOR_VERSION "6" CACHE STRING "Qt major version used by pyqtgraph-cpp")
     mark_as_advanced(PYQTGRAPH_CPP_QT_MAJOR_VERSION)
 
