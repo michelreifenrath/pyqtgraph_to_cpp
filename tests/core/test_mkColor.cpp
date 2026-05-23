@@ -49,6 +49,30 @@ bool checkRgba(const QColor& color, int red, int green, int blue, int alpha, std
         } \
     } while (false)
 
+bool checkHsva(const QColor& color, int hue, int saturation, int value, int alpha, std::string_view label)
+{
+    int actualHue = 0;
+    int actualSaturation = 0;
+    int actualValue = 0;
+    int actualAlpha = 0;
+    color.getHsv(&actualHue, &actualSaturation, &actualValue, &actualAlpha);
+
+    if (actualHue != hue || actualSaturation != saturation || actualValue != value || actualAlpha != alpha) {
+        std::cerr << label << ": expected hsva(" << hue << ", " << saturation << ", " << value << ", " << alpha
+                  << ") got hsva(" << actualHue << ", " << actualSaturation << ", " << actualValue << ", "
+                  << actualAlpha << ")\n";
+        return false;
+    }
+    return true;
+}
+
+#define CHECK_HSVA(color, hue, saturation, value, alpha) \
+    do { \
+        if (!checkHsva((color), (hue), (saturation), (value), (alpha), #color)) { \
+            return false; \
+        } \
+    } while (false)
+
 template <typename Callable>
 bool checkThrowsInvalidArgument(Callable callable, std::string_view label)
 {
@@ -117,6 +141,9 @@ bool testIntColorInputs()
     CHECK_RGBA(pyqtgraph::mkColor(std::array<int, 2>{2, 9}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::tuple<int, int>{2, 9}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor({2.0, 9.0}), 170, 255, 0, 255);
+
+    CHECK_HSVA(pyqtgraph::intColor(1, 4, 1, 255, 150, 0, 10), 7, 255, 255, 255);
+    CHECK_HSVA(pyqtgraph::intColor(1, 1, 4, 150, 254, 360, 0), 0, 255, 219, 255);
     return true;
 }
 

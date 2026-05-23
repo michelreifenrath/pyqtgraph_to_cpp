@@ -22,6 +22,13 @@ namespace {
     return std::isfinite(value) ? static_cast<int>(value) : 0;
 }
 
+[[nodiscard]] int floorDiv(int numerator, int denominator)
+{
+    const int quotient = numerator / denominator;
+    const int remainder = numerator % denominator;
+    return remainder < 0 ? quotient - 1 : quotient;
+}
+
 [[nodiscard]] QColor colorFromChannels(double red, double green, double blue, double alpha)
 {
     return QColor(finiteChannelToInt(red), finiteChannelToInt(green), finiteChannelToInt(blue), finiteChannelToInt(alpha));
@@ -118,8 +125,8 @@ QColor intColor(int index,
     const int ind = ((index % span) + span) % span;
     const int indh = ind % hues;
     const int indv = ind / hues;
-    const int value = values <= 1 ? maxValue : minValue + indv * ((maxValue - minValue) / (values - 1));
-    const int hue = minHue + (indh * (maxHue - minHue)) / hues;
+    const int value = values <= 1 ? maxValue : minValue + indv * floorDiv(maxValue - minValue, values - 1);
+    const int hue = minHue + floorDiv(indh * (maxHue - minHue), hues);
     return QColor::fromHsv(hue, sat, value, alpha);
 }
 

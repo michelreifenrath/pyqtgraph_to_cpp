@@ -19,14 +19,7 @@ target_compile_features(pyqtgraph_cpp_project_options INTERFACE cxx_std_20)
 
 pyqtgraph_cpp_create_warnings_target(pyqtgraph_cpp_project_warnings)
 
-set(pyqtgraph_cpp_sources
-    src/pyqtgraph/core/ArrayView.cpp
-)
-if(PYQTGRAPH_CPP_HAS_QT)
-    list(APPEND pyqtgraph_cpp_sources src/pyqtgraph/functions.cpp)
-endif()
-
-add_library(pyqtgraph_cpp ${pyqtgraph_cpp_sources})
+add_library(pyqtgraph_cpp src/pyqtgraph/core/ArrayView.cpp)
 target_include_directories(pyqtgraph_cpp
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -37,13 +30,6 @@ target_link_libraries(pyqtgraph_cpp
     PRIVATE
         pyqtgraph_cpp_project_warnings
 )
-if(PYQTGRAPH_CPP_HAS_QT)
-    target_link_libraries(pyqtgraph_cpp
-        PUBLIC
-            Qt6::Core
-            Qt6::Gui
-    )
-endif()
 
 include(CTest)
 if(BUILD_TESTING)
@@ -58,16 +44,4 @@ if(BUILD_TESTING)
     )
     pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_arrayview)
     add_test(NAME pyqtgraph_cpp.core.ArrayView COMMAND pyqtgraph_cpp_core_arrayview)
-
-    if(PYQTGRAPH_CPP_HAS_QT)
-        add_executable(pyqtgraph_cpp_core_mkcolor tests/core/test_mkColor.cpp)
-        target_link_libraries(pyqtgraph_cpp_core_mkcolor
-            PRIVATE
-                pyqtgraph_cpp
-                pyqtgraph_cpp_project_options
-                pyqtgraph_cpp_project_warnings
-        )
-        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_mkcolor)
-        add_test(NAME pyqtgraph_cpp.core.mkColor COMMAND pyqtgraph_cpp_core_mkcolor)
-    endif()
 endif()
