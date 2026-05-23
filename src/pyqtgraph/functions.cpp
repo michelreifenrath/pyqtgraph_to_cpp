@@ -149,6 +149,23 @@ QColor mkColor(const char* color)
     return mkColor(QString::fromUtf8(color));
 }
 
+QColor mkColor(char color)
+{
+    QString text;
+    text.append(QLatin1Char(color));
+    return mkColor(text);
+}
+
+QColor mkColor(signed char color)
+{
+    return mkColor(static_cast<char>(color));
+}
+
+QColor mkColor(unsigned char color)
+{
+    return mkColor(static_cast<char>(color));
+}
+
 QColor mkColor(std::string_view color)
 {
     return mkColor(QString::fromUtf8(color.data(), static_cast<qsizetype>(color.size())));

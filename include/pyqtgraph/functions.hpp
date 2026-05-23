@@ -19,6 +19,31 @@
 
 namespace pyqtgraph {
 
+namespace detail {
+
+template <typename T>
+inline constexpr bool is_character_integral_v =
+    std::is_same_v<std::remove_cvref_t<T>, char> || std::is_same_v<std::remove_cvref_t<T>, signed char> ||
+    std::is_same_v<std::remove_cvref_t<T>, unsigned char> || std::is_same_v<std::remove_cvref_t<T>, wchar_t> ||
+    std::is_same_v<std::remove_cvref_t<T>, char8_t> || std::is_same_v<std::remove_cvref_t<T>, char16_t> ||
+    std::is_same_v<std::remove_cvref_t<T>, char32_t>;
+
+inline constexpr int defaultIntColorSpan = 9;
+
+template <typename T>
+[[nodiscard]] constexpr int reduceDefaultIntColorIndex(T index)
+{
+    using Value = std::remove_cvref_t<T>;
+    if constexpr (std::is_same_v<Value, bool>) {
+        return index ? 1 : 0;
+    } else {
+        constexpr Value span = static_cast<Value>(defaultIntColorSpan);
+        return static_cast<int>(index % span);
+    }
+}
+
+} // namespace detail
+
 QColor intColor(int index,
                 int hues = 9,
                 int values = 1,
@@ -33,13 +58,17 @@ QColor mkColor(const QString& color);
 QColor mkColor(const char* color);
 QColor mkColor(std::string_view color);
 QColor mkColor(const QColor& color);
+QColor mkColor(char color);
+QColor mkColor(signed char color);
+QColor mkColor(unsigned char color);
 QColor mkColor(int index);
 
 template <typename T>
-    requires(std::is_integral_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, int>)
+    requires(std::is_integral_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, int> &&
+             !detail::is_character_integral_v<T>)
 [[nodiscard]] QColor mkColor(T index)
 {
-    return intColor(static_cast<int>(index));
+    return intColor(detail::reduceDefaultIntColorIndex(index));
 }
 
 QColor mkColor(double gray);

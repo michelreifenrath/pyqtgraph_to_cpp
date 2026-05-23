@@ -68,6 +68,7 @@ bool checkThrowsInvalidArgument(Callable callable, std::string_view label)
 bool testShortNames()
 {
     CHECK_RGBA(pyqtgraph::mkColor("r"), 255, 0, 0, 255);
+    CHECK_RGBA(pyqtgraph::mkColor('r'), 255, 0, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor("g"), 0, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor("b"), 0, 0, 255, 255);
     CHECK_RGBA(pyqtgraph::mkColor("d"), 150, 150, 150, 255);
@@ -106,6 +107,13 @@ bool testIntColorInputs()
     CHECK_RGBA(pyqtgraph::mkColor(1U), 255, 170, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::size_t{2}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::uint32_t{3}), 0, 255, 0, 255);
+
+    const auto maxIndex = std::numeric_limits<std::uint64_t>::max();
+    CHECK(pyqtgraph::mkColor(maxIndex) == pyqtgraph::intColor(static_cast<int>(maxIndex % 9U)));
+
+    const auto minIndex = std::numeric_limits<std::int64_t>::min();
+    CHECK(pyqtgraph::mkColor(minIndex) == pyqtgraph::intColor(static_cast<int>(minIndex % 9)));
+
     CHECK_RGBA(pyqtgraph::mkColor(std::array<int, 2>{2, 9}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::tuple<int, int>{2, 9}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor({2.0, 9.0}), 170, 255, 0, 255);
@@ -120,6 +128,7 @@ bool testCopyAndErrors()
     CHECK(copied == source);
 
     CHECK(checkThrowsInvalidArgument([] { (void)pyqtgraph::mkColor("q"); }, "unknown short name"));
+    CHECK(checkThrowsInvalidArgument([] { (void)pyqtgraph::mkColor('q'); }, "unknown char short name"));
     CHECK(checkThrowsInvalidArgument([] { (void)pyqtgraph::mkColor("not-a-real-color-name"); }, "invalid color name"));
     CHECK(checkThrowsInvalidArgument([] { (void)pyqtgraph::mkColor("#12"); }, "invalid hex length"));
     CHECK(checkThrowsInvalidArgument([] { (void)pyqtgraph::mkColor({1.0}); }, "unsupported sequence length 1"));
