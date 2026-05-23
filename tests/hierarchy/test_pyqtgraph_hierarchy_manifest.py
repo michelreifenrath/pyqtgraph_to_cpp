@@ -411,6 +411,92 @@ def test_ignored_local_python_files_do_not_contaminate_output(tmp_path: Path) ->
     }
 
 
+def test_resolves_same_module_base_when_simple_name_is_duplicated(
+    tmp_path: Path,
+) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    checkout = root / CHECKOUT_PATH
+    write_fixture_file(
+        checkout / "pyqtgraph" / "jupyter" / "GraphicsView.py",
+        """class GraphicsView:
+    pass
+
+
+class GraphicsLayoutWidget(GraphicsView):
+    pass
+
+
+class PlotWidget(GraphicsView):
+    pass
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "widgets" / "GraphicsView.py",
+        """class GraphicsView:
+    pass
+""",
+    )
+    git(checkout, "add", ".")
+    git(checkout, "commit", "-m", "add duplicate graphics view names")
+    commit = git(checkout, "rev-parse", "HEAD")
+    write_source_lock(root, repo="fixture://pyqtgraph", commit=commit)
+
+    result = run_cli("--root", str(root))
+
+    assert result.returncode == 0, result.stderr
+    hierarchy = json.loads(result.stdout)
+    by_qualified_name = {
+        record["qualified_name"]: record for record in hierarchy["classes"]
+    }
+    expected_base = [
+        {
+            "base": "GraphicsView",
+            "qualified_name": "pyqtgraph.jupyter.GraphicsView.GraphicsView",
+            "upstream_path": "pyqtgraph/jupyter/GraphicsView.py",
+        }
+    ]
+    assert (
+        by_qualified_name[
+            "pyqtgraph.jupyter.GraphicsView.GraphicsLayoutWidget"
+        ]["resolved_bases"]
+        == expected_base
+    )
+    assert by_qualified_name[
+        "pyqtgraph.jupyter.GraphicsView.PlotWidget"
+    ]["resolved_bases"] == expected_base
+    assert by_qualified_name[
+        "pyqtgraph.jupyter.GraphicsView.GraphicsView"
+    ]["children"] == [
+        "pyqtgraph.jupyter.GraphicsView.GraphicsLayoutWidget",
+        "pyqtgraph.jupyter.GraphicsView.PlotWidget",
+    ]
+
+
+def test_package_initializer_classes_use_package_qualified_name(
+    tmp_path: Path,
+) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    checkout = root / CHECKOUT_PATH
+    write_fixture_file(
+        checkout / "pyqtgraph" / "icons" / "__init__.py",
+        """class GraphIcon:
+    pass
+""",
+    )
+    git(checkout, "add", ".")
+    git(checkout, "commit", "-m", "add package initializer class")
+    commit = git(checkout, "rev-parse", "HEAD")
+    write_source_lock(root, repo="fixture://pyqtgraph", commit=commit)
+
+    result = run_cli("--root", str(root))
+
+    assert result.returncode == 0, result.stderr
+    hierarchy = json.loads(result.stdout)
+    qualified_names = {record["qualified_name"] for record in hierarchy["classes"]}
+    assert "pyqtgraph.icons.GraphIcon" in qualified_names
+    assert "pyqtgraph.icons.__init__.GraphIcon" not in qualified_names
+
+
 def test_update_fixture_writes_deterministic_json_and_is_idempotent(
     tmp_path: Path,
 ) -> None:

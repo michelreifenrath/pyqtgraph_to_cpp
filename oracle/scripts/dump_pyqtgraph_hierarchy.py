@@ -177,9 +177,13 @@ def base_expression(base: ast.expr) -> str:
         raise InventoryError(f"could not render class base expression: {exc}") from exc
 
 
-def qualified_name(upstream_path: str, class_name: str) -> str:
+def module_name(upstream_path: str) -> str:
     module = upstream_path.removesuffix(".py").replace("/", ".")
-    return f"{module}.{class_name}"
+    return module.removesuffix(".__init__")
+
+
+def qualified_name(upstream_path: str, class_name: str) -> str:
+    return f"{module_name(upstream_path)}.{class_name}"
 
 
 def simple_base_name(base: str) -> str:
@@ -222,17 +226,54 @@ def tracked_files(checkout: Path) -> list[str]:
 
 def resolve_hierarchy(classes: list[dict[str, Any]]) -> list[dict[str, str]]:
     by_simple_name: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    by_qualified_name: dict[str, dict[str, Any]] = {}
     for record in classes:
         by_simple_name[str(record["class_name"])].append(record)
+        by_qualified_name[str(record["qualified_name"])] = record
+
+    def resolve_parent(child: dict[str, Any], base: str) -> dict[str, Any] | None:
+        """Resolve a base expression without inventing ambiguous inheritance edges."""
+        simple_name = simple_base_name(base)
+        child_module = module_name(str(child["upstream_path"]))
+
+        # A fully-qualified base expression should win when it exactly matches a
+        # manifest class. This keeps explicit imports deterministic.
+        exact = by_qualified_name.get(base)
+        if exact is not None:
+            return exact
+
+        # Prefer a class defined beside the child. PyQtGraph often has local
+        # classes whose simple names also exist in other modules; treating those
+        # as globally ambiguous drops real same-module inheritance edges.
+        same_module = by_qualified_name.get(f"{child_module}.{simple_name}")
+        if same_module is not None:
+            return same_module
+
+        # Handle import-qualified expressions such as GraphicsView.GraphicsView
+        # when the manifest has a unique suffix match.
+        if "." in base:
+            suffix_matches = [
+                record
+                for qualified, record in by_qualified_name.items()
+                if qualified.endswith(f".{base}")
+            ]
+            if len(suffix_matches) == 1:
+                return suffix_matches[0]
+
+        # Fall back to globally unique simple class names only after the more
+        # specific resolution strategies above fail.
+        candidates = by_simple_name.get(simple_name, [])
+        if len(candidates) == 1:
+            return candidates[0]
+        return None
 
     edges: list[dict[str, str]] = []
     for child in classes:
         resolved_bases: list[dict[str, str]] = []
         for base in child["bases"]:
-            candidates = by_simple_name.get(simple_base_name(str(base)), [])
-            if len(candidates) != 1:
+            parent = resolve_parent(child, str(base))
+            if parent is None:
                 continue
-            parent = candidates[0]
             resolved_bases.append(
                 {
                     "base": str(base),
