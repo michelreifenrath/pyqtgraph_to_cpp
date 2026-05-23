@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 SCRIPT = Path("oracle/scripts/generate_source_inventory.py")
@@ -196,3 +197,26 @@ def test_rejects_checkout_at_wrong_commit(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "pinned_commit" in result.stderr
+
+
+@pytest.mark.parametrize("dirty_state", ["untracked", "modified", "deleted"])
+def test_rejects_dirty_local_checkout_at_pinned_commit(
+    tmp_path: Path,
+    dirty_state: str,
+) -> None:
+    root, commit = make_inventory_root(tmp_path)
+    checkout = root / CHECKOUT_PATH
+    assert git(checkout, "rev-parse", "HEAD") == commit
+
+    if dirty_state == "untracked":
+        write_fixture_file(checkout / "pyqtgraph" / "Bogus.py")
+    elif dirty_state == "modified":
+        write_fixture_file(checkout / "pyqtgraph" / "PlotData.py", "# changed\n")
+    else:
+        (checkout / "pyqtgraph" / "PlotData.py").unlink()
+
+    result = run_cli("--root", str(root))
+
+    assert result.returncode != 0
+    assert "must be clean" in result.stderr
+    assert "non-deterministic" in result.stderr

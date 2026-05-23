@@ -97,6 +97,23 @@ def require_pinned_commit(checkout: Path, lock: dict[str, str]) -> None:
         )
 
 
+def require_clean_checkout(checkout: Path) -> None:
+    status = run_git(
+        ["--no-optional-locks", "status", "--porcelain", "--untracked-files=all"],
+        cwd=checkout,
+    )
+    if status:
+        status_lines = status.splitlines()
+        preview = "\n".join(f"  {line}" for line in status_lines[:10])
+        if len(status_lines) > 10:
+            preview += "\n  ..."
+        raise InventoryError(
+            f"checkout {checkout.as_posix()} must be clean before inventory generation; "
+            "dirty or untracked file(s) would make the inventory non-deterministic:\n"
+            f"{preview}"
+        )
+
+
 def clone_pinned_source(lock: dict[str, str], destination: Path) -> None:
     ref = lock["ref"]
     pinned_commit = lock["pinned_commit"]
@@ -131,6 +148,7 @@ def source_checkout(root: Path, lock: dict[str, str]) -> Iterator[Path]:
     checkout = root / checkout_rel
     if checkout.is_dir():
         require_pinned_commit(checkout, lock)
+        require_clean_checkout(checkout)
         yield checkout
         return
 
