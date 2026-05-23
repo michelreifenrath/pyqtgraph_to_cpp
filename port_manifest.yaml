@@ -3,3 +3,557 @@ reference:
   ref: pyqtgraph-0.14.0
   pinned_commit: a20028b98294b9cc8770f2015a92eb342224b788
   docs_url: https://pyqtgraph.readthedocs.io/
+examples:
+  - upstream_path: pyqtgraph/examples/Arrow.py
+    target_source_path: examples/Arrow.cpp
+    name: Arrow
+    category: root
+  - upstream_path: pyqtgraph/examples/AxisItem_label_overlap.py
+    target_source_path: examples/AxisItem_label_overlap.cpp
+    name: AxisItem_label_overlap
+    category: root
+  - upstream_path: pyqtgraph/examples/BarGraphItem.py
+    target_source_path: examples/BarGraphItem.cpp
+    name: BarGraphItem
+    category: root
+  - upstream_path: pyqtgraph/examples/BoxplotItem.py
+    target_source_path: examples/BoxplotItem.cpp
+    name: BoxplotItem
+    category: root
+  - upstream_path: pyqtgraph/examples/CLIexample.py
+    target_source_path: examples/CLIexample.cpp
+    name: CLIexample
+    category: root
+  - upstream_path: pyqtgraph/examples/ColorBarItem.py
+    target_source_path: examples/ColorBarItem.cpp
+    name: ColorBarItem
+    category: root
+  - upstream_path: pyqtgraph/examples/ColorButton.py
+    target_source_path: examples/ColorButton.cpp
+    name: ColorButton
+    category: root
+  - upstream_path: pyqtgraph/examples/ColorGradientPlots.py
+    target_source_path: examples/ColorGradientPlots.cpp
+    name: ColorGradientPlots
+    category: root
+  - upstream_path: pyqtgraph/examples/ConsoleWidget.py
+    target_source_path: examples/ConsoleWidget.cpp
+    name: ConsoleWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/CustomGraphItem.py
+    target_source_path: examples/CustomGraphItem.cpp
+    name: CustomGraphItem
+    category: root
+  - upstream_path: pyqtgraph/examples/DataSlicing.py
+    target_source_path: examples/DataSlicing.cpp
+    name: DataSlicing
+    category: root
+  - upstream_path: pyqtgraph/examples/DataTreeWidget.py
+    target_source_path: examples/DataTreeWidget.cpp
+    name: DataTreeWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/DateAxisItem.py
+    target_source_path: examples/DateAxisItem.cpp
+    name: DateAxisItem
+    category: root
+  - upstream_path: pyqtgraph/examples/DateAxisItem_QtDesigner.py
+    target_source_path: examples/DateAxisItem_QtDesigner.cpp
+    name: DateAxisItem_QtDesigner
+    category: root
+  - upstream_path: pyqtgraph/examples/DiffTreeWidget.py
+    target_source_path: examples/DiffTreeWidget.cpp
+    name: DiffTreeWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/Draw.py
+    target_source_path: examples/Draw.cpp
+    name: Draw
+    category: root
+  - upstream_path: pyqtgraph/examples/ErrorBarItem.py
+    target_source_path: examples/ErrorBarItem.cpp
+    name: ErrorBarItem
+    category: root
+  - upstream_path: pyqtgraph/examples/ExampleApp.py
+    target_source_path: examples/ExampleApp.cpp
+    name: ExampleApp
+    category: root
+  - upstream_path: pyqtgraph/examples/FillBetweenItem.py
+    target_source_path: examples/FillBetweenItem.cpp
+    name: FillBetweenItem
+    category: root
+  - upstream_path: pyqtgraph/examples/Flowchart.py
+    target_source_path: examples/Flowchart.cpp
+    name: Flowchart
+    category: root
+  - upstream_path: pyqtgraph/examples/FlowchartCustomNode.py
+    target_source_path: examples/FlowchartCustomNode.cpp
+    name: FlowchartCustomNode
+    category: root
+  - upstream_path: pyqtgraph/examples/GLBarGraphItem.py
+    target_source_path: examples/GLBarGraphItem.cpp
+    name: GLBarGraphItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLGradientLegendItem.py
+    target_source_path: examples/GLGradientLegendItem.cpp
+    name: GLGradientLegendItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLGraphItem.py
+    target_source_path: examples/GLGraphItem.cpp
+    name: GLGraphItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLImageItem.py
+    target_source_path: examples/GLImageItem.cpp
+    name: GLImageItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLIsosurface.py
+    target_source_path: examples/GLIsosurface.cpp
+    name: GLIsosurface
+    category: root
+  - upstream_path: pyqtgraph/examples/GLLinePlotItem.py
+    target_source_path: examples/GLLinePlotItem.cpp
+    name: GLLinePlotItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLMeshItem.py
+    target_source_path: examples/GLMeshItem.cpp
+    name: GLMeshItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLPainterItem.py
+    target_source_path: examples/GLPainterItem.cpp
+    name: GLPainterItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLScatterPlotItem.py
+    target_source_path: examples/GLScatterPlotItem.cpp
+    name: GLScatterPlotItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLSurfacePlot.py
+    target_source_path: examples/GLSurfacePlot.cpp
+    name: GLSurfacePlot
+    category: root
+  - upstream_path: pyqtgraph/examples/GLTextItem.py
+    target_source_path: examples/GLTextItem.cpp
+    name: GLTextItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLViewWidget.py
+    target_source_path: examples/GLViewWidget.cpp
+    name: GLViewWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/GLVolumeItem.py
+    target_source_path: examples/GLVolumeItem.cpp
+    name: GLVolumeItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GLshaders.py
+    target_source_path: examples/GLshaders.cpp
+    name: GLshaders
+    category: root
+  - upstream_path: pyqtgraph/examples/GradientEditor.py
+    target_source_path: examples/GradientEditor.cpp
+    name: GradientEditor
+    category: root
+  - upstream_path: pyqtgraph/examples/GradientWidget.py
+    target_source_path: examples/GradientWidget.cpp
+    name: GradientWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/GraphItem.py
+    target_source_path: examples/GraphItem.cpp
+    name: GraphItem
+    category: root
+  - upstream_path: pyqtgraph/examples/GraphicsLayout.py
+    target_source_path: examples/GraphicsLayout.cpp
+    name: GraphicsLayout
+    category: root
+  - upstream_path: pyqtgraph/examples/GraphicsScene.py
+    target_source_path: examples/GraphicsScene.cpp
+    name: GraphicsScene
+    category: root
+  - upstream_path: pyqtgraph/examples/HistogramLUT.py
+    target_source_path: examples/HistogramLUT.cpp
+    name: HistogramLUT
+    category: root
+  - upstream_path: pyqtgraph/examples/ImageItem.py
+    target_source_path: examples/ImageItem.cpp
+    name: ImageItem
+    category: root
+  - upstream_path: pyqtgraph/examples/ImageView.py
+    target_source_path: examples/ImageView.cpp
+    name: ImageView
+    category: root
+  - upstream_path: pyqtgraph/examples/InfiniteLine.py
+    target_source_path: examples/InfiniteLine.cpp
+    name: InfiniteLine
+    category: root
+  - upstream_path: pyqtgraph/examples/InteractiveParameter.py
+    target_source_path: examples/InteractiveParameter.cpp
+    name: InteractiveParameter
+    category: root
+  - upstream_path: pyqtgraph/examples/JoystickButton.py
+    target_source_path: examples/JoystickButton.cpp
+    name: JoystickButton
+    category: root
+  - upstream_path: pyqtgraph/examples/Legend.py
+    target_source_path: examples/Legend.cpp
+    name: Legend
+    category: root
+  - upstream_path: pyqtgraph/examples/LogPlotTest.py
+    target_source_path: examples/LogPlotTest.cpp
+    name: LogPlotTest
+    category: root
+  - upstream_path: pyqtgraph/examples/MatrixDisplayExample.py
+    target_source_path: examples/MatrixDisplayExample.cpp
+    name: MatrixDisplayExample
+    category: root
+  - upstream_path: pyqtgraph/examples/MouseSelection.py
+    target_source_path: examples/MouseSelection.cpp
+    name: MouseSelection
+    category: root
+  - upstream_path: pyqtgraph/examples/MultiDataPlot.py
+    target_source_path: examples/MultiDataPlot.cpp
+    name: MultiDataPlot
+    category: root
+  - upstream_path: pyqtgraph/examples/MultiPlotSpeedTest.py
+    target_source_path: examples/MultiPlotSpeedTest.cpp
+    name: MultiPlotSpeedTest
+    category: root
+  - upstream_path: pyqtgraph/examples/MultiplePlotAxes.py
+    target_source_path: examples/MultiplePlotAxes.cpp
+    name: MultiplePlotAxes
+    category: root
+  - upstream_path: pyqtgraph/examples/NonUniformImage.py
+    target_source_path: examples/NonUniformImage.cpp
+    name: NonUniformImage
+    category: root
+  - upstream_path: pyqtgraph/examples/PColorMeshItem.py
+    target_source_path: examples/PColorMeshItem.cpp
+    name: PColorMeshItem
+    category: root
+  - upstream_path: pyqtgraph/examples/PanningPlot.py
+    target_source_path: examples/PanningPlot.cpp
+    name: PanningPlot
+    category: root
+  - upstream_path: pyqtgraph/examples/PlotAutoRange.py
+    target_source_path: examples/PlotAutoRange.cpp
+    name: PlotAutoRange
+    category: root
+  - upstream_path: pyqtgraph/examples/PlotSpeedTest.py
+    target_source_path: examples/PlotSpeedTest.cpp
+    name: PlotSpeedTest
+    category: root
+  - upstream_path: pyqtgraph/examples/PlotWidget.py
+    target_source_path: examples/PlotWidget.cpp
+    name: PlotWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/Plotting.py
+    target_source_path: examples/Plotting.cpp
+    name: Plotting
+    category: root
+  - upstream_path: pyqtgraph/examples/ProgressDialog.py
+    target_source_path: examples/ProgressDialog.cpp
+    name: ProgressDialog
+    category: root
+  - upstream_path: pyqtgraph/examples/ROIExamples.py
+    target_source_path: examples/ROIExamples.cpp
+    name: ROIExamples
+    category: root
+  - upstream_path: pyqtgraph/examples/ROItypes.py
+    target_source_path: examples/ROItypes.cpp
+    name: ROItypes
+    category: root
+  - upstream_path: pyqtgraph/examples/RemoteGraphicsView.py
+    target_source_path: examples/RemoteGraphicsView.cpp
+    name: RemoteGraphicsView
+    category: root
+  - upstream_path: pyqtgraph/examples/RemoteSpeedTest.py
+    target_source_path: examples/RemoteSpeedTest.cpp
+    name: RemoteSpeedTest
+    category: root
+  - upstream_path: pyqtgraph/examples/RunExampleApp.py
+    target_source_path: examples/RunExampleApp.cpp
+    name: RunExampleApp
+    category: root
+  - upstream_path: pyqtgraph/examples/ScaleBar.py
+    target_source_path: examples/ScaleBar.cpp
+    name: ScaleBar
+    category: root
+  - upstream_path: pyqtgraph/examples/ScatterPlot.py
+    target_source_path: examples/ScatterPlot.cpp
+    name: ScatterPlot
+    category: root
+  - upstream_path: pyqtgraph/examples/ScatterPlotSpeedTest.py
+    target_source_path: examples/ScatterPlotSpeedTest.cpp
+    name: ScatterPlotSpeedTest
+    category: root
+  - upstream_path: pyqtgraph/examples/ScatterPlotWidget.py
+    target_source_path: examples/ScatterPlotWidget.cpp
+    name: ScatterPlotWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/SimplePlot.py
+    target_source_path: examples/SimplePlot.cpp
+    name: SimplePlot
+    category: root
+  - upstream_path: pyqtgraph/examples/SpinBox.py
+    target_source_path: examples/SpinBox.cpp
+    name: SpinBox
+    category: root
+  - upstream_path: pyqtgraph/examples/Symbols.py
+    target_source_path: examples/Symbols.cpp
+    name: Symbols
+    category: root
+  - upstream_path: pyqtgraph/examples/TableWidget.py
+    target_source_path: examples/TableWidget.cpp
+    name: TableWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/TreeWidget.py
+    target_source_path: examples/TreeWidget.cpp
+    name: TreeWidget
+    category: root
+  - upstream_path: pyqtgraph/examples/VideoSpeedTest.py
+    target_source_path: examples/VideoSpeedTest.cpp
+    name: VideoSpeedTest
+    category: root
+  - upstream_path: pyqtgraph/examples/VideoTemplate_generic.py
+    target_source_path: examples/VideoTemplate_generic.cpp
+    name: VideoTemplate_generic
+    category: root
+  - upstream_path: pyqtgraph/examples/ViewBox.py
+    target_source_path: examples/ViewBox.cpp
+    name: ViewBox
+    category: root
+  - upstream_path: pyqtgraph/examples/ViewBoxFeatures.py
+    target_source_path: examples/ViewBoxFeatures.cpp
+    name: ViewBoxFeatures
+    category: root
+  - upstream_path: pyqtgraph/examples/ViewLimits.py
+    target_source_path: examples/ViewLimits.cpp
+    name: ViewLimits
+    category: root
+  - upstream_path: pyqtgraph/examples/__init__.py
+    target_source_path: examples/__init__.cpp
+    name: __init__
+    category: root
+  - upstream_path: pyqtgraph/examples/__main__.py
+    target_source_path: examples/__main__.cpp
+    name: __main__
+    category: root
+  - upstream_path: pyqtgraph/examples/_buildParamTypes.py
+    target_source_path: examples/_buildParamTypes.cpp
+    name: _buildParamTypes
+    category: root
+  - upstream_path: pyqtgraph/examples/_paramtreecfg.py
+    target_source_path: examples/_paramtreecfg.cpp
+    name: _paramtreecfg
+    category: root
+  - upstream_path: pyqtgraph/examples/beeswarm.py
+    target_source_path: examples/beeswarm.cpp
+    name: beeswarm
+    category: root
+  - upstream_path: pyqtgraph/examples/colorMaps.py
+    target_source_path: examples/colorMaps.cpp
+    name: colorMaps
+    category: root
+  - upstream_path: pyqtgraph/examples/colorMapsLinearized.py
+    target_source_path: examples/colorMapsLinearized.cpp
+    name: colorMapsLinearized
+    category: root
+  - upstream_path: pyqtgraph/examples/console_exception_inspection.py
+    target_source_path: examples/console_exception_inspection.cpp
+    name: console_exception_inspection
+    category: root
+  - upstream_path: pyqtgraph/examples/contextMenu.py
+    target_source_path: examples/contextMenu.cpp
+    name: contextMenu
+    category: root
+  - upstream_path: pyqtgraph/examples/crosshair.py
+    target_source_path: examples/crosshair.cpp
+    name: crosshair
+    category: root
+  - upstream_path: pyqtgraph/examples/customGraphicsItem.py
+    target_source_path: examples/customGraphicsItem.cpp
+    name: customGraphicsItem
+    category: root
+  - upstream_path: pyqtgraph/examples/customPlot.py
+    target_source_path: examples/customPlot.cpp
+    name: customPlot
+    category: root
+  - upstream_path: pyqtgraph/examples/cx_freeze/plotTest.py
+    target_source_path: examples/cx_freeze/plotTest.cpp
+    name: cx_freeze/plotTest
+    category: cx_freeze
+  - upstream_path: pyqtgraph/examples/cx_freeze/setup.py
+    target_source_path: examples/cx_freeze/setup.cpp
+    name: cx_freeze/setup
+    category: cx_freeze
+  - upstream_path: pyqtgraph/examples/designerExample.py
+    target_source_path: examples/designerExample.cpp
+    name: designerExample
+    category: root
+  - upstream_path: pyqtgraph/examples/dockarea.py
+    target_source_path: examples/dockarea.cpp
+    name: dockarea
+    category: root
+  - upstream_path: pyqtgraph/examples/exampleLoaderTemplate_generic.py
+    target_source_path: examples/exampleLoaderTemplate_generic.cpp
+    name: exampleLoaderTemplate_generic
+    category: root
+  - upstream_path: pyqtgraph/examples/fractal.py
+    target_source_path: examples/fractal.cpp
+    name: fractal
+    category: root
+  - upstream_path: pyqtgraph/examples/glow.py
+    target_source_path: examples/glow.cpp
+    name: glow
+    category: root
+  - upstream_path: pyqtgraph/examples/hdf5.py
+    target_source_path: examples/hdf5.cpp
+    name: hdf5
+    category: root
+  - upstream_path: pyqtgraph/examples/histogram.py
+    target_source_path: examples/histogram.cpp
+    name: histogram
+    category: root
+  - upstream_path: pyqtgraph/examples/imageAnalysis.py
+    target_source_path: examples/imageAnalysis.cpp
+    name: imageAnalysis
+    category: root
+  - upstream_path: pyqtgraph/examples/infiniteline_performance.py
+    target_source_path: examples/infiniteline_performance.cpp
+    name: infiniteline_performance
+    category: root
+  - upstream_path: pyqtgraph/examples/isocurve.py
+    target_source_path: examples/isocurve.cpp
+    name: isocurve
+    category: root
+  - upstream_path: pyqtgraph/examples/jupyter_console_example.py
+    target_source_path: examples/jupyter_console_example.cpp
+    name: jupyter_console_example
+    category: root
+  - upstream_path: pyqtgraph/examples/linkedViews.py
+    target_source_path: examples/linkedViews.cpp
+    name: linkedViews
+    category: root
+  - upstream_path: pyqtgraph/examples/logAxis.py
+    target_source_path: examples/logAxis.cpp
+    name: logAxis
+    category: root
+  - upstream_path: pyqtgraph/examples/multiplePlotSpeedTest.py
+    target_source_path: examples/multiplePlotSpeedTest.cpp
+    name: multiplePlotSpeedTest
+    category: root
+  - upstream_path: pyqtgraph/examples/multiprocess.py
+    target_source_path: examples/multiprocess.cpp
+    name: multiprocess
+    category: root
+  - upstream_path: pyqtgraph/examples/optics/__init__.py
+    target_source_path: examples/optics/__init__.cpp
+    name: optics/__init__
+    category: optics
+  - upstream_path: pyqtgraph/examples/optics/pyoptic.py
+    target_source_path: examples/optics/pyoptic.cpp
+    name: optics/pyoptic
+    category: optics
+  - upstream_path: pyqtgraph/examples/optics_demos.py
+    target_source_path: examples/optics_demos.cpp
+    name: optics_demos
+    category: root
+  - upstream_path: pyqtgraph/examples/parallelize.py
+    target_source_path: examples/parallelize.cpp
+    name: parallelize
+    category: root
+  - upstream_path: pyqtgraph/examples/parametertree.py
+    target_source_path: examples/parametertree.cpp
+    name: parametertree
+    category: root
+  - upstream_path: pyqtgraph/examples/py2exe/plotTest.py
+    target_source_path: examples/py2exe/plotTest.cpp
+    name: py2exe/plotTest
+    category: py2exe
+  - upstream_path: pyqtgraph/examples/py2exe/setup.py
+    target_source_path: examples/py2exe/setup.cpp
+    name: py2exe/setup
+    category: py2exe
+  - upstream_path: pyqtgraph/examples/relativity/__init__.py
+    target_source_path: examples/relativity/__init__.cpp
+    name: relativity/__init__
+    category: relativity
+  - upstream_path: pyqtgraph/examples/relativity/relativity.py
+    target_source_path: examples/relativity/relativity.cpp
+    name: relativity/relativity
+    category: relativity
+  - upstream_path: pyqtgraph/examples/relativity_demo.py
+    target_source_path: examples/relativity_demo.cpp
+    name: relativity_demo
+    category: root
+  - upstream_path: pyqtgraph/examples/scrollingPlots.py
+    target_source_path: examples/scrollingPlots.cpp
+    name: scrollingPlots
+    category: root
+  - upstream_path: pyqtgraph/examples/syntax.py
+    target_source_path: examples/syntax.cpp
+    name: syntax
+    category: root
+  - upstream_path: pyqtgraph/examples/template.py
+    target_source_path: examples/template.cpp
+    name: template
+    category: root
+  - upstream_path: pyqtgraph/examples/test_examples.py
+    target_source_path: examples/test_examples.cpp
+    name: test_examples
+    category: root
+  - upstream_path: pyqtgraph/examples/text.py
+    target_source_path: examples/text.cpp
+    name: text
+    category: root
+  - upstream_path: pyqtgraph/examples/utils.py
+    target_source_path: examples/utils.cpp
+    name: utils
+    category: root
+  - upstream_path: pyqtgraph/examples/verlet_chain/__init__.py
+    target_source_path: examples/verlet_chain/__init__.cpp
+    name: verlet_chain/__init__
+    category: verlet_chain
+  - upstream_path: pyqtgraph/examples/verlet_chain/chain.py
+    target_source_path: examples/verlet_chain/chain.cpp
+    name: verlet_chain/chain
+    category: verlet_chain
+  - upstream_path: pyqtgraph/examples/verlet_chain/relax.py
+    target_source_path: examples/verlet_chain/relax.cpp
+    name: verlet_chain/relax
+    category: verlet_chain
+  - upstream_path: pyqtgraph/examples/verlet_chain_demo.py
+    target_source_path: examples/verlet_chain_demo.cpp
+    name: verlet_chain_demo
+    category: root
+example_assets:
+  - upstream_path: pyqtgraph/examples/DateAxisItem_QtDesigner.ui
+    target_path: examples/DateAxisItem_QtDesigner.ui
+  - upstream_path: pyqtgraph/examples/VideoTemplate.ui
+    target_path: examples/VideoTemplate.ui
+  - upstream_path: pyqtgraph/examples/designerExample.ui
+    target_path: examples/designerExample.ui
+  - upstream_path: pyqtgraph/examples/exampleLoaderTemplate.ui
+    target_path: examples/exampleLoaderTemplate.ui
+  - upstream_path: pyqtgraph/examples/notebooks/ImageAnalysis.ipynb
+    target_path: examples/notebooks/ImageAnalysis.ipynb
+  - upstream_path: pyqtgraph/examples/notebooks/PColorMeshItem.ipynb
+    target_path: examples/notebooks/PColorMeshItem.ipynb
+  - upstream_path: pyqtgraph/examples/notebooks/Plotting.ipynb
+    target_path: examples/notebooks/Plotting.ipynb
+  - upstream_path: pyqtgraph/examples/notebooks/ROIExamples.ipynb
+    target_path: examples/notebooks/ROIExamples.ipynb
+  - upstream_path: pyqtgraph/examples/notebooks/ScatterPlot.ipynb
+    target_path: examples/notebooks/ScatterPlot.ipynb
+  - upstream_path: pyqtgraph/examples/notebooks/simple.ipynb
+    target_path: examples/notebooks/simple.ipynb
+  - upstream_path: pyqtgraph/examples/optics/schott_glasses.csv.gz
+    target_path: examples/optics/schott_glasses.csv.gz
+  - upstream_path: pyqtgraph/examples/relativity/presets/Grid Expansion.cfg
+    target_path: examples/relativity/presets/Grid Expansion.cfg
+  - upstream_path: pyqtgraph/examples/relativity/presets/Twin Paradox (grid).cfg
+    target_path: examples/relativity/presets/Twin Paradox (grid).cfg
+  - upstream_path: pyqtgraph/examples/relativity/presets/Twin Paradox.cfg
+    target_path: examples/relativity/presets/Twin Paradox.cfg
+  - upstream_path: pyqtgraph/examples/verlet_chain/make
+    target_path: examples/verlet_chain/make
+  - upstream_path: pyqtgraph/examples/verlet_chain/relax.c
+    target_path: examples/verlet_chain/relax.c
+example_inventory_summary:
+  example_count: 129
+  asset_count: 16
+  total_example_tree_file_count: 145
