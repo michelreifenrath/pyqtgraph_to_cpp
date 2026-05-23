@@ -1,0 +1,270 @@
+#!/usr/bin/env python3
+"""Verify or refresh the pinned PyQtGraph reference source."""
+
+from __future__ import annotations
+
+import argparse
+import re
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+DEFAULT_REPO = "https://github.com/pyqtgraph/pyqtgraph"
+DEFAULT_REF = "pyqtgraph-0.14.0"
+DEFAULT_PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
+DEFAULT_DOCS_URL = "https://pyqtgraph.readthedocs.io/"
+CHECKOUT_PATH = "reference/pyqtgraph"
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+
+
+class BootstrapError(Exception):
+    pass
+
+
+def run_git(args: list[str], *, cwd: Path | None = None) -> str:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as exc:
+        message = exc.stderr.strip() or exc.stdout.strip() or str(exc)
+        raise BootstrapError(f"git {' '.join(args)} failed: {message}") from exc
+    return result.stdout.strip()
+
+
+def load_yaml(path: Path) -> Any:
+    if not path.exists():
+        raise BootstrapError(f"missing required file: {path}")
+    with path.open("r", encoding="utf-8") as stream:
+        return yaml.safe_load(stream) or {}
+
+
+def parse_ref_file(path: Path) -> dict[str, str]:
+    if not path.exists():
+        raise BootstrapError(f"missing required file: {path}")
+    facts: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if ":" not in line:
+            raise BootstrapError(f"{path}: expected key/value line, got {line!r}")
+        key, value = line.split(":", 1)
+        facts[key.strip()] = value.strip()
+    return facts
+
+
+def expected_metadata(repo: str, pinned_commit: str) -> dict[str, str]:
+    return {
+        "repo": repo,
+        "ref": DEFAULT_REF,
+        "pinned_commit": pinned_commit,
+        "docs_url": DEFAULT_DOCS_URL,
+        "checkout_path": CHECKOUT_PATH,
+    }
+
+
+def require_equal(label: str, actual: Any, expected: Any) -> None:
+    if actual != expected:
+        raise BootstrapError(f"{label} mismatch: expected {expected!r}, got {actual!r}")
+
+
+def validate_files(root: Path, *, repo: str | None = None) -> dict[str, str]:
+    lock_path = root / "reference" / "source.lock"
+    ref_path = root / "reference" / "PYQTGRAPH_REF"
+    manifest_path = root / "port_manifest.yaml"
+
+    lock = load_yaml(lock_path)
+    if not isinstance(lock, dict):
+        raise BootstrapError(f"{lock_path}: expected YAML mapping")
+
+    required = ["repo", "ref", "pinned_commit", "docs_url", "checkout_path"]
+    for field in required:
+        if field not in lock:
+            raise BootstrapError(f"source.lock missing field: {field}")
+
+    if repo is not None:
+        require_equal("source.lock repo", lock["repo"], repo)
+    require_equal("source.lock ref", lock["ref"], DEFAULT_REF)
+    require_equal("source.lock docs_url", lock["docs_url"], DEFAULT_DOCS_URL)
+    require_equal("source.lock checkout_path", lock["checkout_path"], CHECKOUT_PATH)
+    if not isinstance(lock["pinned_commit"], str) or not SHA_RE.match(lock["pinned_commit"]):
+        raise BootstrapError("source.lock pinned_commit must be a 40-character lowercase hex SHA")
+    if lock["repo"] == DEFAULT_REPO:
+        require_equal("source.lock pinned_commit", lock["pinned_commit"], DEFAULT_PINNED_COMMIT)
+
+    ref_facts = parse_ref_file(ref_path)
+    for field in required:
+        require_equal(f"PYQTGRAPH_REF {field}", ref_facts.get(field), lock[field])
+
+    manifest = load_yaml(manifest_path)
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("reference"), dict):
+        raise BootstrapError("port_manifest.yaml missing reference mapping")
+    for field in ["repo", "ref", "pinned_commit", "docs_url"]:
+        require_equal(f"port_manifest.yaml reference.{field}", manifest["reference"].get(field), lock[field])
+
+    return {field: str(lock[field]) for field in required}
+
+
+def resolve_ref(repo: str) -> str:
+    output = run_git(["ls-remote", "--tags", repo, f"refs/tags/{DEFAULT_REF}"])
+    lines = [line for line in output.splitlines() if line.strip()]
+    if not lines:
+        raise BootstrapError(f"could not resolve tag {DEFAULT_REF} from {repo}")
+    sha = lines[0].split()[0]
+    if not SHA_RE.match(sha):
+        raise BootstrapError(f"resolved invalid SHA for {DEFAULT_REF}: {sha}")
+    if repo == DEFAULT_REPO and sha != DEFAULT_PINNED_COMMIT:
+        raise BootstrapError(
+            f"upstream tag {DEFAULT_REF} resolved to {sha}, expected {DEFAULT_PINNED_COMMIT}"
+        )
+    return sha
+
+
+def require_clean_checkout(checkout: Path) -> None:
+    status = run_git(["status", "--porcelain"], cwd=checkout)
+    if status:
+        raise BootstrapError("reference/pyqtgraph checkout has uncommitted changes")
+
+
+def require_git_checkout(checkout: Path) -> None:
+    if not (checkout / ".git").exists():
+        raise BootstrapError(f"checkout path exists but is not a git repository: {checkout}")
+    top_level = Path(run_git(["rev-parse", "--show-toplevel"], cwd=checkout)).resolve()
+    if top_level != checkout.resolve():
+        raise BootstrapError(f"checkout path is not a git repository root: {checkout}")
+
+
+def ensure_checkout_ignored(root: Path, checkout: Path) -> None:
+    """Exclude the nested checkout from the parent repository if one exists."""
+    try:
+        top_level = Path(run_git(["rev-parse", "--show-toplevel"], cwd=root)).resolve()
+        exclude = run_git(["rev-parse", "--git-path", "info/exclude"], cwd=root)
+    except BootstrapError:
+        return
+
+    try:
+        relative_checkout = checkout.resolve().relative_to(top_level)
+    except ValueError:
+        return
+
+    exclude_path = Path(exclude)
+    if not exclude_path.is_absolute():
+        exclude_path = root / exclude_path
+    pattern = f"/{relative_checkout.as_posix().rstrip('/')}/"
+
+    existing = exclude_path.read_text(encoding="utf-8") if exclude_path.exists() else ""
+    if pattern in existing.splitlines():
+        return
+
+    exclude_path.parent.mkdir(parents=True, exist_ok=True)
+    prefix = "" if not existing or existing.endswith("\n") else "\n"
+    exclude_path.write_text(
+        f"{existing}{prefix}# PyQtGraph reference checkout managed by scripts/bootstrap_reference\n{pattern}\n",
+        encoding="utf-8",
+    )
+
+
+def check_checkout(root: Path, pinned_commit: str) -> None:
+    checkout = root / CHECKOUT_PATH
+    if not checkout.exists():
+        print("reference lock verified; checkout reference/pyqtgraph is not present")
+        return
+    require_git_checkout(checkout)
+    head = run_git(["rev-parse", "HEAD"], cwd=checkout)
+    require_equal("reference/pyqtgraph HEAD", head, pinned_commit)
+    require_clean_checkout(checkout)
+
+
+def write_metadata(root: Path, metadata: dict[str, str]) -> None:
+    reference_dir = root / "reference"
+    reference_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = reference_dir / "source.lock"
+    ref_path = reference_dir / "PYQTGRAPH_REF"
+    manifest_path = root / "port_manifest.yaml"
+
+    lock_path.write_text(yaml.safe_dump(metadata, sort_keys=False), encoding="utf-8")
+    ref_path.write_text("".join(f"{key}: {value}\n" for key, value in metadata.items()), encoding="utf-8")
+
+    manifest: dict[str, Any]
+    if manifest_path.exists():
+        loaded = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+        manifest = loaded if isinstance(loaded, dict) else {}
+    else:
+        manifest = {}
+    manifest["reference"] = {
+        "repo": metadata["repo"],
+        "ref": metadata["ref"],
+        "pinned_commit": metadata["pinned_commit"],
+        "docs_url": metadata["docs_url"],
+    }
+    manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+
+def refresh(root: Path, repo: str) -> dict[str, str]:
+    pinned_commit = resolve_ref(repo)
+    checkout = root / CHECKOUT_PATH
+    ensure_checkout_ignored(root, checkout)
+    checkout.parent.mkdir(parents=True, exist_ok=True)
+    if not checkout.exists():
+        run_git(["clone", "--no-checkout", repo, str(checkout)])
+    else:
+        require_git_checkout(checkout)
+        require_clean_checkout(checkout)
+        run_git(["fetch", "--no-tags", repo, f"refs/tags/{DEFAULT_REF}"], cwd=checkout)
+    run_git(["checkout", "--detach", pinned_commit], cwd=checkout)
+    head = run_git(["rev-parse", "HEAD"], cwd=checkout)
+    require_equal("reference/pyqtgraph HEAD", head, pinned_commit)
+    require_clean_checkout(checkout)
+    metadata = expected_metadata(repo, pinned_commit)
+    write_metadata(root, metadata)
+    return metadata
+
+
+def check(root: Path, *, repo: str, offline: bool) -> dict[str, str]:
+    metadata = validate_files(root, repo=repo)
+    if not offline:
+        resolved = resolve_ref(metadata["repo"])
+        require_equal(f"remote tag {DEFAULT_REF}", resolved, metadata["pinned_commit"])
+    check_checkout(root, metadata["pinned_commit"])
+    return metadata
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="verify reference metadata without writing (default)")
+    mode.add_argument("--refresh", action="store_true", help="clone/fetch checkout and rewrite reference metadata")
+    parser.add_argument("--offline", action="store_true", help="skip remote tag verification in check mode")
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1], help="repository root")
+    parser.add_argument("--repo", default=DEFAULT_REPO, help="PyQtGraph repository URL")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    root = args.root.resolve()
+    try:
+        if args.refresh:
+            metadata = refresh(root, args.repo)
+            print(
+                f"refreshed PyQtGraph reference {metadata['ref']} at {metadata['pinned_commit']}"
+            )
+        else:
+            metadata = check(root, repo=args.repo, offline=args.offline)
+            print(f"PyQtGraph reference verified: {metadata['ref']} at {metadata['pinned_commit']}")
+    except BootstrapError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
