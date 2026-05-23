@@ -1,59 +1,84 @@
 #include <pyqtgraph/core/ArrayView.hpp>
 
 #include <array>
-#include <cassert>
 #include <cstddef>
+#include <iostream>
+#include <string_view>
 
 namespace {
 
-void testDefaultView()
+bool check(bool condition, std::string_view expression, std::string_view file, int line)
+{
+    if (!condition) {
+        std::cerr << file << ':' << line << ": check failed: " << expression << '\n';
+        return false;
+    }
+
+    return true;
+}
+
+#define CHECK(expression) \
+    do { \
+        if (!check((expression), #expression, __FILE__, __LINE__)) { \
+            return false; \
+        } \
+    } while (false)
+
+bool testDefaultView()
 {
     pyqtgraph::core::ArrayView<double> view;
 
-    assert(view.data() == nullptr);
-    assert(view.size() == 0);
-    assert(view.empty());
-    assert(view.shape().size() == 1);
-    assert(view.shape()[0] == 0);
+    CHECK(view.data() == nullptr);
+    CHECK(view.size() == 0);
+    CHECK(view.empty());
+    CHECK(view.shape().size() == 1);
+    CHECK(view.shape()[0] == 0);
+
+    return true;
 }
 
-void testPointerAndShapeView()
+bool testPointerAndShapeView()
 {
     std::array<double, 3> values{1.0, 2.0, 3.0};
     pyqtgraph::core::ArrayView<double> view(values.data(), std::array<std::size_t, 1>{values.size()});
 
-    assert(view.data() == values.data());
-    assert(view.size() == values.size());
-    assert(!view.empty());
-    assert(view.shape().size() == 1);
-    assert(view.shape()[0] == values.size());
-    assert(view[0] == 1.0);
-    assert(view[1] == 2.0);
-    assert(view[2] == 3.0);
+    CHECK(view.data() == values.data());
+    CHECK(view.size() == values.size());
+    CHECK(!view.empty());
+    CHECK(view.shape().size() == 1);
+    CHECK(view.shape()[0] == values.size());
+    CHECK(view[0] == 1.0);
+    CHECK(view[1] == 2.0);
+    CHECK(view[2] == 3.0);
 
     values[1] = 4.0;
-    assert(view[1] == 4.0);
+    CHECK(view[1] == 4.0);
+
+    return true;
 }
 
-void testConstView()
+bool testConstView()
 {
     const std::array<double, 2> values{5.0, 6.0};
     pyqtgraph::core::ArrayView<const double> view(values.data(), std::array<std::size_t, 1>{values.size()});
 
-    assert(view.data() == values.data());
-    assert(view.size() == values.size());
-    assert(view.shape()[0] == values.size());
-    assert(view[0] == 5.0);
-    assert(view[1] == 6.0);
+    CHECK(view.data() == values.data());
+    CHECK(view.size() == values.size());
+    CHECK(view.shape()[0] == values.size());
+    CHECK(view[0] == 5.0);
+    CHECK(view[1] == 6.0);
+
+    return true;
 }
 
 } // namespace
 
 int main()
 {
-    testDefaultView();
-    testPointerAndShapeView();
-    testConstView();
+    bool success = true;
+    success = testDefaultView() && success;
+    success = testPointerAndShapeView() && success;
+    success = testConstView() && success;
 
-    return 0;
+    return success ? 0 : 1;
 }
