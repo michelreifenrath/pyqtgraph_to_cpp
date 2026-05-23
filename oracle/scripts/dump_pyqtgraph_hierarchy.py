@@ -297,14 +297,16 @@ def resolve_hierarchy(
                 return f"{target}{name[len(alias):]}"
         return None
 
-    def expand_module_aliases(name: str) -> str:
+    def expand_module_alias_candidates(name: str) -> list[str]:
+        candidates: list[str] = []
         expanded = name
         for _ in range(10):
             replacement = expand_alias_prefix(expanded, all_module_aliases)
             if replacement is None or replacement == expanded:
-                return expanded
+                break
+            candidates.append(replacement)
             expanded = replacement
-        return expanded
+        return candidates
 
     def candidate_qualified_bases(child: dict[str, Any], base: str) -> list[str]:
         candidates = [base]
@@ -313,7 +315,8 @@ def resolve_hierarchy(
             expanded = expand_alias_prefix(base, {str(key): str(value) for key, value in aliases.items()})
             if expanded is not None:
                 candidates.append(expanded)
-        candidates.extend(expand_module_aliases(candidate) for candidate in list(candidates))
+        for candidate in list(candidates):
+            candidates.extend(expand_module_alias_candidates(candidate))
         unique: list[str] = []
         for candidate in candidates:
             if candidate not in unique:

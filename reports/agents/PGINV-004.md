@@ -16,17 +16,17 @@ The fixture top-level keys are `reference`, `classes`, `edges`, `excluded`, and 
 
 Generated counts:
 - Classes: 355
-- Edges: 200
-- Unresolved bases: 150
+- Edges: 203
+- Unresolved bases: 147
 - Source files: 213
 - Excluded examples: 129
 - Excluded tests: 74
 
-Review rework resolved import-qualified/re-exported base expressions such as `ptree.types.ColorMapParameter` before applying same-module or simple-name fallbacks. This prevents false same-module inheritance edges when a local class shares the same simple name as an imported/re-exported base.
+Review rework resolved import-qualified/re-exported base expressions such as `ptree.types.ColorMapParameter`, `ptree.ParameterTree`, and `dockarea.DockArea` before applying same-module or simple-name fallbacks. This prevents false same-module inheritance edges when a local class shares the same simple name as an imported/re-exported base, while preserving real package re-export edges.
 
 ## Validation
 - `python3 -m pytest tests/hierarchy/test_pyqtgraph_hierarchy_manifest.py -q` — passed, 17 tests.
-- `python3 oracle/scripts/dump_pyqtgraph_hierarchy.py --check` — passed, `hierarchy fixture verified (355 classes, 200 edges)`.
+- `python3 oracle/scripts/dump_pyqtgraph_hierarchy.py --check` — passed, `hierarchy fixture verified (355 classes, 203 edges)`.
 - `git diff --check` — passed.
 - `python3 -m pytest -q` — passed, 188 tests.
 - `python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md` — passed, workflow valid.

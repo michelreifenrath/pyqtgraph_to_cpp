@@ -582,7 +582,9 @@
           "upstream_path": "pyqtgraph/dockarea/Container.py"
         }
       ],
-      "children": [],
+      "children": [
+        "pyqtgraph.flowchart.Flowchart.FlowchartWidget"
+      ],
       "line": 9
     },
     {
@@ -810,7 +812,13 @@
       "bases": [
         "dockarea.DockArea"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "dockarea.DockArea",
+          "qualified_name": "pyqtgraph.dockarea.DockArea.DockArea",
+          "upstream_path": "pyqtgraph/dockarea/DockArea.py"
+        }
+      ],
       "children": [],
       "line": 752
     },
@@ -3888,7 +3896,10 @@
           "upstream_path": "pyqtgraph/widgets/TreeWidget.py"
         }
       ],
-      "children": [],
+      "children": [
+        "pyqtgraph.widgets.ColorMapWidget.ColorMapWidget",
+        "pyqtgraph.widgets.DataFilterWidget.DataFilterWidget"
+      ],
       "line": 7
     },
     {
@@ -4785,7 +4796,13 @@
       "bases": [
         "ptree.ParameterTree"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "ptree.ParameterTree",
+          "qualified_name": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
+          "upstream_path": "pyqtgraph/parametertree/ParameterTree.py"
+        }
+      ],
       "children": [],
       "line": 11
     },
@@ -4858,7 +4875,13 @@
       "bases": [
         "ptree.ParameterTree"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "ptree.ParameterTree",
+          "qualified_name": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
+          "upstream_path": "pyqtgraph/parametertree/ParameterTree.py"
+        }
+      ],
       "children": [],
       "line": 12
     },
@@ -5370,6 +5393,11 @@
       "parent": "pyqtgraph.dockarea.Container.SplitContainer",
       "child": "pyqtgraph.dockarea.Container.VContainer",
       "base": "SplitContainer"
+    },
+    {
+      "parent": "pyqtgraph.dockarea.DockArea.DockArea",
+      "child": "pyqtgraph.flowchart.Flowchart.FlowchartWidget",
+      "base": "dockarea.DockArea"
     },
     {
       "parent": "pyqtgraph.exporters.Exporter.Exporter",
@@ -6132,6 +6160,16 @@
       "base": "ParameterItem"
     },
     {
+      "parent": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
+      "child": "pyqtgraph.widgets.ColorMapWidget.ColorMapWidget",
+      "base": "ptree.ParameterTree"
+    },
+    {
+      "parent": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
+      "child": "pyqtgraph.widgets.DataFilterWidget.DataFilterWidget",
+      "base": "ptree.ParameterTree"
+    },
+    {
       "parent": "pyqtgraph.parametertree.parameterTypes.actiongroup.ActionGroupParameter",
       "child": "pyqtgraph.parametertree.parameterTypes.actiongroup.ActionGroup",
       "base": "ActionGroupParameter"
@@ -6553,8 +6591,8 @@
   },
   "summary": {
     "class_count": 355,
-    "edge_count": 200,
-    "unresolved_base_count": 150,
+    "edge_count": 203,
+    "unresolved_base_count": 147,
     "source_file_count": 213,
     "excluded_example_count": 129,
     "excluded_test_count": 74

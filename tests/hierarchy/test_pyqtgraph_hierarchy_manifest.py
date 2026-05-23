@@ -505,9 +505,12 @@ def test_qualified_import_alias_base_does_not_resolve_to_same_module_duplicate(
     write_fixture_file(
         checkout / "pyqtgraph" / "parametertree" / "__init__.py",
         """from . import parameterTypes as types
-
-
-class ParameterTree:
+from .ParameterTree import ParameterTree
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "parametertree" / "ParameterTree.py",
+        """class ParameterTree:
     pass
 """,
     )
@@ -531,7 +534,31 @@ class ColorMapParameter:
     pass
 
 
+class ColorMapWidget(ptree.ParameterTree):
+    pass
+
+
 class RangeColorMapItem(ptree.types.ColorMapParameter):
+    pass
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "dockarea" / "__init__.py",
+        """from .DockArea import DockArea
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "dockarea" / "DockArea.py",
+        """class DockArea:
+    pass
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "flowchart" / "Flowchart.py",
+        """from .. import dockarea
+
+
+class FlowchartWidget(dockarea.DockArea):
     pass
 """,
     )
@@ -554,6 +581,24 @@ class RangeColorMapItem(ptree.types.ColorMapParameter):
             "base": "ptree.types.ColorMapParameter",
             "qualified_name": "pyqtgraph.parametertree.parameterTypes.colormap.ColorMapParameter",
             "upstream_path": "pyqtgraph/parametertree/parameterTypes/colormap.py",
+        }
+    ]
+    assert by_qualified_name[
+        "pyqtgraph.widgets.ColorMapWidget.ColorMapWidget"
+    ]["resolved_bases"] == [
+        {
+            "base": "ptree.ParameterTree",
+            "qualified_name": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
+            "upstream_path": "pyqtgraph/parametertree/ParameterTree.py",
+        }
+    ]
+    assert by_qualified_name[
+        "pyqtgraph.flowchart.Flowchart.FlowchartWidget"
+    ]["resolved_bases"] == [
+        {
+            "base": "dockarea.DockArea",
+            "qualified_name": "pyqtgraph.dockarea.DockArea.DockArea",
+            "upstream_path": "pyqtgraph/dockarea/DockArea.py",
         }
     ]
     assert by_qualified_name[
