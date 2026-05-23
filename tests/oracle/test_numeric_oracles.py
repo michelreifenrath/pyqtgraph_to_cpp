@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 SCRIPT = Path("oracle/scripts/generate_numeric_oracles.py")
@@ -368,6 +369,35 @@ def test_rejects_reference_checkout_commit_mismatch(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert result.stderr.startswith("error:")
     assert "reference checkout commit mismatch" in result.stderr
+
+
+@pytest.mark.parametrize("dirty_state", ["untracked", "modified", "deleted"])
+def test_rejects_dirty_reference_checkout_at_pinned_commit(
+    tmp_path: Path,
+    dirty_state: str,
+) -> None:
+    root = tmp_path / "workspace"
+    commit = write_source_lock(root)
+    checkout = root / CHECKOUT_PATH
+    assert run_git(checkout, "rev-parse", "HEAD").stdout.strip() == commit
+
+    if dirty_state == "untracked":
+        (checkout / "pyqtgraph" / "Bogus.py").write_text(
+            "# untracked\n", encoding="utf-8"
+        )
+    elif dirty_state == "modified":
+        (checkout / "pyqtgraph" / "Point.py").write_text(
+            "# changed\n", encoding="utf-8"
+        )
+    else:
+        (checkout / "pyqtgraph" / "Point.py").unlink()
+
+    result = run_cli("--root", str(root))
+
+    assert result.returncode != 0
+    assert result.stderr.startswith("error:")
+    assert "must be clean" in result.stderr
+    assert "non-deterministic" in result.stderr
 
 
 def test_check_mode_allows_empty_fixture_dir_without_writes(tmp_path: Path) -> None:

@@ -37,7 +37,96 @@ import types
 import warnings
 from pathlib import Path
 
-import numpy as np
+
+class BooleanMask:
+    def __init__(self, values):
+        self._values = [bool(value) for value in values]
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __invert__(self):
+        return BooleanMask(not value for value in self._values)
+
+    def any(self):
+        return any(self._values)
+
+    def all(self):
+        return all(self._values)
+
+
+class NumericArray:
+    def __init__(self, values, dtype_kind="f"):
+        caster = int if dtype_kind in "iu" else float
+        self._values = [caster(value) for value in values]
+        self.dtype = types.SimpleNamespace(kind=dtype_kind)
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __getitem__(self, key):
+        if isinstance(key, BooleanMask):
+            return NumericArray(
+                (value for value, include in zip(self._values, key) if include),
+                self.dtype.kind,
+            )
+        return self._values[key]
+
+    def __setitem__(self, key, value):
+        if isinstance(key, BooleanMask):
+            for index, include in enumerate(key):
+                if include:
+                    self._values[index] = float(value)
+            return
+        self._values[key] = float(value)
+
+    def __add__(self, other):
+        if isinstance(other, NumericArray):
+            return NumericArray(
+                (left + right for left, right in zip(self._values, other._values)),
+                "f",
+            )
+        return NumericArray((value + float(other) for value in self._values), "f")
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def copy(self):
+        return NumericArray(self._values, self.dtype.kind)
+
+    def tolist(self):
+        return list(self._values)
+
+
+class NumericShim:
+    ndarray = NumericArray
+    nan = math.nan
+
+    def asarray(self, values, dtype=float):
+        dtype_kind = "i" if dtype is int else "f"
+        return NumericArray((dtype(value) for value in values), dtype_kind)
+
+    def log10(self, values):
+        def map_value(value):
+            if value > 0:
+                return math.log10(value)
+            if value == 0:
+                return -math.inf
+            return math.nan
+
+        return NumericArray((map_value(value) for value in values), "f")
+
+    def isfinite(self, values):
+        return BooleanMask(math.isfinite(value) for value in values)
+
+    def min(self, values):
+        return min(values)
+
+    def max(self, values):
+        return max(values)
+
+
+np = NumericShim()
 
 
 class QSize:
@@ -268,6 +357,24 @@ def run_git(args: list[str], *, cwd: Path | None = None) -> str:
     return result.stdout.strip()
 
 
+def require_clean_checkout(checkout: Path, root: Path) -> None:
+    status = run_git(
+        ["--no-optional-locks", "status", "--porcelain", "--untracked-files=all"],
+        cwd=checkout,
+    )
+    if status:
+        status_lines = status.splitlines()
+        preview = "\n".join(f"  {line}" for line in status_lines[:10])
+        if len(status_lines) > 10:
+            preview += "\n  ..."
+        raise NumericOracleError(
+            f"reference checkout {posix_relative(checkout, root)} must be clean "
+            "before numeric oracle generation; dirty or untracked file(s) would "
+            "make the oracle fixtures non-deterministic:\n"
+            f"{preview}"
+        )
+
+
 def clone_pinned_reference(lock: dict[str, str], destination: Path, root: Path) -> None:
     ref = lock["ref"]
     pinned_commit = lock["pinned_commit"]
@@ -303,6 +410,7 @@ def resolve_reference_checkout(root: Path, lock: dict[str, str]) -> Iterator[Pat
     checkout = checkout.resolve()
     if checkout.is_dir():
         verify_reference_commit(checkout, lock, root)
+        require_clean_checkout(checkout, root)
         yield checkout
         return
 
