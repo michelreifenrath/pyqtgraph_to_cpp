@@ -21,6 +21,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "ai:ready": ("0e8a16", "AI automation may claim this issue."),
     "ai:claimed": ("1d76db", "AI automation has claimed this issue."),
     "ai:blocked": ("b60205", "AI automation needs human input or a missing prerequisite."),
+    "ai:rework": ("d4c5f9", "AI automation is attempting bounded rework from review findings."),
     "ai:review": ("fbca04", "AI-created PR is ready for review."),
     "ai:merge-ready": ("0e8a16", "Current PR head passed mandatory autoreview and is ready for manual merge."),
     "ai:failed": ("d93f0b", "AI automation failed after retry budget or a hard gate."),
@@ -94,7 +95,7 @@ def list_ready_issues(config: WorkflowConfig, *, limit: int | None = None) -> li
     candidates: list[Issue] = []
     for item in raw:
         label_names = [label["name"] if isinstance(label, dict) else str(label) for label in item.get("labels", [])]
-        if any(label in label_names for label in (labels.claimed_label, labels.blocked_label, labels.ignore_label, labels.done_label)):
+        if any(label in label_names for label in (labels.claimed_label, labels.blocked_label, labels.rework_label, labels.ignore_label, labels.done_label)):
             continue
         author = item.get("author") or {}
         candidates.append(
@@ -226,6 +227,7 @@ def _required_labels(labels: GithubConfig) -> list[str]:
         labels.ready_label,
         labels.claimed_label,
         labels.blocked_label,
+        labels.rework_label,
         labels.review_label,
         labels.merge_ready_label,
         labels.failed_label,

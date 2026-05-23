@@ -52,6 +52,7 @@ class GithubConfig:
     ready_label: str = "ai:ready"
     claimed_label: str = "ai:claimed"
     blocked_label: str = "ai:blocked"
+    rework_label: str = "ai:rework"
     review_label: str = "ai:review"
     merge_ready_label: str = "ai:merge-ready"
     failed_label: str = "ai:failed"
@@ -169,7 +170,7 @@ class WorkflowConfig:
                 raise ConfigError(f"pi.{name} must be one of: off, minimal, low, medium, high, xhigh")
         if self.pi.use_subagents is not True:
             raise ConfigError("pi.use_subagents must be true")
-        for name in ("ready_label", "claimed_label", "blocked_label", "review_label", "merge_ready_label", "failed_label", "done_label", "ignore_label"):
+        for name in ("ready_label", "claimed_label", "blocked_label", "rework_label", "review_label", "merge_ready_label", "failed_label", "done_label", "ignore_label", "human_review_label"):
             _require_text(getattr(self.github, name), f"github.{name}")
         if self.policy.auto_merge is not False:
             raise ConfigError("policy.auto_merge must be false")

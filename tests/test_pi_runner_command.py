@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -6,7 +7,7 @@ from automation.pi_symphony import runner
 from automation.pi_symphony.config import LoadedWorkflow, WorkflowConfig
 from automation.pi_symphony.github import Issue
 from automation.pi_symphony.process import CommandResult, run
-from automation.pi_symphony.runner import GateFailure, _commit_worktree_changes_for_review, _pi_command
+from automation.pi_symphony.runner import GateFailure, _commit_worktree_changes_for_review, _handle_phase_failure, _pi_command
 from automation.pi_symphony.workspace import diff_stats
 
 
@@ -101,6 +102,83 @@ def test_review_issue_refuses_empty_branch_diff_before_autoreview(tmp_path: Path
 
     with pytest.raises(GateFailure, match="review diff is empty"):
         runner.review_issue(loaded, 16)
+
+
+def test_review_failure_schedules_rework_without_human_label(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    issue = Issue(5, "Pin reference", "body", ["tenant:cpp", "tag:bootstrap"], "url", "michel")
+    created: list[dict[str, Any]] = []
+    labels: list[str] = []
+    comments: list[str] = []
+
+    def fake_create(_config, _repo_root, **kwargs):
+        created.append(kwargs)
+        return f"task-{len(created)}"
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: issue)
+    monkeypatch.setattr(runner, "_kanban_create", fake_create)
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda _config, _number, _values: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda _config, _number, body: comments.append(body))
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=5,
+        phase="review",
+        reason="autoreview failed: actionable finding in scripts/bootstrap_reference",
+    )
+
+    assert result["action"] == "scheduled_rework"
+    assert [item["assignee"] for item in created] == ["pi-worker", "pi-reviewer", "pi-release-manager"]
+    assert [item["metadata"]["phase"] for item in created] == ["rework", "review", "release"]
+    assert created[1]["parents"] == ["task-1"]
+    assert created[2]["parents"] == ["task-2"]
+    assert "ai:rework" in labels
+    assert config.github.human_review_label not in labels
+    assert any("scheduled an automatic rework" in body for body in comments)
+
+
+def test_human_blocker_labels_issue_for_github_visibility(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    labels: list[str] = []
+    removed_labels: list[str] = []
+    comments: list[str] = []
+
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda _config, _number, values: removed_labels.extend(values))
+    monkeypatch.setattr(runner, "comment_issue", lambda _config, _number, body: comments.append(body))
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("human blockers must not schedule rework")))
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=3,
+        phase="review",
+        reason="missing required secret LINEAR_API_KEY",
+    )
+
+    assert result["action"] == "human_blocked"
+    assert config.github.blocked_label in labels
+    assert config.github.human_review_label in labels
+    assert config.github.rework_label in removed_labels
+    assert any("Human intervention required" in body for body in comments)
 
 
 def test_release_issue_refuses_uncommitted_changes_after_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
