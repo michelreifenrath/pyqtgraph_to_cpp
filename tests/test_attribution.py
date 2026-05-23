@@ -43,6 +43,15 @@ int translated_symbol() {{ return 0; }}
 """
 
 
+def documented_template_source() -> str:
+    return f"""// Source note: translated/adapted from PyQtGraph pyqtgraph/widgets/PlotWidget.py
+// PyQtGraph ref: pyqtgraph-0.14.0
+// Pinned commit: {PINNED_COMMIT}
+// License: MIT; see THIRD_PARTY_NOTICES.md
+int translated_symbol() {{ return 0; }}
+"""
+
+
 def translated_source_without_upstream_path(note_line: str) -> str:
     return f"""{note_line}
 // PyQtGraph ref: pyqtgraph-0.14.0
@@ -153,6 +162,20 @@ def test_documented_source_note_form_passes(tmp_path: Path) -> None:
     write(
         tmp_path / "include" / "pyqtgraph" / "PlotWidget.cpp",
         documented_translated_source(),
+    )
+
+    result = run_check(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert "Attribution audit passed" in result.stdout
+
+
+def test_documented_translated_adapted_template_source_note_form_passes(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "include" / "pyqtgraph" / "Template.cpp",
+        documented_template_source(),
     )
 
     result = run_check(tmp_path)
