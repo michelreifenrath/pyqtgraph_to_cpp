@@ -131,6 +131,14 @@ bool testIntColorInputs()
     CHECK_RGBA(pyqtgraph::mkColor(1U), 255, 170, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::size_t{2}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::uint32_t{3}), 0, 255, 0, 255);
+    CHECK(pyqtgraph::mkColor(static_cast<signed char>('r')) ==
+          pyqtgraph::intColor(static_cast<int>(static_cast<signed char>('r'))));
+    CHECK(pyqtgraph::mkColor(static_cast<unsigned char>('r')) ==
+          pyqtgraph::intColor(static_cast<int>(static_cast<unsigned char>('r'))));
+    CHECK(pyqtgraph::mkColor(static_cast<signed char>(-1)) == pyqtgraph::intColor(-1));
+    CHECK(pyqtgraph::mkColor(static_cast<unsigned char>(1)) == pyqtgraph::intColor(1));
+    CHECK(pyqtgraph::mkColor(std::int8_t{-1}) == pyqtgraph::intColor(-1));
+    CHECK(pyqtgraph::mkColor(std::uint8_t{3}) == pyqtgraph::intColor(3));
 
     const auto maxIndex = std::numeric_limits<std::uint64_t>::max();
     CHECK(pyqtgraph::mkColor(maxIndex) == pyqtgraph::intColor(static_cast<int>(maxIndex % 9U)));

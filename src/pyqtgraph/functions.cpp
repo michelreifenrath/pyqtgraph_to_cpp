@@ -165,12 +165,12 @@ QColor mkColor(char color)
 
 QColor mkColor(signed char color)
 {
-    return mkColor(static_cast<char>(color));
+    return intColor(static_cast<int>(color));
 }
 
 QColor mkColor(unsigned char color)
 {
-    return mkColor(static_cast<char>(color));
+    return intColor(static_cast<int>(color));
 }
 
 QColor mkColor(std::string_view color)
