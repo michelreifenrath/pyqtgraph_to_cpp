@@ -106,13 +106,15 @@ def git(repo: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
-def make_local_pyqtgraph_repo(tmp_path: Path) -> tuple[Path, str]:
-    repo = tmp_path / "remote"
+def make_local_pyqtgraph_repo(
+    tmp_path: Path, name: str = "remote", readme: str = "local pyqtgraph fixture\n"
+) -> tuple[Path, str]:
+    repo = tmp_path / name
     repo.mkdir()
     git(repo, "init")
     git(repo, "config", "user.email", "test@example.invalid")
     git(repo, "config", "user.name", "Test User")
-    (repo / "README.md").write_text("local pyqtgraph fixture\n", encoding="utf-8")
+    (repo / "README.md").write_text(readme, encoding="utf-8")
     git(repo, "add", "README.md")
     git(repo, "commit", "-m", "fixture")
     git(repo, "tag", REF)
@@ -174,6 +176,93 @@ def test_refresh_with_local_git_remote_writes_checkout_and_metadata(tmp_path: Pa
         capture_output=True,
     )
     assert check.returncode == 0, check.stderr
+
+
+def test_refresh_fails_when_existing_checkout_is_dirty(tmp_path: Path):
+    remote, _commit = make_local_pyqtgraph_repo(tmp_path)
+    root = tmp_path / "workspace"
+    root.mkdir()
+
+    first_refresh = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT.resolve()),
+            "--refresh",
+            "--root",
+            str(root),
+            "--repo",
+            str(remote),
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert first_refresh.returncode == 0, first_refresh.stderr
+
+    checkout = root / CHECKOUT_PATH
+    (checkout / "README.md").write_text("dirty local edit\n", encoding="utf-8")
+
+    dirty_refresh = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT.resolve()),
+            "--refresh",
+            "--root",
+            str(root),
+            "--repo",
+            str(remote),
+        ],
+        text=True,
+        capture_output=True,
+    )
+
+    assert dirty_refresh.returncode != 0
+    assert "uncommitted changes" in dirty_refresh.stderr
+
+
+def test_refresh_existing_checkout_fetches_requested_repo(tmp_path: Path):
+    first_remote, _first_commit = make_local_pyqtgraph_repo(
+        tmp_path, "first-remote", "first fixture\n"
+    )
+    second_remote, second_commit = make_local_pyqtgraph_repo(
+        tmp_path, "second-remote", "second fixture\n"
+    )
+    root = tmp_path / "workspace"
+    root.mkdir()
+
+    first_refresh = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT.resolve()),
+            "--refresh",
+            "--root",
+            str(root),
+            "--repo",
+            str(first_remote),
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert first_refresh.returncode == 0, first_refresh.stderr
+
+    second_refresh = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT.resolve()),
+            "--refresh",
+            "--root",
+            str(root),
+            "--repo",
+            str(second_remote),
+        ],
+        text=True,
+        capture_output=True,
+    )
+
+    assert second_refresh.returncode == 0, second_refresh.stderr
+    assert git(root / CHECKOUT_PATH, "rev-parse", "HEAD") == second_commit
+    lock = load_yaml(root / "reference/source.lock")
+    assert lock["repo"] == str(second_remote)
+    assert lock["pinned_commit"] == second_commit
 
 
 def test_script_is_executable():

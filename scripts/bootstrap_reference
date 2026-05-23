@@ -128,6 +128,12 @@ def resolve_ref(repo: str) -> str:
     return sha
 
 
+def require_clean_checkout(checkout: Path) -> None:
+    status = run_git(["status", "--porcelain"], cwd=checkout)
+    if status:
+        raise BootstrapError("reference/pyqtgraph checkout has uncommitted changes")
+
+
 def check_checkout(root: Path, pinned_commit: str) -> None:
     checkout = root / CHECKOUT_PATH
     if not (checkout / ".git").exists():
@@ -135,9 +141,7 @@ def check_checkout(root: Path, pinned_commit: str) -> None:
         return
     head = run_git(["rev-parse", "HEAD"], cwd=checkout)
     require_equal("reference/pyqtgraph HEAD", head, pinned_commit)
-    status = run_git(["status", "--porcelain"], cwd=checkout)
-    if status:
-        raise BootstrapError("reference/pyqtgraph checkout has uncommitted changes")
+    require_clean_checkout(checkout)
 
 
 def write_metadata(root: Path, metadata: dict[str, str]) -> None:
@@ -175,10 +179,12 @@ def refresh(root: Path, repo: str) -> dict[str, str]:
     else:
         if not (checkout / ".git").exists():
             raise BootstrapError(f"checkout path exists but is not a git repository: {checkout}")
-        run_git(["fetch", "--tags", "origin"], cwd=checkout)
+        require_clean_checkout(checkout)
+        run_git(["fetch", "--no-tags", repo, f"refs/tags/{DEFAULT_REF}"], cwd=checkout)
     run_git(["checkout", "--detach", pinned_commit], cwd=checkout)
     head = run_git(["rev-parse", "HEAD"], cwd=checkout)
     require_equal("reference/pyqtgraph HEAD", head, pinned_commit)
+    require_clean_checkout(checkout)
     metadata = expected_metadata(repo, pinned_commit)
     write_metadata(root, metadata)
     return metadata
