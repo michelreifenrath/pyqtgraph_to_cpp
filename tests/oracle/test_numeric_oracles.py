@@ -150,6 +150,8 @@ def test_normal_mode_writes_deterministic_numeric_fixtures(tmp_path: Path) -> No
 def test_check_mode_validates_without_writes(tmp_path: Path) -> None:
     root = tmp_path / "workspace"
     write_source_lock(root)
+    write_result = run_cli("--root", str(root))
+    assert write_result.returncode == 0, write_result.stderr
     before = snapshot_tree(root)
 
     result = run_cli("--root", str(root), "--check")
@@ -179,14 +181,34 @@ def test_rejects_invalid_or_missing_reference_lock(tmp_path: Path) -> None:
     assert invalid.stderr.startswith("error:")
 
 
-def test_check_mode_does_not_create_fixture_directory(tmp_path: Path) -> None:
+def test_check_mode_requires_fixtures_without_writes(tmp_path: Path) -> None:
     root = tmp_path / "workspace"
     write_source_lock(root)
+    before = snapshot_tree(root)
 
     result = run_cli("--root", str(root), "--check")
 
-    assert result.returncode == 0, result.stderr
+    assert result.returncode != 0
+    assert result.stderr.startswith("error:")
+    assert "missing numeric fixture" in result.stderr
+    assert snapshot_tree(root) == before
     assert not (root / "oracle" / "fixtures" / "numeric").exists()
+
+
+def test_check_mode_rejects_missing_expected_fixture(tmp_path: Path) -> None:
+    root = tmp_path / "workspace"
+    write_source_lock(root)
+    write_result = run_cli("--root", str(root))
+    assert write_result.returncode == 0, write_result.stderr
+    missing_fixture = root / "oracle" / "fixtures" / "numeric" / "log_mapping.json"
+    missing_fixture.unlink()
+
+    result = run_cli("--root", str(root), "--check")
+
+    assert result.returncode != 0
+    assert result.stderr.startswith("error:")
+    assert "missing numeric fixture" in result.stderr
+    assert "log_mapping.json" in result.stderr
 
 
 def test_check_mode_rejects_stale_existing_fixture(tmp_path: Path) -> None:

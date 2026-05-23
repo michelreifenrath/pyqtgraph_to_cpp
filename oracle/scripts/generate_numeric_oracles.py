@@ -112,7 +112,9 @@ def case_definitions(lock: dict[str, str]) -> list[dict[str, Any]]:
             "inputs": affine_inputs,
             "expected": {
                 "points": affine_transform_points(
-                    affine_inputs["points"], affine_inputs["scale"], affine_inputs["offset"]
+                    affine_inputs["points"],
+                    affine_inputs["scale"],
+                    affine_inputs["offset"],
                 )
             },
             "tolerance": {"absolute": 0.0, "relative": 0.0},
@@ -122,7 +124,9 @@ def case_definitions(lock: dict[str, str]) -> list[dict[str, Any]]:
             "case": "log_mapping",
             "reference": reference,
             "inputs": log_inputs,
-            "expected": {"values": log_mapping(log_inputs["values"], log_inputs["base"])},
+            "expected": {
+                "values": log_mapping(log_inputs["values"], log_inputs["base"])
+            },
             "tolerance": {"absolute": 1.0e-12, "relative": 1.0e-12},
         },
     ]
@@ -151,22 +155,36 @@ def write_fixtures(fixtures_dir: Path, cases: list[dict[str, Any]]) -> None:
 def check_existing_fixtures(
     fixtures_dir: Path, cases: list[dict[str, Any]], root: Path
 ) -> None:
+    expected_by_path = {
+        fixture_path(fixtures_dir, case): fixture_text(case) for case in cases
+    }
     if not fixtures_dir.exists():
-        return
+        missing_path = min(expected_by_path, key=lambda path: path.as_posix())
+        raise NumericOracleError(
+            f"missing numeric fixture: {posix_relative(missing_path, root)}"
+        )
     if not fixtures_dir.is_dir():
         raise NumericOracleError(
             f"numeric fixture path is not a directory: {posix_relative(fixtures_dir, root)}"
         )
 
-    expected_by_path = {fixture_path(fixtures_dir, case): fixture_text(case) for case in cases}
+    for path, expected in sorted(
+        expected_by_path.items(), key=lambda item: item[0].as_posix()
+    ):
+        if not path.is_file():
+            raise NumericOracleError(
+                f"missing numeric fixture: {posix_relative(path, root)}"
+            )
+        if path.read_text(encoding="utf-8") != expected:
+            raise NumericOracleError(
+                f"stale numeric fixture: {posix_relative(path, root)}"
+            )
+
     for path in sorted(fixtures_dir.rglob("*.json")):
-        expected = expected_by_path.get(path)
-        if expected is None:
+        if path not in expected_by_path:
             raise NumericOracleError(
                 f"unknown numeric fixture: {posix_relative(path, root)}"
             )
-        if path.read_text(encoding="utf-8") != expected:
-            raise NumericOracleError(f"stale numeric fixture: {posix_relative(path, root)}")
 
 
 def build_manifest(
