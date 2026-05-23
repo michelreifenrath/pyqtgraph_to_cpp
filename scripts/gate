@@ -16,8 +16,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from automation.pi_symphony.config import ConfigError, load_workflow_with_context
-from automation.pi_symphony.process import CommandResult, _subprocess_env
+from automation.pi_symphony.config import ConfigError, load_workflow_with_context  # noqa: E402
+from automation.pi_symphony.process import CommandResult, _subprocess_env  # noqa: E402
 
 DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
 
@@ -27,17 +27,21 @@ EXTRA_COMMANDS = {
         "cmake --build --preset dev --parallel",
         "ctest --preset dev --output-on-failure",
     ],
-    "visual": ["QT_QPA_PLATFORM=offscreen ctest --preset visual --output-on-failure"],
-    "performance": [
-        "cmake --build --preset release --parallel",
-        "ctest --preset performance --output-on-failure",
-    ],
 }
+
+
+def diff_check_commands(base: str) -> list[str]:
+    """Return local and branch diff checks for pre-PR validation."""
+    return [
+        "git diff --check",
+        "git diff --cached --check",
+        f"git diff --check {base}...HEAD",
+    ]
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run configured repository validation gates.")
-    parser.add_argument("mode", choices=["focus", "commit", "merge", "visual", "performance"])
+    parser.add_argument("mode", choices=["focus", "commit", "merge"])
     parser.add_argument("--workflow", default="WORKFLOW.md", help="workflow file to load")
     parser.add_argument(
         "--base",
@@ -53,12 +57,10 @@ def command_plan(mode: str, validation_commands: list[str], diff_check: bool, ba
     if mode == "focus":
         return list(validation_commands)
     if mode == "commit":
-        commands = [f"git diff --check {base}...HEAD"] if diff_check else []
+        commands = diff_check_commands(base) if diff_check else []
         return [*commands, *validation_commands]
     if mode == "merge":
         return [*command_plan("commit", validation_commands, diff_check, base), *EXTRA_COMMANDS["merge"]]
-    if mode in {"visual", "performance"}:
-        return list(EXTRA_COMMANDS[mode])
     raise ValueError(f"unsupported gate mode: {mode}")
 
 

@@ -93,8 +93,10 @@ def test_gate_help_lists_required_modes() -> None:
     result = run_script("scripts/gate", "--help")
 
     assert result.returncode == 0
-    for mode in ["focus", "commit", "merge", "visual", "performance"]:
+    for mode in ["focus", "commit", "merge"]:
         assert mode in result.stdout
+    assert "visual" not in result.stdout
+    assert "performance" not in result.stdout
 
 
 def test_workflow_pre_pr_autoreview_uses_branch_mode() -> None:
@@ -144,7 +146,11 @@ def test_gate_commit_runs_diff_check_before_validation(tmp_path: Path) -> None:
         f"order_file = Path({json.dumps(str(order_file))})\n"
         "args = sys.argv[1:]\n"
         "order_file.open('a', encoding='utf-8').write(' '.join(args) + '\\n')\n"
-        "if args != ['diff', '--check', 'origin/main...HEAD']:\n"
+        "if args not in (\n"
+        "    ['diff', '--check'],\n"
+        "    ['diff', '--cached', '--check'],\n"
+        "    ['diff', '--check', 'origin/main...HEAD'],\n"
+        "):\n"
         "    raise SystemExit(9)\n",
     )
     code = f"from pathlib import Path; Path({json.dumps(str(order_file))}).open('a').write('validation\\n')"
@@ -162,6 +168,8 @@ def test_gate_commit_runs_diff_check_before_validation(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert order_file.read_text(encoding="utf-8").splitlines() == [
+        "diff --check",
+        "diff --cached --check",
         "diff --check origin/main...HEAD",
         "validation",
     ]
@@ -274,20 +282,20 @@ def test_gate_dry_run_command_plans(tmp_path: Path) -> None:
 
     expected = {
         "focus": [validation],
-        "commit": ["git diff --check origin/main...HEAD", validation],
+        "commit": [
+            "git diff --check",
+            "git diff --cached --check",
+            "git diff --check origin/main...HEAD",
+            validation,
+        ],
         "merge": [
+            "git diff --check",
+            "git diff --cached --check",
             "git diff --check origin/main...HEAD",
             validation,
             "cmake --preset dev",
             "cmake --build --preset dev --parallel",
             "ctest --preset dev --output-on-failure",
-        ],
-        "visual": [
-            "QT_QPA_PLATFORM=offscreen ctest --preset visual --output-on-failure"
-        ],
-        "performance": [
-            "cmake --build --preset release --parallel",
-            "ctest --preset performance --output-on-failure",
         ],
     }
 
