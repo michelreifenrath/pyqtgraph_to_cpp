@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""Run the configured autoreview/Codex review gate safely."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from automation.pi_symphony.config import ConfigError, load_workflow_with_context
+from automation.pi_symphony.process import CommandResult, _subprocess_env, run
+
+
+DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
+SUPPORTED_WRAPPER_MODES = {"auto", "local", "branch", "commit", "merge"}
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run autoreview or Codex review for the current worktree.")
+    parser.add_argument("--workflow", default="WORKFLOW.md", help="workflow file to load")
+    parser.add_argument("--mode", help="review mode; defaults to workflow autoreview.mode")
+    parser.add_argument("--base", help="base ref; defaults to workflow autoreview.base")
+    parser.add_argument("--reports-dir", default=DEFAULT_REPORTS_DIR, help="directory for autoreview reports")
+    parser.add_argument("--timeout", type=int, default=1800, help="seconds to allow the review command")
+    return parser
+
+
+def resolve_executable(command: str) -> str | None:
+    expanded = Path(command).expanduser()
+    if expanded.parent != Path(".") or command.startswith("."):
+        return str(expanded) if expanded.is_file() and expanded.stat().st_mode & 0o111 else None
+    return shutil.which(command)
+
+
+def write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def timeout_output(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+
+def autoreview_cli_mode(mode: str) -> str:
+    if mode not in SUPPORTED_WRAPPER_MODES:
+        supported = ", ".join(sorted(SUPPORTED_WRAPPER_MODES))
+        raise ValueError(f"unsupported autoreview mode: {mode} (choose from {supported})")
+    return "branch" if mode == "merge" else mode
+
+
+def run_review_command(command: list[str], *, cwd: Path, timeout: int) -> CommandResult:
+    process = subprocess.Popen(
+        command,
+        cwd=str(cwd),
+        env=_subprocess_env(),
+        start_new_session=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            stdout, stderr = process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            stdout, stderr = process.communicate()
+        raise subprocess.TimeoutExpired(command, timeout, output=stdout, stderr=stderr) from error
+    return CommandResult(args=command, returncode=process.returncode, stdout=stdout, stderr=stderr)
+
+
+def enforce_clean_worktree(workflow, mode: str, base: str, summary_path: Path) -> int:
+    if not workflow.config.autoreview.require_clean:
+        return 0
+
+    command = ["git", "status", "--porcelain"]
+    try:
+        result = run(command, cwd=workflow.repo_root, timeout=30, check=False)
+    except subprocess.TimeoutExpired as error:
+        summary = {
+            "status": "clean_check_failed",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "returncode": 124,
+            "stdout": timeout_output(error.output),
+            "stderr": timeout_output(error.stderr),
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print("autoreview clean-worktree check timed out", file=sys.stderr)
+        return 124
+    except OSError as error:
+        summary = {
+            "status": "clean_check_failed",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "error": str(error),
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print(f"autoreview clean-worktree check failed: {error}", file=sys.stderr)
+        return 2
+
+    if result.returncode != 0:
+        summary = {
+            "status": "clean_check_failed",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "returncode": result.returncode,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print("autoreview could not verify a clean worktree", file=sys.stderr)
+        return result.returncode or 2
+
+    if result.stdout.strip():
+        summary = {
+            "status": "dirty_worktree",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "git_status": result.stdout,
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print(
+            "autoreview requires a clean worktree; commit, stash, or discard local changes before running this gate",
+            file=sys.stderr,
+        )
+        return 3
+
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    try:
+        workflow = load_workflow_with_context(args.workflow)
+    except (ConfigError, OSError) as error:
+        print(f"autoreview configuration failed: {error}", file=sys.stderr)
+        return 2
+
+    mode = args.mode or workflow.config.autoreview.mode
+    try:
+        command_mode = autoreview_cli_mode(mode)
+    except ValueError as error:
+        print(str(error), file=sys.stderr)
+        return 2
+
+    base = args.base or workflow.config.autoreview.base
+    reports_dir = Path(args.reports_dir)
+    if not reports_dir.is_absolute():
+        reports_dir = workflow.repo_root / reports_dir
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    prompt_path = reports_dir / "autoreview-prompt.md"
+    json_output_path = reports_dir / "autoreview-output.json"
+    log_path = reports_dir / "autoreview.log"
+    summary_path = reports_dir / "autoreview-summary.json"
+
+    clean_result = enforce_clean_worktree(workflow, mode, base, summary_path)
+    if clean_result != 0:
+        return clean_result
+
+    write_text(
+        prompt_path,
+        f"Review mode: {mode}\nBase ref: {base}\nWorkflow: {workflow.path}\n\nRun the configured mandatory advisory autoreview gate.\n",
+    )
+
+    autoreview_exe = resolve_executable(workflow.config.autoreview.command) or shutil.which("autoreview")
+    codex_exe = shutil.which("codex")
+
+    if autoreview_exe is not None:
+        command = [
+            autoreview_exe,
+            "--mode",
+            command_mode,
+            "--base",
+            base,
+            "--prompt-file",
+            str(prompt_path),
+            "--json-output",
+            str(json_output_path),
+        ]
+    elif codex_exe is not None:
+        command = [codex_exe, "review", "--base", base]
+    else:
+        summary = {
+            "status": "unavailable",
+            "mode": mode,
+            "base": base,
+            "command": workflow.config.autoreview.command,
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print(
+            "neither autoreview nor codex review is available; install/configure one before passing this gate",
+            file=sys.stderr,
+        )
+        return 127
+
+    print("running autoreview gate: " + " ".join(command))
+    try:
+        result = run_review_command(command, cwd=workflow.repo_root, timeout=args.timeout)
+    except subprocess.TimeoutExpired as error:
+        write_text(
+            log_path,
+            "$ "
+            + " ".join(command)
+            + f"\n\n[timeout]\nreview command timed out after {args.timeout} seconds\n"
+            + f"[stdout]\n{timeout_output(error.output)}\n[stderr]\n{timeout_output(error.stderr)}",
+        )
+        summary = {
+            "status": "timed_out",
+            "mode": mode,
+            "base": base,
+            "returncode": 124,
+            "command": command,
+            "log": str(log_path),
+            "json_output": str(json_output_path),
+            "timeout_seconds": args.timeout,
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print(f"autoreview gate timed out after {args.timeout} seconds", file=sys.stderr)
+        return 124
+
+    write_text(log_path, f"$ {' '.join(command)}\n\n[stdout]\n{result.stdout}\n[stderr]\n{result.stderr}")
+    summary = {
+        "status": "passed" if result.returncode == 0 else "failed",
+        "mode": mode,
+        "base": base,
+        "returncode": result.returncode,
+        "command": command,
+        "log": str(log_path),
+        "json_output": str(json_output_path),
+        "finished_at": time.time(),
+    }
+    write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    if result.returncode != 0:
+        print(f"autoreview gate failed ({result.returncode})", file=sys.stderr)
+    return result.returncode
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
