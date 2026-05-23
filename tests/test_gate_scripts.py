@@ -18,6 +18,7 @@ def write_workflow(
     *,
     commands: list[str] | None = None,
     autoreview_command: str = "autoreview",
+    require_clean: bool = False,
 ) -> None:
     commands = commands or [f"{sys.executable} -c 'print(\"validated\")'"]
     command_lines = "\n".join(f"    - {json.dumps(command)}" for command in commands)
@@ -41,6 +42,7 @@ def write_workflow(
                 "  engine: codex",
                 "  mode: commit",
                 "  base: origin/main",
+                f"  require_clean: {str(require_clean).lower()}",
                 "  advisory: true",
                 "  mandatory_gate: true",
                 "policy:",
@@ -262,6 +264,52 @@ def test_run_autoreview_fails_safely_when_tools_unavailable(tmp_path: Path) -> N
         (tmp_path / "reports" / "autoreview-summary.json").read_text(encoding="utf-8")
     )
     assert summary["status"] == "unavailable"
+
+
+def test_run_autoreview_requires_clean_worktree_before_review(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    received = tmp_path / "autoreview-called.txt"
+    make_executable(
+        bin_dir / "git",
+        f"#!{sys.executable}\n"
+        "import sys\n"
+        "if sys.argv[1:] == ['status', '--porcelain']:\n"
+        "    print('A  staged.txt')\n"
+        "    print(' M dirty.txt')\n"
+        "    print('?? new.txt')\n"
+        "    raise SystemExit(0)\n"
+        "raise SystemExit(99)\n",
+    )
+    make_executable(
+        bin_dir / "autoreview",
+        f"#!{sys.executable}\n"
+        "from pathlib import Path\n"
+        f"Path({json.dumps(str(received))}).write_text('called')\n",
+    )
+    write_workflow(workflow, autoreview_command="autoreview", require_clean=True)
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+
+    assert result.returncode != 0
+    assert "clean worktree" in result.stderr.lower()
+    assert not received.exists()
+    assert not (reports / "autoreview-prompt.md").exists()
+    summary = json.loads(
+        (reports / "autoreview-summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "dirty_worktree"
 
 
 def test_run_autoreview_times_out_safely(tmp_path: Path) -> None:

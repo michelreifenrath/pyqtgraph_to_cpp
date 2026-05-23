@@ -49,6 +49,78 @@ def timeout_output(value: str | bytes | None) -> str:
     return value
 
 
+def enforce_clean_worktree(workflow, mode: str, base: str, summary_path: Path) -> int:
+    if not workflow.config.autoreview.require_clean:
+        return 0
+
+    command = ["git", "status", "--porcelain"]
+    try:
+        result = run(command, cwd=workflow.repo_root, timeout=30, check=False)
+    except subprocess.TimeoutExpired as error:
+        summary = {
+            "status": "clean_check_failed",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "returncode": 124,
+            "stdout": timeout_output(error.output),
+            "stderr": timeout_output(error.stderr),
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print("autoreview clean-worktree check timed out", file=sys.stderr)
+        return 124
+    except OSError as error:
+        summary = {
+            "status": "clean_check_failed",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "error": str(error),
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print(f"autoreview clean-worktree check failed: {error}", file=sys.stderr)
+        return 2
+
+    if result.returncode != 0:
+        summary = {
+            "status": "clean_check_failed",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "returncode": result.returncode,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print("autoreview could not verify a clean worktree", file=sys.stderr)
+        return result.returncode or 2
+
+    if result.stdout.strip():
+        summary = {
+            "status": "dirty_worktree",
+            "mode": mode,
+            "base": base,
+            "autoreview_command": workflow.config.autoreview.command,
+            "clean_check_command": command,
+            "git_status": result.stdout,
+            "finished_at": time.time(),
+        }
+        write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
+        print(
+            "autoreview requires a clean worktree; commit, stash, or discard local changes before running this gate",
+            file=sys.stderr,
+        )
+        return 3
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -70,6 +142,11 @@ def main(argv: list[str] | None = None) -> int:
     json_output_path = reports_dir / "autoreview-output.json"
     log_path = reports_dir / "autoreview.log"
     summary_path = reports_dir / "autoreview-summary.json"
+
+    clean_result = enforce_clean_worktree(workflow, mode, base, summary_path)
+    if clean_result != 0:
+        return clean_result
+
     write_text(
         prompt_path,
         f"Review mode: {mode}\nBase ref: {base}\nWorkflow: {workflow.path}\n\nRun the configured mandatory advisory autoreview gate.\n",
