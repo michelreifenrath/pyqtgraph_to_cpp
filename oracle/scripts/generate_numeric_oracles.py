@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Generate deterministic numeric oracle fixtures for the pinned reference."""
+"""Generate deterministic numeric oracle fixtures from the pinned reference."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import math
+import os
+import subprocess
 import sys
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +20,171 @@ LOCK_PATH = Path("reference/source.lock")
 FIXTURE_PATH = Path("oracle/fixtures/numeric")
 REQUIRED_LOCK_KEYS = ("repo", "ref", "pinned_commit", "docs_url", "checkout_path")
 SCHEMA_VERSION = 1
+
+AFFINE_INPUTS = {
+    "points": [[0.0, 0.0], [1.0, 2.0], [-3.0, 4.5]],
+    "scale": [2.0, 3.0],
+    "offset": [1.5, -2.0],
+}
+LOG_INPUTS = {"values": [0.1, 1.0, 10.0, 100.0], "base": 10.0}
+
+REFERENCE_PROBE = r"""
+import ast
+import json
+import math
+import sys
+import types
+import warnings
+from pathlib import Path
+
+import numpy as np
+
+
+class QSize:
+    def __init__(self, width=0.0, height=0.0):
+        self._width = float(width)
+        self._height = float(height)
+
+    def width(self):
+        return self._width
+
+    def height(self):
+        return self._height
+
+
+class QPointF:
+    def __init__(self, *args):
+        if not args:
+            self._x = 0.0
+            self._y = 0.0
+        elif len(args) == 1 and isinstance(args[0], QPointF):
+            self._x = args[0].x()
+            self._y = args[0].y()
+        elif len(args) == 1 and hasattr(args[0], "__getitem__"):
+            self._x = float(args[0][0])
+            self._y = float(args[0][1])
+        elif len(args) == 2:
+            self._x = float(args[0])
+            self._y = float(args[1])
+        else:
+            raise TypeError("QPointF requires zero, one point-like, or two coordinates")
+
+    def x(self):
+        return self._x
+
+    def y(self):
+        return self._y
+
+    def setX(self, value):
+        self._x = float(value)
+
+    def setY(self, value):
+        self._y = float(value)
+
+
+class QRectF:
+    def __init__(self, *args):
+        self.args = args
+
+
+QtCore = types.SimpleNamespace(
+    QPointF=QPointF,
+    QSize=QSize,
+    QSizeF=QSize,
+    QRectF=QRectF,
+)
+
+
+def require_under_checkout(source_path, checkout_path):
+    resolved = Path(source_path).resolve()
+    try:
+        resolved.relative_to(checkout_path)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"reference source {resolved} is outside pinned checkout {checkout_path}"
+        ) from exc
+
+
+def reference_class(relative_path, class_name, namespace):
+    source_path = (checkout / relative_path).resolve()
+    require_under_checkout(source_path, checkout)
+    if not source_path.is_file():
+        raise RuntimeError(f"missing PyQtGraph reference source: {relative_path}")
+
+    tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    class_node = next(
+        (
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef) and node.name == class_name
+        ),
+        None,
+    )
+    if class_node is None:
+        raise RuntimeError(
+            f"missing PyQtGraph reference class {class_name}: {relative_path}"
+        )
+
+    module = ast.Module(body=[class_node], type_ignores=[])
+    ast.fix_missing_locations(module)
+    exec(compile(module, str(source_path), "exec"), namespace)
+    return namespace[class_name]
+
+
+def point_pair(point):
+    return [float(point[0]), float(point[1])]
+
+
+payload = json.loads(sys.stdin.read())
+checkout = Path(payload["checkout_path"]).resolve()
+
+affine_inputs = payload["affine_inputs"]
+log_inputs = payload["log_inputs"]
+if float(log_inputs["base"]) != 10.0:
+    raise RuntimeError("PyQtGraph PlotDataItem log mode only supports base-10 mapping")
+
+Point = reference_class(
+    "pyqtgraph/Point.py",
+    "Point",
+    {
+        "QtCore": QtCore,
+        "atan2": math.atan2,
+        "degrees": math.degrees,
+        "hypot": math.hypot,
+    },
+)
+PlotDataset = reference_class(
+    "pyqtgraph/graphicsItems/PlotDataItem.py",
+    "PlotDataset",
+    {
+        "QtCore": QtCore,
+        "RuntimeWarning": RuntimeWarning,
+        "math": math,
+        "np": np,
+        "warnings": warnings,
+    },
+)
+
+affine_points = []
+for point in affine_inputs["points"]:
+    mapped = Point(point) * Point(affine_inputs["scale"]) + Point(affine_inputs["offset"])
+    affine_points.append(point_pair(mapped))
+
+values = np.asarray(log_inputs["values"], dtype=float)
+dataset = PlotDataset(values.copy(), values.copy())
+dataset.applyLogMapping((True, False))
+log_values = [float(value) for value in dataset.x.tolist()]
+
+print(
+    json.dumps(
+        {
+            "affine_transform": {"points": affine_points},
+            "log_mapping": {"values": log_values},
+        },
+        allow_nan=False,
+    )
+)
+"""
 
 
 class NumericOracleError(RuntimeError):
@@ -81,52 +250,187 @@ def posix_relative(path: Path, root: Path) -> str:
         return path.as_posix()
 
 
-def affine_transform_points(
-    points: list[list[float]], scale: list[float], offset: list[float]
-) -> list[list[float]]:
-    return [
-        [point[0] * scale[0] + offset[0], point[1] * scale[1] + offset[1]]
-        for point in points
-    ]
+def run_git(args: list[str], *, cwd: Path | None = None) -> str:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise NumericOracleError(f"unable to run git {' '.join(args)}: {exc}") from exc
+
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip() or "git command failed"
+        raise NumericOracleError(f"git {' '.join(args)} failed: {detail}")
+    return result.stdout.strip()
 
 
-def log_mapping(values: list[float], base: float) -> list[float]:
-    return [round(math.log(value, base), 12) for value in values]
+def clone_pinned_reference(lock: dict[str, str], destination: Path, root: Path) -> None:
+    ref = lock["ref"]
+    pinned_commit = lock["pinned_commit"]
+    try:
+        run_git(
+            [
+                "clone",
+                "--quiet",
+                "--depth",
+                "1",
+                "--filter=blob:none",
+                "--no-checkout",
+                "--branch",
+                ref,
+                "--single-branch",
+                lock["repo"],
+                str(destination),
+            ]
+        )
+        run_git(["checkout", "--quiet", "--detach", pinned_commit], cwd=destination)
+    except NumericOracleError as exc:
+        raise NumericOracleError(
+            "reference checkout is absent and pinned-source fallback failed: "
+            f"could not materialize {ref} at {pinned_commit} from {lock['repo']}: {exc}"
+        ) from exc
+    verify_reference_commit(destination, lock, root)
 
 
-def case_definitions(lock: dict[str, str]) -> list[dict[str, Any]]:
+@contextmanager
+def resolve_reference_checkout(root: Path, lock: dict[str, str]) -> Iterator[Path]:
+    checkout = Path(lock["checkout_path"])
+    checkout = checkout if checkout.is_absolute() else root / checkout
+    checkout = checkout.resolve()
+    if checkout.is_dir():
+        verify_reference_commit(checkout, lock, root)
+        yield checkout
+        return
+
+    with tempfile.TemporaryDirectory(prefix="pyqtgraph-numeric-oracle-") as temp_dir:
+        fallback_checkout = Path(temp_dir) / "pyqtgraph"
+        clone_pinned_reference(lock, fallback_checkout, root)
+        yield fallback_checkout
+
+
+def verify_reference_commit(checkout: Path, lock: dict[str, str], root: Path) -> None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(checkout), "rev-parse", "HEAD"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise NumericOracleError(
+            f"unable to inspect reference checkout with git: {exc}"
+        ) from exc
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        message = (
+            "reference checkout is not a usable git checkout: "
+            f"{posix_relative(checkout, root)}"
+        )
+        if detail:
+            message += f" ({detail})"
+        raise NumericOracleError(message)
+
+    actual_commit = result.stdout.strip()
+    expected_commit = lock["pinned_commit"]
+    if actual_commit != expected_commit:
+        raise NumericOracleError(
+            "reference checkout commit mismatch: "
+            f"{posix_relative(checkout, root)} "
+            f"(expected {expected_commit}, got {actual_commit})"
+        )
+
+
+def run_reference_probe(root: Path, checkout: Path) -> dict[str, Any]:
+    env = os.environ.copy()
+    existing_pythonpath = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = str(checkout) + (
+        os.pathsep + existing_pythonpath if existing_pythonpath else ""
+    )
+    env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    payload = {
+        "checkout_path": str(checkout),
+        "affine_inputs": AFFINE_INPUTS,
+        "log_inputs": LOG_INPUTS,
+    }
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", REFERENCE_PROBE],
+            cwd=root,
+            env=env,
+            input=json.dumps(payload),
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise NumericOracleError(
+            "unable to use pinned PyQtGraph reference: reference probe timed out"
+        ) from exc
+    except OSError as exc:
+        raise NumericOracleError(
+            f"unable to use pinned PyQtGraph reference: {exc}"
+        ) from exc
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        message = "unable to use pinned PyQtGraph reference runtime"
+        if detail:
+            message += f": {detail}"
+        raise NumericOracleError(message)
+
+    try:
+        parsed = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise NumericOracleError(
+            "unable to use pinned PyQtGraph reference runtime: "
+            "reference probe returned invalid JSON"
+        ) from exc
+
+    if not isinstance(parsed, dict):
+        raise NumericOracleError(
+            "unable to use pinned PyQtGraph reference runtime: "
+            "reference probe returned invalid payload"
+        )
+    return parsed
+
+
+def case_definitions(
+    lock: dict[str, str], reference_results: dict[str, Any]
+) -> list[dict[str, Any]]:
     reference = {"ref": lock["ref"], "pinned_commit": lock["pinned_commit"]}
 
-    affine_inputs = {
-        "points": [[0.0, 0.0], [1.0, 2.0], [-3.0, 4.5]],
-        "scale": [2.0, 3.0],
-        "offset": [1.5, -2.0],
-    }
-    log_inputs = {"values": [0.1, 1.0, 10.0, 100.0], "base": 10.0}
+    try:
+        affine_expected = reference_results["affine_transform"]
+        log_expected = reference_results["log_mapping"]
+    except KeyError as exc:
+        raise NumericOracleError(
+            "unable to use pinned PyQtGraph reference runtime: "
+            f"missing result for {exc.args[0]}"
+        ) from exc
 
     return [
         {
             "schema_version": SCHEMA_VERSION,
             "case": "affine_transform",
             "reference": reference,
-            "inputs": affine_inputs,
-            "expected": {
-                "points": affine_transform_points(
-                    affine_inputs["points"],
-                    affine_inputs["scale"],
-                    affine_inputs["offset"],
-                )
-            },
+            "inputs": AFFINE_INPUTS,
+            "expected": affine_expected,
             "tolerance": {"absolute": 0.0, "relative": 0.0},
         },
         {
             "schema_version": SCHEMA_VERSION,
             "case": "log_mapping",
             "reference": reference,
-            "inputs": log_inputs,
-            "expected": {
-                "values": log_mapping(log_inputs["values"], log_inputs["base"])
-            },
+            "inputs": LOG_INPUTS,
+            "expected": log_expected,
             "tolerance": {"absolute": 1.0e-12, "relative": 1.0e-12},
         },
     ]
@@ -218,7 +522,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         lock = load_lock(root)
-        cases = case_definitions(lock)
+        with resolve_reference_checkout(root, lock) as checkout:
+            reference_results = run_reference_probe(root, checkout)
+        cases = case_definitions(lock, reference_results)
         manifest = build_manifest(lock, fixtures_dir, cases, root)
         # Exercise serialization before check/write so format regressions fail early.
         rendered_manifest = render_manifest(manifest, args.format)
