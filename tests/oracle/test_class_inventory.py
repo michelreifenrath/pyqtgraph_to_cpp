@@ -321,6 +321,23 @@ def test_rejects_checkout_at_wrong_commit(tmp_path: Path) -> None:
     assert "pinned_commit" in result.stderr
 
 
+def test_ignored_local_python_files_do_not_contaminate_inventory(tmp_path: Path) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    checkout = root / CHECKOUT_PATH
+    write_fixture_file(checkout / ".gitignore", "pyqtgraph/Ignored.py\n")
+    git(checkout, "add", ".gitignore")
+    git(checkout, "commit", "-m", "ignore local artifacts")
+    commit = git(checkout, "rev-parse", "HEAD")
+    write_source_lock(root, repo="fixture://pyqtgraph", commit=commit)
+    write_fixture_file(checkout / "pyqtgraph" / "Ignored.py", "class IgnoredArtifact:\n    pass\n")
+
+    result = run_cli("--root", str(root))
+
+    assert result.returncode == 0, result.stderr
+    inventory = yaml.safe_load(result.stdout)
+    assert {record["class_name"] for record in inventory["classes"]} == {"PlotData", "HelperMixin", "PlotWidget"}
+
+
 @pytest.mark.parametrize("dirty_state", ["untracked", "modified", "deleted"])
 def test_rejects_dirty_local_checkout_at_pinned_commit(
     tmp_path: Path,

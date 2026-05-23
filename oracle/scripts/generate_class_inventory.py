@@ -215,28 +215,30 @@ def class_records(path: Path, checkout: Path) -> list[dict[str, Any]]:
     return records
 
 
+def tracked_files(checkout: Path) -> list[str]:
+    return sorted(path for path in run_git(["ls-files", "-z"], cwd=checkout).split("\0") if path)
+
+
 def enumerate_inventory(checkout: Path, lock: dict[str, str]) -> dict[str, Any]:
     package_root = checkout / "pyqtgraph"
     if not package_root.is_dir():
         raise InventoryError("checkout does not contain pyqtgraph/ package directory")
 
+    tracked = tracked_files(checkout)
     example_paths: list[str] = []
     source_files: list[Path] = []
     classes: list[dict[str, Any]] = []
-    for path in sorted(package_root.rglob("*.py")):
-        upstream_path = posix_relative(path, checkout)
+    for upstream_path in tracked:
+        if not upstream_path.startswith("pyqtgraph/") or not upstream_path.endswith(".py"):
+            continue
         if upstream_path.startswith("pyqtgraph/examples/"):
             example_paths.append(upstream_path)
             continue
+        path = checkout / upstream_path
         source_files.append(path)
         classes.extend(class_records(path, checkout))
 
-    test_root = checkout / "tests"
-    test_paths = (
-        [posix_relative(path, checkout) for path in sorted(test_root.rglob("*.py"))]
-        if test_root.is_dir()
-        else []
-    )
+    test_paths = [path for path in tracked if path.startswith("tests/") and path.endswith(".py")]
 
     classes.sort(
         key=lambda record: (
