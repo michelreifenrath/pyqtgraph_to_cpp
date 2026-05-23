@@ -152,6 +152,10 @@ bool testIntColorInputs()
 
     CHECK_HSVA(pyqtgraph::intColor(1, 4, 1, 255, 150, 0, 10), 7, 255, 255, 255);
     CHECK_HSVA(pyqtgraph::intColor(1, 1, 4, 150, 254, 360, 0), 0, 255, 219, 255);
+
+    const QColor largeGridColor = pyqtgraph::intColor(0, 65536, 65536);
+    CHECK(largeGridColor.isValid());
+    CHECK_HSVA(largeGridColor, 0, 255, 150, 255);
     return true;
 }
 

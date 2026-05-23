@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -22,11 +24,18 @@ namespace {
     return std::isfinite(value) ? static_cast<int>(value) : 0;
 }
 
-[[nodiscard]] int floorDiv(int numerator, int denominator)
+[[nodiscard]] std::int64_t floorDiv(std::int64_t numerator, std::int64_t denominator)
 {
-    const int quotient = numerator / denominator;
-    const int remainder = numerator % denominator;
+    const std::int64_t quotient = numerator / denominator;
+    const std::int64_t remainder = numerator % denominator;
     return remainder < 0 ? quotient - 1 : quotient;
+}
+
+[[nodiscard]] int clampToInt(std::int64_t value)
+{
+    return static_cast<int>(std::clamp(value,
+                                       static_cast<std::int64_t>(std::numeric_limits<int>::min()),
+                                       static_cast<std::int64_t>(std::numeric_limits<int>::max())));
 }
 
 [[nodiscard]] QColor colorFromChannels(double red, double green, double blue, double alpha)
@@ -121,13 +130,19 @@ QColor intColor(int index,
         throw std::invalid_argument("intColor requires positive hues and values");
     }
 
-    const int span = hues * values;
-    const int ind = ((index % span) + span) % span;
-    const int indh = ind % hues;
-    const int indv = ind / hues;
-    const int value = values <= 1 ? maxValue : minValue + indv * floorDiv(maxValue - minValue, values - 1);
-    const int hue = minHue + floorDiv(indh * (maxHue - minHue), hues);
-    return QColor::fromHsv(hue, sat, value, alpha);
+    const std::int64_t wideHues = hues;
+    const std::int64_t wideValues = values;
+    const std::int64_t span = wideHues * wideValues;
+    const std::int64_t ind = ((static_cast<std::int64_t>(index) % span) + span) % span;
+    const std::int64_t indh = ind % wideHues;
+    const std::int64_t indv = ind / wideHues;
+    const std::int64_t value = values <= 1 ? maxValue
+                                           : static_cast<std::int64_t>(minValue) +
+                                                 indv * floorDiv(static_cast<std::int64_t>(maxValue) - minValue,
+                                                                 wideValues - 1);
+    const std::int64_t hue = static_cast<std::int64_t>(minHue) +
+                             floorDiv(indh * (static_cast<std::int64_t>(maxHue) - minHue), wideHues);
+    return QColor::fromHsv(clampToInt(hue), sat, clampToInt(value), alpha);
 }
 
 QColor mkColor(const QString& color)
