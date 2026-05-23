@@ -269,6 +269,25 @@ def test_source_note_without_upstream_path_after_pyqtgraph_fails(
     assert "include/pyqtgraph/BlockComment.cpp: missing upstream path" in result.stderr
 
 
+def test_source_note_with_placeholder_upstream_path_fails(tmp_path: Path) -> None:
+    for name, note in {
+        "SlashOnly.cpp": "// Source note: translated from PyQtGraph /",
+        "ExtensionOnly.cpp": "// Source note: translated from PyQtGraph .py",
+        "Placeholder.cpp": "// Source note: translated from PyQtGraph <upstream-path>",
+    }.items():
+        write(
+            tmp_path / "include" / "pyqtgraph" / name,
+            translated_source_without_upstream_path(note),
+        )
+
+    result = run_check(tmp_path)
+
+    assert result.returncode != 0
+    assert "include/pyqtgraph/SlashOnly.cpp: missing upstream path" in result.stderr
+    assert "include/pyqtgraph/ExtensionOnly.cpp: missing upstream path" in result.stderr
+    assert "include/pyqtgraph/Placeholder.cpp: missing upstream path" in result.stderr
+
+
 def test_generated_source_without_generation_inputs_fails(tmp_path: Path) -> None:
     write(
         tmp_path / "src" / "pyqtgraph" / "generated.cpp",

@@ -70,6 +70,11 @@ PYQTGRAPH_NOTE_RE = re.compile(
 )
 
 
+PYQTGRAPH_UPSTREAM_PATH_RE = re.compile(
+    r"\b(?:pyqtgraph|examples|tests|benchmarks)/[A-Za-z0-9_.+\-/]+\.(?:py|c|cc|cpp|cxx|h|hh|hpp|hxx)\b"
+)
+
+
 def has_pyqtgraph_source_note(text: str) -> bool:
     return bool(PYQTGRAPH_NOTE_RE.search(text))
 
@@ -86,7 +91,7 @@ def missing_pyqtgraph_fields(text: str) -> list[str]:
         suffix = re.sub(r"\s*\*/\s*$", "", line[match.end() :]).strip()
         note_suffixes.append(suffix)
     has_upstream_path = any(
-        any(token in suffix for token in ("/", ".py", ".cpp", ".h"))
+        bool(PYQTGRAPH_UPSTREAM_PATH_RE.search(suffix))
         for suffix in note_suffixes
     )
     if not has_upstream_path:
