@@ -54,6 +54,7 @@ def test_config_parser_reads_kanban_settings_from_workflow(tmp_path: Path):
     assert config.pi.implementation_thinking == "xhigh"
     assert config.pi.use_subagents is True
     assert config.github.ready_label == "ai:ready"
+    assert config.github.rework_label == "ai:rework"
     assert config.github.merge_ready_label == "ai:merge-ready"
     assert config.policy.auto_merge is False
     assert config.policy.never_push_to_main is True

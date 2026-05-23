@@ -57,7 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_issue = subparsers.add_parser("run-issue", help="run a deterministic phase for one GitHub issue")
     run_issue.add_argument("--workflow", default="WORKFLOW.md", type=Path)
     run_issue.add_argument("--issue", required=True, type=int)
-    run_issue.add_argument("--phase", choices=["implement", "review", "release", "all"], default="all")
+    run_issue.add_argument("--phase", choices=["implement", "rework", "review", "release", "all"], default="all")
     run_issue.add_argument("--complete-current-task", action="store_true")
     run_issue.add_argument("--json", action="store_true")
     run_issue.set_defaults(func=_run_issue)

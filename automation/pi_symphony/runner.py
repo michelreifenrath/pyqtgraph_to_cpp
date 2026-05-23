@@ -170,7 +170,54 @@ def create_issue_task_graph(config: WorkflowConfig, repo_root: Path, issue: Issu
     return {"implement": implement, "review": review, "release": release}
 
 
-def _task_body(config: WorkflowConfig, issue: Issue, phase: str, common: dict[str, Any]) -> str:
+def create_rework_task_graph(config: WorkflowConfig, repo_root: Path, issue: Issue, *, reason: str, attempt: int) -> dict[str, str]:
+    metadata = build_task_metadata(issue.number, issue.labels, config.kanban, config.tracker.repo)
+    tenant = str(metadata["tenant"])
+    common = {
+        "repo": config.tracker.repo,
+        "issue": issue.number,
+        "tenant": tenant,
+        "tags": metadata["tags"],
+        "branch": branch_name(issue.number, issue.title),
+        "workflow": "pi-symphony-v1",
+        "rework_attempt": attempt,
+    }
+    rework = _kanban_create(
+        config,
+        repo_root,
+        title=f"issue #{issue.number}: rework review findings (attempt {attempt}) {issue.title}",
+        assignee="pi-worker",
+        tenant=tenant,
+        body=_task_body(config, issue, "rework", common, failure_reason=reason),
+        idempotency_key=f"{config.tracker.repo}#{issue.number}:rework:{attempt}",
+        metadata=common | {"phase": "rework"},
+    )
+    review = _kanban_create(
+        config,
+        repo_root,
+        title=f"issue #{issue.number}: review after rework (attempt {attempt}) {issue.title}",
+        assignee="pi-reviewer",
+        tenant=tenant,
+        body=_task_body(config, issue, "review", common, failure_reason=reason),
+        idempotency_key=f"{config.tracker.repo}#{issue.number}:review:{attempt}",
+        parents=[rework],
+        metadata=common | {"phase": "review"},
+    )
+    release = _kanban_create(
+        config,
+        repo_root,
+        title=f"issue #{issue.number}: release PR after rework (attempt {attempt}) {issue.title}",
+        assignee="pi-release-manager",
+        tenant=tenant,
+        body=_task_body(config, issue, "release", common, failure_reason=reason),
+        idempotency_key=f"{config.tracker.repo}#{issue.number}:release:{attempt}",
+        parents=[review],
+        metadata=common | {"phase": "release"},
+    )
+    return {"rework": rework, "review": review, "release": release}
+
+
+def _task_body(config: WorkflowConfig, issue: Issue, phase: str, common: dict[str, Any], *, failure_reason: str | None = None) -> str:
     command = [
         "python3",
         "-m",
@@ -190,7 +237,7 @@ Repository: {config.tracker.repo}
 Branch: {common['branch']}
 Tenant: {common['tenant']}
 Tags: {', '.join(common.get('tags') or []) or '(none)'}
-
+{_failure_context(failure_reason)}
 Run this exact command from the repository root and let it perform the deterministic gate for this phase:
 
     {shell_join(command)}
@@ -200,10 +247,19 @@ Rules:
 - Do not push to main.
 - Do not merge PRs.
 - Treat Pi/autoreview/Codex output as advisory; deterministic gates in the command are authoritative.
+- If this is a rework task, address only the listed review/gate findings and avoid unrelated cleanup or redesign.
 - If the command blocks, leave the issue/task blocked with the printed reason.
 
 Issue body:
 {issue.body or '(no body)'}
+"""
+
+
+def _failure_context(failure_reason: str | None) -> str:
+    if not failure_reason:
+        return ""
+    return f"""Previous gate/review finding to address:
+{failure_reason[:4000]}
 """
 
 
@@ -263,12 +319,92 @@ def reconcile(loaded: LoadedWorkflow, *, dispatch: bool = True, dry_run: bool = 
     return {"intake": intake_result, "prs": pr_result, "dispatch": dispatch_result}
 
 
+_HUMAN_BLOCKER_KEYWORDS = (
+    "missing required command",
+    "missing required secret",
+    "authentication",
+    "permission",
+    "forbidden",
+    "ambiguous",
+    "unclear requirement",
+    "policy violation",
+    "too large for autonomous",
+)
+
+
+_AUTO_REWORK_KEYWORDS = (
+    "autoreview failed",
+    "codex review failed",
+    "validation failed",
+    "git diff --check failed",
+)
+
+
+def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: str, reason: str) -> dict[str, Any]:
+    """Classify a phase failure and either schedule bounded rework or surface a human blocker."""
+    config = loaded.config
+    lower_reason = reason.lower()
+    state = get_issue(loaded.repo_root, issue_number)
+    current_attempt = int(state.get("rework_attempts", 0))
+    if phase == "review" and _auto_rework_allowed(lower_reason) and current_attempt < config.agent.max_attempts:
+        issue = view_issue(config, issue_number)
+        next_attempt = current_attempt + 1
+        task_ids = create_rework_task_graph(config, loaded.repo_root, issue, reason=reason, attempt=next_attempt)
+        update_issue(
+            loaded.repo_root,
+            issue_number,
+            lambda item: item.update(
+                {
+                    "status": "rework_scheduled",
+                    "rework_attempts": next_attempt,
+                    "last_failure": reason,
+                    "rework_task_ids": task_ids,
+                    "rework_scheduled_at": utc_now(),
+                }
+            ),
+        )
+        add_labels(config, issue_number, [config.github.rework_label])
+        remove_labels(config, issue_number, [config.github.blocked_label, config.github.human_review_label, config.github.failed_label])
+        comment_issue(
+            config,
+            issue_number,
+            "Pi Symphony scheduled an automatic rework pass for actionable review findings. "
+            f"Attempt {next_attempt}/{config.agent.max_attempts}. The original failing gate remains blocked for history; follow-up Kanban tasks will rework, re-review, and release if gates pass.\n\n"
+            f"Gate finding:\n```text\n{reason[:3000]}\n```",
+        )
+        return {"action": "scheduled_rework", "issue": issue_number, "attempt": next_attempt, "tasks": task_ids}
+
+    human_reason = "retry budget exhausted" if phase == "review" and current_attempt >= config.agent.max_attempts else reason
+    add_labels(config, issue_number, [config.github.blocked_label, config.github.human_review_label])
+    remove_labels(config, issue_number, [config.github.rework_label])
+    update_issue(
+        loaded.repo_root,
+        issue_number,
+        lambda item: item.update({"status": "human_blocked", "last_failure": human_reason, "human_blocked_at": utc_now()}),
+    )
+    comment_issue(
+        config,
+        issue_number,
+        "Human intervention required. Pi Symphony cannot safely continue this issue autonomously.\n\n"
+        f"Reason:\n```text\n{human_reason[:3000]}\n```",
+    )
+    return {"action": "human_blocked", "issue": issue_number, "reason": human_reason}
+
+
+def _auto_rework_allowed(lower_reason: str) -> bool:
+    if any(keyword in lower_reason for keyword in _HUMAN_BLOCKER_KEYWORDS):
+        return False
+    return any(keyword in lower_reason for keyword in _AUTO_REWORK_KEYWORDS)
+
+
 def run_issue_phase(loaded: LoadedWorkflow, *, issue_number: int, phase: str, complete_current_task: bool = False) -> dict[str, Any]:
     try:
         if phase == "implement":
             result = implement_issue(loaded, issue_number)
         elif phase == "review":
             result = review_issue(loaded, issue_number)
+        elif phase == "rework":
+            result = rework_issue(loaded, issue_number)
         elif phase == "release":
             result = release_issue(loaded, issue_number)
         elif phase == "all":
@@ -279,7 +415,11 @@ def run_issue_phase(loaded: LoadedWorkflow, *, issue_number: int, phase: str, co
             raise GateFailure(f"unknown phase: {phase}")
     except Exception as exc:
         if complete_current_task:
-            _block_current_task(loaded.config, f"{phase} failed for issue #{issue_number}: {exc}")
+            failure = _handle_phase_failure(loaded, issue_number=issue_number, phase=phase, reason=str(exc))
+            if failure.get("action") == "scheduled_rework":
+                _block_current_task(loaded.config, f"{phase} failed for issue #{issue_number}; automatic rework was scheduled")
+            else:
+                _block_current_task(loaded.config, f"{phase} failed for issue #{issue_number}: {exc}")
         raise
     if complete_current_task:
         _complete_current_task(loaded.config, f"{phase} complete for issue #{issue_number}", result)
@@ -327,6 +467,55 @@ def implement_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]
         "completed_at": utc_now(),
     }
     (issue_log_dir / "implementation.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    update_issue(loaded.repo_root, issue.number, lambda item: item.update(summary))
+    return summary
+
+
+def rework_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
+    config = loaded.config
+    issue = view_issue(config, issue_number)
+    worktree = worktree_path(config, issue.number)
+    if not worktree.exists():
+        raise GateFailure(f"missing worktree: {worktree}")
+    issue_log_dir = logs_dir(loaded.repo_root, issue.number)
+    issue_log_dir.mkdir(parents=True, exist_ok=True)
+    state = get_issue(loaded.repo_root, issue.number)
+    branch = str(state.get("branch") or branch_name(issue.number, issue.title))
+    reason = str(state.get("last_failure") or "Previous review failed; inspect issue logs and fix only the failing review findings.")
+
+    update_issue(
+        loaded.repo_root,
+        issue.number,
+        lambda item: item.update({"status": "reworking", "branch": branch, "worktree": str(worktree), "rework_started_at": utc_now()}),
+    )
+    prompt = _pi_rework_prompt(config, issue, branch, reason)
+    (issue_log_dir / "pi-rework-prompt.md").write_text(prompt, encoding="utf-8")
+    pi_cmd = _pi_command(config, thinking=config.pi.implementation_thinking, prompt=prompt)
+    pi_result = run(pi_cmd, cwd=worktree, timeout=3600, check=False)
+    (issue_log_dir / "pi-rework-output.md").write_text(pi_result.combined_output + "\n", encoding="utf-8")
+    if pi_result.returncode != 0:
+        raise GateFailure(f"Pi rework failed with exit code {pi_result.returncode}; see {issue_log_dir / 'pi-rework-output.md'}")
+
+    status = git_status_short(worktree)
+    if not status:
+        raise GateFailure("Pi rework completed but left no git changes")
+    validations = run_validations(config, worktree, issue_log_dir)
+    review_commit = _commit_worktree_changes_for_review(worktree, issue_number=issue.number)
+    changed_files, changed_lines = diff_stats(worktree, config.autoreview.base)
+    if not changed_files:
+        raise GateFailure("review diff is empty after rework commit; refusing to attest an empty branch diff")
+    summary = {
+        "status": "reworked",
+        "issue": issue.number,
+        "branch": branch,
+        "worktree": str(worktree),
+        "review_commit": review_commit,
+        "changed_files": changed_files,
+        "changed_lines": changed_lines,
+        "validations": validations,
+        "reworked_at": utc_now(),
+    }
+    (issue_log_dir / "rework.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     update_issue(loaded.repo_root, issue.number, lambda item: item.update(summary))
     return summary
 
@@ -426,7 +615,7 @@ def release_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     if pr.get("number"):
         add_labels(config, int(pr["number"]), [config.github.merge_ready_label])
     add_labels(config, issue.number, [config.github.review_label])
-    remove_labels(config, issue.number, [config.github.claimed_label, config.github.failed_label, config.github.blocked_label])
+    remove_labels(config, issue.number, [config.github.claimed_label, config.github.failed_label, config.github.blocked_label, config.github.rework_label])
     comment_issue(config, issue.number, f"Pi Symphony opened/updated PR: {pr.get('url')}. Auto-merge is disabled; please review manually.")
     summary = {"status": "released", "issue": issue.number, "branch": branch, "pr": pr, "validations": validations, "released_at": utc_now()}
     (issue_log_dir / "release.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -485,7 +674,7 @@ def check_prs(config: WorkflowConfig, repo_root: Path) -> dict[str, Any]:
         if issue is None:
             continue
         add_labels(config, issue, [config.github.done_label])
-        remove_labels(config, issue, [config.github.claimed_label, config.github.review_label, config.github.failed_label, config.github.blocked_label])
+        remove_labels(config, issue, [config.github.claimed_label, config.github.review_label, config.github.failed_label, config.github.blocked_label, config.github.rework_label])
         update_issue(repo_root, issue, lambda item, pr=pr: item.update({"status": "done", "merged_pr": pr, "done_at": utc_now()}))
         updated.append({"issue": issue, "pr": pr.get("number"), "state": "done"})
     return {"updated": updated}
@@ -524,6 +713,34 @@ Acceptance rules:
 """
 
 
+def _pi_rework_prompt(config: WorkflowConfig, issue: Issue, branch: str, reason: str) -> str:
+    return f"""Use pi subagents for a bounded rework pass. Do not start over. Inspect the current branch, the prior review finding, then make the smallest safe changes that address only that finding. Do not commit, push, or merge. Leave a clean git diff in the current worktree.
+
+Repository: {config.tracker.repo}
+Branch: {branch}
+Issue: #{issue.number} {issue.title}
+Author: {issue.author}
+URL: {issue.url}
+Labels: {', '.join(issue.labels) or '(none)'}
+
+Review/gate finding to fix:
+{reason[:4000]}
+
+Issue body:
+{issue.body or '(no body)'}
+
+Repo-owned workflow:
+{config.body}
+
+Rework rules:
+- Fix only the listed review/gate finding and directly required tests.
+- Preserve the previous implementation scope; no unrelated refactors or redesigns.
+- Run the relevant checks before finalizing.
+- Do not leave scratch artifacts such as .pi-lens, temp files, or debug logs in the diff.
+- Do not modify WORKFLOW.md or automation policy files unless the finding explicitly requires it.
+"""
+
+
 def _pr_body(issue: Issue, state: dict[str, Any], validations: list[dict[str, Any]]) -> str:
     validation_lines = "\n".join(
         f"- `{item['command']}`: {'PASS' if item['returncode'] == 0 else 'FAIL'}" for item in validations
@@ -549,7 +766,7 @@ Closes #{issue.number}
 
 
 def _mark_issue_failed(config: WorkflowConfig, repo_root: Path, issue_number: int, reason: str) -> None:
-    add_labels(config, issue_number, [config.github.failed_label, config.github.blocked_label])
+    add_labels(config, issue_number, [config.github.failed_label, config.github.blocked_label, config.github.human_review_label])
     update_issue(repo_root, issue_number, lambda item: item.update({"status": "failed", "failure": reason, "failed_at": utc_now()}))
 
 
