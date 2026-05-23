@@ -209,6 +209,219 @@ def test_intake_claim_does_not_comment_when_compact_claim_comments_disabled(tmp_
     assert comments == []
 
 
+def test_implement_no_git_changes_schedules_rework_without_human_label(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    issue = Issue(8, "Inventory", "body", ["tag:inventory"], "url", "michel")
+    created: list[dict[str, Any]] = []
+    labels: list[str] = []
+    removed_labels: list[str] = []
+
+    def fake_create(_config, _repo_root, **kwargs):
+        created.append(kwargs)
+        return f"task-{len(created)}"
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: issue)
+    monkeypatch.setattr(runner, "_kanban_create", fake_create)
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda _config, _number, values: removed_labels.extend(values))
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=8,
+        phase="implement",
+        reason="Pi completed but left no git changes",
+    )
+
+    assert result["action"] == "scheduled_rework"
+    assert [item["metadata"]["phase"] for item in created] == ["rework", "review", "release"]
+    assert config.github.rework_label in labels
+    assert config.github.blocked_label in removed_labels
+    assert config.github.human_review_label in removed_labels
+    assert config.github.human_review_label not in labels
+
+
+def test_validation_failure_schedules_rework_without_human_label(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    issue = Issue(8, "Inventory", "body", ["tag:inventory"], "url", "michel")
+    labels: list[str] = []
+    removed_labels: list[str] = []
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: issue)
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: "task")
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda _config, _number, values: removed_labels.extend(values))
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=8,
+        phase="review",
+        reason="validation failed: python oracle/scripts/generate_source_inventory.py --check",
+    )
+
+    assert result["action"] == "scheduled_rework"
+    assert config.github.rework_label in labels
+    assert config.github.blocked_label in removed_labels
+    assert config.github.human_review_label in removed_labels
+    assert config.github.human_review_label not in labels
+
+
+def test_permission_word_in_actionable_review_does_not_force_human_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    issue = Issue(6, "Attribution", "body", ["tag:bootstrap"], "url", "michel")
+    labels: list[str] = []
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: issue)
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: "task")
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=6,
+        phase="review",
+        reason="autoreview failed: permission text in attribution report needs code cleanup",
+    )
+
+    assert result["action"] == "scheduled_rework"
+    assert config.github.rework_label in labels
+    assert config.github.human_review_label not in labels
+
+
+def test_ambiguous_requirement_in_actionable_review_does_not_force_human_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    issue = Issue(6, "Attribution", "body", ["tag:bootstrap"], "url", "michel")
+    labels: list[str] = []
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: issue)
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: "task")
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=6,
+        phase="review",
+        reason="autoreview failed: ambiguous requirement wording should be clarified in code comments",
+    )
+
+    assert result["action"] == "scheduled_rework"
+    assert config.github.rework_label in labels
+    assert config.github.human_review_label not in labels
+
+
+def test_authentication_failed_labels_issue_for_human_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    labels: list[str] = []
+
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("auth failures must not schedule rework")))
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=3,
+        phase="implement",
+        reason="authentication failed: GitHub token expired",
+    )
+
+    assert result["action"] == "human_blocked"
+    assert config.github.blocked_label in labels
+    assert config.github.human_review_label in labels
+
+
+def test_common_github_permission_failures_label_issue_for_human_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    labels: list[str] = []
+
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("permission failures must not schedule rework")))
+
+    for reason in (
+        "remote: Permission to michelreifenrath/pyqtgraph_to_cpp.git denied to bot",
+        "Resource not accessible by integration",
+        "requires credentials to push to GitHub",
+        "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+        "remote: Invalid username or password.",
+    ):
+        result = _handle_phase_failure(loaded, issue_number=3, phase="release", reason=reason)
+        assert result["action"] == "human_blocked"
+
+    assert config.github.blocked_label in labels
+    assert config.github.human_review_label in labels
+
+
+def test_pi_output_hard_blocker_evidence_is_preserved_for_failure_classification(tmp_path: Path):
+    reason = runner._failure_reason_with_output_evidence(
+        "Pi implementation failed with exit code 1",
+        "remote: Permission to michelreifenrath/pyqtgraph_to_cpp.git denied to bot",
+        tmp_path / "pi-output.md",
+    )
+
+    assert "permission to ... denied" in reason
+    assert runner._requires_human_review(reason.lower())
+
+
 def test_human_blocker_labels_issue_for_github_visibility(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     config = WorkflowConfig.from_mapping(
         {
@@ -241,6 +454,36 @@ def test_human_blocker_labels_issue_for_github_visibility(tmp_path: Path, monkey
     assert config.github.human_review_label in labels
     assert config.github.rework_label in removed_labels
     assert any("Human intervention required" in body for body in comments)
+
+
+def test_design_decision_labels_issue_for_human_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    labels: list[str] = []
+
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("design decisions must not schedule rework")))
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=12,
+        phase="review",
+        reason="important architecture decision required: choose scene graph ownership model before implementation can continue",
+    )
+
+    assert result["action"] == "human_blocked"
+    assert config.github.blocked_label in labels
+    assert config.github.human_review_label in labels
 
 
 def test_repeated_review_finding_blocks_before_retry_budget(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

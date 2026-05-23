@@ -314,16 +314,63 @@ def reconcile(loaded: LoadedWorkflow, *, dispatch: bool = True, dry_run: bool = 
     return {"intake": intake_result, "prs": pr_result, "dispatch": dispatch_result}
 
 
-_HUMAN_BLOCKER_KEYWORDS = (
+_HARD_HUMAN_BLOCKER_KEYWORDS = (
     "missing required command",
     "missing required secret",
-    "authentication",
-    "permission",
+    "missing credential",
+    "authentication required",
+    "authentication failed",
+    "authentication error",
+    "requires authentication",
+    "authorization required",
+    "authorization failed",
+    "not authenticated",
+    "not authorized",
+    "unauthorized",
+    "bad credentials",
+    "invalid username or password",
+    "could not read username",
+    "terminal prompts disabled",
+    "login required",
+    "token expired",
+    "credentials required",
+    "credential required",
+    "requires credentials",
+    "missing credentials",
+    "permission denied",
+    "access denied",
+    "resource not accessible",
+    "insufficient permission",
+    "insufficient permissions",
+    "insufficient privilege",
+    "insufficient privileges",
     "forbidden",
-    "ambiguous",
-    "unclear requirement",
     "policy violation",
+    "unsafe to continue",
+    "protected branch",
     "too large for autonomous",
+    "diff too large for autonomous",
+    "neither autoreview nor codex review is available",
+)
+
+
+_DESIGN_DECISION_KEYWORDS = (
+    "important architecture decision",
+    "architecture decision required",
+    "architectural decision required",
+    "important design decision",
+    "design decision required",
+    "requires human decision",
+    "human decision required",
+    "manual decision required",
+    "product decision required",
+    "requires product decision",
+    "requires architecture decision",
+    "requires design decision",
+    "cannot proceed without human decision",
+    "cannot proceed without product decision",
+    "cannot proceed without architecture decision",
+    "cannot proceed without design decision",
 )
 
 
@@ -332,6 +379,10 @@ _AUTO_REWORK_KEYWORDS = (
     "codex review failed",
     "validation failed",
     "git diff --check failed",
+    "pi completed but left no git changes",
+    "pi rework completed but left no git changes",
+    "review diff is empty",
+    "release found uncommitted changes after review",
 )
 
 
@@ -386,7 +437,7 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
     state = get_issue(loaded.repo_root, issue_number)
     current_attempt = int(state.get("rework_attempts", 0))
     repeated_review_finding = phase == "review" and _is_repeated_review_finding(state.get("last_failure"), reason)
-    if phase == "review" and _auto_rework_allowed(lower_reason) and not repeated_review_finding and current_attempt < config.agent.max_attempts:
+    if _phase_failure_can_try_rework(phase, lower_reason) and not repeated_review_finding and current_attempt < config.agent.max_attempts:
         issue = view_issue(config, issue_number)
         next_attempt = current_attempt + 1
         task_ids = create_rework_task_graph(config, loaded.repo_root, issue, reason=reason, attempt=next_attempt)
@@ -406,12 +457,12 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
         add_labels(config, issue_number, [config.github.rework_label])
         remove_labels(config, issue_number, [config.github.blocked_label, config.github.human_review_label, config.github.failed_label])
         if config.github_output.comments.rework_scheduled:
-            _comment_issue_compact(config, issue_number, f"Rework {next_attempt}/{config.agent.max_attempts} scheduled: review failed.")
+            _comment_issue_compact(config, issue_number, f"Rework {next_attempt}/{config.agent.max_attempts} scheduled: {phase} failed.")
         return {"action": "scheduled_rework", "issue": issue_number, "attempt": next_attempt, "tasks": task_ids}
 
     if repeated_review_finding:
         human_reason = f"repeated review finding after {current_attempt} rework attempts; manual inspection required to avoid an autonomous loop"
-    elif phase == "review" and current_attempt >= config.agent.max_attempts:
+    elif current_attempt >= config.agent.max_attempts and not _requires_human_review(lower_reason):
         human_reason = "retry budget exhausted"
     else:
         human_reason = reason
@@ -427,10 +478,51 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
     return {"action": "human_blocked", "issue": issue_number, "reason": human_reason}
 
 
+def _hard_human_blocker_evidence(lower_reason: str) -> str | None:
+    for keyword in _HARD_HUMAN_BLOCKER_KEYWORDS:
+        if keyword in lower_reason:
+            return keyword
+    # Common Git/GitHub wording is often "Permission to owner/repo.git denied to <actor>".
+    if "permission to" in lower_reason and "denied" in lower_reason:
+        return "permission to ... denied"
+    # Keep credential matching specific enough to avoid treating ordinary prose as a blocker.
+    if "credential" in lower_reason and any(marker in lower_reason for marker in ("required", "requires", "missing", "not found", "unavailable")):
+        return "credential required"
+    return None
+
+
+def _has_hard_human_blocker(lower_reason: str) -> bool:
+    return _hard_human_blocker_evidence(lower_reason) is not None
+
+
+def _requires_human_review(lower_reason: str) -> bool:
+    """Return True only for hard human blockers or explicit design decisions."""
+    return _has_hard_human_blocker(lower_reason) or any(
+        keyword in lower_reason for keyword in _DESIGN_DECISION_KEYWORDS
+    )
+
+
+def _failure_reason_with_output_evidence(prefix: str, output: str, log_path: Path) -> str:
+    lower_output = output.lower()
+    evidence = _hard_human_blocker_evidence(lower_output)
+    if evidence:
+        return f"{prefix}: hard human blocker evidence ({evidence}) in output; see {log_path}"
+    return f"{prefix}; see {log_path}"
+
+
 def _auto_rework_allowed(lower_reason: str) -> bool:
-    if any(keyword in lower_reason for keyword in _HUMAN_BLOCKER_KEYWORDS):
+    if _requires_human_review(lower_reason):
         return False
     return any(keyword in lower_reason for keyword in _AUTO_REWORK_KEYWORDS)
+
+
+def _phase_failure_can_try_rework(phase: str, lower_reason: str) -> bool:
+    """Prefer bounded automation unless evidence proves a human is required."""
+    if _requires_human_review(lower_reason):
+        return False
+    if phase in {"implement", "rework", "review", "release", "all"}:
+        return True
+    return _auto_rework_allowed(lower_reason)
 
 
 def run_issue_phase(loaded: LoadedWorkflow, *, issue_number: int, phase: str, complete_current_task: bool = False) -> dict[str, Any]:
@@ -480,8 +572,14 @@ def implement_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]
     pi_result = run(pi_cmd, cwd=worktree, timeout=3600, check=False)
     (issue_log_dir / "pi-output.md").write_text(pi_result.combined_output + "\n", encoding="utf-8")
     if pi_result.returncode != 0:
-        _mark_issue_failed(config, loaded.repo_root, issue.number, f"Pi implementation failed with exit code {pi_result.returncode}")
-        raise GateFailure(f"Pi implementation failed; see {issue_log_dir / 'pi-output.md'}")
+        output_path = issue_log_dir / "pi-output.md"
+        failure_reason = _failure_reason_with_output_evidence(
+            f"Pi implementation failed with exit code {pi_result.returncode}",
+            pi_result.combined_output,
+            output_path,
+        )
+        _mark_issue_failed(config, loaded.repo_root, issue.number, failure_reason)
+        raise GateFailure(failure_reason)
 
     status = git_status_short(worktree)
     if not status:
@@ -530,7 +628,14 @@ def rework_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     pi_result = run(pi_cmd, cwd=worktree, timeout=3600, check=False)
     (issue_log_dir / "pi-rework-output.md").write_text(pi_result.combined_output + "\n", encoding="utf-8")
     if pi_result.returncode != 0:
-        raise GateFailure(f"Pi rework failed with exit code {pi_result.returncode}; see {issue_log_dir / 'pi-rework-output.md'}")
+        output_path = issue_log_dir / "pi-rework-output.md"
+        raise GateFailure(
+            _failure_reason_with_output_evidence(
+                f"Pi rework failed with exit code {pi_result.returncode}",
+                pi_result.combined_output,
+                output_path,
+            )
+        )
 
     status = git_status_short(worktree)
     if not status:

@@ -120,4 +120,6 @@ For every issue:
 - Use `scripts/run_autoreview --mode branch` for the local pre-PR autoreview wrapper.
 - Block for human review if the diff exceeds the configured file or line limits.
 - Treat Pi and AI-reviewer reports as advisory; deterministic checks and actual code inspection are authoritative.
-- On failure, label the issue `ai:blocked` and/or `ai:failed` with a reason instead of retrying blindly.
+- On failure, prefer bounded `ai:rework` unless current evidence proves no safe automated path remains.
+- Use `human-review` only for hard human blockers (credentials/auth/permissions, policy or safety constraints, retry budget exhausted/repeated-loop protection) or explicit important design/architecture decisions.
+- Do not mark `human-review` for ordinary validation failures, empty/no-diff implementation handoffs, scratch-artifact cleanup, or actionable review findings; schedule rework instead.
