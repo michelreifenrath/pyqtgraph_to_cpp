@@ -36,6 +36,48 @@ def import_renderer() -> Any:
     return module
 
 
+def install_fake_runtime_with_top_level_widget(renderer: Any) -> None:
+    class FakePixmap:
+        def save(self, path: str, fmt: str) -> bool:
+            assert fmt == "PNG"
+            Path(path).write_bytes(PNG_SIGNATURE + b"fake-png")
+            return True
+
+    class FakeWidget:
+        def resize(self, _width: int, _height: int) -> None:
+            pass
+
+        def show(self) -> None:
+            pass
+
+        def grab(self) -> FakePixmap:
+            return FakePixmap()
+
+    class FakeApplication:
+        _instance = None
+
+        def __init__(self, _argv: list[str]) -> None:
+            type(self)._instance = self
+
+        @classmethod
+        def instance(cls):
+            return cls._instance
+
+        def topLevelWidgets(self):
+            return [FakeWidget()]
+
+        def processEvents(self) -> None:
+            pass
+
+    def load_runtime():
+        return SimpleNamespace(
+            QtCore=SimpleNamespace(),
+            QtWidgets=SimpleNamespace(QApplication=FakeApplication, QWidget=FakeWidget),
+        )
+
+    renderer._load_runtime = load_runtime
+
+
 def test_help_exposes_renderer_cli_options() -> None:
     result = run_cli("--help", env={"QT_QPA_PLATFORM": "offscreen"})
 
@@ -156,6 +198,66 @@ def test_render_skips_example_main_guard_to_avoid_blocking_event_loop(
     assert code == 0
     assert output.read_bytes().startswith(PNG_SIGNATURE)
     assert not sentinel.exists()
+    assert captured.err == ""
+
+
+def test_render_isolates_example_argv_from_renderer_cli_args(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    renderer = import_renderer()
+    example = tmp_path / "example.py"
+    output = tmp_path / "reference.png"
+    leaked_argv = [
+        "render_pyqtgraph_example.py",
+        str(example),
+        "--output",
+        str(output),
+        "--width",
+        "320",
+    ]
+    example.write_text(
+        "import sys\n"
+        f"expected = [{str(example)!r}]\n"
+        "if sys.argv != expected:\n"
+        "    raise RuntimeError(f'leaked argv: {sys.argv!r}')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys, "argv", leaked_argv[:])
+    install_fake_runtime_with_top_level_widget(renderer)
+
+    code = renderer.main([str(example), "--output", str(output), "--timeout-ms", "1"])
+    captured = capsys.readouterr()
+
+    assert code == 0, captured.err
+    assert output.read_bytes().startswith(PNG_SIGNATURE)
+    assert sys.argv == leaked_argv
+    assert captured.err == ""
+
+
+def test_render_prepends_example_directory_for_sibling_imports(
+    tmp_path: Path, capsys
+) -> None:
+    renderer = import_renderer()
+    sibling = tmp_path / "example_ui.py"
+    example = tmp_path / "example.py"
+    output = tmp_path / "reference.png"
+    sibling.write_text("SENTINEL = 'loaded sibling'\n", encoding="utf-8")
+    example.write_text(
+        "import example_ui\n"
+        "if example_ui.SENTINEL != 'loaded sibling':\n"
+        "    raise RuntimeError('unexpected sibling module')\n",
+        encoding="utf-8",
+    )
+    original_sys_path = sys.path[:]
+    assert str(tmp_path) not in original_sys_path
+    install_fake_runtime_with_top_level_widget(renderer)
+
+    code = renderer.main([str(example), "--output", str(output), "--timeout-ms", "1"])
+    captured = capsys.readouterr()
+
+    assert code == 0, captured.err
+    assert output.read_bytes().startswith(PNG_SIGNATURE)
+    assert sys.path == original_sys_path
     assert captured.err == ""
 
 

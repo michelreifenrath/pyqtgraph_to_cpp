@@ -133,7 +133,16 @@ def render(args: argparse.Namespace) -> None:
         raise RenderError(f"missing required runtime dependency: {exc}") from exc
 
     app = _application(runtime.QtWidgets)
-    namespace = runpy.run_path(str(args.example), run_name=EXAMPLE_RUN_NAME)
+    example_dir = str(args.example.parent)
+    original_argv = sys.argv[:]
+    original_sys_path = sys.path[:]
+    try:
+        sys.argv = [str(args.example)]
+        sys.path.insert(0, example_dir)
+        namespace = runpy.run_path(str(args.example), run_name=EXAMPLE_RUN_NAME)
+    finally:
+        sys.argv = original_argv
+        sys.path[:] = original_sys_path
     widget = _find_widget(namespace, app, runtime.QtWidgets)
     widget.resize(args.width, args.height)
     widget.show()
