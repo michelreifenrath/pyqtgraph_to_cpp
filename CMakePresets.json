@@ -19,18 +19,170 @@
         "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
         "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
       }
+    },
+    {
+      "name": "release",
+      "displayName": "Release Configuration",
+      "description": "Configure the C++20 pyqtgraph-cpp skeleton for release and performance-record validation.",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
+        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "ci-linux",
+      "displayName": "Linux CI Configuration",
+      "description": "Configure the Linux GitHub Actions CI skeleton build.",
+      "binaryDir": "${sourceDir}/build/ci-linux",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
+        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "ci-macos",
+      "displayName": "macOS CI Configuration",
+      "description": "Configure the macOS GitHub Actions CI skeleton build.",
+      "binaryDir": "${sourceDir}/build/ci-macos",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
+        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "ci-windows",
+      "displayName": "Windows CI Configuration",
+      "description": "Configure the Windows GitHub Actions CI skeleton build.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ci-windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
+        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "visual",
+      "displayName": "Visual CI Configuration",
+      "description": "Configure the Linux offscreen visual-validation CI skeleton build.",
+      "binaryDir": "${sourceDir}/build/visual",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
+        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
+        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "dev",
       "configurePreset": "dev"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux"
+    },
+    {
+      "name": "ci-macos",
+      "configurePreset": "ci-macos"
+    },
+    {
+      "name": "ci-windows",
+      "configurePreset": "ci-windows"
+    },
+    {
+      "name": "visual",
+      "configurePreset": "visual"
     }
   ],
   "testPresets": [
     {
       "name": "dev",
       "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-macos",
+      "configurePreset": "ci-macos",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-windows",
+      "configurePreset": "ci-windows",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "visual",
+      "configurePreset": "visual",
+      "filter": {
+        "include": {
+          "label": "visual"
+        }
+      },
+      "execution": {
+        "noTestsAction": "ignore"
+      },
+      "output": {
+        "outputOnFailure": true
+      },
+      "environment": {
+        "QT_QPA_PLATFORM": "offscreen"
+      }
+    },
+    {
+      "name": "performance",
+      "configurePreset": "release",
+      "filter": {
+        "include": {
+          "label": "performance"
+        }
+      },
+      "execution": {
+        "noTestsAction": "ignore"
+      },
       "output": {
         "outputOnFailure": true
       }
