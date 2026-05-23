@@ -187,6 +187,19 @@ bool testSlicing()
     return true;
 }
 
+bool testShapeOnlySlicePreservesNullData()
+{
+    pyqtgraph::core::ArrayView<int> view(nullptr, std::array<std::size_t, 1>{4});
+
+    const auto sliced = view.slice(0, 1, 3);
+    CHECK(sliced.data() == nullptr);
+    CHECK(sliced.size() == 2);
+    CHECK(sliced.shape()[0] == 2);
+    CHECK(sliced.strides()[0] == 1);
+
+    return true;
+}
+
 bool testInvalidSlices()
 {
     std::array<int, 6> values{0, 1, 2, 3, 4, 5};
@@ -255,6 +268,7 @@ int main()
     success = testZeroExtentIsEmpty() && success;
     success = testRankOneStridedIndexing() && success;
     success = testSlicing() && success;
+    success = testShapeOnlySlicePreservesNullData() && success;
     success = testInvalidSlices() && success;
     success = testConstView() && success;
 

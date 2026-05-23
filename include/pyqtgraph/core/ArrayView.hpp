@@ -102,7 +102,7 @@ public:
 
         T* slicedData = data_;
         const std::ptrdiff_t dataOffset = static_cast<std::ptrdiff_t>(begin) * strides_[axis];
-        if (slicedData != nullptr || dataOffset != 0) {
+        if (slicedData != nullptr) {
             slicedData += dataOffset;
         }
 
