@@ -75,6 +75,8 @@ policy:
   generated_diff_exceptions:
     - path: port_manifest.yaml
       verify_command: "python3 oracle/scripts/generate_class_inventory.py --check"
+    - path: oracle/fixtures/hierarchy_pyqtgraph.json
+      verify_command: "python3 oracle/scripts/dump_pyqtgraph_hierarchy.py --check"
 validation:
   diff_check: true
   commands:
