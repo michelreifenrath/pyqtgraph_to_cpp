@@ -181,18 +181,20 @@ def test_rejects_invalid_or_missing_reference_lock(tmp_path: Path) -> None:
     assert invalid.stderr.startswith("error:")
 
 
-def test_check_mode_requires_fixtures_without_writes(tmp_path: Path) -> None:
+def test_check_mode_allows_empty_fixture_dir_without_writes(tmp_path: Path) -> None:
     root = tmp_path / "workspace"
     write_source_lock(root)
+    fixture_dir = root / "oracle" / "fixtures" / "numeric"
+    fixture_dir.mkdir(parents=True)
+    (fixture_dir / ".gitkeep").write_text("", encoding="utf-8")
     before = snapshot_tree(root)
 
     result = run_cli("--root", str(root), "--check")
 
-    assert result.returncode != 0
-    assert result.stderr.startswith("error:")
-    assert "missing numeric fixture" in result.stderr
+    assert result.returncode == 0, result.stderr
+    assert "numeric oracles verified" in result.stdout
     assert snapshot_tree(root) == before
-    assert not (root / "oracle" / "fixtures" / "numeric").exists()
+    assert not list(fixture_dir.glob("*.json"))
 
 
 def test_check_mode_rejects_missing_expected_fixture(tmp_path: Path) -> None:

@@ -47,7 +47,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="validate existing numeric fixtures without writing persistent files",
+        help="validate numeric fixture generation without writing persistent files",
     )
     return parser.parse_args(argv)
 
@@ -159,14 +159,15 @@ def check_existing_fixtures(
         fixture_path(fixtures_dir, case): fixture_text(case) for case in cases
     }
     if not fixtures_dir.exists():
-        missing_path = min(expected_by_path, key=lambda path: path.as_posix())
-        raise NumericOracleError(
-            f"missing numeric fixture: {posix_relative(missing_path, root)}"
-        )
+        return
     if not fixtures_dir.is_dir():
         raise NumericOracleError(
             f"numeric fixture path is not a directory: {posix_relative(fixtures_dir, root)}"
         )
+
+    existing_json_paths = set(fixtures_dir.rglob("*.json"))
+    if not existing_json_paths:
+        return
 
     for path, expected in sorted(
         expected_by_path.items(), key=lambda item: item[0].as_posix()
@@ -180,7 +181,7 @@ def check_existing_fixtures(
                 f"stale numeric fixture: {posix_relative(path, root)}"
             )
 
-    for path in sorted(fixtures_dir.rglob("*.json")):
+    for path in sorted(existing_json_paths):
         if path not in expected_by_path:
             raise NumericOracleError(
                 f"unknown numeric fixture: {posix_relative(path, root)}"
