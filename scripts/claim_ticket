@@ -41,6 +41,12 @@ def normalize_owned_file(value: str) -> str:
     return normalized
 
 
+def non_empty_arg(value: str) -> str:
+    if not value.strip():
+        raise argparse.ArgumentTypeError("must be non-empty")
+    return value
+
+
 def load_registry(path: Path) -> dict[str, Any]:
     if not path.exists():
         return empty_registry()
@@ -90,8 +96,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_REGISTRY,
         help="path to ownership registry YAML (default: repo ownership.yaml)",
     )
-    parser.add_argument("--issue", required=True, help="issue id to claim, e.g. PGBOOT-004")
-    parser.add_argument("--branch", required=True, help="branch name for the claim")
+    parser.add_argument(
+        "--issue",
+        required=True,
+        type=non_empty_arg,
+        help="issue id to claim, e.g. PGBOOT-004",
+    )
+    parser.add_argument(
+        "--branch",
+        required=True,
+        type=non_empty_arg,
+        help="branch name for the claim",
+    )
     parser.add_argument(
         "--file",
         dest="owned_files",

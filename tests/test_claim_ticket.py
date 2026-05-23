@@ -1,8 +1,9 @@
-import subprocess
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import subprocess
+import sys
 
+import pytest
 import yaml
 
 
@@ -25,6 +26,35 @@ def write_registry(path: Path, data: dict) -> None:
 
 def read_registry(path: Path) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize(
+    ("option", "blank_value"),
+    [("--issue", ""), ("--branch", "   ")],
+)
+def test_rejects_blank_issue_or_branch_without_modifying_registry(
+    tmp_path: Path, option: str, blank_value: str
+):
+    registry = tmp_path / "ownership.yaml"
+    original = {"version": 1, "claims": []}
+    write_registry(registry, original)
+    args = [
+        "--registry",
+        str(registry),
+        "--issue",
+        "PGBOOT-004",
+        "--branch",
+        "ai/issue-4",
+        "--file",
+        "src/new.cpp",
+    ]
+    args[args.index(option) + 1] = blank_value
+
+    result = run_claim_ticket(*args)
+
+    assert result.returncode != 0
+    assert "must be non-empty" in result.stderr
+    assert read_registry(registry) == original
 
 
 def test_rejects_active_owned_file_overlap(tmp_path: Path):
