@@ -349,6 +349,14 @@ cmake --build --preset dev --parallel
 ctest --preset dev --output-on-failure
 ```
 
+CI skeleton presets:
+
+- GitHub Actions must expose `linux`, `macos`, `windows`, `visual`, and `performance-record` jobs.
+- Platform jobs use `ci-linux`, `ci-macos`, and `ci-windows` configure/build/test presets.
+- The visual job uses the `visual` configure/build/test presets with `QT_QPA_PLATFORM=offscreen`.
+- The performance-record job uses the `release` configure/build preset and `performance` test preset.
+- Visual and performance presets are skeleton-safe during bootstrap: no matching `visual` or `performance` labeled tests is not a failure until later issues add those suites.
+
 Visual tests:
 
 ```bash
@@ -423,6 +431,8 @@ reports/visual-diffs/<case>/
   metrics.json
   gpt5_vision_review.md        # when gpt_visual_review != not_applicable
 ```
+
+The CI visual job uploads `reports/visual-diffs/` when present and uses `if-no-files-found: ignore` while bootstrap visual suites are absent. The performance-record job applies the same artifact policy to `reports/benchmarks/`.
 
 `metrics.json` must be machine-readable and include at least:
 
@@ -574,6 +584,7 @@ Exit criteria:
 - `scripts/gate commit` runs.
 - `scripts/run_autoreview` fails safely when missing configuration and passes when configured.
 - `ownership.yaml` can prevent conflicting claims.
+- `PGBOOT-007` establishes the multi-platform GitHub Actions skeleton and CMake presets for Linux, macOS, Windows, visual, and performance-record jobs; it does not implement the full visual or performance harnesses.
 
 ### Phase B: Inventory and manifest
 
