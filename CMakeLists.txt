@@ -19,7 +19,29 @@ target_compile_features(pyqtgraph_cpp_project_options INTERFACE cxx_std_20)
 
 pyqtgraph_cpp_create_warnings_target(pyqtgraph_cpp_project_warnings)
 
+add_library(pyqtgraph_cpp src/pyqtgraph/core/ArrayView.cpp)
+target_include_directories(pyqtgraph_cpp
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+target_link_libraries(pyqtgraph_cpp
+    PUBLIC
+        pyqtgraph_cpp_project_options
+    PRIVATE
+        pyqtgraph_cpp_project_warnings
+)
+
 include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
+
+    add_executable(pyqtgraph_cpp_core_arrayview tests/core/test_ArrayView.cpp)
+    target_link_libraries(pyqtgraph_cpp_core_arrayview
+        PRIVATE
+            pyqtgraph_cpp
+            pyqtgraph_cpp_project_options
+            pyqtgraph_cpp_project_warnings
+    )
+    pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_arrayview)
+    add_test(NAME pyqtgraph_cpp.core.ArrayView COMMAND pyqtgraph_cpp_core_arrayview)
 endif()
