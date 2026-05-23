@@ -423,6 +423,86 @@ def test_run_autoreview_times_out_safely(tmp_path: Path) -> None:
     assert summary["timeout_seconds"] == 1
 
 
+def test_run_autoreview_timeout_kills_reviewer_process_group(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    marker = tmp_path / "leaked-review-child.txt"
+    child_script = tmp_path / "leaky_review_child.py"
+    child_script.write_text(
+        "import time\n"
+        "from pathlib import Path\n"
+        "time.sleep(2)\n"
+        f"Path({json.dumps(str(marker))}).write_text('leaked', encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    make_executable(
+        bin_dir / "autoreview",
+        f"#!{sys.executable}\n"
+        "import subprocess\n"
+        "import sys\n"
+        "import time\n"
+        f"subprocess.Popen([sys.executable, {json.dumps(str(child_script))}])\n"
+        "time.sleep(2)\n",
+    )
+    write_workflow(workflow, autoreview_command="autoreview")
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        "--timeout",
+        "1",
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+    time.sleep(2.25)
+
+    assert result.returncode == 124
+    assert not marker.exists()
+
+
+def test_run_autoreview_maps_merge_mode_to_branch_for_autoreview(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    received = tmp_path / "received.txt"
+    make_executable(
+        bin_dir / "autoreview",
+        f"#!{sys.executable}\n"
+        "import sys\n"
+        "from pathlib import Path\n"
+        f"Path({json.dumps(str(received))}).write_text('\\n'.join(sys.argv[1:]) + '\\n', encoding='utf-8')\n",
+    )
+    write_workflow(workflow, autoreview_command="autoreview")
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        "--mode",
+        "merge",
+        "--base",
+        "origin/main",
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    args = received.read_text(encoding="utf-8").splitlines()
+    assert args[:4] == ["--mode", "branch", "--base", "origin/main"]
+    summary = json.loads(
+        (reports / "autoreview-summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["mode"] == "merge"
+
+
 def test_run_autoreview_uses_available_autoreview_and_writes_outputs(
     tmp_path: Path,
 ) -> None:
