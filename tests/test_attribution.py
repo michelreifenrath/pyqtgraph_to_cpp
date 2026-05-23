@@ -84,6 +84,13 @@ def test_third_party_notices_cover_required_dependencies() -> None:
         "Apache-2.0",
         "Tests and benchmarks",
         "Project-authored tests and benchmarks are under the project MIT License",
+        "pytest",
+        "Copyright (c) 2004 Holger Krekel and others",
+        "Qt Test",
+        "Google Benchmark",
+        "Apache-2.0",
+        "nanobench",
+        "Copyright (c) 2019-2023 Martin Leitner-Ankerl",
         "No third-party source is vendored by this issue",
     ):
         assert needle in text
@@ -145,6 +152,21 @@ def test_translated_cpp_without_source_note_fails(tmp_path: Path) -> None:
     assert "include/pyqtgraph/PlotWidget.cpp" in result.stderr
     assert "missing source attribution note" in result.stderr
     assert len(result.stderr.strip().splitlines()) == 1
+
+
+def test_symlinked_source_under_required_tree_still_requires_note(
+    tmp_path: Path,
+) -> None:
+    target = write(tmp_path / "tests" / "smoke" / "missing_note.cpp", "int missing() { return 0; }\n")
+    link = tmp_path / "include" / "pyqtgraph" / "Symlinked.cpp"
+    link.parent.mkdir(parents=True, exist_ok=True)
+    link.symlink_to(target)
+
+    result = run_check(tmp_path)
+
+    assert result.returncode != 0
+    assert "include/pyqtgraph/Symlinked.cpp" in result.stderr
+    assert "missing source attribution note" in result.stderr
 
 
 def test_translated_cpp_with_valid_source_note_passes(tmp_path: Path) -> None:

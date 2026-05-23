@@ -43,3 +43,20 @@ OpenCV is an external dependency and is not vendored here.
 ## Tests and benchmarks
 
 Project-authored tests and benchmarks are under the project MIT License unless a file-level source note states adaptation or translation from PyQtGraph or another source. Tests or benchmarks adapted from PyQtGraph must identify the upstream source and retain the PyQtGraph attribution metadata required by the workflow.
+
+Third-party test and benchmark tooling referenced by this repository or workflow:
+
+- Project: pytest
+  - License: MIT
+  - Copyright: Copyright (c) 2004 Holger Krekel and others
+  - Repository: https://github.com/pytest-dev/pytest
+- Project: Qt Test
+  - License: follows Qt's LGPL, GPL, and commercial licensing options listed in the Qt section above
+  - Documentation: https://doc.qt.io/qt-6/qttest-index.html
+- Project: Google Benchmark
+  - License: Apache-2.0
+  - Repository: https://github.com/google/benchmark
+- Project: nanobench
+  - License: MIT
+  - Copyright: Copyright (c) 2019-2023 Martin Leitner-Ankerl
+  - Repository: https://github.com/martinus/nanobench

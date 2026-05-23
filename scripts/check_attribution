@@ -180,9 +180,9 @@ def audit(root: Path) -> list[str]:
         for path in sorted(audit_dir.rglob("*")):
             if not is_source_file(path, audit_dir):
                 continue
-            resolved = path.resolve()
-            require_note = any(is_under(resolved, required_root) for required_root in required_roots)
-            errors.extend(audit_file(resolved, root, require_note))
+            candidate = path.absolute()
+            require_note = any(is_under(candidate, required_root) for required_root in required_roots)
+            errors.extend(audit_file(candidate, root, require_note))
     return errors
 
 
