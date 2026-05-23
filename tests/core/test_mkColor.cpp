@@ -4,6 +4,8 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <limits>
@@ -101,6 +103,9 @@ bool testIntColorInputs()
     CHECK_RGBA(pyqtgraph::intColor(0), 255, 0, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(0), 255, 0, 0, 255);
     CHECK_RGBA(pyqtgraph::intColor(1), 255, 170, 0, 255);
+    CHECK_RGBA(pyqtgraph::mkColor(1U), 255, 170, 0, 255);
+    CHECK_RGBA(pyqtgraph::mkColor(std::size_t{2}), 170, 255, 0, 255);
+    CHECK_RGBA(pyqtgraph::mkColor(std::uint32_t{3}), 0, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::array<int, 2>{2, 9}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor(std::tuple<int, int>{2, 9}), 170, 255, 0, 255);
     CHECK_RGBA(pyqtgraph::mkColor({2.0, 9.0}), 170, 255, 0, 255);

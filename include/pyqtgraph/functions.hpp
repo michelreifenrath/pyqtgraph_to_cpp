@@ -34,6 +34,14 @@ QColor mkColor(const char* color);
 QColor mkColor(std::string_view color);
 QColor mkColor(const QColor& color);
 QColor mkColor(int index);
+
+template <typename T>
+    requires(std::is_integral_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, int>)
+[[nodiscard]] QColor mkColor(T index)
+{
+    return intColor(static_cast<int>(index));
+}
+
 QColor mkColor(double gray);
 QColor mkColor(double red, double green, double blue);
 QColor mkColor(double red, double green, double blue, double alpha);
