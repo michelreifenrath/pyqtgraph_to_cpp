@@ -381,7 +381,7 @@ def _dispatch_step(step: dict[str, Any], widget: Any, runtime: RuntimeModules) -
     qtest = runtime.QtTest.QTest
     action = step["action"]
     if action == "wait":
-        qtest.wait(step["ms"])
+        qtest.qWait(step["ms"])
     elif action == "mouse_click":
         point = runtime.QtCore.QPoint(step["x"], step["y"])
         target, target_point = _mouse_target_for_point(widget, point)

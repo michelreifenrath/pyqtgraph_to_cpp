@@ -255,11 +255,11 @@ def install_fake_runtime(
 
     class FakeQTest:
         @staticmethod
-        def wait(ms: int) -> None:
+        def qWait(ms: int) -> None:
             on_wait = records.get("on_wait")
             if callable(on_wait):
                 on_wait()
-            records.setdefault("qtest", []).append(("wait", ms))
+            records.setdefault("qtest", []).append(("qWait", ms))
 
         @staticmethod
         def mouseClick(
@@ -392,7 +392,7 @@ def test_run_interactions_dispatches_fake_qt_actions_and_writes_json(
     assert records["focused"] is True
     assert records["processed_events"] >= 5
     assert records["qtest"] == [
-        ("wait", 5),
+        ("qWait", 5),
         ("mouseClick", widget, 1, 24, (7, 9)),
         ("keyClick", widget, 65, 0),
     ]
