@@ -118,10 +118,33 @@ def accepted_note(text: str) -> bool:
 
 def attribution_header(text: str) -> str:
     header: list[str] = []
+    in_block_comment = False
+    in_docstring: str | None = None
     for line in text.splitlines()[:80]:
         stripped = line.strip()
-        if not stripped or stripped.startswith(("#", "//", "/*", "*", "'''", '\"\"\"')):
+        if in_block_comment:
             header.append(line)
+            if "*/" in stripped:
+                in_block_comment = False
+            continue
+        if in_docstring:
+            header.append(line)
+            if in_docstring in stripped:
+                in_docstring = None
+            continue
+        if not stripped or stripped.startswith(("#", "//", "*")):
+            header.append(line)
+            continue
+        if stripped.startswith("/*"):
+            header.append(line)
+            if "*/" not in stripped[2:]:
+                in_block_comment = True
+            continue
+        docstring_marker = next((marker for marker in ("'''", '\"\"\"') if stripped.startswith(marker)), None)
+        if docstring_marker:
+            header.append(line)
+            if stripped.count(docstring_marker) < 2:
+                in_docstring = docstring_marker
             continue
         break
     return "\n".join(header)

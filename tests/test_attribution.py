@@ -161,6 +161,46 @@ def test_documented_source_note_form_passes(tmp_path: Path) -> None:
     assert "Attribution audit passed" in result.stdout
 
 
+def test_multiline_c_block_source_note_passes(tmp_path: Path) -> None:
+    write(
+        tmp_path / "include" / "pyqtgraph" / "BlockComment.cpp",
+        f"""/*
+Source note: translated from PyQtGraph pyqtgraph/widgets/PlotWidget.py
+PyQtGraph ref: pyqtgraph-0.14.0
+Pinned commit: {PINNED_COMMIT}
+License: MIT; see THIRD_PARTY_NOTICES.md
+*/
+int translated_symbol() {{ return 0; }}
+""",
+    )
+
+    result = run_check(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert "Attribution audit passed" in result.stdout
+
+
+def test_multiline_python_docstring_source_note_passes(tmp_path: Path) -> None:
+    write(
+        tmp_path / "src" / "pyqtgraph" / "plot_widget.py",
+        f'''"""
+Source note: translated from PyQtGraph pyqtgraph/widgets/PlotWidget.py
+PyQtGraph ref: pyqtgraph-0.14.0
+Pinned commit: {PINNED_COMMIT}
+License: MIT; see THIRD_PARTY_NOTICES.md
+"""
+
+def translated_symbol() -> int:
+    return 0
+''',
+    )
+
+    result = run_check(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert "Attribution audit passed" in result.stdout
+
+
 def test_source_note_without_upstream_path_after_pyqtgraph_fails(
     tmp_path: Path,
 ) -> None:
