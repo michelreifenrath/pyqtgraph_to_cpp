@@ -42,15 +42,22 @@ def git_status_short(path: Path) -> str:
     return run(["git", "status", "--short"], cwd=path, timeout=60).stdout.strip()
 
 
-def diff_stats(path: Path, base: str = "origin/main") -> tuple[list[str], int]:
+def diff_file_stats(path: Path, base: str = "origin/main") -> list[dict[str, int | str]]:
     diff_ref = f"{base}...HEAD"
-    files_out = run(["git", "diff", "--name-only", diff_ref, "--"], cwd=path, timeout=120, check=False).stdout
-    files = [line for line in files_out.splitlines() if line.strip()]
     numstat = run(["git", "diff", "--numstat", diff_ref, "--"], cwd=path, timeout=120, check=False).stdout
-    changed_lines = 0
+    stats: list[dict[str, int | str]] = []
     for line in numstat.splitlines():
         parts = line.split("\t")
-        for value in parts[:2]:
-            if value.isdigit():
-                changed_lines += int(value)
+        if len(parts) < 3:
+            continue
+        added = int(parts[0]) if parts[0].isdigit() else 0
+        deleted = int(parts[1]) if parts[1].isdigit() else 0
+        stats.append({"path": parts[-1], "changed_lines": added + deleted})
+    return stats
+
+
+def diff_stats(path: Path, base: str = "origin/main") -> tuple[list[str], int]:
+    stats = diff_file_stats(path, base)
+    files = [str(item["path"]) for item in stats]
+    changed_lines = sum(int(item["changed_lines"]) for item in stats)
     return files, changed_lines

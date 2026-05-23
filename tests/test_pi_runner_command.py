@@ -105,6 +105,104 @@ def test_review_issue_refuses_empty_branch_diff_before_autoreview(tmp_path: Path
         runner.review_issue(loaded, 16)
 
 
+def test_review_issue_allows_large_verified_generated_manifest_diff(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "validation": {"commands": []},
+            "policy": {
+                "max_changed_files_without_human_review": 3,
+                "max_diff_lines_without_human_review": 1000,
+                "generated_diff_exceptions": [
+                    {
+                        "path": "port_manifest.yaml",
+                        "verify_command": "python3 oracle/scripts/generate_class_inventory.py --check",
+                    }
+                ],
+            },
+        },
+        body="body",
+    )
+    worktree = Path(config.workspace.root) / "issue-10"
+    worktree.mkdir(parents=True)
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    labels: list[str] = []
+    reviewed: list[bool] = []
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: Issue(10, "inventory", "body", [], "url", "michel"))
+    monkeypatch.setattr(runner, "run_validations", lambda _config, _worktree, _issue_log_dir: [])
+    monkeypatch.setattr(runner, "diff_stats", lambda _worktree, _base: (["oracle/scripts/generate_class_inventory.py", "port_manifest.yaml", "reports/agents/PGINV-003.md", "tests/oracle/test_class_inventory.py"], 3819))
+    monkeypatch.setattr(
+        runner,
+        "diff_file_stats",
+        lambda _worktree, _base: [
+            {"path": "oracle/scripts/generate_class_inventory.py", "changed_lines": 339},
+            {"path": "port_manifest.yaml", "changed_lines": 3047},
+            {"path": "reports/agents/PGINV-003.md", "changed_lines": 30},
+            {"path": "tests/oracle/test_class_inventory.py", "changed_lines": 403},
+        ],
+    )
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "run_autoreview", lambda *_args, **_kwargs: reviewed.append(True) or {"status": "passed"})
+    monkeypatch.setattr(runner, "run", lambda args, **_kwargs: CommandResult(args=args, returncode=0, stdout="class inventory verified (227 classes)\n", stderr=""))
+
+    result = runner.review_issue(loaded, 10)
+
+    assert reviewed == [True]
+    assert labels == []
+    assert result["changed_lines"] == 3819
+    assert result["review_surface_lines"] == 772
+    assert result["verified_generated_files"] == ["port_manifest.yaml"]
+
+
+def test_review_issue_blocks_large_generated_diff_when_verification_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "validation": {"commands": []},
+            "policy": {
+                "max_changed_files_without_human_review": 3,
+                "max_diff_lines_without_human_review": 1000,
+                "generated_diff_exceptions": [
+                    {
+                        "path": "port_manifest.yaml",
+                        "verify_command": "python3 oracle/scripts/generate_class_inventory.py --check",
+                    }
+                ],
+            },
+        },
+        body="body",
+    )
+    worktree = Path(config.workspace.root) / "issue-10"
+    worktree.mkdir(parents=True)
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    labels: list[str] = []
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: Issue(10, "inventory", "body", [], "url", "michel"))
+    monkeypatch.setattr(runner, "run_validations", lambda _config, _worktree, _issue_log_dir: [])
+    monkeypatch.setattr(runner, "diff_stats", lambda _worktree, _base: (["oracle/scripts/generate_class_inventory.py", "port_manifest.yaml", "reports/agents/PGINV-003.md", "tests/oracle/test_class_inventory.py"], 3819))
+    monkeypatch.setattr(
+        runner,
+        "diff_file_stats",
+        lambda _worktree, _base: [
+            {"path": "oracle/scripts/generate_class_inventory.py", "changed_lines": 339},
+            {"path": "port_manifest.yaml", "changed_lines": 3047},
+            {"path": "reports/agents/PGINV-003.md", "changed_lines": 30},
+            {"path": "tests/oracle/test_class_inventory.py", "changed_lines": 403},
+        ],
+    )
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "run_autoreview", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("autoreview must not run when generated check fails")))
+    monkeypatch.setattr(runner, "run", lambda args, **_kwargs: CommandResult(args=args, returncode=1, stdout="", stderr="stale manifest"))
+
+    with pytest.raises(GateFailure, match="diff too large"):
+        runner.review_issue(loaded, 10)
+
+    assert config.github.human_review_label in labels
+
+
 def test_review_failure_schedules_rework_without_human_label(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     config = WorkflowConfig.from_mapping(
         {

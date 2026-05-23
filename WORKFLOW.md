@@ -72,6 +72,9 @@ policy:
   auto_merge: false
   max_changed_files_without_human_review: 20
   max_diff_lines_without_human_review: 1500
+  generated_diff_exceptions:
+    - path: port_manifest.yaml
+      verify_command: "python3 oracle/scripts/generate_class_inventory.py --check"
 validation:
   diff_check: true
   commands:
@@ -118,7 +121,8 @@ For every issue:
 - Use `scripts/gate commit` for the local pre-PR validation wrapper.
 - Require independent review and autoreview before PR creation.
 - Use `scripts/run_autoreview --mode branch` for the local pre-PR autoreview wrapper.
-- Block for human review if the diff exceeds the configured file or line limits.
+- Block for human review if the review-surface diff exceeds the configured file or line limits after verified generated-file exceptions.
+- Generated-file exceptions must pass their configured read-only verification command before automation discounts them from review-surface size.
 - Treat Pi and AI-reviewer reports as advisory; deterministic checks and actual code inspection are authoritative.
 - On failure, prefer bounded `ai:rework` unless current evidence proves no safe automated path remains.
 - Use `human-review` only for hard human blockers (credentials/auth/permissions, policy or safety constraints, retry budget exhausted/repeated-loop protection) or explicit important design/architecture decisions.
