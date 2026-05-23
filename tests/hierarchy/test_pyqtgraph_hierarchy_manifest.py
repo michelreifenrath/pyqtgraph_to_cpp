@@ -497,6 +497,70 @@ def test_package_initializer_classes_use_package_qualified_name(
     assert "pyqtgraph.icons.__init__.GraphIcon" not in qualified_names
 
 
+def test_qualified_import_alias_base_does_not_resolve_to_same_module_duplicate(
+    tmp_path: Path,
+) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    checkout = root / CHECKOUT_PATH
+    write_fixture_file(
+        checkout / "pyqtgraph" / "parametertree" / "__init__.py",
+        """from . import parameterTypes as types
+
+
+class ParameterTree:
+    pass
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "parametertree" / "parameterTypes" / "__init__.py",
+        """from .colormap import ColorMapParameter
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "parametertree" / "parameterTypes" / "colormap.py",
+        """class ColorMapParameter:
+    pass
+""",
+    )
+    write_fixture_file(
+        checkout / "pyqtgraph" / "widgets" / "ColorMapWidget.py",
+        """from .. import parametertree as ptree
+
+
+class ColorMapParameter:
+    pass
+
+
+class RangeColorMapItem(ptree.types.ColorMapParameter):
+    pass
+""",
+    )
+    git(checkout, "add", ".")
+    git(checkout, "commit", "-m", "add qualified alias hierarchy case")
+    commit = git(checkout, "rev-parse", "HEAD")
+    write_source_lock(root, repo="fixture://pyqtgraph", commit=commit)
+
+    result = run_cli("--root", str(root))
+
+    assert result.returncode == 0, result.stderr
+    hierarchy = json.loads(result.stdout)
+    by_qualified_name = {
+        record["qualified_name"]: record for record in hierarchy["classes"]
+    }
+    assert by_qualified_name[
+        "pyqtgraph.widgets.ColorMapWidget.RangeColorMapItem"
+    ]["resolved_bases"] == [
+        {
+            "base": "ptree.types.ColorMapParameter",
+            "qualified_name": "pyqtgraph.parametertree.parameterTypes.colormap.ColorMapParameter",
+            "upstream_path": "pyqtgraph/parametertree/parameterTypes/colormap.py",
+        }
+    ]
+    assert by_qualified_name[
+        "pyqtgraph.widgets.ColorMapWidget.ColorMapParameter"
+    ]["children"] == []
+
+
 def test_update_fixture_writes_deterministic_json_and_is_idempotent(
     tmp_path: Path,
 ) -> None:

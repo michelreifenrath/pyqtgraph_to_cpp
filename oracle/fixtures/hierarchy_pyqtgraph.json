@@ -582,9 +582,7 @@
           "upstream_path": "pyqtgraph/dockarea/Container.py"
         }
       ],
-      "children": [
-        "pyqtgraph.flowchart.Flowchart.FlowchartWidget"
-      ],
+      "children": [],
       "line": 9
     },
     {
@@ -812,13 +810,7 @@
       "bases": [
         "dockarea.DockArea"
       ],
-      "resolved_bases": [
-        {
-          "base": "dockarea.DockArea",
-          "qualified_name": "pyqtgraph.dockarea.DockArea.DockArea",
-          "upstream_path": "pyqtgraph/dockarea/DockArea.py"
-        }
-      ],
+      "resolved_bases": [],
       "children": [],
       "line": 752
     },
@@ -857,7 +849,13 @@
       "bases": [
         "GraphicsView"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "GraphicsView",
+          "qualified_name": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+          "upstream_path": "pyqtgraph/widgets/GraphicsView.py"
+        }
+      ],
       "children": [],
       "line": 7
     },
@@ -2281,7 +2279,13 @@
       "bases": [
         "TextItem"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "TextItem",
+          "qualified_name": "pyqtgraph.graphicsItems.TextItem.TextItem",
+          "upstream_path": "pyqtgraph/graphicsItems/TextItem.py"
+        }
+      ],
       "children": [],
       "line": 445
     },
@@ -2976,7 +2980,13 @@
       "bases": [
         "TextItem"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "TextItem",
+          "qualified_name": "pyqtgraph.graphicsItems.TextItem.TextItem",
+          "upstream_path": "pyqtgraph/graphicsItems/TextItem.py"
+        }
+      ],
       "children": [],
       "line": 350
     },
@@ -2994,7 +3004,10 @@
           "upstream_path": "pyqtgraph/graphicsItems/GraphicsObject.py"
         }
       ],
-      "children": [],
+      "children": [
+        "pyqtgraph.graphicsItems.InfiniteLine.InfLineLabel",
+        "pyqtgraph.graphicsItems.TargetItem.TargetLabel"
+      ],
       "line": 10
     },
     {
@@ -3875,10 +3888,7 @@
           "upstream_path": "pyqtgraph/widgets/TreeWidget.py"
         }
       ],
-      "children": [
-        "pyqtgraph.widgets.ColorMapWidget.ColorMapWidget",
-        "pyqtgraph.widgets.DataFilterWidget.DataFilterWidget"
-      ],
+      "children": [],
       "line": 7
     },
     {
@@ -4333,7 +4343,9 @@
           "upstream_path": "pyqtgraph/parametertree/parameterTypes/basetypes.py"
         }
       ],
-      "children": [],
+      "children": [
+        "pyqtgraph.widgets.ColorMapWidget.RangeColorMapItem"
+      ],
       "line": 21
     },
     {
@@ -4773,13 +4785,7 @@
       "bases": [
         "ptree.ParameterTree"
       ],
-      "resolved_bases": [
-        {
-          "base": "ptree.ParameterTree",
-          "qualified_name": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
-          "upstream_path": "pyqtgraph/parametertree/ParameterTree.py"
-        }
-      ],
+      "resolved_bases": [],
       "children": [],
       "line": 11
     },
@@ -4797,9 +4803,7 @@
           "upstream_path": "pyqtgraph/parametertree/parameterTypes/basetypes.py"
         }
       ],
-      "children": [
-        "pyqtgraph.widgets.ColorMapWidget.RangeColorMapItem"
-      ],
+      "children": [],
       "line": 53
     },
     {
@@ -4812,8 +4816,8 @@
       "resolved_bases": [
         {
           "base": "ptree.types.ColorMapParameter",
-          "qualified_name": "pyqtgraph.widgets.ColorMapWidget.ColorMapParameter",
-          "upstream_path": "pyqtgraph/widgets/ColorMapWidget.py"
+          "qualified_name": "pyqtgraph.parametertree.parameterTypes.colormap.ColorMapParameter",
+          "upstream_path": "pyqtgraph/parametertree/parameterTypes/colormap.py"
         }
       ],
       "children": [],
@@ -4854,13 +4858,7 @@
       "bases": [
         "ptree.ParameterTree"
       ],
-      "resolved_bases": [
-        {
-          "base": "ptree.ParameterTree",
-          "qualified_name": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
-          "upstream_path": "pyqtgraph/parametertree/ParameterTree.py"
-        }
-      ],
+      "resolved_bases": [],
       "children": [],
       "line": 12
     },
@@ -4966,7 +4964,13 @@
       "bases": [
         "GraphicsView"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "GraphicsView",
+          "qualified_name": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+          "upstream_path": "pyqtgraph/widgets/GraphicsView.py"
+        }
+      ],
       "children": [],
       "line": 8
     },
@@ -4977,7 +4981,13 @@
       "bases": [
         "GraphicsView"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "GraphicsView",
+          "qualified_name": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+          "upstream_path": "pyqtgraph/widgets/GraphicsView.py"
+        }
+      ],
       "children": [],
       "line": 6
     },
@@ -4989,7 +4999,14 @@
         "QtWidgets.QGraphicsView"
       ],
       "resolved_bases": [],
-      "children": [],
+      "children": [
+        "pyqtgraph.flowchart.FlowchartGraphicsView.FlowchartGraphicsView",
+        "pyqtgraph.widgets.GradientWidget.GradientWidget",
+        "pyqtgraph.widgets.GraphicsLayoutWidget.GraphicsLayoutWidget",
+        "pyqtgraph.widgets.HistogramLUTWidget.HistogramLUTWidget",
+        "pyqtgraph.widgets.PlotWidget.PlotWidget",
+        "pyqtgraph.widgets.RemoteGraphicsView.Renderer"
+      ],
       "line": 17
     },
     {
@@ -5010,7 +5027,13 @@
       "bases": [
         "GraphicsView"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "GraphicsView",
+          "qualified_name": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+          "upstream_path": "pyqtgraph/widgets/GraphicsView.py"
+        }
+      ],
       "children": [],
       "line": 13
     },
@@ -5076,7 +5099,13 @@
       "bases": [
         "GraphicsView"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "GraphicsView",
+          "qualified_name": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+          "upstream_path": "pyqtgraph/widgets/GraphicsView.py"
+        }
+      ],
       "children": [],
       "line": 12
     },
@@ -5186,7 +5215,13 @@
       "bases": [
         "GraphicsView"
       ],
-      "resolved_bases": [],
+      "resolved_bases": [
+        {
+          "base": "GraphicsView",
+          "qualified_name": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+          "upstream_path": "pyqtgraph/widgets/GraphicsView.py"
+        }
+      ],
       "children": [],
       "line": 248
     },
@@ -5335,11 +5370,6 @@
       "parent": "pyqtgraph.dockarea.Container.SplitContainer",
       "child": "pyqtgraph.dockarea.Container.VContainer",
       "base": "SplitContainer"
-    },
-    {
-      "parent": "pyqtgraph.dockarea.DockArea.DockArea",
-      "child": "pyqtgraph.flowchart.Flowchart.FlowchartWidget",
-      "base": "dockarea.DockArea"
     },
     {
       "parent": "pyqtgraph.exporters.Exporter.Exporter",
@@ -5877,6 +5907,16 @@
       "base": "ROI"
     },
     {
+      "parent": "pyqtgraph.graphicsItems.TextItem.TextItem",
+      "child": "pyqtgraph.graphicsItems.InfiniteLine.InfLineLabel",
+      "base": "TextItem"
+    },
+    {
+      "parent": "pyqtgraph.graphicsItems.TextItem.TextItem",
+      "child": "pyqtgraph.graphicsItems.TargetItem.TargetLabel",
+      "base": "TextItem"
+    },
+    {
       "parent": "pyqtgraph.graphicsItems.UIGraphicsItem.UIGraphicsItem",
       "child": "pyqtgraph.graphicsItems.GradientLegend.GradientLegend",
       "base": "UIGraphicsItem"
@@ -6092,16 +6132,6 @@
       "base": "ParameterItem"
     },
     {
-      "parent": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
-      "child": "pyqtgraph.widgets.ColorMapWidget.ColorMapWidget",
-      "base": "ptree.ParameterTree"
-    },
-    {
-      "parent": "pyqtgraph.parametertree.ParameterTree.ParameterTree",
-      "child": "pyqtgraph.widgets.DataFilterWidget.DataFilterWidget",
-      "base": "ptree.ParameterTree"
-    },
-    {
       "parent": "pyqtgraph.parametertree.parameterTypes.actiongroup.ActionGroupParameter",
       "child": "pyqtgraph.parametertree.parameterTypes.actiongroup.ActionGroup",
       "base": "ActionGroupParameter"
@@ -6247,6 +6277,11 @@
       "base": "BoolParameterItem"
     },
     {
+      "parent": "pyqtgraph.parametertree.parameterTypes.colormap.ColorMapParameter",
+      "child": "pyqtgraph.widgets.ColorMapWidget.RangeColorMapItem",
+      "base": "ptree.types.ColorMapParameter"
+    },
+    {
       "parent": "pyqtgraph.parametertree.parameterTypes.list.ListParameter",
       "child": "pyqtgraph.parametertree.parameterTypes.qtenum.QtEnumParameter",
       "base": "ListParameter"
@@ -6267,9 +6302,34 @@
       "base": "ColorMapDisplayMixin"
     },
     {
-      "parent": "pyqtgraph.widgets.ColorMapWidget.ColorMapParameter",
-      "child": "pyqtgraph.widgets.ColorMapWidget.RangeColorMapItem",
-      "base": "ptree.types.ColorMapParameter"
+      "parent": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+      "child": "pyqtgraph.flowchart.FlowchartGraphicsView.FlowchartGraphicsView",
+      "base": "GraphicsView"
+    },
+    {
+      "parent": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+      "child": "pyqtgraph.widgets.GradientWidget.GradientWidget",
+      "base": "GraphicsView"
+    },
+    {
+      "parent": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+      "child": "pyqtgraph.widgets.GraphicsLayoutWidget.GraphicsLayoutWidget",
+      "base": "GraphicsView"
+    },
+    {
+      "parent": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+      "child": "pyqtgraph.widgets.HistogramLUTWidget.HistogramLUTWidget",
+      "base": "GraphicsView"
+    },
+    {
+      "parent": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+      "child": "pyqtgraph.widgets.PlotWidget.PlotWidget",
+      "base": "GraphicsView"
+    },
+    {
+      "parent": "pyqtgraph.widgets.GraphicsView.GraphicsView",
+      "child": "pyqtgraph.widgets.RemoteGraphicsView.Renderer",
+      "base": "GraphicsView"
     },
     {
       "parent": "pyqtgraph.widgets.TreeWidget.TreeWidget",
@@ -6493,8 +6553,8 @@
   },
   "summary": {
     "class_count": 355,
-    "edge_count": 195,
-    "unresolved_base_count": 155,
+    "edge_count": 200,
+    "unresolved_base_count": 150,
     "source_file_count": 213,
     "excluded_example_count": 129,
     "excluded_test_count": 74

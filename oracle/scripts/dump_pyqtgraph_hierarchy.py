@@ -182,6 +182,13 @@ def module_name(upstream_path: str) -> str:
     return module.removesuffix(".__init__")
 
 
+def package_name(upstream_path: str) -> str:
+    module = module_name(upstream_path)
+    if upstream_path.endswith("/__init__.py"):
+        return module
+    return module.rsplit(".", 1)[0]
+
+
 def qualified_name(upstream_path: str, class_name: str) -> str:
     return f"{module_name(upstream_path)}.{class_name}"
 
@@ -190,16 +197,58 @@ def simple_base_name(base: str) -> str:
     return base.split(".")[-1]
 
 
-def class_records(path: Path, checkout: Path) -> list[dict[str, Any]]:
+def resolve_import_module(upstream_path: str, *, level: int, module: str | None) -> str:
+    if level == 0:
+        return module or ""
+    parts = package_name(upstream_path).split(".")
+    if level > len(parts):
+        return module or ""
+    base_parts = parts[: len(parts) - level + 1]
+    if module:
+        base_parts.extend(module.split("."))
+    return ".".join(part for part in base_parts if part)
+
+
+def import_aliases(upstream_path: str, tree: ast.Module) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                alias_name = alias.asname or alias.name.split(".", 1)[0]
+                aliases[alias_name] = alias.name if alias.asname else alias.name.split(".", 1)[0]
+        elif isinstance(node, ast.ImportFrom):
+            base_module = resolve_import_module(
+                upstream_path,
+                level=node.level,
+                module=node.module,
+            )
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                alias_name = alias.asname or alias.name
+                aliases[alias_name] = f"{base_module}.{alias.name}" if base_module else alias.name
+    return aliases
+
+
+def parse_source_module(path: Path, checkout: Path) -> tuple[str, ast.Module]:
     upstream_path = posix_relative(path, checkout)
     try:
         source = path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=upstream_path)
+        return upstream_path, ast.parse(source, filename=upstream_path)
     except SyntaxError as exc:
         raise InventoryError(f"failed to parse {upstream_path}: {exc}") from exc
     except OSError as exc:
         raise InventoryError(f"failed to read {upstream_path}: {exc}") from exc
 
+
+def file_import_aliases(path: Path, checkout: Path) -> dict[str, str]:
+    upstream_path, tree = parse_source_module(path, checkout)
+    return import_aliases(upstream_path, tree)
+
+
+def class_records(path: Path, checkout: Path) -> list[dict[str, Any]]:
+    upstream_path, tree = parse_source_module(path, checkout)
+    aliases = import_aliases(upstream_path, tree)
     records: list[dict[str, Any]] = []
     for node in tree.body:
         if not isinstance(node, ast.ClassDef):
@@ -213,6 +262,7 @@ def class_records(path: Path, checkout: Path) -> list[dict[str, Any]]:
                 "resolved_bases": [],
                 "children": [],
                 "line": node.lineno,
+                "_import_aliases": aliases,
             }
         )
     return records
@@ -224,34 +274,74 @@ def tracked_files(checkout: Path) -> list[str]:
     )
 
 
-def resolve_hierarchy(classes: list[dict[str, Any]]) -> list[dict[str, str]]:
+def resolve_hierarchy(
+    classes: list[dict[str, Any]], module_aliases: dict[str, str] | None = None
+) -> list[dict[str, str]]:
     by_simple_name: dict[str, list[dict[str, Any]]] = defaultdict(list)
     by_qualified_name: dict[str, dict[str, Any]] = {}
+    all_module_aliases: dict[str, str] = dict(module_aliases or {})
     for record in classes:
         by_simple_name[str(record["class_name"])].append(record)
         by_qualified_name[str(record["qualified_name"])] = record
+        module = module_name(str(record["upstream_path"]))
+        aliases = record.get("_import_aliases", {})
+        if isinstance(aliases, dict):
+            for alias, target in aliases.items():
+                all_module_aliases[f"{module}.{alias}"] = str(target)
+
+    def expand_alias_prefix(name: str, aliases: dict[str, str]) -> str | None:
+        for alias, target in sorted(aliases.items(), key=lambda item: len(item[0]), reverse=True):
+            if name == alias:
+                return target
+            if name.startswith(f"{alias}."):
+                return f"{target}{name[len(alias):]}"
+        return None
+
+    def expand_module_aliases(name: str) -> str:
+        expanded = name
+        for _ in range(10):
+            replacement = expand_alias_prefix(expanded, all_module_aliases)
+            if replacement is None or replacement == expanded:
+                return expanded
+            expanded = replacement
+        return expanded
+
+    def candidate_qualified_bases(child: dict[str, Any], base: str) -> list[str]:
+        candidates = [base]
+        aliases = child.get("_import_aliases", {})
+        if isinstance(aliases, dict):
+            expanded = expand_alias_prefix(base, {str(key): str(value) for key, value in aliases.items()})
+            if expanded is not None:
+                candidates.append(expanded)
+        candidates.extend(expand_module_aliases(candidate) for candidate in list(candidates))
+        unique: list[str] = []
+        for candidate in candidates:
+            if candidate not in unique:
+                unique.append(candidate)
+        return unique
 
     def resolve_parent(child: dict[str, Any], base: str) -> dict[str, Any] | None:
         """Resolve a base expression without inventing ambiguous inheritance edges."""
         simple_name = simple_base_name(base)
         child_module = module_name(str(child["upstream_path"]))
+        is_qualified = "." in base
 
-        # A fully-qualified base expression should win when it exactly matches a
-        # manifest class. This keeps explicit imports deterministic.
-        exact = by_qualified_name.get(base)
-        if exact is not None:
-            return exact
+        for candidate in candidate_qualified_bases(child, base):
+            exact = by_qualified_name.get(candidate)
+            if exact is not None:
+                return exact
 
-        # Prefer a class defined beside the child. PyQtGraph often has local
-        # classes whose simple names also exist in other modules; treating those
-        # as globally ambiguous drops real same-module inheritance edges.
-        same_module = by_qualified_name.get(f"{child_module}.{simple_name}")
-        if same_module is not None:
-            return same_module
+        # Prefer a class defined beside the child only for unqualified bases.
+        # Qualified expressions such as ptree.types.ColorMapParameter must not
+        # collapse to a same-module SimpleName match before alias resolution.
+        if not is_qualified:
+            same_module = by_qualified_name.get(f"{child_module}.{simple_name}")
+            if same_module is not None:
+                return same_module
 
         # Handle import-qualified expressions such as GraphicsView.GraphicsView
         # when the manifest has a unique suffix match.
-        if "." in base:
+        if is_qualified:
             suffix_matches = [
                 record
                 for qualified, record in by_qualified_name.items()
@@ -259,6 +349,7 @@ def resolve_hierarchy(classes: list[dict[str, Any]]) -> list[dict[str, str]]:
             ]
             if len(suffix_matches) == 1:
                 return suffix_matches[0]
+            return None
 
         # Fall back to globally unique simple class names only after the more
         # specific resolution strategies above fail.
@@ -312,6 +403,7 @@ def enumerate_hierarchy(checkout: Path, lock: dict[str, str]) -> dict[str, Any]:
     example_paths: list[str] = []
     source_files: list[Path] = []
     classes: list[dict[str, Any]] = []
+    module_aliases: dict[str, str] = {}
     for upstream_path in tracked:
         if upstream_path.startswith("pyqtgraph/examples/") and upstream_path.endswith(
             ".py"
@@ -324,6 +416,8 @@ def enumerate_hierarchy(checkout: Path, lock: dict[str, str]) -> dict[str, Any]:
             continue
         path = checkout / upstream_path
         source_files.append(path)
+        for alias, target in file_import_aliases(path, checkout).items():
+            module_aliases[f"{module_name(upstream_path)}.{alias}"] = target
         classes.extend(class_records(path, checkout))
 
     test_paths = [
@@ -337,7 +431,9 @@ def enumerate_hierarchy(checkout: Path, lock: dict[str, str]) -> dict[str, Any]:
             str(record["class_name"]),
         )
     )
-    edges = resolve_hierarchy(classes)
+    edges = resolve_hierarchy(classes, module_aliases)
+    for record in classes:
+        record.pop("_import_aliases", None)
     unresolved_base_count = sum(
         len(record["bases"]) - len(record["resolved_bases"]) for record in classes
     )
