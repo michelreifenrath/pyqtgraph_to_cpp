@@ -172,6 +172,36 @@ def test_gate_commit_stops_on_first_failure(tmp_path: Path) -> None:
     assert len(summary["commands"]) == 1
 
 
+def test_gate_times_out_safely(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    slow_code = "import time; time.sleep(2)"
+    write_workflow(workflow, commands=[f"{sys.executable} -c {json.dumps(slow_code)}"])
+
+    result = run_script(
+        "scripts/gate",
+        "focus",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        "--timeout",
+        "1",
+    )
+
+    assert result.returncode == 124
+    assert "timed out" in result.stderr.lower()
+    assert "traceback" not in result.stderr.lower()
+    summary = json.loads((reports / "focus-summary.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "failed"
+    assert summary["timeout_seconds"] == 1
+    assert len(summary["commands"]) == 1
+    assert summary["commands"][0]["returncode"] == 124
+    log = (reports / "focus-1.log").read_text(encoding="utf-8")
+    assert "timed out" in log.lower()
+    assert "traceback" not in log.lower()
+
+
 def test_gate_dry_run_command_plans(tmp_path: Path) -> None:
     workflow = tmp_path / "WORKFLOW.md"
     reports = tmp_path / "reports"

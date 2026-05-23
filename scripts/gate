@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -35,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("mode", choices=["focus", "commit", "merge", "visual", "performance"])
     parser.add_argument("--workflow", default="WORKFLOW.md", help="workflow file to load")
     parser.add_argument("--reports-dir", default="reports/gates", help="directory for gate reports")
+    parser.add_argument("--timeout", type=int, default=1800, help="seconds to allow each gate command")
     parser.add_argument("--dry-run", action="store_true", help="print planned commands without running them")
     return parser
 
@@ -55,6 +57,14 @@ def command_plan(mode: str, validation_commands: list[str], diff_check: bool) ->
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def timeout_output(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -92,16 +102,34 @@ def main(argv: list[str] | None = None) -> int:
 
     for index, command in enumerate(commands, start=1):
         print(f"[{args.mode}] {command}")
-        result = run(command, cwd=workflow.repo_root, check=False, shell=True)
         command_summary = {
             "index": index,
             "command": command,
-            "returncode": result.returncode,
+            "returncode": 124,
             "log": f"{args.mode}-{index}.log",
         }
+        log_path = reports_dir / command_summary["log"]
+        try:
+            result = run(command, cwd=workflow.repo_root, timeout=args.timeout, check=False, shell=True)
+        except subprocess.TimeoutExpired as error:
+            summary["commands"].append(command_summary)  # type: ignore[index]
+            summary["status"] = "failed"
+            summary["failed_command"] = command
+            summary["timeout_seconds"] = args.timeout
+            summary["finished_at"] = time.time()
+            write_text(
+                log_path,
+                f"$ {command}\n\n[timeout]\ngate command timed out after {args.timeout} seconds\n"
+                f"[stdout]\n{timeout_output(error.output)}\n[stderr]\n{timeout_output(error.stderr)}",
+            )
+            write_text(reports_dir / f"{args.mode}-summary.json", json.dumps(summary, indent=2, sort_keys=True) + "\n")
+            print(f"gate {args.mode} timed out after {args.timeout} seconds: {command}", file=sys.stderr)
+            return 124
+
+        command_summary["returncode"] = result.returncode
         summary["commands"].append(command_summary)  # type: ignore[index]
         write_text(
-            reports_dir / command_summary["log"],
+            log_path,
             f"$ {command}\n\n[stdout]\n{result.stdout}\n[stderr]\n{result.stderr}",
         )
         if result.returncode != 0:
