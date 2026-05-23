@@ -80,6 +80,19 @@ def test_third_party_notices_cover_required_dependencies() -> None:
         assert needle in text
 
 
+def test_third_party_notices_preserve_upstream_pyqtgraph_mit_notice() -> None:
+    text = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    for needle in (
+        "Copyright (c) 2012 University of North Carolina at Chapel Hill",
+        "Luke Campagnola",
+        "The MIT License",
+        "Permission is hereby granted, free of charge",
+        "The above copyright notice and this permission notice shall be included",
+        "THE SOFTWARE IS PROVIDED \"AS IS\"",
+    ):
+        assert needle in text
+
+
 def test_workflow_documents_license_and_attribution_policy() -> None:
     text = (ROOT / "docs" / "pyqtgraph-cpp-port-workflow.md").read_text(
         encoding="utf-8"
