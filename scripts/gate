@@ -17,6 +17,8 @@ if str(REPO_ROOT) not in sys.path:
 from automation.pi_symphony.config import ConfigError, load_workflow_with_context
 from automation.pi_symphony.process import run
 
+DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
+
 EXTRA_COMMANDS = {
     "merge": [
         "cmake --preset dev",
@@ -35,20 +37,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run configured repository validation gates.")
     parser.add_argument("mode", choices=["focus", "commit", "merge", "visual", "performance"])
     parser.add_argument("--workflow", default="WORKFLOW.md", help="workflow file to load")
-    parser.add_argument("--reports-dir", default="reports/gates", help="directory for gate reports")
+    parser.add_argument(
+        "--base",
+        help="base ref for branch diff checks; defaults to workflow autoreview.base",
+    )
+    parser.add_argument("--reports-dir", default=DEFAULT_REPORTS_DIR, help="directory for gate reports")
     parser.add_argument("--timeout", type=int, default=1800, help="seconds to allow each gate command")
     parser.add_argument("--dry-run", action="store_true", help="print planned commands without running them")
     return parser
 
 
-def command_plan(mode: str, validation_commands: list[str], diff_check: bool) -> list[str]:
+def command_plan(mode: str, validation_commands: list[str], diff_check: bool, base: str) -> list[str]:
     if mode == "focus":
         return list(validation_commands)
     if mode == "commit":
-        commands = ["git diff --check"] if diff_check else []
+        commands = [f"git diff --check {base}...HEAD"] if diff_check else []
         return [*commands, *validation_commands]
     if mode == "merge":
-        return [*command_plan("commit", validation_commands, diff_check), *EXTRA_COMMANDS["merge"]]
+        return [*command_plan("commit", validation_commands, diff_check, base), *EXTRA_COMMANDS["merge"]]
     if mode in {"visual", "performance"}:
         return list(EXTRA_COMMANDS[mode])
     raise ValueError(f"unsupported gate mode: {mode}")
@@ -77,10 +83,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"gate configuration failed: {error}", file=sys.stderr)
         return 2
 
+    base = args.base or workflow.config.autoreview.base
     commands = command_plan(
         args.mode,
         workflow.config.validation.commands,
         workflow.config.validation.diff_check,
+        base,
     )
 
     if args.dry_run:

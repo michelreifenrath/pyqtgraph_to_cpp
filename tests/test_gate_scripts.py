@@ -130,7 +130,14 @@ def test_gate_commit_runs_diff_check_before_validation(tmp_path: Path) -> None:
     order_file = tmp_path / "order.txt"
     make_executable(
         bin_dir / "git",
-        f"#!/bin/sh\nprintf 'diff\\n' >> {order_file}\nexit 0\n",
+        f"#!{sys.executable}\n"
+        "import sys\n"
+        "from pathlib import Path\n"
+        f"order_file = Path({json.dumps(str(order_file))})\n"
+        "args = sys.argv[1:]\n"
+        "order_file.open('a', encoding='utf-8').write(' '.join(args) + '\\n')\n"
+        "if args != ['diff', '--check', 'origin/main...HEAD']:\n"
+        "    raise SystemExit(9)\n",
     )
     code = f"from pathlib import Path; Path({json.dumps(str(order_file))}).open('a').write('validation\\n')"
     write_workflow(workflow, commands=[f"{sys.executable} -c {json.dumps(code)}"])
@@ -146,7 +153,22 @@ def test_gate_commit_runs_diff_check_before_validation(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0, result.stderr
-    assert order_file.read_text(encoding="utf-8").splitlines() == ["diff", "validation"]
+    assert order_file.read_text(encoding="utf-8").splitlines() == [
+        "diff --check origin/main...HEAD",
+        "validation",
+    ]
+
+
+def test_gate_defaults_reports_to_ignored_hermes_logs(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    write_workflow(workflow)
+
+    result = run_script("scripts/gate", "focus", "--workflow", str(workflow))
+
+    assert result.returncode == 0, result.stderr
+    reports = tmp_path / ".hermes" / "pi-symphony" / "logs" / "gates"
+    assert (reports / "focus-summary.json").exists()
+    assert not (tmp_path / "reports" / "gates" / "focus-summary.json").exists()
 
 
 def test_gate_commit_stops_on_first_failure(tmp_path: Path) -> None:
@@ -212,9 +234,9 @@ def test_gate_dry_run_command_plans(tmp_path: Path) -> None:
 
     expected = {
         "focus": [validation],
-        "commit": ["git diff --check", validation],
+        "commit": ["git diff --check origin/main...HEAD", validation],
         "merge": [
-            "git diff --check",
+            "git diff --check origin/main...HEAD",
             validation,
             "cmake --preset dev",
             "cmake --build --preset dev --parallel",
@@ -264,6 +286,23 @@ def test_run_autoreview_fails_safely_when_tools_unavailable(tmp_path: Path) -> N
         (tmp_path / "reports" / "autoreview-summary.json").read_text(encoding="utf-8")
     )
     assert summary["status"] == "unavailable"
+
+
+def test_run_autoreview_defaults_reports_to_ignored_hermes_logs(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    write_workflow(workflow, autoreview_command="definitely-not-autoreview")
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        env={"PATH": str(tmp_path / "empty-bin")},
+    )
+
+    assert result.returncode == 127
+    reports = tmp_path / ".hermes" / "pi-symphony" / "logs" / "gates"
+    assert (reports / "autoreview-summary.json").exists()
+    assert not (tmp_path / "reports" / "gates" / "autoreview-summary.json").exists()
 
 
 def test_run_autoreview_requires_clean_worktree_before_review(

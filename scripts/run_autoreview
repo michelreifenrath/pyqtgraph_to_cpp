@@ -19,12 +19,15 @@ from automation.pi_symphony.config import ConfigError, load_workflow_with_contex
 from automation.pi_symphony.process import run
 
 
+DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run autoreview or Codex review for the current worktree.")
     parser.add_argument("--workflow", default="WORKFLOW.md", help="workflow file to load")
     parser.add_argument("--mode", help="review mode; defaults to workflow autoreview.mode")
     parser.add_argument("--base", help="base ref; defaults to workflow autoreview.base")
-    parser.add_argument("--reports-dir", default="reports/gates", help="directory for autoreview reports")
+    parser.add_argument("--reports-dir", default=DEFAULT_REPORTS_DIR, help="directory for autoreview reports")
     parser.add_argument("--timeout", type=int, default=1800, help="seconds to allow the review command")
     return parser
 
