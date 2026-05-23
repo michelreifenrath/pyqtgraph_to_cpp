@@ -10,9 +10,9 @@ workspace:
   preserve_on_success: true
   cleanup_terminal_issues: false
 agent:
-  max_concurrent_issues: 2
+  max_concurrent_issues: 4
   max_attempts: 10
-  normal_continue_delay_ms: 1000
+  normal_continue_delay_ms: 500
   max_retry_backoff_ms: 300000
 pi:
   command: pi
