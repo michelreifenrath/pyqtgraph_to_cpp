@@ -1,0 +1,301 @@
+"""Tests for PGBOOT-004 gate and autoreview scripts."""
+
+from __future__ import annotations
+
+import json
+import os
+import stat
+import subprocess
+import sys
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def write_workflow(
+    path: Path,
+    *,
+    commands: list[str] | None = None,
+    autoreview_command: str = "autoreview",
+) -> None:
+    commands = commands or [f"{sys.executable} -c 'print(\"validated\")'"]
+    command_lines = "\n".join(f"    - {json.dumps(command)}" for command in commands)
+    path.write_text(
+        "\n".join(
+            [
+                "---",
+                "tracker:",
+                "  kind: github",
+                "  repo: example/repo",
+                "workspace:",
+                f"  root: {path.parent.as_posix()}",
+                "  strategy: git-worktree",
+                "  base_branch: main",
+                "pi:",
+                "  command: pi",
+                "  use_subagents: true",
+                "autoreview:",
+                "  enabled: true",
+                f"  command: {json.dumps(autoreview_command)}",
+                "  engine: codex",
+                "  mode: commit",
+                "  base: origin/main",
+                "  advisory: true",
+                "  mandatory_gate: true",
+                "policy:",
+                "  never_push_to_main: true",
+                "  auto_merge: false",
+                "validation:",
+                "  diff_check: true",
+                "  commands:",
+                command_lines,
+                "kanban:",
+                "  board_slug: pyqtgraph-to-cpp",
+                "  board_scope: project",
+                "  tenant_strategy: tags",
+                "  default_tenant: core",
+                "  tenant_label_prefix: 'tenant:'",
+                "  tag_label_prefix: 'tag:'",
+                "---",
+                "# Test workflow",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def run_script(
+    script: str, *args: str, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
+    merged_env = os.environ.copy()
+    merged_env.update(env or {})
+    return subprocess.run(
+        [sys.executable, str(REPO_ROOT / script), *args],
+        cwd=REPO_ROOT,
+        env=merged_env,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+
+
+def make_executable(path: Path, content: str) -> None:
+    path.write_text(content, encoding="utf-8")
+    path.chmod(path.stat().st_mode | stat.S_IXUSR)
+
+
+def test_gate_help_lists_required_modes() -> None:
+    result = run_script("scripts/gate", "--help")
+
+    assert result.returncode == 0
+    for mode in ["focus", "commit", "merge", "visual", "performance"]:
+        assert mode in result.stdout
+
+
+def test_gate_focus_runs_configured_validation_and_writes_summary(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    marker = tmp_path / "validated.txt"
+    reports = tmp_path / "reports"
+    code = f"from pathlib import Path; Path({json.dumps(str(marker))}).write_text('ok')"
+    write_workflow(workflow, commands=[f"{sys.executable} -c {json.dumps(code)}"])
+
+    result = run_script(
+        "scripts/gate",
+        "focus",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert marker.read_text(encoding="utf-8") == "ok"
+    summary = json.loads((reports / "focus-summary.json").read_text(encoding="utf-8"))
+    assert summary["mode"] == "focus"
+    assert summary["status"] == "passed"
+    assert summary["commands"][0]["returncode"] == 0
+
+
+def test_gate_commit_runs_diff_check_before_validation(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    order_file = tmp_path / "order.txt"
+    make_executable(
+        bin_dir / "git",
+        f"#!/bin/sh\nprintf 'diff\\n' >> {order_file}\nexit 0\n",
+    )
+    code = f"from pathlib import Path; Path({json.dumps(str(order_file))}).open('a').write('validation\\n')"
+    write_workflow(workflow, commands=[f"{sys.executable} -c {json.dumps(code)}"])
+
+    result = run_script(
+        "scripts/gate",
+        "commit",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert order_file.read_text(encoding="utf-8").splitlines() == ["diff", "validation"]
+
+
+def test_gate_commit_stops_on_first_failure(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    first_code = "import sys; sys.exit(7)"
+    second_code = 'print("must not run")'
+    first_command = f"{sys.executable} -c {json.dumps(first_code)}"
+    second_command = f"{sys.executable} -c {json.dumps(second_code)}"
+    write_workflow(workflow, commands=[first_command, second_command])
+
+    result = run_script(
+        "scripts/gate",
+        "focus",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+    )
+
+    assert result.returncode == 7
+    assert "failed" in result.stderr.lower()
+    summary = json.loads((reports / "focus-summary.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "failed"
+    assert len(summary["commands"]) == 1
+
+
+def test_gate_dry_run_command_plans(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    validation = f"{sys.executable} -c 'print(\"validated\")'"
+    write_workflow(workflow, commands=[validation])
+
+    expected = {
+        "focus": [validation],
+        "commit": ["git diff --check", validation],
+        "merge": [
+            "git diff --check",
+            validation,
+            "cmake --preset dev",
+            "cmake --build --preset dev --parallel",
+            "ctest --preset dev --output-on-failure",
+        ],
+        "visual": [
+            "QT_QPA_PLATFORM=offscreen ctest --preset visual --output-on-failure"
+        ],
+        "performance": [
+            "cmake --build --preset release --parallel",
+            "ctest --preset performance --output-on-failure",
+        ],
+    }
+
+    for mode, commands in expected.items():
+        result = run_script(
+            "scripts/gate",
+            mode,
+            "--workflow",
+            str(workflow),
+            "--reports-dir",
+            str(reports),
+            "--dry-run",
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.splitlines() == commands
+    assert not reports.exists()
+
+
+def test_run_autoreview_fails_safely_when_tools_unavailable(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    write_workflow(workflow, autoreview_command="definitely-not-autoreview")
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(tmp_path / "reports"),
+        env={"PATH": str(tmp_path / "empty-bin")},
+    )
+
+    assert result.returncode == 127
+    assert "neither autoreview nor codex review is available" in result.stderr.lower()
+    assert "traceback" not in result.stderr.lower()
+    summary = json.loads(
+        (tmp_path / "reports" / "autoreview-summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "unavailable"
+
+
+def test_run_autoreview_times_out_safely(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    make_executable(
+        bin_dir / "autoreview",
+        f"#!{sys.executable}\nimport time\ntime.sleep(2)\n",
+    )
+    write_workflow(workflow, autoreview_command="autoreview")
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        "--timeout",
+        "1",
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+
+    assert result.returncode == 124
+    assert "timed out" in result.stderr.lower()
+    assert "traceback" not in result.stderr.lower()
+    summary = json.loads(
+        (reports / "autoreview-summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "timed_out"
+    assert summary["timeout_seconds"] == 1
+
+
+def test_run_autoreview_uses_available_autoreview_and_writes_outputs(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    received = tmp_path / "received.txt"
+    make_executable(
+        bin_dir / "autoreview",
+        f"#!/bin/sh\nprintf '%s\\n' \"$@\" > {received}\nexit 0\n",
+    )
+    write_workflow(workflow, autoreview_command="autoreview")
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    args = received.read_text(encoding="utf-8").splitlines()
+    assert args[:4] == ["--mode", "commit", "--base", "origin/main"]
+    assert "--prompt-file" in args
+    assert "--json-output" in args
+    assert (reports / "autoreview-prompt.md").exists()
+    summary = json.loads(
+        (reports / "autoreview-summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "passed"

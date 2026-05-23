@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Run local PGBOOT validation gates."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from automation.pi_symphony.config import ConfigError, load_workflow_with_context
+from automation.pi_symphony.process import run
+
+EXTRA_COMMANDS = {
+    "merge": [
+        "cmake --preset dev",
+        "cmake --build --preset dev --parallel",
+        "ctest --preset dev --output-on-failure",
+    ],
+    "visual": ["QT_QPA_PLATFORM=offscreen ctest --preset visual --output-on-failure"],
+    "performance": [
+        "cmake --build --preset release --parallel",
+        "ctest --preset performance --output-on-failure",
+    ],
+}
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run configured repository validation gates.")
+    parser.add_argument("mode", choices=["focus", "commit", "merge", "visual", "performance"])
+    parser.add_argument("--workflow", default="WORKFLOW.md", help="workflow file to load")
+    parser.add_argument("--reports-dir", default="reports/gates", help="directory for gate reports")
+    parser.add_argument("--dry-run", action="store_true", help="print planned commands without running them")
+    return parser
+
+
+def command_plan(mode: str, validation_commands: list[str], diff_check: bool) -> list[str]:
+    if mode == "focus":
+        return list(validation_commands)
+    if mode == "commit":
+        commands = ["git diff --check"] if diff_check else []
+        return [*commands, *validation_commands]
+    if mode == "merge":
+        return [*command_plan("commit", validation_commands, diff_check), *EXTRA_COMMANDS["merge"]]
+    if mode in {"visual", "performance"}:
+        return list(EXTRA_COMMANDS[mode])
+    raise ValueError(f"unsupported gate mode: {mode}")
+
+
+def write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    try:
+        workflow = load_workflow_with_context(args.workflow)
+    except (ConfigError, OSError) as error:
+        print(f"gate configuration failed: {error}", file=sys.stderr)
+        return 2
+
+    commands = command_plan(
+        args.mode,
+        workflow.config.validation.commands,
+        workflow.config.validation.diff_check,
+    )
+
+    if args.dry_run:
+        for command in commands:
+            print(command)
+        return 0
+
+    reports_dir = Path(args.reports_dir)
+    if not reports_dir.is_absolute():
+        reports_dir = workflow.repo_root / reports_dir
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    summary: dict[str, object] = {
+        "mode": args.mode,
+        "workflow": str(workflow.path),
+        "status": "passed",
+        "commands": [],
+    }
+
+    for index, command in enumerate(commands, start=1):
+        print(f"[{args.mode}] {command}")
+        result = run(command, cwd=workflow.repo_root, check=False, shell=True)
+        command_summary = {
+            "index": index,
+            "command": command,
+            "returncode": result.returncode,
+            "log": f"{args.mode}-{index}.log",
+        }
+        summary["commands"].append(command_summary)  # type: ignore[index]
+        write_text(
+            reports_dir / command_summary["log"],
+            f"$ {command}\n\n[stdout]\n{result.stdout}\n[stderr]\n{result.stderr}",
+        )
+        if result.returncode != 0:
+            summary["status"] = "failed"
+            summary["failed_command"] = command
+            summary["finished_at"] = time.time()
+            write_text(reports_dir / f"{args.mode}-summary.json", json.dumps(summary, indent=2, sort_keys=True) + "\n")
+            print(f"gate {args.mode} failed ({result.returncode}): {command}", file=sys.stderr)
+            return result.returncode
+
+    summary["finished_at"] = time.time()
+    write_text(reports_dir / f"{args.mode}-summary.json", json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
