@@ -99,6 +99,12 @@ class GithubOutputConfig:
 
 
 @dataclass(frozen=True)
+class GeneratedDiffExceptionConfig:
+    path: str
+    verify_command: str
+
+
+@dataclass(frozen=True)
 class PolicyConfig:
     require_clean_base: bool = True
     never_push_to_main: bool = True
@@ -109,6 +115,7 @@ class PolicyConfig:
     auto_merge: bool = False
     max_changed_files_without_human_review: int = 20
     max_diff_lines_without_human_review: int = 1500
+    generated_diff_exceptions: list[GeneratedDiffExceptionConfig] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -180,7 +187,7 @@ class WorkflowConfig:
             pi=PiConfig(**_dataclass_kwargs(PiConfig, pi_data)),
             github=GithubConfig(**_dataclass_kwargs(GithubConfig, github_data)),
             github_output=_github_output_config(github_output_data),
-            policy=PolicyConfig(**_dataclass_kwargs(PolicyConfig, policy_data)),
+            policy=_policy_config(policy_data),
             autoreview=AutoreviewConfig(**_dataclass_kwargs(AutoreviewConfig, autoreview_data)),
             kanban=KanbanConfig(**_dataclass_kwargs(KanbanConfig, kanban_data)),
             validation=ValidationConfig(**_dataclass_kwargs(ValidationConfig, validation_data)),
@@ -223,6 +230,11 @@ class WorkflowConfig:
             raise ConfigError("policy.auto_merge must be false")
         if self.policy.never_push_to_main is not True:
             raise ConfigError("policy.never_push_to_main must be true")
+        if not isinstance(self.policy.generated_diff_exceptions, list):
+            raise ConfigError("policy.generated_diff_exceptions must be a list")
+        for index, item in enumerate(self.policy.generated_diff_exceptions):
+            _require_text(item.path, f"policy.generated_diff_exceptions[{index}].path")
+            _require_text(item.verify_command, f"policy.generated_diff_exceptions[{index}].verify_command")
         if self.autoreview.enabled is not True:
             raise ConfigError("autoreview.enabled must be true")
         if self.autoreview.advisory is not True or self.autoreview.mandatory_gate is not True:
@@ -303,6 +315,29 @@ def _optional_section(data: dict[str, Any], name: str) -> dict[str, Any]:
 def _dataclass_kwargs(cls: type, data: dict[str, Any]) -> dict[str, Any]:
     allowed = {field.name for field in fields(cls)}
     return {key: value for key, value in data.items() if key in allowed}
+
+
+def _policy_config(data: dict[str, Any]) -> PolicyConfig:
+    raw_exceptions = data.get("generated_diff_exceptions", [])
+    if raw_exceptions is None:
+        raw_exceptions = []
+    if not isinstance(raw_exceptions, list):
+        raise ConfigError("policy.generated_diff_exceptions must be a list")
+    exceptions: list[GeneratedDiffExceptionConfig] = []
+    for index, item in enumerate(raw_exceptions):
+        if not isinstance(item, dict):
+            raise ConfigError(f"policy.generated_diff_exceptions[{index}] must be a mapping")
+        exceptions.append(
+            GeneratedDiffExceptionConfig(
+                path=item.get("path", ""),
+                verify_command=item.get("verify_command", ""),
+            )
+        )
+    top_level = {key: value for key, value in data.items() if key != "generated_diff_exceptions"}
+    return PolicyConfig(
+        **_dataclass_kwargs(PolicyConfig, top_level),
+        generated_diff_exceptions=exceptions,
+    )
 
 
 def _github_output_config(data: dict[str, Any]) -> GithubOutputConfig:

@@ -23,7 +23,7 @@ from automation.pi_symphony.github import (
 )
 from automation.pi_symphony.process import run, shell_join
 from automation.pi_symphony.state import get_issue, logs_dir, update_issue
-from automation.pi_symphony.workspace import branch_name, diff_stats, ensure_worktree, git_status_short, worktree_path
+from automation.pi_symphony.workspace import branch_name, diff_file_stats, diff_stats, ensure_worktree, git_status_short, worktree_path
 
 
 class GateFailure(RuntimeError):
@@ -689,6 +689,44 @@ def _commit_worktree_changes_for_review(worktree: Path, *, issue_number: int) ->
     return run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
 
 
+def _review_surface_after_verified_generated_exceptions(
+    config: WorkflowConfig,
+    worktree: Path,
+    changed_file_stats: list[dict[str, Any]],
+) -> tuple[list[str], int, list[str], list[dict[str, Any]]]:
+    """Return the human-review surface after discounting verified generated files."""
+    changed_paths = {str(item.get("path", "")) for item in changed_file_stats}
+    verified_generated_files: list[str] = []
+    generated_checks: list[dict[str, Any]] = []
+    for exception in config.policy.generated_diff_exceptions:
+        if exception.path not in changed_paths:
+            continue
+        result = run(exception.verify_command, cwd=worktree, timeout=1800, check=False, shell=True)
+        generated_checks.append(
+            {
+                "path": exception.path,
+                "command": exception.verify_command,
+                "returncode": result.returncode,
+                "output": result.combined_output[-4000:],
+            }
+        )
+        if result.returncode == 0:
+            verified_generated_files.append(exception.path)
+
+    verified_set = set(verified_generated_files)
+    review_surface_files = [
+        str(item["path"])
+        for item in changed_file_stats
+        if str(item.get("path", "")) not in verified_set
+    ]
+    review_surface_lines = sum(
+        int(item.get("changed_lines", 0))
+        for item in changed_file_stats
+        if str(item.get("path", "")) not in verified_set
+    )
+    return review_surface_files, review_surface_lines, verified_generated_files, generated_checks
+
+
 def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     config = loaded.config
     issue = view_issue(config, issue_number)
@@ -701,10 +739,17 @@ def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     changed_files, changed_lines = diff_stats(worktree, config.autoreview.base)
     if not changed_files:
         raise GateFailure("review diff is empty; refusing to run autoreview without branch changes")
-    if len(changed_files) > config.policy.max_changed_files_without_human_review or changed_lines > config.policy.max_diff_lines_without_human_review:
+    changed_file_stats = diff_file_stats(worktree, config.autoreview.base)
+    review_surface_files, review_surface_lines, verified_generated_files, generated_checks = _review_surface_after_verified_generated_exceptions(
+        config,
+        worktree,
+        changed_file_stats,
+    )
+    if len(review_surface_files) > config.policy.max_changed_files_without_human_review or review_surface_lines > config.policy.max_diff_lines_without_human_review:
         add_labels(config, issue.number, [config.github.human_review_label, config.github.blocked_label])
         raise GateFailure(
-            f"diff too large for autonomous release: {len(changed_files)} files, {changed_lines} changed lines"
+            f"diff too large for autonomous release: {len(review_surface_files)} review-surface files, "
+            f"{review_surface_lines} review-surface changed lines ({len(changed_files)} total files, {changed_lines} total changed lines)"
         )
     review = run_autoreview(config, worktree, issue_log_dir)
     reviewed_head = run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
@@ -713,6 +758,10 @@ def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
         "issue": issue.number,
         "changed_files": changed_files,
         "changed_lines": changed_lines,
+        "review_surface_files": review_surface_files,
+        "review_surface_lines": review_surface_lines,
+        "verified_generated_files": verified_generated_files,
+        "generated_diff_checks": generated_checks,
         "validations": validations,
         "autoreview": review,
         "reviewed_head": reviewed_head,

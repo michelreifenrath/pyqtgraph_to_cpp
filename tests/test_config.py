@@ -18,6 +18,9 @@ pi:
   use_subagents: true
 policy:
   auto_merge: false
+  generated_diff_exceptions:
+    - path: port_manifest.yaml
+      verify_command: "python3 oracle/scripts/generate_class_inventory.py --check"
 autoreview:
   enabled: true
   engine: codex
@@ -75,6 +78,9 @@ def test_config_parser_reads_kanban_settings_from_workflow(tmp_path: Path):
     assert config.github.merge_ready_label == "ai:merge-ready"
     assert config.policy.auto_merge is False
     assert config.policy.never_push_to_main is True
+    assert len(config.policy.generated_diff_exceptions) == 1
+    assert config.policy.generated_diff_exceptions[0].path == "port_manifest.yaml"
+    assert config.policy.generated_diff_exceptions[0].verify_command == "python3 oracle/scripts/generate_class_inventory.py --check"
     assert config.autoreview.enabled is True
     assert config.autoreview.advisory is True
     assert config.autoreview.mandatory_gate is True
