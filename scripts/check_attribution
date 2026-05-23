@@ -71,12 +71,19 @@ def has_pyqtgraph_source_note(text: str) -> bool:
 
 def missing_pyqtgraph_fields(text: str) -> list[str]:
     missing: list[str] = []
-    note_lines = [
-        line
-        for line in text.splitlines()
-        if "pyqtgraph" in line.lower() and PYQTGRAPH_NOTE_RE.search(line)
-    ]
-    has_upstream_path = any(any(token in line for token in ("/", ".py", ".cpp", ".h")) for line in note_lines)
+    note_suffixes: list[str] = []
+    for line in text.splitlines():
+        if "pyqtgraph" not in line.lower():
+            continue
+        match = PYQTGRAPH_NOTE_RE.search(line)
+        if not match:
+            continue
+        suffix = re.sub(r"\s*\*/\s*$", "", line[match.end() :]).strip()
+        note_suffixes.append(suffix)
+    has_upstream_path = any(
+        any(token in suffix for token in ("/", ".py", ".cpp", ".h"))
+        for suffix in note_suffixes
+    )
     if not has_upstream_path:
         missing.append("upstream path")
     if f"PyQtGraph ref: {PINNED_REF}" not in text:

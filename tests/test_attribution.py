@@ -43,6 +43,15 @@ int translated_symbol() {{ return 0; }}
 """
 
 
+def translated_source_without_upstream_path(note_line: str) -> str:
+    return f"""{note_line}
+// PyQtGraph ref: pyqtgraph-0.14.0
+// Pinned commit: {PINNED_COMMIT}
+// License: MIT; see THIRD_PARTY_NOTICES.md
+int translated_symbol() {{ return 0; }}
+"""
+
+
 def test_project_license_is_mit() -> None:
     text = (ROOT / "LICENSE").read_text(encoding="utf-8")
     assert "MIT License" in text
@@ -137,6 +146,29 @@ def test_documented_source_note_form_passes(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert "Attribution audit passed" in result.stdout
+
+
+def test_source_note_without_upstream_path_after_pyqtgraph_fails(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "include" / "pyqtgraph" / "LineComment.cpp",
+        translated_source_without_upstream_path(
+            "// Source note: translated from PyQtGraph"
+        ),
+    )
+    write(
+        tmp_path / "include" / "pyqtgraph" / "BlockComment.cpp",
+        translated_source_without_upstream_path(
+            "/* Source note: translated from PyQtGraph */"
+        ),
+    )
+
+    result = run_check(tmp_path)
+
+    assert result.returncode != 0
+    assert "include/pyqtgraph/LineComment.cpp: missing upstream path" in result.stderr
+    assert "include/pyqtgraph/BlockComment.cpp: missing upstream path" in result.stderr
 
 
 def test_generated_source_without_generation_inputs_fails(tmp_path: Path) -> None:
