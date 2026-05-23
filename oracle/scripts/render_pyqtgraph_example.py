@@ -26,6 +26,20 @@ class RuntimeModules(NamedTuple):
 EXAMPLE_RUN_NAME = "__pgoracle_example__"
 
 
+def _pyqtgraph_checkout_root_for_example(example: Path) -> Path | None:
+    example_path = example.resolve()
+    for ancestor in (example_path.parent, *example_path.parent.parents):
+        if ancestor.name != "examples":
+            continue
+        package_dir = ancestor.parent
+        if package_dir.name != "pyqtgraph":
+            continue
+        checkout_root = package_dir.parent
+        if (checkout_root / "pyqtgraph" / "__init__.py").is_file():
+            return checkout_root
+    return None
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Render a PyQtGraph example Python script to a PNG screenshot."
@@ -127,21 +141,26 @@ def _validate_args(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
 
 def render(args: argparse.Namespace) -> None:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-    try:
-        runtime = _load_runtime()
-    except ImportError as exc:
-        raise RenderError(f"missing required runtime dependency: {exc}") from exc
-
-    app = _application(runtime.QtWidgets)
-    example_dir = str(args.example.parent)
-    original_argv = sys.argv[:]
+    example_dir = str(args.example.resolve().parent)
+    checkout_root = _pyqtgraph_checkout_root_for_example(args.example)
     original_sys_path = sys.path[:]
     try:
-        sys.argv = [str(args.example)]
-        sys.path.insert(0, example_dir)
-        namespace = runpy.run_path(str(args.example), run_name=EXAMPLE_RUN_NAME)
+        if checkout_root is not None:
+            sys.path.insert(0, str(checkout_root))
+        try:
+            runtime = _load_runtime()
+        except ImportError as exc:
+            raise RenderError(f"missing required runtime dependency: {exc}") from exc
+
+        app = _application(runtime.QtWidgets)
+        original_argv = sys.argv[:]
+        try:
+            sys.argv = [str(args.example)]
+            sys.path.insert(0, example_dir)
+            namespace = runpy.run_path(str(args.example), run_name=EXAMPLE_RUN_NAME)
+        finally:
+            sys.argv = original_argv
     finally:
-        sys.argv = original_argv
         sys.path[:] = original_sys_path
     widget = _find_widget(namespace, app, runtime.QtWidgets)
     widget.resize(args.width, args.height)

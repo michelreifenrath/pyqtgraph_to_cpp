@@ -4,6 +4,7 @@ import importlib.util
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -36,7 +37,9 @@ def import_renderer() -> Any:
     return module
 
 
-def install_fake_runtime_with_top_level_widget(renderer: Any) -> None:
+def install_fake_runtime_with_top_level_widget(
+    renderer: Any, before_load: Callable[[], None] | None = None
+) -> None:
     class FakePixmap:
         def save(self, path: str, fmt: str) -> bool:
             assert fmt == "PNG"
@@ -70,6 +73,8 @@ def install_fake_runtime_with_top_level_widget(renderer: Any) -> None:
             pass
 
     def load_runtime():
+        if before_load is not None:
+            before_load()
         return SimpleNamespace(
             QtCore=SimpleNamespace(),
             QtWidgets=SimpleNamespace(QApplication=FakeApplication, QWidget=FakeWidget),
@@ -251,6 +256,43 @@ def test_render_prepends_example_directory_for_sibling_imports(
     original_sys_path = sys.path[:]
     assert str(tmp_path) not in original_sys_path
     install_fake_runtime_with_top_level_widget(renderer)
+
+    code = renderer.main([str(example), "--output", str(output), "--timeout-ms", "1"])
+    captured = capsys.readouterr()
+
+    assert code == 0, captured.err
+    assert output.read_bytes().startswith(PNG_SIGNATURE)
+    assert sys.path == original_sys_path
+    assert captured.err == ""
+
+
+def test_render_prepends_pinned_checkout_before_loading_runtime(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    renderer = import_renderer()
+    checkout_root = tmp_path / "reference" / "pyqtgraph"
+    package_dir = checkout_root / "pyqtgraph"
+    example_dir = package_dir / "examples" / "nested"
+    example_dir.mkdir(parents=True)
+    (package_dir / "__init__.py").write_text("# pinned pyqtgraph\n", encoding="utf-8")
+    example = example_dir / "example.py"
+    example.write_text("# fake pinned example\n", encoding="utf-8")
+    output = tmp_path / "reference.png"
+    original_sys_path = sys.path[:]
+
+    def assert_runtime_path() -> None:
+        assert sys.path[0] == str(checkout_root)
+        assert str(example_dir) not in sys.path[:1]
+
+    def run_path(path: str, run_name: str):
+        assert path == str(example)
+        assert run_name == renderer.EXAMPLE_RUN_NAME
+        assert sys.path[0] == str(example_dir)
+        assert sys.path[1] == str(checkout_root)
+        return {}
+
+    install_fake_runtime_with_top_level_widget(renderer, assert_runtime_path)
+    monkeypatch.setattr(renderer.runpy, "run_path", run_path)
 
     code = renderer.main([str(example), "--output", str(output), "--timeout-ms", "1"])
     captured = capsys.readouterr()
