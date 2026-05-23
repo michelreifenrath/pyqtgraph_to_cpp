@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+python3 -m automation.pi_symphony.issue_simplifier "$@"

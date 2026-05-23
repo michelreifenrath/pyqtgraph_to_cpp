@@ -7,7 +7,8 @@ from automation.pi_symphony import runner
 from automation.pi_symphony.config import LoadedWorkflow, WorkflowConfig
 from automation.pi_symphony.github import Issue
 from automation.pi_symphony.process import CommandResult, run
-from automation.pi_symphony.runner import GateFailure, _commit_worktree_changes_for_review, _handle_phase_failure, _pi_command
+from automation.pi_symphony.runner import GateFailure, _commit_worktree_changes_for_review, _handle_phase_failure, _pi_command, _pr_body
+from automation.pi_symphony.state import update_issue
 from automation.pi_symphony.workspace import diff_stats
 
 
@@ -144,7 +145,68 @@ def test_review_failure_schedules_rework_without_human_label(tmp_path: Path, mon
     assert created[2]["parents"] == ["task-2"]
     assert "ai:rework" in labels
     assert config.github.human_review_label not in labels
-    assert any("scheduled an automatic rework" in body for body in comments)
+    assert comments == ["Rework 1/3 scheduled: review failed."]
+    assert all(len(body) <= config.github_output.comment_max_chars for body in comments)
+
+
+def test_compact_pr_body_contains_only_summary_validation_and_closer():
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": "/tmp/workspaces"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    issue = Issue(12, "[AI] PGBOOT-012: Add concise GitHub output policy", "body", [], "url", "michel")
+    state = {
+        "changed_files": ["automation/pi_symphony/runner.py", "tests/test_pi_runner_command.py"],
+        "changed_lines": 123,
+    }
+    validations = [
+        {"command": "git diff --check", "returncode": 0, "output": ""},
+        {"command": "python3 -m pytest -q", "returncode": 0, "output": "77 passed"},
+    ]
+
+    body = _pr_body(config, issue, state, validations)
+
+    assert len(body) <= config.github_output.pr_body_max_chars
+    assert body.startswith("## Summary\n")
+    assert "Addresses #12" in body
+    assert "## Validation" in body
+    assert "Closes #12" in body
+    assert "## Changed files" not in body
+    assert "## Safety" not in body
+    assert "automation/pi_symphony/runner.py" not in body
+    assert "isolated git worktree" not in body
+
+
+def test_intake_claim_does_not_comment_when_compact_claim_comments_disabled(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    issue = Issue(7, "Small issue", "body", ["tenant:cpp"], "url", "michel")
+    comments: list[str] = []
+
+    monkeypatch.setattr(runner, "ensure_runtime_prereqs", lambda _config: [])
+    monkeypatch.setattr(runner, "ensure_labels", lambda _config: [])
+    monkeypatch.setattr(runner, "ensure_board", lambda _config, _repo_root: "pyqtgraph-to-cpp")
+    monkeypatch.setattr(runner, "list_ready_issues", lambda _config, limit=None: [issue])
+    monkeypatch.setattr(runner, "create_issue_task_graph", lambda _config, _repo_root, _issue: {"implement": "t1", "review": "t2", "release": "t3"})
+    monkeypatch.setattr(runner, "add_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda _config, _number, body: comments.append(body))
+
+    result = runner.intake(loaded)
+
+    assert result["actions"] == [{"issue": 7, "action": "claimed", "tasks": {"implement": "t1", "review": "t2", "release": "t3"}}]
+    assert comments == []
 
 
 def test_human_blocker_labels_issue_for_github_visibility(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -179,6 +241,59 @@ def test_human_blocker_labels_issue_for_github_visibility(tmp_path: Path, monkey
     assert config.github.human_review_label in labels
     assert config.github.rework_label in removed_labels
     assert any("Human intervention required" in body for body in comments)
+
+
+def test_repeated_review_finding_blocks_before_retry_budget(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "agent": {"max_attempts": 10},
+            "github": {"rework_label": "ai:rework"},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    previous_reason = """autoreview failed: autoreview target: branch
+bundle: 32667 chars
+[P2] Gate diff check ignores dirty working-tree changes
+scripts/gate:54
+The commit gate skips dirty edits.
+"""
+    current_reason = """autoreview failed: autoreview target: branch
+bundle: 34566 chars
+[P2] Gate diff check ignores dirty working-tree changes
+scripts/gate:54
+The same issue is still present with different volatile review metadata.
+"""
+    update_issue(
+        tmp_path,
+        4,
+        lambda item: item.update({"rework_attempts": 4, "last_failure": previous_reason}),
+    )
+    labels: list[str] = []
+    removed_labels: list[str] = []
+    comments: list[str] = []
+
+    monkeypatch.setattr(runner, "add_labels", lambda _config, _number, values: labels.extend(values))
+    monkeypatch.setattr(runner, "remove_labels", lambda _config, _number, values: removed_labels.extend(values))
+    monkeypatch.setattr(runner, "comment_issue", lambda _config, _number, body: comments.append(body))
+    monkeypatch.setattr(runner, "_kanban_create", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("repeated findings must not schedule more rework")))
+
+    result = _handle_phase_failure(
+        loaded,
+        issue_number=4,
+        phase="review",
+        reason=current_reason,
+    )
+
+    assert result["action"] == "human_blocked"
+    assert "repeated review finding" in result["reason"]
+    assert config.github.blocked_label in labels
+    assert config.github.human_review_label in labels
+    assert config.github.rework_label in removed_labels
+    assert any("repeated review finding" in body for body in comments)
 
 
 def test_release_issue_refuses_uncommitted_changes_after_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

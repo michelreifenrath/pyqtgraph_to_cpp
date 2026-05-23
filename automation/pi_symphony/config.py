@@ -62,6 +62,43 @@ class GithubConfig:
 
 
 @dataclass(frozen=True)
+class GithubOutputCommentsConfig:
+    claim: bool = False
+    normal_transition: bool = False
+    rework_scheduled: bool = True
+    blocked: bool = True
+    pr_ready: bool = True
+    done: bool = False
+
+
+@dataclass(frozen=True)
+class GithubOutputPrBodyConfig:
+    include_changed_files: bool = False
+    include_safety_section: bool = False
+    include_task_ids: bool = False
+    include_logs: bool = False
+    include_validation: bool = True
+
+
+@dataclass(frozen=True)
+class GithubOutputIssueBodyConfig:
+    template: str = "compact"
+    include_agent_instructions: bool = False
+    include_workflow_rules: bool = False
+
+
+@dataclass(frozen=True)
+class GithubOutputConfig:
+    style: str = "compact"
+    issue_body_max_chars: int = 1200
+    pr_body_max_chars: int = 900
+    comment_max_chars: int = 300
+    comments: GithubOutputCommentsConfig = field(default_factory=GithubOutputCommentsConfig)
+    pr_body: GithubOutputPrBodyConfig = field(default_factory=GithubOutputPrBodyConfig)
+    issue_body: GithubOutputIssueBodyConfig = field(default_factory=GithubOutputIssueBodyConfig)
+
+
+@dataclass(frozen=True)
 class PolicyConfig:
     require_clean_base: bool = True
     never_push_to_main: bool = True
@@ -91,7 +128,7 @@ class KanbanConfig:
     board_slug: str = "pyqtgraph-to-cpp"
     board_scope: str = "project"
     tenant_strategy: str = "tags"
-    default_tenant: str = "core"
+    default_tenant: str = "cpp"
     tenant_label_prefix: str = "tenant:"
     tag_label_prefix: str = "tag:"
 
@@ -110,6 +147,7 @@ class WorkflowConfig:
     agent: AgentConfig = field(default_factory=AgentConfig)
     pi: PiConfig = field(default_factory=PiConfig)
     github: GithubConfig = field(default_factory=GithubConfig)
+    github_output: GithubOutputConfig = field(default_factory=GithubOutputConfig)
     policy: PolicyConfig = field(default_factory=PolicyConfig)
     autoreview: AutoreviewConfig = field(default_factory=AutoreviewConfig)
     kanban: KanbanConfig = field(default_factory=KanbanConfig)
@@ -125,6 +163,7 @@ class WorkflowConfig:
         agent_data = _optional_section(data, "agent")
         pi_data = _optional_section(data, "pi")
         github_data = _optional_section(data, "github")
+        github_output_data = _optional_section(data, "github_output")
         policy_data = _optional_section(data, "policy")
         autoreview_data = _optional_section(data, "autoreview")
         kanban_data = _optional_section(data, "kanban")
@@ -140,6 +179,7 @@ class WorkflowConfig:
             agent=AgentConfig(**_dataclass_kwargs(AgentConfig, agent_data)),
             pi=PiConfig(**_dataclass_kwargs(PiConfig, pi_data)),
             github=GithubConfig(**_dataclass_kwargs(GithubConfig, github_data)),
+            github_output=_github_output_config(github_output_data),
             policy=PolicyConfig(**_dataclass_kwargs(PolicyConfig, policy_data)),
             autoreview=AutoreviewConfig(**_dataclass_kwargs(AutoreviewConfig, autoreview_data)),
             kanban=KanbanConfig(**_dataclass_kwargs(KanbanConfig, kanban_data)),
@@ -172,6 +212,13 @@ class WorkflowConfig:
             raise ConfigError("pi.use_subagents must be true")
         for name in ("ready_label", "claimed_label", "blocked_label", "rework_label", "review_label", "merge_ready_label", "failed_label", "done_label", "ignore_label", "human_review_label"):
             _require_text(getattr(self.github, name), f"github.{name}")
+        if self.github_output.style != "compact":
+            raise ConfigError("github_output.style must be compact")
+        if self.github_output.issue_body.template != "compact":
+            raise ConfigError("github_output.issue_body.template must be compact")
+        for name in ("issue_body_max_chars", "pr_body_max_chars", "comment_max_chars"):
+            if int(getattr(self.github_output, name)) < 1:
+                raise ConfigError(f"github_output.{name} must be >= 1")
         if self.policy.auto_merge is not False:
             raise ConfigError("policy.auto_merge must be false")
         if self.policy.never_push_to_main is not True:
@@ -256,6 +303,29 @@ def _optional_section(data: dict[str, Any], name: str) -> dict[str, Any]:
 def _dataclass_kwargs(cls: type, data: dict[str, Any]) -> dict[str, Any]:
     allowed = {field.name for field in fields(cls)}
     return {key: value for key, value in data.items() if key in allowed}
+
+
+def _github_output_config(data: dict[str, Any]) -> GithubOutputConfig:
+    nested_keys = {"comments", "pr_body", "issue_body"}
+    top_level = {key: value for key, value in data.items() if key not in nested_keys}
+    comments_data = _child_section(data, "comments")
+    pr_body_data = _child_section(data, "pr_body")
+    issue_body_data = _child_section(data, "issue_body")
+    return GithubOutputConfig(
+        **_dataclass_kwargs(GithubOutputConfig, top_level),
+        comments=GithubOutputCommentsConfig(**_dataclass_kwargs(GithubOutputCommentsConfig, comments_data)),
+        pr_body=GithubOutputPrBodyConfig(**_dataclass_kwargs(GithubOutputPrBodyConfig, pr_body_data)),
+        issue_body=GithubOutputIssueBodyConfig(**_dataclass_kwargs(GithubOutputIssueBodyConfig, issue_body_data)),
+    )
+
+
+def _child_section(data: dict[str, Any], name: str) -> dict[str, Any]:
+    value = data.get(name, {})
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ConfigError(f"github_output.{name} section must be a mapping")
+    return value
 
 
 def _require_text(value: object, field_name: str) -> None:

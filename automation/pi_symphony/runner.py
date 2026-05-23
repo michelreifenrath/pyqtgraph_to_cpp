@@ -113,13 +113,8 @@ def intake(loaded: LoadedWorkflow, *, limit: int | None = None, dry_run: bool = 
         )
         add_labels(config, issue.number, [config.github.claimed_label])
         remove_labels(config, issue.number, [config.github.ready_label])
-        comment_issue(
-            config,
-            issue.number,
-            "Pi Symphony automation has claimed this issue. A Hermes Kanban task graph was created: "
-            + ", ".join(f"{phase}={task_id}" for phase, task_id in task_ids.items())
-            + ". The system will implement in an isolated git worktree, run independent review/autoreview gates, then open a PR without auto-merge.",
-        )
+        if config.github_output.comments.claim:
+            _comment_issue_compact(config, issue.number, f"Claimed: Kanban tasks {', '.join(task_ids.values())}.")
         actions.append({"issue": issue.number, "action": "claimed", "tasks": task_ids})
     return {"created_labels": created_labels, "actions": actions}
 
@@ -340,13 +335,58 @@ _AUTO_REWORK_KEYWORDS = (
 )
 
 
+def _review_finding_signature(reason: str) -> tuple[str, ...]:
+    """Return a stable signature for autoreview findings, ignoring volatile run metadata."""
+    lines = [line.strip() for line in reason.splitlines() if line.strip()]
+    findings: list[str] = []
+    for index, line in enumerate(lines):
+        if not line.startswith("[P") or "]" not in line:
+            continue
+        location = ""
+        for candidate in lines[index + 1 :]:
+            lower_candidate = candidate.lower()
+            if candidate.startswith("[P") or lower_candidate.startswith("overall:"):
+                break
+            location = lower_candidate
+            break
+        findings.append(f"{line.lower()}|{location}")
+    if findings:
+        return tuple(findings)
+
+    volatile_prefixes = (
+        "branch:",
+        "bundle:",
+        "engine:",
+        "tools:",
+        "web_search:",
+        "ref:",
+        "autoreview target:",
+        "autoreview findings:",
+        "overall:",
+    )
+    return tuple(
+        line.lower()
+        for line in lines
+        if not any(line.lower().startswith(prefix) for prefix in volatile_prefixes)
+    )
+
+
+def _is_repeated_review_finding(previous_reason: object, current_reason: str) -> bool:
+    if not isinstance(previous_reason, str) or not previous_reason.strip():
+        return False
+    previous_signature = _review_finding_signature(previous_reason)
+    current_signature = _review_finding_signature(current_reason)
+    return bool(previous_signature and current_signature and previous_signature == current_signature)
+
+
 def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: str, reason: str) -> dict[str, Any]:
     """Classify a phase failure and either schedule bounded rework or surface a human blocker."""
     config = loaded.config
     lower_reason = reason.lower()
     state = get_issue(loaded.repo_root, issue_number)
     current_attempt = int(state.get("rework_attempts", 0))
-    if phase == "review" and _auto_rework_allowed(lower_reason) and current_attempt < config.agent.max_attempts:
+    repeated_review_finding = phase == "review" and _is_repeated_review_finding(state.get("last_failure"), reason)
+    if phase == "review" and _auto_rework_allowed(lower_reason) and not repeated_review_finding and current_attempt < config.agent.max_attempts:
         issue = view_issue(config, issue_number)
         next_attempt = current_attempt + 1
         task_ids = create_rework_task_graph(config, loaded.repo_root, issue, reason=reason, attempt=next_attempt)
@@ -365,16 +405,16 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
         )
         add_labels(config, issue_number, [config.github.rework_label])
         remove_labels(config, issue_number, [config.github.blocked_label, config.github.human_review_label, config.github.failed_label])
-        comment_issue(
-            config,
-            issue_number,
-            "Pi Symphony scheduled an automatic rework pass for actionable review findings. "
-            f"Attempt {next_attempt}/{config.agent.max_attempts}. The original failing gate remains blocked for history; follow-up Kanban tasks will rework, re-review, and release if gates pass.\n\n"
-            f"Gate finding:\n```text\n{reason[:3000]}\n```",
-        )
+        if config.github_output.comments.rework_scheduled:
+            _comment_issue_compact(config, issue_number, f"Rework {next_attempt}/{config.agent.max_attempts} scheduled: review failed.")
         return {"action": "scheduled_rework", "issue": issue_number, "attempt": next_attempt, "tasks": task_ids}
 
-    human_reason = "retry budget exhausted" if phase == "review" and current_attempt >= config.agent.max_attempts else reason
+    if repeated_review_finding:
+        human_reason = f"repeated review finding after {current_attempt} rework attempts; manual inspection required to avoid an autonomous loop"
+    elif phase == "review" and current_attempt >= config.agent.max_attempts:
+        human_reason = "retry budget exhausted"
+    else:
+        human_reason = reason
     add_labels(config, issue_number, [config.github.blocked_label, config.github.human_review_label])
     remove_labels(config, issue_number, [config.github.rework_label])
     update_issue(
@@ -382,12 +422,8 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
         issue_number,
         lambda item: item.update({"status": "human_blocked", "last_failure": human_reason, "human_blocked_at": utc_now()}),
     )
-    comment_issue(
-        config,
-        issue_number,
-        "Human intervention required. Pi Symphony cannot safely continue this issue autonomously.\n\n"
-        f"Reason:\n```text\n{human_reason[:3000]}\n```",
-    )
+    if config.github_output.comments.blocked:
+        _comment_issue_compact(config, issue_number, f"Human intervention required: {human_reason}")
     return {"action": "human_blocked", "issue": issue_number, "reason": human_reason}
 
 
@@ -608,7 +644,7 @@ def release_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     run(["git", "push", "-u", "origin", branch], cwd=worktree, timeout=300)
     existing_pr = find_pr_for_branch(config, branch)
     if existing_pr is None:
-        pr_body = _pr_body(issue, state, validations)
+        pr_body = _pr_body(config, issue, state, validations)
         pr = create_pr(config, branch=branch, title=f"fix: address issue #{issue.number} - {issue.title}", body=pr_body)
     else:
         pr = existing_pr
@@ -616,7 +652,9 @@ def release_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
         add_labels(config, int(pr["number"]), [config.github.merge_ready_label])
     add_labels(config, issue.number, [config.github.review_label])
     remove_labels(config, issue.number, [config.github.claimed_label, config.github.failed_label, config.github.blocked_label, config.github.rework_label])
-    comment_issue(config, issue.number, f"Pi Symphony opened/updated PR: {pr.get('url')}. Auto-merge is disabled; please review manually.")
+    if config.github_output.comments.pr_ready:
+        validation_status = "Validation passed" if all(item.get("returncode") == 0 for item in validations) else "Check validation"
+        _comment_issue_compact(config, issue.number, f"PR ready: {pr.get('url')}. {validation_status}.")
     summary = {"status": "released", "issue": issue.number, "branch": branch, "pr": pr, "validations": validations, "released_at": utc_now()}
     (issue_log_dir / "release.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     update_issue(loaded.repo_root, issue.number, lambda item: item.update(summary))
@@ -741,28 +779,43 @@ Rework rules:
 """
 
 
-def _pr_body(issue: Issue, state: dict[str, Any], validations: list[dict[str, Any]]) -> str:
+def _comment_issue_compact(config: WorkflowConfig, issue_number: int, body: str) -> None:
+    comment_issue(config, issue_number, _truncate_public_text(body, config.github_output.comment_max_chars))
+
+
+def _truncate_public_text(text: str, max_chars: int) -> str:
+    cleaned = " ".join(text.strip().split())
+    if len(cleaned) <= max_chars:
+        return cleaned
+    if max_chars <= 1:
+        return cleaned[:max_chars]
+    return cleaned[: max_chars - 1].rstrip() + "…"
+
+
+def _compact_issue_title(title: str) -> str:
+    text = title.strip()
+    if text.startswith("[AI] "):
+        text = text[5:]
+    if ": " in text:
+        prefix, rest = text.split(": ", 1)
+        if prefix.startswith("PG") and any(char.isdigit() for char in prefix):
+            return rest.strip()
+    return text
+
+
+def _pr_body(config: WorkflowConfig, issue: Issue, state: dict[str, Any], validations: list[dict[str, Any]]) -> str:
     validation_lines = "\n".join(
         f"- `{item['command']}`: {'PASS' if item['returncode'] == 0 else 'FAIL'}" for item in validations
     )
-    changed = state.get("changed_files") or []
-    changed_lines = "\n".join(f"- `{path}`" for path in changed) or "- See diff"
-    return f"""## Summary
-Automated Pi Symphony implementation for #{issue.number}.
-
-## Changed files
-{changed_lines}
+    body = f"""## Summary
+- Addresses #{issue.number}: {_compact_issue_title(issue.title)}
 
 ## Validation
-{validation_lines or '- No validation commands configured'}
-
-## Safety
-- Implemented in an isolated git worktree.
-- Independent review/autoreview gate completed before PR creation.
-- Auto-merge is disabled by policy.
+{validation_lines or '- Not run'}
 
 Closes #{issue.number}
 """
+    return _truncate_public_text(body, config.github_output.pr_body_max_chars) if len(body) > config.github_output.pr_body_max_chars else body
 
 
 def _mark_issue_failed(config: WorkflowConfig, repo_root: Path, issue_number: int, reason: str) -> None:

@@ -28,9 +28,26 @@ kanban:
   board_slug: pyqtgraph-to-cpp
   board_scope: project
   tenant_strategy: tags
-  default_tenant: core
+  default_tenant: cpp
   tenant_label_prefix: 'tenant:'
   tag_label_prefix: 'tag:'
+github_output:
+  style: compact
+  pr_body_max_chars: 900
+  comment_max_chars: 300
+  comments:
+    claim: false
+    rework_scheduled: true
+    blocked: true
+    pr_ready: true
+  pr_body:
+    include_changed_files: false
+    include_safety_section: false
+    include_validation: true
+  issue_body:
+    template: compact
+    include_agent_instructions: false
+    include_workflow_rules: false
 validation:
   commands:
     - "python3 -m pytest -q"
@@ -64,9 +81,22 @@ def test_config_parser_reads_kanban_settings_from_workflow(tmp_path: Path):
     assert config.kanban.board_slug == "pyqtgraph-to-cpp"
     assert config.kanban.board_scope == "project"
     assert config.kanban.tenant_strategy == "tags"
-    assert config.kanban.default_tenant == "core"
+    assert config.kanban.default_tenant == "cpp"
     assert config.kanban.tenant_label_prefix == "tenant:"
     assert config.kanban.tag_label_prefix == "tag:"
+    assert config.github_output.style == "compact"
+    assert config.github_output.pr_body_max_chars == 900
+    assert config.github_output.comment_max_chars == 300
+    assert config.github_output.comments.claim is False
+    assert config.github_output.comments.rework_scheduled is True
+    assert config.github_output.comments.blocked is True
+    assert config.github_output.comments.pr_ready is True
+    assert config.github_output.pr_body.include_changed_files is False
+    assert config.github_output.pr_body.include_safety_section is False
+    assert config.github_output.pr_body.include_validation is True
+    assert config.github_output.issue_body.template == "compact"
+    assert config.github_output.issue_body.include_agent_instructions is False
+    assert config.github_output.issue_body.include_workflow_rules is False
     assert config.validation.commands == ["python3 -m pytest -q"]
     assert config.body == "# Workflow body\n"
 
@@ -89,7 +119,13 @@ def test_workflow_defaults_are_production_safe():
     assert config.kanban.board_slug == "pyqtgraph-to-cpp"
     assert config.kanban.board_scope == "project"
     assert config.kanban.tenant_strategy == "tags"
-    assert config.kanban.default_tenant == "core"
+    assert config.kanban.default_tenant == "cpp"
+    assert config.github_output.style == "compact"
+    assert config.github_output.comments.claim is False
+    assert config.github_output.pr_body.include_changed_files is False
+    assert config.github_output.pr_body.include_safety_section is False
+    assert config.github_output.pr_body.include_validation is True
+    assert config.github_output.comment_max_chars == 300
 
 
 @pytest.mark.parametrize(

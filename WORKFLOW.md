@@ -11,7 +11,7 @@ workspace:
   cleanup_terminal_issues: false
 agent:
   max_concurrent_issues: 2
-  max_attempts: 3
+  max_attempts: 10
   normal_continue_delay_ms: 1000
   max_retry_backoff_ms: 300000
 pi:
@@ -42,6 +42,26 @@ github:
   done_label: "ai:done"
   ignore_label: "ai:ignore"
   human_review_label: human-review
+github_output:
+  style: compact
+  issue_body_max_chars: 1200
+  pr_body_max_chars: 900
+  comment_max_chars: 300
+  comments:
+    claim: false
+    rework_scheduled: true
+    blocked: true
+    pr_ready: true
+  pr_body:
+    include_changed_files: false
+    include_safety_section: false
+    include_task_ids: false
+    include_logs: false
+    include_validation: true
+  issue_body:
+    template: compact
+    include_agent_instructions: false
+    include_workflow_rules: false
 policy:
   require_clean_base: true
   never_push_to_main: true
@@ -60,7 +80,7 @@ kanban:
   board_slug: pyqtgraph-to-cpp
   board_scope: project
   tenant_strategy: tags
-  default_tenant: core
+  default_tenant: cpp
   tenant_label_prefix: 'tenant:'
   tag_label_prefix: 'tag:'
 ---
