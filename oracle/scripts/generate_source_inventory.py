@@ -150,7 +150,7 @@ def source_record(upstream_path: str) -> dict[str, str]:
     subsystem = parts[1] if len(parts) > 2 else "core"
     return {
         "upstream_path": upstream_path,
-        "target_header_path": f"include/{stem}.h",
+        "target_header_path": f"include/{stem}.hpp",
         "target_source_path": f"src/{stem}.cpp",
         "subsystem": subsystem,
     }

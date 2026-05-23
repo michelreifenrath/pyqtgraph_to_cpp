@@ -119,13 +119,13 @@ def test_yaml_inventory_is_deterministic_sorted_and_maps_targets(
     assert inventory["source_files"] == [
         {
             "upstream_path": "pyqtgraph/PlotData.py",
-            "target_header_path": "include/pyqtgraph/PlotData.h",
+            "target_header_path": "include/pyqtgraph/PlotData.hpp",
             "target_source_path": "src/pyqtgraph/PlotData.cpp",
             "subsystem": "core",
         },
         {
             "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
-            "target_header_path": "include/pyqtgraph/widgets/PlotWidget.h",
+            "target_header_path": "include/pyqtgraph/widgets/PlotWidget.hpp",
             "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
             "subsystem": "widgets",
         },

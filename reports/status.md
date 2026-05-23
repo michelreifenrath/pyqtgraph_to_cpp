@@ -15,11 +15,11 @@ Implemented a deterministic source inventory CLI for the pinned PyQtGraph refere
 ## Mapping Rules
 
 - `upstream_path` uses POSIX separators and is sorted lexicographically.
-- `target_header_path` is `include/<upstream_path without .py>.h`.
+- `target_header_path` is `include/<upstream_path without .py>.hpp`.
 - `target_source_path` is `src/<upstream_path without .py>.cpp`.
 - Top-level `pyqtgraph/*.py` files use subsystem `core`.
 - Nested package files use the first component after `pyqtgraph/` as subsystem.
-- `__init__.py` remains deterministic as `__init__.h` / `__init__.cpp`.
+- `__init__.py` remains deterministic as `__init__.hpp` / `__init__.cpp`.
 
 ## Validation
 
