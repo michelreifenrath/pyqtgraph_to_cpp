@@ -120,6 +120,13 @@ bool testNumericInputs()
     CHECK_RGBA(pyqtgraph::mkColor({8.0, 9.0, 10.0}), 8, 9, 10, 255);
     CHECK_RGBA(pyqtgraph::mkColor({11.0, 12.0, 13.0, 14.0}), 11, 12, 13, 14);
     CHECK_RGBA(pyqtgraph::mkColor(1.0, std::numeric_limits<double>::infinity(), std::nan(""), 4.0), 1, 0, 0, 4);
+
+    const QColor hugeChannelColor = pyqtgraph::mkColor(1.0e100, 0.0, 0.0);
+    CHECK(!hugeChannelColor.isValid());
+
+    const QColor hugeArrayHueColor = pyqtgraph::mkColor(std::array<double, 2>{0.0, 1.0e100});
+    CHECK(hugeArrayHueColor.isValid());
+    CHECK_HSVA(hugeArrayHueColor, 0, 255, 255, 255);
     return true;
 }
 

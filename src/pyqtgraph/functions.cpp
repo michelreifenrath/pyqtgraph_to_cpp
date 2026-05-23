@@ -21,7 +21,16 @@ namespace {
 
 [[nodiscard]] int finiteChannelToInt(double value)
 {
-    return std::isfinite(value) ? static_cast<int>(value) : 0;
+    if (!std::isfinite(value)) {
+        return 0;
+    }
+    if (value <= static_cast<double>(std::numeric_limits<int>::min())) {
+        return std::numeric_limits<int>::min();
+    }
+    if (value >= static_cast<double>(std::numeric_limits<int>::max())) {
+        return std::numeric_limits<int>::max();
+    }
+    return static_cast<int>(value);
 }
 
 [[nodiscard]] std::int64_t floorDiv(std::int64_t numerator, std::int64_t denominator)

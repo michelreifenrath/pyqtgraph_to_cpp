@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <initializer_list>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <tuple>
@@ -82,7 +83,16 @@ template <typename T>
 [[nodiscard]] int finiteChannelToInt(T value)
 {
     const double numeric = static_cast<double>(value);
-    return std::isfinite(numeric) ? static_cast<int>(numeric) : 0;
+    if (!std::isfinite(numeric)) {
+        return 0;
+    }
+    if (numeric <= static_cast<double>(std::numeric_limits<int>::min())) {
+        return std::numeric_limits<int>::min();
+    }
+    if (numeric >= static_cast<double>(std::numeric_limits<int>::max())) {
+        return std::numeric_limits<int>::max();
+    }
+    return static_cast<int>(numeric);
 }
 
 template <typename T, std::size_t N>
