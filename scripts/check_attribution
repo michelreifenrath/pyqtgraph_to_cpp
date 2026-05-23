@@ -71,7 +71,7 @@ PYQTGRAPH_NOTE_RE = re.compile(
 
 
 PYQTGRAPH_UPSTREAM_PATH_RE = re.compile(
-    r"\b(?:pyqtgraph|examples|tests|benchmarks)/[A-Za-z0-9_.+\-/]+\.(?:py|c|cc|cpp|cxx|h|hh|hpp|hxx)\b"
+    r"\b(?:pyqtgraph|examples|tests|benchmarks)/[A-Za-z0-9_.+\-/ ]+\.(?:py|c|cc|cpp|cxx|h|hh|hpp|hxx)\b"
 )
 
 
