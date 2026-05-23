@@ -19,7 +19,12 @@ AUDIT_DIRS = (
     Path("tests"),
     Path("benchmarks"),
 )
-REQUIRED_NOTE_DIRS = (Path("include/pyqtgraph"), Path("src/pyqtgraph"))
+REQUIRED_NOTE_DIRS = (
+    Path("include/pyqtgraph"),
+    Path("src/pyqtgraph"),
+    Path("examples"),
+    Path("benchmarks"),
+)
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".py"}
 
 

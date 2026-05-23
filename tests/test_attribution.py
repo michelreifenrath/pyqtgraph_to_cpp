@@ -363,3 +363,23 @@ def test_unrelated_tests_are_not_forced_to_have_notes(tmp_path: Path) -> None:
     result = run_check(tmp_path)
 
     assert result.returncode == 0, result.stderr
+
+
+def test_examples_without_source_note_fail(tmp_path: Path) -> None:
+    write(tmp_path / "examples" / "plot_demo.py", "def demo():\n    return 1\n")
+
+    result = run_check(tmp_path)
+
+    assert result.returncode != 0
+    assert "examples/plot_demo.py" in result.stderr
+    assert "missing source attribution note" in result.stderr
+
+
+def test_benchmarks_without_source_note_fail(tmp_path: Path) -> None:
+    write(tmp_path / "benchmarks" / "plot_bench.cpp", "int main() { return 0; }\n")
+
+    result = run_check(tmp_path)
+
+    assert result.returncode != 0
+    assert "benchmarks/plot_bench.cpp" in result.stderr
+    assert "missing source attribution note" in result.stderr
