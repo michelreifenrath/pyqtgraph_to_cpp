@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
+import os
 import posixpath
 import sys
-from pathlib import Path
-from typing import Any
+import tempfile
+from pathlib import Path, PureWindowsPath
+from typing import Any, TextIO
 
 import yaml
 
@@ -20,23 +23,34 @@ class RegistryError(ValueError):
     """Raised when the ownership registry is malformed."""
 
 
+def empty_registry() -> dict[str, Any]:
+    return {"version": INITIAL_REGISTRY["version"], "claims": []}
+
+
 def normalize_owned_file(value: str) -> str:
     path = value.strip().replace("\\", "/")
     if not path:
         raise RegistryError("owned file paths must not be empty")
     normalized = posixpath.normpath(path)
+    if posixpath.isabs(normalized) or PureWindowsPath(path).is_absolute():
+        raise RegistryError("owned file paths must be relative to repository root")
     if normalized == ".":
         raise RegistryError("owned file paths must not be empty")
+    if normalized == ".." or normalized.startswith("../"):
+        raise RegistryError("owned file paths must not escape repository root")
     return normalized
 
 
 def load_registry(path: Path) -> dict[str, Any]:
     if not path.exists():
-        return {"version": INITIAL_REGISTRY["version"], "claims": []}
+        return empty_registry()
 
     with path.open("r", encoding="utf-8") as registry_file:
-        data = yaml.safe_load(registry_file)
+        return load_registry_from_stream(registry_file)
 
+
+def load_registry_from_stream(registry_file: TextIO) -> dict[str, Any]:
+    data = yaml.safe_load(registry_file)
     if not isinstance(data, dict):
         raise RegistryError("registry must be a YAML mapping")
     if data.get("version") != 1:
@@ -103,8 +117,55 @@ def find_conflict(
 
 def write_registry(path: Path, registry: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as registry_file:
-        yaml.safe_dump(registry, registry_file, sort_keys=False)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            dir=path.parent,
+            encoding="utf-8",
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as registry_file:
+            temporary_path = Path(registry_file.name)
+            yaml.safe_dump(registry, registry_file, sort_keys=False)
+            registry_file.flush()
+            os.fsync(registry_file.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except FileNotFoundError:
+                pass
+
+
+def record_claim(
+    path: Path, issue: str, branch: str, requested_files: list[str]
+) -> tuple[str, dict[str, Any]] | None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd = os.open(path.parent, os.O_RDONLY)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        registry = load_registry(path)
+        conflict = find_conflict(set(requested_files), registry["claims"])
+        if conflict is not None:
+            return conflict
+
+        registry["claims"].append(
+            {
+                "issue": issue,
+                "branch": branch,
+                "status": "active",
+                "owned_files": requested_files,
+            }
+        )
+        write_registry(path, registry)
+        os.fsync(lock_fd)
+        return None
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -113,8 +174,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         requested_files = [normalize_owned_file(path) for path in args.owned_files]
-        registry = load_registry(args.registry)
-        conflict = find_conflict(set(requested_files), registry["claims"])
+        conflict = record_claim(args.registry, args.issue, args.branch, requested_files)
     except RegistryError as error:
         print(f"claim rejected: {error}", file=sys.stderr)
         return 1
@@ -131,15 +191,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    registry["claims"].append(
-        {
-            "issue": args.issue,
-            "branch": args.branch,
-            "status": "active",
-            "owned_files": requested_files,
-        }
-    )
-    write_registry(args.registry, registry)
     print(f"claim recorded: {args.issue} owns {len(requested_files)} file(s)")
     return 0
 

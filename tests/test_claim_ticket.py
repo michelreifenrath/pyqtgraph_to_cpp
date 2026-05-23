@@ -1,6 +1,7 @@
-from pathlib import Path
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import yaml
 
@@ -156,4 +157,111 @@ def test_creates_registry_when_missing(tmp_path: Path):
                 "owned_files": ["src/new.cpp"],
             }
         ],
+    }
+
+
+def test_rejects_absolute_owned_file_paths(tmp_path: Path):
+    registry = tmp_path / "ownership.yaml"
+    original = {"version": 1, "claims": []}
+    write_registry(registry, original)
+
+    result = run_claim_ticket(
+        "--registry",
+        str(registry),
+        "--issue",
+        "PGBOOT-007",
+        "--branch",
+        "ai/issue-7",
+        "--file",
+        "/src/hidden.cpp",
+    )
+
+    assert result.returncode != 0
+    assert "relative to repository root" in result.stderr
+    assert read_registry(registry) == original
+
+
+def test_rejects_parent_escaping_owned_file_paths(tmp_path: Path):
+    registry = tmp_path / "ownership.yaml"
+
+    result = run_claim_ticket(
+        "--registry",
+        str(registry),
+        "--issue",
+        "PGBOOT-008",
+        "--branch",
+        "ai/issue-8",
+        "--file",
+        "../src/hidden.cpp",
+    )
+
+    assert result.returncode != 0
+    assert "escape repository root" in result.stderr
+    assert not registry.exists()
+
+
+def test_rejects_malformed_registry_with_unsafe_owned_file(tmp_path: Path):
+    cases = [
+        ("absolute", "/src/hidden.cpp", "relative to repository root"),
+        ("parent", "../src/hidden.cpp", "escape repository root"),
+    ]
+    for name, unsafe_path, expected_error in cases:
+        registry = tmp_path / f"ownership-{name}.yaml"
+        original = {
+            "version": 1,
+            "claims": [
+                {
+                    "issue": "PGBOOT-001",
+                    "branch": "ai/issue-1",
+                    "status": "active",
+                    "owned_files": [unsafe_path],
+                }
+            ],
+        }
+        write_registry(registry, original)
+
+        result = run_claim_ticket(
+            "--registry",
+            str(registry),
+            "--issue",
+            "PGBOOT-009",
+            "--branch",
+            "ai/issue-9",
+            "--file",
+            "src/new.cpp",
+        )
+
+        assert result.returncode != 0
+        assert expected_error in result.stderr
+        assert read_registry(registry) == original
+
+
+def test_serializes_parallel_non_overlapping_claims(tmp_path: Path):
+    registry = tmp_path / "ownership.yaml"
+    claim_count = 30
+
+    def claim(index: int) -> subprocess.CompletedProcess[str]:
+        return run_claim_ticket(
+            "--registry",
+            str(registry),
+            "--issue",
+            f"PGBOOT-{index:03d}",
+            "--branch",
+            f"ai/issue-{index}",
+            "--file",
+            f"src/file_{index}.cpp",
+        )
+
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        results = list(executor.map(claim, range(claim_count)))
+
+    failures = [result for result in results if result.returncode != 0]
+    assert failures == []
+    claims = read_registry(registry)["claims"]
+    assert len(claims) == claim_count
+    assert {claim["issue"] for claim in claims} == {
+        f"PGBOOT-{index:03d}" for index in range(claim_count)
+    }
+    assert {claim["owned_files"][0] for claim in claims} == {
+        f"src/file_{index}.cpp" for index in range(claim_count)
     }
