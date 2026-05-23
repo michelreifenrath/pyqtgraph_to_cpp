@@ -134,11 +134,50 @@ def require_clean_checkout(checkout: Path) -> None:
         raise BootstrapError("reference/pyqtgraph checkout has uncommitted changes")
 
 
+def require_git_checkout(checkout: Path) -> None:
+    if not (checkout / ".git").exists():
+        raise BootstrapError(f"checkout path exists but is not a git repository: {checkout}")
+    top_level = Path(run_git(["rev-parse", "--show-toplevel"], cwd=checkout)).resolve()
+    if top_level != checkout.resolve():
+        raise BootstrapError(f"checkout path is not a git repository root: {checkout}")
+
+
+def ensure_checkout_ignored(root: Path, checkout: Path) -> None:
+    """Exclude the nested checkout from the parent repository if one exists."""
+    try:
+        top_level = Path(run_git(["rev-parse", "--show-toplevel"], cwd=root)).resolve()
+        exclude = run_git(["rev-parse", "--git-path", "info/exclude"], cwd=root)
+    except BootstrapError:
+        return
+
+    try:
+        relative_checkout = checkout.resolve().relative_to(top_level)
+    except ValueError:
+        return
+
+    exclude_path = Path(exclude)
+    if not exclude_path.is_absolute():
+        exclude_path = root / exclude_path
+    pattern = f"/{relative_checkout.as_posix().rstrip('/')}/"
+
+    existing = exclude_path.read_text(encoding="utf-8") if exclude_path.exists() else ""
+    if pattern in existing.splitlines():
+        return
+
+    exclude_path.parent.mkdir(parents=True, exist_ok=True)
+    prefix = "" if not existing or existing.endswith("\n") else "\n"
+    exclude_path.write_text(
+        f"{existing}{prefix}# PyQtGraph reference checkout managed by scripts/bootstrap_reference\n{pattern}\n",
+        encoding="utf-8",
+    )
+
+
 def check_checkout(root: Path, pinned_commit: str) -> None:
     checkout = root / CHECKOUT_PATH
-    if not (checkout / ".git").exists():
+    if not checkout.exists():
         print("reference lock verified; checkout reference/pyqtgraph is not present")
         return
+    require_git_checkout(checkout)
     head = run_git(["rev-parse", "HEAD"], cwd=checkout)
     require_equal("reference/pyqtgraph HEAD", head, pinned_commit)
     require_clean_checkout(checkout)
@@ -170,15 +209,14 @@ def write_metadata(root: Path, metadata: dict[str, str]) -> None:
 
 
 def refresh(root: Path, repo: str) -> dict[str, str]:
-    print("warning: --refresh may create reference/pyqtgraph as an untracked checkout")
     pinned_commit = resolve_ref(repo)
     checkout = root / CHECKOUT_PATH
+    ensure_checkout_ignored(root, checkout)
     checkout.parent.mkdir(parents=True, exist_ok=True)
     if not checkout.exists():
         run_git(["clone", "--no-checkout", repo, str(checkout)])
     else:
-        if not (checkout / ".git").exists():
-            raise BootstrapError(f"checkout path exists but is not a git repository: {checkout}")
+        require_git_checkout(checkout)
         require_clean_checkout(checkout)
         run_git(["fetch", "--no-tags", repo, f"refs/tags/{DEFAULT_REF}"], cwd=checkout)
     run_git(["checkout", "--detach", pinned_commit], cwd=checkout)

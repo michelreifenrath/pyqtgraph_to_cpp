@@ -69,6 +69,29 @@ def copy_metadata(root: Path) -> None:
     shutil.copy2("port_manifest.yaml", root / "port_manifest.yaml")
 
 
+def test_check_offline_rejects_unverifiable_checkout_directory(tmp_path: Path):
+    copy_metadata(tmp_path)
+    checkout = tmp_path / CHECKOUT_PATH
+    checkout.mkdir()
+    (checkout / "README.md").write_text("copied pyqtgraph tree\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT.resolve()),
+            "--check",
+            "--offline",
+            "--root",
+            str(tmp_path),
+        ],
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode != 0
+    assert "not a git repository" in result.stderr
+
+
 def test_check_offline_reports_mismatched_manifest_field(tmp_path: Path):
     copy_metadata(tmp_path)
     manifest_path = tmp_path / "port_manifest.yaml"
@@ -176,6 +199,32 @@ def test_refresh_with_local_git_remote_writes_checkout_and_metadata(tmp_path: Pa
         capture_output=True,
     )
     assert check.returncode == 0, check.stderr
+
+
+def test_refresh_ignores_nested_checkout_in_parent_repo(tmp_path: Path):
+    remote, _commit = make_local_pyqtgraph_repo(tmp_path)
+    root = tmp_path / "workspace"
+    root.mkdir()
+    git(root, "init")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT.resolve()),
+            "--refresh",
+            "--root",
+            str(root),
+            "--repo",
+            str(remote),
+        ],
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    exclude = (root / ".git/info/exclude").read_text(encoding="utf-8")
+    assert f"/{CHECKOUT_PATH}/" in exclude.splitlines()
+    assert git(root, "status", "--porcelain", "--", CHECKOUT_PATH) == ""
 
 
 def test_refresh_fails_when_existing_checkout_is_dirty(tmp_path: Path):
