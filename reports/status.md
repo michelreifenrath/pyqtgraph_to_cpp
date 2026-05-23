@@ -1,39 +1,49 @@
-# PGINV-001 Status
+# PGINV-005 Status
 
-Implemented a deterministic source inventory CLI for the pinned PyQtGraph reference.
+Implemented the repository-level deterministic port manifest generator for the pinned PyQtGraph reference.
 
 ## Behavior
 
-- Reads `reference/source.lock` and validates required reference metadata.
-- Uses the local checkout from `checkout_path` (`reference/pyqtgraph`) when present, validating `git rev-parse HEAD` against `pinned_commit`.
-- When the checkout is absent, materializes the locked `repo`/`ref`/`pinned_commit` into a temporary directory, validates the commit, enumerates the inventory, and removes the temporary source without writing to `reference/pyqtgraph`.
-- Enumerates `.py` files under the PyQtGraph `pyqtgraph/` package.
-- Excludes `pyqtgraph/examples/**` and repo-level `tests/**` from `source_files`, while reporting them under `excluded` and `summary` counts for later phases.
-- Emits deterministic YAML by default or JSON with `--format json`.
-- Supports read-only `--check`, which generates and serializes the inventory in memory without writing persistent files.
+- `scripts/generate_manifest` reads `reference/source.lock`, validates the pinned checkout through the existing inventory helpers, and uses the temporary clone fallback when `reference/pyqtgraph` is absent.
+- The generator composes source, example, and class inventories from the same validated checkout.
+- Default output is deterministic YAML; `--format json` emits the same schema as JSON.
+- `--update-manifest` rewrites generated sections in `port_manifest.yaml` and preserves unrelated keys.
+- `--check` is read-only and fails when `port_manifest.yaml` is missing or any generated section is stale.
 
-## Mapping Rules
+## Manifest Schema
 
-- `upstream_path` uses POSIX separators and is sorted lexicographically.
-- `target_header_path` is `include/<upstream_path without .py>.hpp`.
-- `target_source_path` is `src/<upstream_path without .py>.cpp`.
-- Top-level `pyqtgraph/*.py` files use subsystem `core`.
-- Nested package files use the first component after `pyqtgraph/` as subsystem.
-- `__init__.py` remains deterministic as `__init__.hpp` / `__init__.cpp`.
+Canonical generated top-level keys are ordered as:
+
+1. `reference`
+2. `source_files`
+3. `examples`
+4. `example_assets`
+5. `example_inventory_summary`
+6. `classes`
+7. `excluded`
+8. `summary`
+
+The checked-in manifest now records:
+
+- Source files: 213
+- Examples: 129
+- Example assets: 16
+- Total example tree files: 145
+- Classes: 355
+- Excluded example Python files: 129
+- Excluded test Python files: 74
 
 ## Validation
 
-- Initial expected red checks before implementation:
-  - `python3 -m pytest tests/oracle/test_source_inventory.py -q` exited 4 because the test path was missing.
-  - `python oracle/scripts/generate_source_inventory.py --check` exited 2 because the script was missing.
-- Rework validation:
-  - `python3 -m pytest tests/oracle/test_source_inventory.py -q` exited 0 (`6 passed`).
-  - `python oracle/scripts/generate_source_inventory.py --check` exited 0 (`source inventory verified (213 source files)`) using the temporary pinned-source fallback because `reference/pyqtgraph` is absent.
-  - `python3 -m pytest -q` exited 0 (`82 passed`).
-  - `python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md` exited 0.
-  - `git diff --check` exited 0.
+- `python3 -m pytest tests/oracle/test_port_manifest.py -q` — passed, 13 tests.
+- `python3 scripts/generate_manifest --check` — passed, `port manifest verified (213 source files, 129 examples, 355 classes)`.
+- `python3 -m pytest tests/oracle/test_source_inventory.py tests/oracle/test_example_inventory.py tests/oracle/test_class_inventory.py -q` — passed, 32 tests.
+- `python3 -m pytest -q` — passed, 217 tests.
+- `python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md` — passed, workflow valid.
+- `git diff --check` — passed.
 
 ## Scope Notes
 
-- Did not write `port_manifest.yaml` or bootstrap/modify `reference/pyqtgraph` because those files are not owned for this issue.
-- Added the required implementation report at `reports/agents/PGINV-001.md`.
+- `port_manifest.yaml` was regenerated via `python3 scripts/generate_manifest --update-manifest`.
+- The manifest `reference` section preserves the existing repository schema (`repo`, `ref`, `pinned_commit`, `docs_url`); checkout validation still uses `checkout_path` from `reference/source.lock` internally.
+- No commits, pushes, merges, or workflow-policy edits were performed.
