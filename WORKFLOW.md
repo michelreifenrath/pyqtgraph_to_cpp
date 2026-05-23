@@ -97,7 +97,7 @@ For every issue:
 - Require `git diff --check` and the configured validation commands before PR creation.
 - Use `scripts/gate commit` for the local pre-PR validation wrapper.
 - Require independent review and autoreview before PR creation.
-- Use `scripts/run_autoreview --mode commit` for the local pre-PR autoreview wrapper.
+- Use `scripts/run_autoreview --mode branch` for the local pre-PR autoreview wrapper.
 - Block for human review if the diff exceeds the configured file or line limits.
 - Treat Pi and AI-reviewer reports as advisory; deterministic checks and actual code inspection are authoritative.
 - On failure, label the issue `ai:blocked` and/or `ai:failed` with a reason instead of retrying blindly.

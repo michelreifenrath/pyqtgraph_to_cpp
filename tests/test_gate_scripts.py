@@ -7,6 +7,7 @@ import os
 import stat
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -94,6 +95,13 @@ def test_gate_help_lists_required_modes() -> None:
     assert result.returncode == 0
     for mode in ["focus", "commit", "merge", "visual", "performance"]:
         assert mode in result.stdout
+
+
+def test_workflow_pre_pr_autoreview_uses_branch_mode() -> None:
+    workflow_text = (REPO_ROOT / "WORKFLOW.md").read_text(encoding="utf-8")
+
+    assert "scripts/run_autoreview --mode branch" in workflow_text
+    assert "scripts/run_autoreview --mode commit" not in workflow_text
 
 
 def test_gate_focus_runs_configured_validation_and_writes_summary(
@@ -224,6 +232,38 @@ def test_gate_times_out_safely(tmp_path: Path) -> None:
     log = (reports / "focus-1.log").read_text(encoding="utf-8")
     assert "timed out" in log.lower()
     assert "traceback" not in log.lower()
+
+
+def test_gate_timeout_kills_shell_process_group(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    marker = tmp_path / "leaked-child.txt"
+    child_code = "; ".join(
+        [
+            "import time",
+            "from pathlib import Path",
+            "time.sleep(2)",
+            f"Path({json.dumps(str(marker))}).write_text('leaked', encoding='utf-8')",
+        ]
+    )
+    write_workflow(
+        workflow, commands=[f"{sys.executable} -c {json.dumps(child_code)} & wait"]
+    )
+
+    result = run_script(
+        "scripts/gate",
+        "focus",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        "--timeout",
+        "1",
+    )
+    time.sleep(2.25)
+
+    assert result.returncode == 124
+    assert not marker.exists()
 
 
 def test_gate_dry_run_command_plans(tmp_path: Path) -> None:

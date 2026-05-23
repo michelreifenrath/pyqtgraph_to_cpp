@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import signal
 import subprocess
 import sys
 import time
@@ -15,7 +17,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from automation.pi_symphony.config import ConfigError, load_workflow_with_context
-from automation.pi_symphony.process import run
+from automation.pi_symphony.process import CommandResult, _subprocess_env
 
 DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
 
@@ -73,6 +75,36 @@ def timeout_output(value: str | bytes | None) -> str:
     return value
 
 
+def run_gate_command(command: str, *, cwd: Path, timeout: int) -> CommandResult:
+    process = subprocess.Popen(
+        command,
+        cwd=str(cwd),
+        env=_subprocess_env(),
+        shell=True,
+        start_new_session=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            stdout, stderr = process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            stdout, stderr = process.communicate()
+        raise subprocess.TimeoutExpired(command, timeout, output=stdout, stderr=stderr) from error
+    return CommandResult(args=command, returncode=process.returncode, stdout=stdout, stderr=stderr)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -118,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
         }
         log_path = reports_dir / command_summary["log"]
         try:
-            result = run(command, cwd=workflow.repo_root, timeout=args.timeout, check=False, shell=True)
+            result = run_gate_command(command, cwd=workflow.repo_root, timeout=args.timeout)
         except subprocess.TimeoutExpired as error:
             summary["commands"].append(command_summary)  # type: ignore[index]
             summary["status"] = "failed"
