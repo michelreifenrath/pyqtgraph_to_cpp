@@ -234,6 +234,7 @@ def install_fake_runtime(
     widget: Any,
     records: dict[str, Any],
     before_load: Callable[[], None] | None = None,
+    qt_namespace: Any | None = None,
 ) -> None:
     class FakePoint:
         def __init__(self, x: int, y: int) -> None:
@@ -255,6 +256,9 @@ def install_fake_runtime(
     class FakeQTest:
         @staticmethod
         def wait(ms: int) -> None:
+            on_wait = records.get("on_wait")
+            if callable(on_wait):
+                on_wait()
             records.setdefault("qtest", []).append(("wait", ms))
 
         @staticmethod
@@ -295,7 +299,7 @@ def install_fake_runtime(
         if before_load is not None:
             before_load()
         return SimpleNamespace(
-            QtCore=SimpleNamespace(Qt=FakeQt, QPoint=FakePoint),
+            QtCore=SimpleNamespace(Qt=qt_namespace or FakeQt, QPoint=FakePoint),
             QtWidgets=SimpleNamespace(
                 QApplication=FakeApplication, QWidget=widget_class
             ),
@@ -396,6 +400,84 @@ def test_run_interactions_dispatches_fake_qt_actions_and_writes_json(
     assert captured.err == ""
 
 
+def test_mouse_click_dispatches_to_viewport_at_mapped_point() -> None:
+    runner = import_runner()
+    records: dict[str, Any] = {}
+
+    class FakeRect:
+        @staticmethod
+        def contains(point: Any) -> bool:
+            records["viewport_contains"] = (point.x, point.y)
+            return True
+
+    class FakeViewport:
+        def mapFrom(self, source: Any, point: Any) -> Any:
+            records["viewport_map_from"] = (source, point.x, point.y)
+            return type(point)(point.x - 5, point.y - 6)
+
+        @staticmethod
+        def rect() -> FakeRect:
+            return FakeRect()
+
+    class FakeView:
+        def __init__(self, viewport: FakeViewport) -> None:
+            self._viewport = viewport
+
+        def viewport(self) -> FakeViewport:
+            records["viewport_requested"] = True
+            return self._viewport
+
+    class FakeWidget:
+        def __init__(self, child: FakeView) -> None:
+            self._child = child
+
+        def childAt(self, point: Any) -> FakeView:
+            records["child_at"] = (point.x, point.y)
+            return self._child
+
+    viewport = FakeViewport()
+    view = FakeView(viewport)
+    widget = FakeWidget(view)
+    install_fake_runtime(runner, widget, records)
+    runtime = runner._load_runtime()
+
+    runner._dispatch_step(
+        {"action": "mouse_click", "x": 12, "y": 15, "button": "left", "modifiers": []},
+        widget,
+        runtime,
+    )
+
+    assert records["child_at"] == (12, 15)
+    assert records["viewport_requested"] is True
+    assert records["viewport_map_from"] == (widget, 12, 15)
+    assert records["viewport_contains"] == (7, 9)
+    assert records["qtest"] == [("mouseClick", viewport, 1, 0, (7, 9))]
+
+
+def test_key_click_accepts_qt6_nested_key_enum() -> None:
+    runner = import_runner()
+    records: dict[str, Any] = {}
+
+    class FakeQt6:
+        NoModifier = 0
+
+        class Key:
+            Key_A = 65
+
+    class FakeWidget:
+        pass
+
+    widget = FakeWidget()
+    install_fake_runtime(runner, widget, records, qt_namespace=FakeQt6)
+    runtime = runner._load_runtime()
+
+    runner._dispatch_step(
+        {"action": "key_click", "key": "A", "modifiers": []}, widget, runtime
+    )
+
+    assert records["qtest"] == [("keyClick", widget, 65, 0)]
+
+
 def test_runner_isolates_paths_argv_and_prefers_pinned_checkout(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
@@ -409,22 +491,29 @@ def test_runner_isolates_paths_argv_and_prefers_pinned_checkout(
     script = tmp_path / "interaction.yaml"
     output = tmp_path / "status.json"
     example.write_text("# fake pinned example\n", encoding="utf-8")
-    script.write_text("version: 1\nsteps: []\n", encoding="utf-8")
+    script.write_text(
+        "version: 1\nsteps:\n  - action: wait\n    ms: 1\n", encoding="utf-8"
+    )
     original_sys_path = sys.path[:]
     leaked_argv = ["run_interaction_script.py", "--leaked"]
     monkeypatch.setattr(sys, "argv", leaked_argv[:])
-    records: dict[str, Any] = {}
+
+    def assert_runtime_path() -> None:
+        assert sys.path[0] == str(checkout_root)
+        assert str(example_dir) not in sys.path[:1]
+
+    def assert_interaction_path() -> None:
+        assert sys.path[0] == str(example_dir)
+        assert sys.path[1] == str(checkout_root)
+
+    records: dict[str, Any] = {"on_wait": assert_interaction_path}
 
     class FakeWidget:
         def resize(self, width: int, height: int) -> None:
             pass
 
         def show(self) -> None:
-            pass
-
-    def assert_runtime_path() -> None:
-        assert sys.path[0] == str(checkout_root)
-        assert str(example_dir) not in sys.path[:1]
+            assert_interaction_path()
 
     install_fake_runtime(runner, FakeWidget(), records, assert_runtime_path)
 

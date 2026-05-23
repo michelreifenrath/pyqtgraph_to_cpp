@@ -334,7 +334,47 @@ def _key_constant(QtCore: Any, key: str) -> Any:
     }
     qt_key_name = key.upper() if len(key) == 1 else key_names.get(key.lower(), key)
     qt = _qt_namespace(QtCore)
-    return _constant(qt, (f"Key_{qt_key_name}",), f"key: {key}")
+    return _constant(
+        qt, (f"Key_{qt_key_name}", f"Key.Key_{qt_key_name}"), f"key: {key}"
+    )
+
+
+def _map_point_from_widget(widget: Any, target: Any, point: Any) -> Any:
+    if target is widget:
+        return point
+    map_from = getattr(target, "mapFrom", None)
+    if callable(map_from):
+        return map_from(widget, point)
+    return point
+
+
+def _point_in_widget(widget: Any, point: Any) -> bool:
+    rect = getattr(widget, "rect", None)
+    if not callable(rect):
+        return True
+    contains = getattr(rect(), "contains", None)
+    if not callable(contains):
+        return True
+    return bool(contains(point))
+
+
+def _mouse_target_for_point(widget: Any, point: Any) -> tuple[Any, Any]:
+    target = widget
+    child_at = getattr(widget, "childAt", None)
+    if callable(child_at):
+        child = child_at(point)
+        if child is not None:
+            target = child
+
+    viewport = getattr(target, "viewport", None)
+    if callable(viewport):
+        viewport_widget = viewport()
+        if viewport_widget is not None:
+            viewport_point = _map_point_from_widget(widget, viewport_widget, point)
+            if _point_in_widget(viewport_widget, viewport_point):
+                return viewport_widget, viewport_point
+
+    return target, _map_point_from_widget(widget, target, point)
 
 
 def _dispatch_step(step: dict[str, Any], widget: Any, runtime: RuntimeModules) -> None:
@@ -344,11 +384,12 @@ def _dispatch_step(step: dict[str, Any], widget: Any, runtime: RuntimeModules) -
         qtest.wait(step["ms"])
     elif action == "mouse_click":
         point = runtime.QtCore.QPoint(step["x"], step["y"])
+        target, target_point = _mouse_target_for_point(widget, point)
         qtest.mouseClick(
-            widget,
+            target,
             _button_constant(runtime.QtCore, step["button"]),
             _combine_modifiers(runtime.QtCore, step["modifiers"]),
-            point,
+            target_point,
         )
     elif action == "key_click":
         qtest.keyClick(
@@ -384,34 +425,34 @@ def run_interactions(args: argparse.Namespace) -> dict[str, Any]:
             namespace = runpy.run_path(str(args.example), run_name=EXAMPLE_RUN_NAME)
         finally:
             sys.argv = original_argv
+
+        widget = _find_widget(namespace, app, runtime.QtWidgets)
+        widget.resize(args.width, args.height)
+        widget.show()
+        activate_window = getattr(widget, "activateWindow", None)
+        if callable(activate_window):
+            activate_window()
+        set_focus = getattr(widget, "setFocus", None)
+        if callable(set_focus):
+            set_focus()
+
+        _process_events(app, args.timeout_ms)
+        for step in steps:
+            _dispatch_step(step, widget, runtime)
+            _process_events(app, args.timeout_ms)
+        _process_events(app, args.timeout_ms)
+
+        return {
+            "status": "ok",
+            "example": str(args.example),
+            "script": str(args.script),
+            "width": args.width,
+            "height": args.height,
+            "steps_executed": len(steps),
+            "actions": [step["action"] for step in steps],
+        }
     finally:
         sys.path[:] = original_sys_path
-
-    widget = _find_widget(namespace, app, runtime.QtWidgets)
-    widget.resize(args.width, args.height)
-    widget.show()
-    activate_window = getattr(widget, "activateWindow", None)
-    if callable(activate_window):
-        activate_window()
-    set_focus = getattr(widget, "setFocus", None)
-    if callable(set_focus):
-        set_focus()
-
-    _process_events(app, args.timeout_ms)
-    for step in steps:
-        _dispatch_step(step, widget, runtime)
-        _process_events(app, args.timeout_ms)
-    _process_events(app, args.timeout_ms)
-
-    return {
-        "status": "ok",
-        "example": str(args.example),
-        "script": str(args.script),
-        "width": args.width,
-        "height": args.height,
-        "steps_executed": len(steps),
-        "actions": [step["action"] for step in steps],
-    }
 
 
 def main(argv: list[str] | None = None) -> int:
