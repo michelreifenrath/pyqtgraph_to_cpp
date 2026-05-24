@@ -7,7 +7,11 @@
 
 #include "core/ArrayView.hpp"
 
+#if __has_include(<QImage>)
 #include <QImage>
+#else
+class QImage;
+#endif
 
 #include <cstdint>
 #include <optional>
@@ -16,6 +20,8 @@ namespace pyqtgraph {
 
 struct MakeQImageOptions {
     bool transpose = true;
+    // When false, return a non-owning QImage only for compatible contiguous storage;
+    // callers must keep the source storage alive, and unsupported layouts throw.
     bool copy = true;
     std::optional<bool> alpha = std::nullopt;
 };

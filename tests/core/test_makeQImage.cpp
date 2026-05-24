@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string_view>
 
@@ -176,6 +177,107 @@ bool testStridedInputCopiesElements()
     return true;
 }
 
+bool testCopyTrueDetachesSource()
+{
+    std::array<std::uint8_t, 6> data{10, 20, 30, 40, 50, 60};
+    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
+
+    const QImage image = pyqtgraph::makeQImage(view);
+    CHECK_PIXEL(image, 1, 0, 40, 40, 40, 255);
+
+    data[3] = 99;
+    CHECK_PIXEL(image, 1, 0, 40, 40, 40, 255);
+    return true;
+}
+
+bool testCopyFalseSharesCompatibleGrayscale()
+{
+    alignas(4) std::array<std::uint8_t, 8> data{10, 20, 30, 40, 50, 60, 70, 80};
+    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 4});
+    pyqtgraph::MakeQImageOptions options;
+    options.transpose = false;
+    options.copy = false;
+
+    const QImage image = pyqtgraph::makeQImage(view, options);
+    CHECK(image.width() == 4);
+    CHECK(image.height() == 2);
+    CHECK(image.format() == QImage::Format_Grayscale8);
+    CHECK(reinterpret_cast<const std::uint8_t*>(image.constBits()) == data.data());
+    CHECK_PIXEL(image, 1, 0, 20, 20, 20, 255);
+
+    data[1] = 99;
+    CHECK_PIXEL(image, 1, 0, 99, 99, 99, 255);
+    return true;
+}
+
+bool testCopyFalseSharesCompatibleTransposedGrayscale()
+{
+    alignas(4) std::array<std::uint8_t, 8> data{10, 20, 30, 40, 50, 60, 70, 80};
+    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {4, 2}, {1, 4});
+    pyqtgraph::MakeQImageOptions options;
+    options.copy = false;
+
+    const QImage image = pyqtgraph::makeQImage(view, options);
+    CHECK(image.width() == 4);
+    CHECK(image.height() == 2);
+    CHECK(image.format() == QImage::Format_Grayscale8);
+    CHECK(reinterpret_cast<const std::uint8_t*>(image.constBits()) == data.data());
+    CHECK_PIXEL(image, 1, 1, 60, 60, 60, 255);
+
+    data[5] = 99;
+    CHECK_PIXEL(image, 1, 1, 99, 99, 99, 255);
+    return true;
+}
+
+bool testCopyFalseSharesCompatibleBgra()
+{
+    alignas(4) std::array<std::uint8_t, 8> data{1, 2, 3, 4, 10, 20, 30, 128};
+    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {1, 2, 4});
+    pyqtgraph::MakeQImageOptions options;
+    options.transpose = false;
+    options.copy = false;
+
+    const QImage image = pyqtgraph::makeQImage(view, options);
+    CHECK(image.width() == 2);
+    CHECK(image.height() == 1);
+    CHECK(image.format() == QImage::Format_ARGB32);
+    CHECK(reinterpret_cast<const std::uint8_t*>(image.constBits()) == data.data());
+    CHECK_PIXEL(image, 0, 0, 3, 2, 1, 4);
+
+    data[2] = 33;
+    data[3] = 44;
+    CHECK_PIXEL(image, 0, 0, 33, 2, 1, 44);
+    return true;
+}
+
+bool testCopyFalseRejectsUnsupportedInputs()
+{
+    const std::array<std::uint8_t, 16> data{};
+    pyqtgraph::MakeQImageOptions options;
+    options.copy = false;
+    CHECK(checkThrowsInvalidArgument(
+        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {2, 2}), options); },
+        "copy=false default-transposed contiguous rank-2 input"));
+
+    options.transpose = false;
+    CHECK(checkThrowsInvalidArgument(
+        [&] {
+            (void)pyqtgraph::makeQImage(
+                pyqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {2, 2}, {4, 2}), options);
+        },
+        "copy=false strided rank-2 input"));
+    CHECK(checkThrowsInvalidArgument(
+        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 3}), options); },
+        "copy=false three-channel input"));
+
+    options.transpose = true;
+    options.alpha = std::nullopt;
+    CHECK(checkThrowsInvalidArgument(
+        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 4}), options); },
+        "copy=false default-transposed four-channel input"));
+    return true;
+}
+
 bool testInvalidInputs()
 {
     const std::array<std::uint8_t, 20> data{};
@@ -212,6 +314,11 @@ int main()
     success = testAlphaTrueAddsOpaqueAlphaForBgr() && success;
     success = testTransposeFalse() && success;
     success = testStridedInputCopiesElements() && success;
+    success = testCopyTrueDetachesSource() && success;
+    success = testCopyFalseSharesCompatibleGrayscale() && success;
+    success = testCopyFalseSharesCompatibleTransposedGrayscale() && success;
+    success = testCopyFalseSharesCompatibleBgra() && success;
+    success = testCopyFalseRejectsUnsupportedInputs() && success;
     success = testInvalidInputs() && success;
 
     return success ? 0 : 1;
