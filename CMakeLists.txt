@@ -87,5 +87,15 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_colormap)
         add_test(NAME pyqtgraph_cpp.core.ColorMap COMMAND pyqtgraph_cpp_core_colormap)
+
+        add_executable(pyqtgraph_cpp_core_colormap_lut tests/core/test_ColorMap_LUT.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_colormap_lut
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_colormap_lut)
+        add_test(NAME pyqtgraph_cpp.core.ColorMap.LUT COMMAND pyqtgraph_cpp_core_colormap_lut)
     endif()
 endif()
