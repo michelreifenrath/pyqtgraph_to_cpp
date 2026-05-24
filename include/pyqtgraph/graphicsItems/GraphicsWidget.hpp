@@ -21,12 +21,17 @@ public:
     GraphicsWidget(GraphicsWidget&&) = delete;
     GraphicsWidget& operator=(GraphicsWidget&&) = delete;
 
+    using GraphicsItem::setGraphicsItem;
+
     [[nodiscard]] QGraphicsItem* graphicsItem() const noexcept;
 
     void setFixedHeight(qreal height);
     void setFixedWidth(qreal width);
     [[nodiscard]] qreal height() const;
     [[nodiscard]] qreal width() const;
+
+protected:
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 };
 
 } // namespace pyqtgraph::graphicsItems

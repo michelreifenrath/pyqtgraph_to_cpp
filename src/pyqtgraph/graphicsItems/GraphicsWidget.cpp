@@ -6,6 +6,8 @@
 #include "../../../include/pyqtgraph/graphicsItems/GraphicsWidget.hpp"
 
 #include <QtCore/QRectF>
+#include <QtCore/QVariant>
+#include <QtWidgets/QGraphicsItem>
 
 namespace pyqtgraph::graphicsItems {
 
@@ -42,6 +44,20 @@ qreal GraphicsWidget::height() const
 qreal GraphicsWidget::width() const
 {
     return geometry().width();
+}
+
+QVariant GraphicsWidget::itemChange(GraphicsItemChange change, const QVariant& value)
+{
+    switch (change) {
+    case QGraphicsItem::ItemParentHasChanged:
+    case QGraphicsItem::ItemSceneHasChanged:
+        forgetViewWidget();
+        break;
+    default:
+        break;
+    }
+
+    return QGraphicsWidget::itemChange(change, value);
 }
 
 } // namespace pyqtgraph::graphicsItems

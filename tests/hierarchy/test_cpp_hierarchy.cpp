@@ -122,6 +122,13 @@ bool testGraphicsWidgetApiShape()
 
     GraphicsWidget widget;
     CHECK(widget.graphicsItem() == static_cast<QGraphicsItem*>(&widget));
+
+    QGraphicsRectItem host(QRectF(0.0, 0.0, 1.0, 1.0));
+    widget.setGraphicsItem(&host);
+    CHECK(widget.graphicsItem() == &host);
+
+    widget.setGraphicsItem(static_cast<QGraphicsItem*>(&widget));
+    CHECK(widget.graphicsItem() == static_cast<QGraphicsItem*>(&widget));
     CHECK(widget.getViewWidget() == nullptr);
 
     return true;

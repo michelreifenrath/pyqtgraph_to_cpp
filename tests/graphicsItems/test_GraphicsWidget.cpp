@@ -67,17 +67,24 @@ bool testConstructionAndHierarchy()
 bool testInheritedViewWidgetDiscovery()
 {
     pyqtgraph::graphicsItems::GraphicsWidget widget;
-    QGraphicsScene scene;
-    scene.addItem(&widget);
+    QGraphicsScene firstScene;
+    firstScene.addItem(&widget);
 
     CHECK(widget.getViewWidget() == nullptr);
 
-    QGraphicsView view(&scene);
-    CHECK(widget.getViewWidget() == &view);
-    CHECK(widget.getViewWidget() == &view);
+    QGraphicsView firstView(&firstScene);
+    CHECK(widget.getViewWidget() == &firstView);
+    CHECK(widget.getViewWidget() == &firstView);
 
-    scene.removeItem(&widget);
-    widget.forgetViewWidget();
+    firstScene.removeItem(&widget);
+    CHECK(widget.getViewWidget() == nullptr);
+
+    QGraphicsScene secondScene;
+    QGraphicsView secondView(&secondScene);
+    secondScene.addItem(&widget);
+    CHECK(widget.getViewWidget() == &secondView);
+
+    secondScene.removeItem(&widget);
     CHECK(widget.getViewWidget() == nullptr);
 
     return true;
