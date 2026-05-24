@@ -1,3 +1,4 @@
+#include <pyqtgraph/graphicsItems/AxisItem.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsItem.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsWidget.hpp>
@@ -134,6 +135,26 @@ bool testGraphicsWidgetApiShape()
     return true;
 }
 
+bool testAxisItemApiShape()
+{
+    using pyqtgraph::graphicsItems::AxisItem;
+    using pyqtgraph::graphicsItems::GraphicsItem;
+    using pyqtgraph::graphicsItems::GraphicsWidget;
+
+    static_assert(std::is_constructible_v<AxisItem>);
+    static_assert(std::is_constructible_v<AxisItem, QGraphicsItem*>);
+    static_assert(std::is_destructible_v<AxisItem>);
+    static_assert(std::is_base_of_v<GraphicsWidget, AxisItem>);
+    static_assert(std::is_base_of_v<GraphicsItem, AxisItem>);
+    static_assert(std::is_base_of_v<QGraphicsWidget, AxisItem>);
+    static_assert(std::is_base_of_v<QGraphicsItem, AxisItem>);
+
+    AxisItem axis;
+    CHECK(axis.graphicsItem() == static_cast<QGraphicsItem*>(&axis));
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -148,6 +169,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testGraphicsWidgetApiShape()) {
+        return 1;
+    }
+    if (!testAxisItemApiShape()) {
         return 1;
     }
 

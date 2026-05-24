@@ -117,6 +117,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GraphicsItem.cpp
             src/pyqtgraph/graphicsItems/GraphicsObject.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
+            src/pyqtgraph/graphicsItems/AxisItem.cpp
     )
     set_target_properties(pyqtgraph_cpp PROPERTIES AUTOMOC ON)
     target_link_libraries(pyqtgraph_cpp
@@ -276,6 +277,16 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsscene_graphicsscene)
         add_test(NAME pyqtgraph_cpp.GraphicsScene.GraphicsScene COMMAND pyqtgraph_cpp_graphicsscene_graphicsscene)
+
+        add_executable(pyqtgraph_cpp_graphicsitems_axisitem tests/graphicsItems/test_AxisItem.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsitems_axisitem
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_axisitem)
+        add_test(NAME pyqtgraph_cpp.graphicsItems.AxisItem COMMAND pyqtgraph_cpp_graphicsitems_axisitem)
 
         add_executable(pyqtgraph_cpp_hierarchy_cpp tests/hierarchy/test_cpp_hierarchy.cpp)
         target_link_libraries(pyqtgraph_cpp_hierarchy_cpp
