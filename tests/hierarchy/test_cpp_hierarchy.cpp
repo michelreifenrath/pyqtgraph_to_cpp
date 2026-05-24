@@ -1,9 +1,12 @@
 #include <pyqtgraph/graphicsItems/GraphicsItem.hpp>
+#include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
 #include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsObject>
 #include <QtWidgets/QGraphicsRectItem>
+#include <QtWidgets/QStyleOptionGraphicsItem>
 
 #include <iostream>
 #include <string_view>
@@ -27,6 +30,15 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
             return false; \
         } \
     } while (false)
+
+class ConcreteGraphicsObject final : public pyqtgraph::graphicsItems::GraphicsObject {
+public:
+    using pyqtgraph::graphicsItems::GraphicsObject::GraphicsObject;
+
+    QRectF boundingRect() const override { return QRectF(0.0, 0.0, 1.0, 1.0); }
+
+    void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override {}
+};
 
 bool testGraphicsItemApiShape()
 {
@@ -58,11 +70,34 @@ bool testGraphicsItemApiShape()
     return true;
 }
 
+bool testGraphicsObjectApiShape()
+{
+    using pyqtgraph::graphicsItems::GraphicsItem;
+    using pyqtgraph::graphicsItems::GraphicsObject;
+
+    static_assert(std::is_base_of_v<QObject, GraphicsObject>);
+    static_assert(std::is_base_of_v<QGraphicsItem, GraphicsObject>);
+    static_assert(std::is_base_of_v<QGraphicsObject, GraphicsObject>);
+    static_assert(std::is_base_of_v<GraphicsItem, GraphicsObject>);
+    static_assert(std::is_abstract_v<GraphicsObject>);
+    static_assert(std::is_constructible_v<ConcreteGraphicsObject>);
+    static_assert(std::is_destructible_v<ConcreteGraphicsObject>);
+
+    ConcreteGraphicsObject object;
+    CHECK(object.graphicsItem() == static_cast<QGraphicsItem*>(&object));
+    CHECK(object.getViewWidget() == nullptr);
+
+    return true;
+}
+
 } // namespace
 
 int main()
 {
     if (!testGraphicsItemApiShape()) {
+        return 1;
+    }
+    if (!testGraphicsObjectApiShape()) {
         return 1;
     }
 
