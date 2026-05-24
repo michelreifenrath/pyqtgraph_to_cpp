@@ -85,6 +85,7 @@ bool testGraphicsObjectBindsItselfAsGraphicsItem()
     ConcreteGraphicsObject object;
 
     CHECK(object.graphicsItem() == static_cast<QGraphicsItem*>(&object));
+    CHECK(object.toGraphicsObject() == &object);
     CHECK(object.flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges));
     CHECK(object.parentItem() == nullptr);
 
@@ -92,6 +93,7 @@ bool testGraphicsObjectBindsItselfAsGraphicsItem()
     ConcreteGraphicsObject child(&parent);
     CHECK(child.parentItem() == &parent);
     CHECK(child.graphicsItem() == static_cast<QGraphicsItem*>(&child));
+    CHECK(child.toGraphicsObject() == &child);
 
     return true;
 }
