@@ -5,6 +5,7 @@
 #include <QtWidgets/QGraphicsRectItem>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <string_view>
@@ -47,6 +48,13 @@ bool samePoint(const pyqtgraph::Point& actual, qreal x, qreal y)
     return qFuzzyCompare(actual.x(), x) && qFuzzyCompare(actual.y(), y);
 }
 
+qint64 steadyClockNowMilliseconds() noexcept
+{
+    using Clock = std::chrono::steady_clock;
+    return static_cast<qint64>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count());
+}
+
 bool testMouseClickEventShapeAndAccessors()
 {
     using pyqtgraph::GraphicsScene::MouseClickEvent;
@@ -61,16 +69,21 @@ bool testMouseClickEventShapeAndAccessors()
     pressEvent.setButton(Qt::LeftButton);
     pressEvent.setButtons(Qt::LeftButton | Qt::RightButton);
     pressEvent.setModifiers(Qt::ShiftModifier | Qt::ControlModifier);
-    pressEvent.setTimestamp(1234);
+
+    const qint64 before = steadyClockNowMilliseconds();
+    pressEvent.setTimestamp(static_cast<unsigned long>(before + 60000));
 
     MouseClickEvent event(&pressEvent, true);
+    const qint64 after = steadyClockNowMilliseconds();
+
     CHECK(samePoint(event.scenePos(), 12.5, 24.0));
     CHECK(samePoint(event.screenPos(), 125.0, 240.0));
     CHECK(event.button() == Qt::LeftButton);
     CHECK(event.buttons() == (Qt::LeftButton | Qt::RightButton));
     CHECK(event.modifiers() == (Qt::ShiftModifier | Qt::ControlModifier));
     CHECK(event.doubleClick());
-    CHECK(event.time() == 1234);
+    CHECK(event.time() >= before);
+    CHECK(event.time() <= after);
     CHECK(!event.isAccepted());
     CHECK(event.currentItem() == nullptr);
     CHECK(event.acceptedItem() == nullptr);

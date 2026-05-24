@@ -10,6 +10,7 @@
 #include <QtWidgets/QGraphicsSceneMouseEvent>
 
 #include <array>
+#include <chrono>
 #include <memory>
 
 using PyQtGraphItemLifetimeToken = std::shared_ptr<void>;
@@ -33,6 +34,13 @@ pyqtgraph::Point mapFromScene(QGraphicsItem* item, const pyqtgraph::Point& scene
         return scenePos;
     }
     return pyqtgraph::Point(item->mapFromScene(scenePos));
+}
+
+qint64 steadyClockNowMilliseconds() noexcept
+{
+    using Clock = std::chrono::steady_clock;
+    return static_cast<qint64>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count());
 }
 
 constexpr std::array<Qt::MouseButton, 3> trackedMouseButtons {
@@ -217,7 +225,7 @@ MouseClickEvent::MouseClickEvent(QGraphicsSceneMouseEvent* pressEvent, bool doub
     , buttons_(pressEvent != nullptr ? pressEvent->buttons() : Qt::MouseButtons(Qt::NoButton))
     , button_(pressEvent != nullptr ? pressEvent->button() : Qt::NoButton)
     , modifiers_(pressEvent != nullptr ? pressEvent->modifiers() : Qt::KeyboardModifiers(Qt::NoModifier))
-    , time_(pressEvent != nullptr ? static_cast<qint64>(pressEvent->timestamp()) : 0)
+    , time_(pressEvent != nullptr ? steadyClockNowMilliseconds() : 0)
     , doubleClick_(doubleClick)
 {
 }

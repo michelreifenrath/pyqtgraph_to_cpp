@@ -94,6 +94,7 @@ public:
     [[nodiscard]] Qt::MouseButton button() const noexcept;
     [[nodiscard]] bool doubleClick() const noexcept;
     [[nodiscard]] Qt::KeyboardModifiers modifiers() const noexcept;
+    // Monotonic construction time in std::chrono::steady_clock milliseconds.
     [[nodiscard]] qint64 time() const noexcept;
 
 private:
