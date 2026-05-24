@@ -1,14 +1,19 @@
 #include <pyqtgraph/graphicsItems/GraphicsItem.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
+#include <pyqtgraph/graphicsItems/GraphicsWidget.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
+#include <QtCore/QtGlobal>
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsObject>
 #include <QtWidgets/QGraphicsRectItem>
+#include <QtWidgets/QGraphicsWidget>
 #include <QtWidgets/QStyleOptionGraphicsItem>
 
 #include <iostream>
+#include <memory>
 #include <string_view>
 #include <type_traits>
 
@@ -30,6 +35,19 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
             return false; \
         } \
     } while (false)
+
+class ApplicationGuard {
+public:
+    ApplicationGuard(int& argc, char** argv)
+    {
+        if (QApplication::instance() == nullptr) {
+            application_ = std::make_unique<QApplication>(argc, argv);
+        }
+    }
+
+private:
+    std::unique_ptr<QApplication> application_;
+};
 
 class ConcreteGraphicsObject final : public pyqtgraph::graphicsItems::GraphicsObject {
 public:
@@ -90,14 +108,39 @@ bool testGraphicsObjectApiShape()
     return true;
 }
 
+bool testGraphicsWidgetApiShape()
+{
+    using pyqtgraph::graphicsItems::GraphicsItem;
+    using pyqtgraph::graphicsItems::GraphicsWidget;
+
+    static_assert(std::is_constructible_v<GraphicsWidget>);
+    static_assert(std::is_constructible_v<GraphicsWidget, QGraphicsItem*>);
+    static_assert(std::is_destructible_v<GraphicsWidget>);
+    static_assert(std::is_base_of_v<GraphicsItem, GraphicsWidget>);
+    static_assert(std::is_base_of_v<QGraphicsWidget, GraphicsWidget>);
+    static_assert(std::is_base_of_v<QGraphicsItem, GraphicsWidget>);
+
+    GraphicsWidget widget;
+    CHECK(widget.graphicsItem() == static_cast<QGraphicsItem*>(&widget));
+    CHECK(widget.getViewWidget() == nullptr);
+
+    return true;
+}
+
 } // namespace
 
-int main()
+int main(int argc, char** argv)
 {
+    qputenv("QT_QPA_PLATFORM", "offscreen");
+    ApplicationGuard application(argc, argv);
+
     if (!testGraphicsItemApiShape()) {
         return 1;
     }
     if (!testGraphicsObjectApiShape()) {
+        return 1;
+    }
+    if (!testGraphicsWidgetApiShape()) {
         return 1;
     }
 

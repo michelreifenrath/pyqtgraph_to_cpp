@@ -21,6 +21,8 @@ public:
     GraphicsWidget(GraphicsWidget&&) = delete;
     GraphicsWidget& operator=(GraphicsWidget&&) = delete;
 
+    [[nodiscard]] QGraphicsItem* graphicsItem() const noexcept;
+
     void setFixedHeight(qreal height);
     void setFixedWidth(qreal width);
     [[nodiscard]] qreal height() const;
