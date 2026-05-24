@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "case": "makeQImage_byte_arrayview",
+  "reference": {
+    "pyqtgraph_version": "0.14.0",
+    "pyqtgraph_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "source": "pyqtgraph/functions.py makeQImage",
+    "notes": [
+      "Rank-3 channel order follows PyQtGraph's documented (b, g, r, a) order.",
+      "Rank-3 three-channel input defaults to RGB32 with opaque alpha; forcing alpha=true selects ARGB32 with opaque alpha.",
+      "Rank-3 four-channel input defaults to ARGB32 and preserves alpha; alpha=false selects RGB32 and discards input alpha.",
+      "Rank-2 grayscale input is supported with the documented transpose semantics, while the pinned Python implementation raises for transpose=true because it calls transpose((1, 0, 2)) on a 2D array.",
+      "The C++ helper returns an owned copied QImage. The copy option is accepted for API parity and does not change ownership behavior."
+    ]
+  },
+  "inputs": {
+    "dtype": "uint8",
+    "options_default": {
+      "transpose": true,
+      "copy": true,
+      "alpha": null
+    },
+    "cases": [
+      {
+        "name": "gray2d_transpose_true",
+        "shape": [2, 3],
+        "values_row_major": [10, 20, 30, 40, 50, 60]
+      },
+      {
+        "name": "bgr_transpose_true",
+        "shape": [2, 2, 3],
+        "values_row_major": [1, 2, 3, 10, 20, 30, 0, 128, 255, 7, 8, 9]
+      },
+      {
+        "name": "bgra_transpose_true",
+        "shape": [2, 2, 4],
+        "values_row_major": [1, 2, 3, 0, 10, 20, 30, 128, 0, 128, 255, 255, 7, 8, 9, 64]
+      },
+      {
+        "name": "bgra_alpha_false",
+        "shape": [1, 1, 4],
+        "values_row_major": [1, 2, 3, 4],
+        "options": {
+          "transpose": true,
+          "copy": true,
+          "alpha": false
+        }
+      },
+      {
+        "name": "bgr_alpha_true",
+        "shape": [1, 1, 3],
+        "values_row_major": [1, 2, 3],
+        "options": {
+          "transpose": true,
+          "copy": true,
+          "alpha": true
+        }
+      },
+      {
+        "name": "gray2d_transpose_false_strided",
+        "shape": [2, 3],
+        "strides_elements": [6, 2],
+        "base_values_row_major": [1, 99, 2, 99, 3, 99, 4, 99, 5, 99, 6, 99],
+        "options": {
+          "transpose": false,
+          "copy": true,
+          "alpha": null
+        }
+      }
+    ]
+  },
+  "expected": {
+    "gray2d_transpose_true": {
+      "width": 2,
+      "height": 3,
+      "format": "QImage::Format_Grayscale8",
+      "pixels_rgba_rows": [
+        [[10, 10, 10, 255], [40, 40, 40, 255]],
+        [[20, 20, 20, 255], [50, 50, 50, 255]],
+        [[30, 30, 30, 255], [60, 60, 60, 255]]
+      ]
+    },
+    "bgr_transpose_true": {
+      "width": 2,
+      "height": 2,
+      "format": "QImage::Format_RGB32",
+      "pixels_rgba_rows": [
+        [[3, 2, 1, 255], [255, 128, 0, 255]],
+        [[30, 20, 10, 255], [9, 8, 7, 255]]
+      ]
+    },
+    "bgra_transpose_true": {
+      "width": 2,
+      "height": 2,
+      "format": "QImage::Format_ARGB32",
+      "pixels_rgba_rows": [
+        [[3, 2, 1, 0], [255, 128, 0, 255]],
+        [[30, 20, 10, 128], [9, 8, 7, 64]]
+      ]
+    },
+    "bgra_alpha_false": {
+      "width": 1,
+      "height": 1,
+      "format": "QImage::Format_RGB32",
+      "pixels_rgba_rows": [
+        [[3, 2, 1, 255]]
+      ]
+    },
+    "bgr_alpha_true": {
+      "width": 1,
+      "height": 1,
+      "format": "QImage::Format_ARGB32",
+      "pixels_rgba_rows": [
+        [[3, 2, 1, 255]]
+      ]
+    },
+    "gray2d_transpose_false_strided": {
+      "width": 3,
+      "height": 2,
+      "format": "QImage::Format_Grayscale8",
+      "pixels_rgba_rows": [
+        [[1, 1, 1, 255], [2, 2, 2, 255], [3, 3, 3, 255]],
+        [[4, 4, 4, 255], [5, 5, 5, 255], [6, 6, 6, 255]]
+      ]
+    },
+    "invalid_inputs": {
+      "unsupported_channels": [1, 2, 5],
+      "null_data": true,
+      "zero_extent": true
+    }
+  },
+  "tolerance": {
+    "rgba_channel_abs": 0
+  }
+}

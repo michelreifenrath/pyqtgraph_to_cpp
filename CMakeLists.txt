@@ -45,6 +45,7 @@ if(_pyqtgraph_cpp_has_mkcolor)
         PRIVATE
             src/pyqtgraph/colormap.cpp
             src/pyqtgraph/functions.cpp
+            src/pyqtgraph/functions_qimage.cpp
     )
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
@@ -77,6 +78,16 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_mkcolor)
         add_test(NAME pyqtgraph_cpp.core.mkColor COMMAND pyqtgraph_cpp_core_mkcolor)
+
+        add_executable(pyqtgraph_cpp_core_makeqimage tests/core/test_makeQImage.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_makeqimage
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_makeqimage)
+        add_test(NAME pyqtgraph_cpp.core.makeQImage COMMAND pyqtgraph_cpp_core_makeqimage)
 
         add_executable(pyqtgraph_cpp_core_colormap tests/core/test_ColorMap.cpp)
         target_link_libraries(pyqtgraph_cpp_core_colormap
