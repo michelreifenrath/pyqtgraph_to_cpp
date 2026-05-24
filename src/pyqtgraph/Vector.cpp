@@ -22,6 +22,18 @@ constexpr double radiansToDegrees(double radians)
     return radians * 180.0 / std::acos(-1.0);
 }
 
+int checkedCoordinateIndex(qsizetype index)
+{
+    switch (index) {
+    case 0:
+    case 1:
+    case 2:
+        return static_cast<int>(index);
+    default:
+        throw std::out_of_range("Vector coordinate index out of range");
+    }
+}
+
 } // namespace
 
 Vector::Vector() = default;
@@ -75,35 +87,24 @@ Vector::Vector(std::initializer_list<double> values)
     setZ(values.size() == coordinateCount() ? toFloat(*it) : 0.0F);
 }
 
+float Vector::operator[](int index) const
+{
+    return QVector3D::operator[](checkedCoordinateIndex(index));
+}
+
+float& Vector::operator[](int index)
+{
+    return QVector3D::operator[](checkedCoordinateIndex(index));
+}
+
 double Vector::at(qsizetype index) const
 {
-    switch (index) {
-    case 0:
-        return x();
-    case 1:
-        return y();
-    case 2:
-        return z();
-    default:
-        throw std::out_of_range("Vector coordinate index out of range");
-    }
+    return QVector3D::operator[](checkedCoordinateIndex(index));
 }
 
 void Vector::set(qsizetype index, double value)
 {
-    switch (index) {
-    case 0:
-        setX(toFloat(value));
-        return;
-    case 1:
-        setY(toFloat(value));
-        return;
-    case 2:
-        setZ(toFloat(value));
-        return;
-    default:
-        throw std::out_of_range("Vector coordinate index out of range");
-    }
+    QVector3D::operator[](checkedCoordinateIndex(index)) = toFloat(value);
 }
 
 std::optional<double> Vector::angle(const QVector3D& other) const

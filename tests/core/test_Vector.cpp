@@ -70,6 +70,28 @@ void expectOutOfRangeSet(pyqtgraph::Vector& vector, qsizetype index)
     CHECK(threw);
 }
 
+void expectOutOfRangeIndexRead(const pyqtgraph::Vector& vector, int index)
+{
+    bool threw = false;
+    try {
+        static_cast<void>(vector[index]);
+    } catch (const std::out_of_range&) {
+        threw = true;
+    }
+    CHECK(threw);
+}
+
+void expectOutOfRangeIndexWrite(pyqtgraph::Vector& vector, int index)
+{
+    bool threw = false;
+    try {
+        vector[index] = 1.0F;
+    } catch (const std::out_of_range&) {
+        threw = true;
+    }
+    CHECK(threw);
+}
+
 void expectInvalidInitializerList(std::initializer_list<double> values)
 {
     bool threw = false;
@@ -113,14 +135,30 @@ int main()
     assertNear(indexed.at(0), 10.0);
     assertNear(indexed.at(1), 20.0);
     assertNear(indexed.at(2), 30.0);
-    indexed.set(0, -1.0);
-    indexed.set(1, -2.0);
-    indexed.set(2, -3.0);
+    const Vector& constIndexed = indexed;
+    assertNear(constIndexed[0], 10.0);
+    assertNear(constIndexed[1], 20.0);
+    assertNear(constIndexed[2], 30.0);
+    indexed[0] = -1.0F;
+    indexed[1] = -2.0F;
+    indexed[2] = -3.0F;
     assertVector(indexed, -1.0, -2.0, -3.0);
+    indexed.set(0, -4.0);
+    indexed.set(1, -5.0);
+    indexed.set(2, -6.0);
+    assertVector(indexed, -4.0, -5.0, -6.0);
     expectOutOfRangeAt(indexed, -1);
     expectOutOfRangeAt(indexed, 3);
+    expectOutOfRangeAt(indexed, 4);
     expectOutOfRangeSet(indexed, -1);
     expectOutOfRangeSet(indexed, 3);
+    expectOutOfRangeSet(indexed, 4);
+    expectOutOfRangeIndexRead(indexed, -1);
+    expectOutOfRangeIndexRead(indexed, 3);
+    expectOutOfRangeIndexRead(indexed, 4);
+    expectOutOfRangeIndexWrite(indexed, -1);
+    expectOutOfRangeIndexWrite(indexed, 3);
+    expectOutOfRangeIndexWrite(indexed, 4);
 
     const Vector original{6.0, 8.0, 10.0};
     Vector copied = original.copy();

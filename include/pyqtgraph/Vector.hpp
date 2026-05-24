@@ -28,6 +28,8 @@ public:
 
     static constexpr qsizetype coordinateCount() noexcept { return 3; }
 
+    [[nodiscard]] float operator[](int index) const;
+    float& operator[](int index);
     [[nodiscard]] double at(qsizetype index) const;
     void set(qsizetype index, double value);
 
