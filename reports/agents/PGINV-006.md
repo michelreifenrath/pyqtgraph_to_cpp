@@ -12,20 +12,27 @@ Categorized every checked-in PyQtGraph example by validation level without chang
 
 ## Classification summary
 
-- 64 examples: visual required, interaction optional.
-- 47 examples: visual required, interaction required.
+- 65 examples: visual required, interaction optional.
+- 46 examples: visual required, interaction required.
 - 4 examples: numeric required only.
 - 14 examples: validation not applicable.
 
-## Rework note
+## Rework notes
 
-This rework specifically fixes the gate finding that the prior Pi run left no git changes. A bounded scout subagent inspected the branch and confirmed the safe path was to add a non-generated top-level validation section plus focused tests/docs.
+- Initial rework fixed the gate finding that the prior Pi run left no git changes by adding a non-generated top-level validation section plus focused tests/docs.
+- Current bounded rework fixes the autoreview finding by recategorizing `pyqtgraph/examples/CLIexample.py` as a static-render example and adding focused regression coverage.
 
 ## Validation
+
+Current bounded rework checks:
 
 - `python3 -m pytest tests/oracle/test_example_validation_levels.py -q` — passed, 4 tests.
 - `python3 scripts/generate_manifest --check` — passed.
 - `python3 -m pytest tests/oracle/test_port_manifest.py -q` — passed, 13 tests.
+- `git diff --check` — passed.
+
+Additional full-run checks:
+
 - `python3 -m pytest -q` — passed, 225 tests.
 - `python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md` — passed.
 

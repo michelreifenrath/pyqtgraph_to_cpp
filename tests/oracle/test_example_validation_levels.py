@@ -91,6 +91,12 @@ def test_representative_example_validation_categories_are_present() -> None:
         "interaction": "optional",
         "gpt_visual_review": "required_for_pr",
     }
+    assert records_by_path["pyqtgraph/examples/CLIexample.py"] == {
+        "numeric": "optional",
+        "visual": "required",
+        "interaction": "optional",
+        "gpt_visual_review": "required_for_pr",
+    }
     assert records_by_path["pyqtgraph/examples/ColorButton.py"] == {
         "numeric": "optional",
         "visual": "required",

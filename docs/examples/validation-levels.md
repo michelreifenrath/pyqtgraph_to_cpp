@@ -22,8 +22,8 @@ Each record mirrors one `examples` entry by `upstream_path`, `name`, and `catego
 
 ## Current inventory summary
 
-- 64 examples: visual required, interaction optional.
-- 47 examples: visual required, interaction required.
+- 65 examples: visual required, interaction optional.
+- 46 examples: visual required, interaction required.
 - 4 examples: numeric required only.
 - 14 examples: validation not applicable.
 
