@@ -2,6 +2,7 @@
 #include <pyqtgraph/graphicsItems/GraphicsItem.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsWidget.hpp>
+#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -155,6 +156,32 @@ bool testAxisItemApiShape()
     return true;
 }
 
+bool testViewBoxApiShape()
+{
+    using pyqtgraph::graphicsItems::GraphicsItem;
+    using pyqtgraph::graphicsItems::GraphicsWidget;
+    using pyqtgraph::graphicsItems::ViewBox;
+
+    static_assert(std::is_constructible_v<ViewBox>);
+    static_assert(std::is_constructible_v<ViewBox, QGraphicsItem*>);
+    static_assert(std::is_destructible_v<ViewBox>);
+    static_assert(std::is_base_of_v<GraphicsWidget, ViewBox>);
+    static_assert(std::is_base_of_v<GraphicsItem, ViewBox>);
+    static_assert(std::is_base_of_v<QGraphicsWidget, ViewBox>);
+    static_assert(std::is_base_of_v<QGraphicsItem, ViewBox>);
+
+    CHECK(ViewBox::PanMode == 3);
+    CHECK(ViewBox::RectMode == 1);
+    CHECK(ViewBox::XAxis == 0);
+    CHECK(ViewBox::YAxis == 1);
+    CHECK(ViewBox::XYAxes == 2);
+
+    ViewBox viewBox;
+    CHECK(viewBox.graphicsItem() == static_cast<QGraphicsItem*>(&viewBox));
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -172,6 +199,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testAxisItemApiShape()) {
+        return 1;
+    }
+    if (!testViewBoxApiShape()) {
         return 1;
     }
 
