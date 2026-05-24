@@ -22,6 +22,9 @@ public:
     GraphicsObject& operator=(const GraphicsObject&) = delete;
     GraphicsObject(GraphicsObject&&) = delete;
     GraphicsObject& operator=(GraphicsObject&&) = delete;
+
+protected:
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 };
 
 } // namespace pyqtgraph::graphicsItems

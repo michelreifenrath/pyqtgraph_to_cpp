@@ -96,19 +96,48 @@ bool testGraphicsObjectBindsItselfAsGraphicsItem()
     return true;
 }
 
-bool testInheritedViewWidgetCache()
+bool testInheritedViewWidgetCacheInvalidatesAcrossScenes()
+{
+    QGraphicsScene firstScene;
+    QGraphicsScene secondScene;
+    ConcreteGraphicsObject object;
+    firstScene.addItem(&object);
+
+    QGraphicsView firstView(&firstScene);
+    QGraphicsView secondView(&secondScene);
+    CHECK(object.getViewWidget() == &firstView);
+    CHECK(object.getViewWidget() == &firstView);
+
+    firstScene.removeItem(&object);
+    CHECK(object.getViewWidget() == nullptr);
+
+    secondScene.addItem(&object);
+    CHECK(object.getViewWidget() == &secondView);
+
+    secondScene.removeItem(&object);
+    CHECK(object.getViewWidget() == nullptr);
+
+    return true;
+}
+
+bool testInheritedViewWidgetCacheInvalidatesAcrossParents()
 {
     QGraphicsScene scene;
-    ConcreteGraphicsObject object;
-    scene.addItem(&object);
+    ConcreteGraphicsObject sceneParent;
+    ConcreteGraphicsObject detachedParent;
+    ConcreteGraphicsObject child;
+    scene.addItem(&sceneParent);
 
     QGraphicsView view(&scene);
-    CHECK(object.getViewWidget() == &view);
-    CHECK(object.getViewWidget() == &view);
+    child.setParentItem(&sceneParent);
+    CHECK(child.getViewWidget() == &view);
+    CHECK(child.getViewWidget() == &view);
 
-    scene.removeItem(&object);
-    object.forgetViewWidget();
-    CHECK(object.getViewWidget() == nullptr);
+    child.setParentItem(&detachedParent);
+    CHECK(child.getViewWidget() == nullptr);
+
+    child.setParentItem(nullptr);
+    scene.removeItem(&sceneParent);
 
     return true;
 }
@@ -126,7 +155,10 @@ int main(int argc, char** argv)
     if (!testGraphicsObjectBindsItselfAsGraphicsItem()) {
         return 1;
     }
-    if (!testInheritedViewWidgetCache()) {
+    if (!testInheritedViewWidgetCacheInvalidatesAcrossScenes()) {
+        return 1;
+    }
+    if (!testInheritedViewWidgetCacheInvalidatesAcrossParents()) {
         return 1;
     }
 
