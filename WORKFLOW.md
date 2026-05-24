@@ -77,6 +77,10 @@ policy:
       verify_command: "python3 oracle/scripts/generate_class_inventory.py --check"
     - path: oracle/fixtures/hierarchy_pyqtgraph.json
       verify_command: "python3 oracle/scripts/dump_pyqtgraph_hierarchy.py --check"
+  shared_integration_files:
+    - CMakeLists.txt
+    - oracle/scripts/generate_numeric_oracles.py
+    - reports/agents/<issue-code>.md
 validation:
   diff_check: true
   commands:
@@ -125,6 +129,7 @@ For every issue:
 - Use `scripts/run_autoreview --mode branch` for the local pre-PR autoreview wrapper.
 - Block for human review if the review-surface diff exceeds the configured file or line limits after verified generated-file exceptions.
 - Generated-file exceptions must pass their configured read-only verification command before automation discounts them from review-surface size.
+- Issue-owned files include the listed feature files plus directly required shared integration files from `policy.shared_integration_files` (for example CMake/test registration, numeric-oracle generator registration, and the per-issue report). Do not treat those narrow wiring edits as human scope blockers.
 - Treat Pi and AI-reviewer reports as advisory; deterministic checks and actual code inspection are authoritative.
 - On failure, prefer bounded `ai:rework` unless current evidence proves no safe automated path remains.
 - Use `human-review` only for hard human blockers (credentials/auth/permissions, policy or safety constraints, retry budget exhausted/repeated-loop protection) or explicit important design/architecture decisions.

@@ -115,6 +115,7 @@ class PolicyConfig:
     auto_merge: bool = False
     max_changed_files_without_human_review: int = 20
     max_diff_lines_without_human_review: int = 1500
+    shared_integration_files: list[str] = field(default_factory=list)
     generated_diff_exceptions: list[GeneratedDiffExceptionConfig] = field(default_factory=list)
 
 
@@ -235,6 +236,8 @@ class WorkflowConfig:
         for index, item in enumerate(self.policy.generated_diff_exceptions):
             _require_text(item.path, f"policy.generated_diff_exceptions[{index}].path")
             _require_text(item.verify_command, f"policy.generated_diff_exceptions[{index}].verify_command")
+        if not isinstance(self.policy.shared_integration_files, list) or not all(isinstance(path, str) and path.strip() for path in self.policy.shared_integration_files):
+            raise ConfigError("policy.shared_integration_files must be a list of non-empty path strings")
         if self.autoreview.enabled is not True:
             raise ConfigError("autoreview.enabled must be true")
         if self.autoreview.advisory is not True or self.autoreview.mandatory_gate is not True:

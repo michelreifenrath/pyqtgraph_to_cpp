@@ -63,6 +63,9 @@ def test_compact_issue_body_preserves_operational_sections_without_boilerplate()
     assert "#1" in body and "#4" in body
     assert "## Owned files" in body
     assert "include/pyqtgraph/core/ArrayView.hpp" in body
+    assert "CMakeLists.txt" in body
+    assert "oracle/scripts/generate_numeric_oracles.py" in body
+    assert "reports/agents/PGCORE-001.md" in body
     assert "## Validation" in body
     assert "scripts/gate focus PGCORE-001" in body
     assert "python3 -m pytest -q" in body

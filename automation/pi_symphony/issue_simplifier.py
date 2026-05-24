@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from automation.pi_symphony.config import load_workflow
 
@@ -59,13 +59,34 @@ class SimplifiedIssue:
 
 SECTION_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 
+DEFAULT_SHARED_INTEGRATION_FILES: tuple[str, ...] = (
+    "CMakeLists.txt",
+    "oracle/scripts/generate_numeric_oracles.py",
+    "reports/agents/<issue-code>.md",
+)
 
-def compact_issue_body(title: str, body: str, *, max_chars: int = 1200) -> str:
+SHARED_INTEGRATION_NOTES: dict[str, str] = {
+    "CMakeLists.txt": "only to register this issue's sources/tests",
+    "oracle/scripts/generate_numeric_oracles.py": "only when adding/updating numeric oracle fixtures",
+}
+
+
+def compact_issue_body(
+    title: str,
+    body: str,
+    *,
+    max_chars: int = 1200,
+    shared_integration_files: Sequence[str] | None = None,
+) -> str:
     goal = _first_paragraph(_section(body, "Goal")) or _title_without_ai_prefix(title)
     dependencies = _bullet_lines(_section(body, "Dependencies")) or ["- none"]
-    owned_files = _bullet_lines(_section(body, "Owned files")) or ["- see implementation scope"]
-    validation = _validation_lines(body) or ["- `scripts/gate commit`", "- `python3 -m pytest -q`"]
     issue_code = _issue_code(title)
+    owned_files = _with_shared_integration_files(
+        _bullet_lines(_section(body, "Owned files")) or ["- see implementation scope"],
+        issue_code=issue_code,
+        shared_integration_files=shared_integration_files,
+    )
+    validation = _validation_lines(body) or ["- `scripts/gate commit`", "- `python3 -m pytest -q`"]
     report_line = f"- Implementation report: `reports/agents/{issue_code}.md`" if issue_code else "- Implementation report written where applicable."
 
     compact = "\n".join(
@@ -84,7 +105,7 @@ def compact_issue_body(title: str, body: str, *, max_chars: int = 1200) -> str:
             "",
             "## Done",
             "- Focused checks pass before handoff.",
-            "- Scope stays within owned files.",
+            "- Scope stays within owned files and directly required shared integration files.",
             report_line,
             "- PR opened by automation, or handoff explains why no PR was opened.",
             "",
@@ -107,10 +128,20 @@ def simplified_labels(title: str, labels: list[str]) -> list[str]:
     return result
 
 
-def simplify_issue_payload(issue: dict[str, Any], *, max_body_chars: int) -> SimplifiedIssue:
+def simplify_issue_payload(
+    issue: dict[str, Any],
+    *,
+    max_body_chars: int,
+    shared_integration_files: Sequence[str] | None = None,
+) -> SimplifiedIssue:
     labels = [label["name"] if isinstance(label, dict) else str(label) for label in issue.get("labels", [])]
     body = str(issue.get("body") or "")
-    new_body = compact_issue_body(str(issue.get("title") or ""), body, max_chars=max_body_chars)
+    new_body = compact_issue_body(
+        str(issue.get("title") or ""),
+        body,
+        max_chars=max_body_chars,
+        shared_integration_files=shared_integration_files,
+    )
     return SimplifiedIssue(
         number=int(issue["number"]),
         title=str(issue.get("title") or ""),
@@ -153,6 +184,43 @@ def _bullet_lines(text: str) -> list[str]:
         if line.startswith("- "):
             lines.append(line)
     return lines
+
+
+def _with_shared_integration_files(
+    owned_files: list[str],
+    *,
+    issue_code: str,
+    shared_integration_files: Sequence[str] | None = None,
+) -> list[str]:
+    """Add the small shared-file allowlist that prevents false scope blockers."""
+    result = list(owned_files)
+    existing_paths = {_path_from_bullet(line) for line in result}
+    shared_files = tuple(shared_integration_files or DEFAULT_SHARED_INTEGRATION_FILES)
+    for pattern in shared_files:
+        path = _expand_shared_integration_path(pattern, issue_code=issue_code)
+        if not path or path in existing_paths:
+            continue
+        note = SHARED_INTEGRATION_NOTES.get(pattern) or SHARED_INTEGRATION_NOTES.get(path)
+        suffix = f" ({note})" if note else ""
+        result.append(f"- `{path}`{suffix}")
+        existing_paths.add(path)
+    return result
+
+
+def _expand_shared_integration_path(pattern: str, *, issue_code: str) -> str:
+    pattern = pattern.strip()
+    if "<issue-code>" in pattern:
+        if not issue_code:
+            return ""
+        return pattern.replace("<issue-code>", issue_code)
+    return pattern
+
+
+def _path_from_bullet(line: str) -> str:
+    match = re.search(r"`([^`]+)`", line)
+    if match:
+        return match.group(1)
+    return line.removeprefix("- ").strip()
 
 
 def _validation_lines(body: str) -> list[str]:
@@ -254,9 +322,24 @@ def ensure_domain_labels(repo: str) -> None:
         _run(["gh", "label", "create", label, "--repo", repo, "--color", color, "--description", description])
 
 
-def apply_simplification(repo: str, issue: dict[str, Any], *, max_body_chars: int) -> SimplifiedIssue:
-    simplified = simplify_issue_payload(issue, max_body_chars=max_body_chars)
-    new_body = compact_issue_body(str(issue.get("title") or ""), str(issue.get("body") or ""), max_chars=max_body_chars)
+def apply_simplification(
+    repo: str,
+    issue: dict[str, Any],
+    *,
+    max_body_chars: int,
+    shared_integration_files: Sequence[str] | None = None,
+) -> SimplifiedIssue:
+    simplified = simplify_issue_payload(
+        issue,
+        max_body_chars=max_body_chars,
+        shared_integration_files=shared_integration_files,
+    )
+    new_body = compact_issue_body(
+        str(issue.get("title") or ""),
+        str(issue.get("body") or ""),
+        max_chars=max_body_chars,
+        shared_integration_files=shared_integration_files,
+    )
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
         handle.write(new_body)
         path = handle.name
@@ -282,10 +365,26 @@ def main(argv: list[str] | None = None) -> int:
     repo = config.tracker.repo
     issues = _open_issues(repo)
     max_chars = config.github_output.issue_body_max_chars
-    summaries = [simplify_issue_payload(issue, max_body_chars=max_chars) for issue in issues]
+    shared_integration_files = config.policy.shared_integration_files
+    summaries = [
+        simplify_issue_payload(
+            issue,
+            max_body_chars=max_chars,
+            shared_integration_files=shared_integration_files,
+        )
+        for issue in issues
+    ]
     if args.apply:
         ensure_domain_labels(repo)
-        summaries = [apply_simplification(repo, issue, max_body_chars=max_chars) for issue in issues]
+        summaries = [
+            apply_simplification(
+                repo,
+                issue,
+                max_body_chars=max_chars,
+                shared_integration_files=shared_integration_files,
+            )
+            for issue in issues
+        ]
 
     data = [
         {

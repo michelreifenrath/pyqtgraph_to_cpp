@@ -897,7 +897,7 @@ Repo-owned workflow:
 {config.body}
 
 Acceptance rules:
-- Implement only the issue scope.
+- Implement only the issue scope: the issue-owned files plus directly required shared integration files listed in `policy.shared_integration_files`.
 - Add or update tests for behavior changes.
 - Run the relevant checks before finalizing.
 - Do not leave scratch artifacts such as .pi-lens, temp files, or debug logs in the diff.
@@ -925,7 +925,7 @@ Repo-owned workflow:
 {config.body}
 
 Rework rules:
-- Fix only the listed review/gate finding and directly required tests.
+- Fix only the listed review/gate finding and directly required tests/shared integration wiring.
 - Preserve the previous implementation scope; no unrelated refactors or redesigns.
 - Run the relevant checks before finalizing.
 - Do not leave scratch artifacts such as .pi-lens, temp files, or debug logs in the diff.
