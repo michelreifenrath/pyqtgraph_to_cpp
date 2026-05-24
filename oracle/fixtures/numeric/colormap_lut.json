@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case": "colormap_lut",
+  "reference": {
+    "repo": "https://github.com/pyqtgraph/pyqtgraph",
+    "ref": "pyqtgraph-0.14.0",
+    "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "source": "pyqtgraph/colormap.py"
+  },
+  "inputs": {
+    "default_byte_rgb": {
+      "positions": [0.0, 1.0],
+      "colors_rgba": [[0, 0, 0, 255], [255, 128, 64, 255]],
+      "lookup": {"start": 0.0, "stop": 1.0, "nPts": 3, "alpha": null, "mode": "byte"}
+    },
+    "alpha_auto_byte_rgba": {
+      "positions": [0.0, 1.0],
+      "colors_rgba": [[0, 0, 0, 255], [255, 0, 0, 128]],
+      "lookup": {"start": 0.0, "stop": 1.0, "nPts": 3, "alpha": null, "mode": "byte"}
+    },
+    "float_start_stop_rgba": {
+      "positions": [0.0, 1.0],
+      "colors_rgba": [[0, 0, 0, 255], [255, 255, 255, 255]],
+      "lookup": {"start": 0.25, "stop": 0.75, "nPts": 2, "alpha": true, "mode": "float"}
+    },
+    "repeat_byte_rgb": {
+      "positions": [0.0, 1.0],
+      "colors_rgba": [[0, 0, 0, 255], [255, 255, 255, 255]],
+      "mapping": "repeat",
+      "lookup": {"start": 0.75, "stop": 1.25, "nPts": 3, "alpha": null, "mode": "byte"}
+    },
+    "unsorted_stops_byte_rgb": {
+      "positions": [1.0, 0.0],
+      "colors_rgba": [[255, 255, 255, 255], [0, 0, 0, 255]],
+      "lookup": {"start": 0.0, "stop": 1.0, "nPts": 2, "alpha": null, "mode": "byte"}
+    }
+  },
+  "expected": {
+    "default_byte_rgb": {
+      "channels": 3,
+      "values": [[0, 0, 0], [127, 64, 32], [255, 128, 64]]
+    },
+    "alpha_auto_byte_rgba": {
+      "channels": 4,
+      "values": [[0, 0, 0, 255], [127, 0, 0, 191], [255, 0, 0, 128]]
+    },
+    "float_start_stop_rgba": {
+      "channels": 4,
+      "values": [[0.25, 0.25, 0.25, 1.0], [0.75, 0.75, 0.75, 1.0]]
+    },
+    "repeat_byte_rgb": {
+      "channels": 3,
+      "values": [[191, 191, 191], [0, 0, 0], [63, 63, 63]]
+    },
+    "unsorted_stops_byte_rgb": {
+      "channels": 3,
+      "values": [[0, 0, 0], [255, 255, 255]]
+    }
+  },
+  "tolerance": {"absolute": 0.0, "relative": 0.0}
+}
