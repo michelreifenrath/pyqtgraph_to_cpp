@@ -20,6 +20,15 @@ target_compile_features(pyqtgraph_cpp_project_options INTERFACE cxx_std_20)
 pyqtgraph_cpp_create_warnings_target(pyqtgraph_cpp_project_warnings)
 
 find_package(Qt6 6 COMPONENTS Core Gui Widgets QUIET)
+set(_pyqtgraph_cpp_has_qtcore FALSE)
+if(TARGET Qt6::Core)
+    set(_pyqtgraph_cpp_has_qtcore TRUE)
+elseif(PYQTGRAPH_CPP_REQUIRE_QT)
+    message(FATAL_ERROR "Qt 6 Core is required for PGCORE-003 Point. Install Qt 6 Core, or configure with -DPYQTGRAPH_CPP_REQUIRE_QT=OFF only if intentionally skipping Qt-dependent targets.")
+else()
+    message(STATUS "Qt6 Core was not found; skipping the Point library source and test target")
+endif()
+
 set(_pyqtgraph_cpp_has_mkcolor FALSE)
 if(TARGET Qt6::Core AND TARGET Qt6::Gui)
     set(_pyqtgraph_cpp_has_mkcolor TRUE)
@@ -52,6 +61,17 @@ target_link_libraries(pyqtgraph_cpp
     PRIVATE
         pyqtgraph_cpp_project_warnings
 )
+if(_pyqtgraph_cpp_has_qtcore)
+    target_sources(pyqtgraph_cpp
+        PRIVATE
+            src/pyqtgraph/Point.cpp
+    )
+    target_link_libraries(pyqtgraph_cpp
+        PUBLIC
+            Qt6::Core
+    )
+endif()
+
 if(_pyqtgraph_cpp_has_mkcolor)
     target_sources(pyqtgraph_cpp
         PRIVATE
@@ -64,7 +84,6 @@ if(_pyqtgraph_cpp_has_mkcolor)
     )
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
-            Qt6::Core
             Qt6::Gui
     )
 endif()
@@ -105,6 +124,18 @@ if(BUILD_TESTING)
     )
     pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_nan_minmax)
     add_test(NAME pyqtgraph_cpp.core.nan_minmax COMMAND pyqtgraph_cpp_core_nan_minmax)
+
+    if(_pyqtgraph_cpp_has_qtcore)
+        add_executable(pyqtgraph_cpp_core_point tests/core/test_Point.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_point
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_point)
+        add_test(NAME pyqtgraph_cpp.core.Point COMMAND pyqtgraph_cpp_core_point)
+    endif()
 
     if(_pyqtgraph_cpp_has_mkcolor)
         add_executable(pyqtgraph_cpp_core_mkcolor tests/core/test_mkColor.cpp)
