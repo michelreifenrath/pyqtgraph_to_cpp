@@ -39,9 +39,11 @@ MouseDragEvent::MouseDragEvent(QGraphicsSceneMouseEvent* moveEvent, QGraphicsSce
     , buttonDownScenePos_(pressEvent != nullptr ? toPoint(pressEvent->scenePos()) : pyqtgraph::Point())
     , buttonDownScreenPos_(pressEvent != nullptr ? toPoint(pressEvent->screenPos()) : pyqtgraph::Point())
     , lastScenePos_(lastEvent != nullptr ? toPoint(lastEvent->scenePos())
-                                         : (moveEvent != nullptr ? toPoint(moveEvent->lastScenePos()) : scenePos_))
+                                         : (pressEvent != nullptr ? toPoint(pressEvent->scenePos())
+                                                                  : (moveEvent != nullptr ? toPoint(moveEvent->lastScenePos()) : scenePos_)))
     , lastScreenPos_(lastEvent != nullptr ? toPoint(lastEvent->screenPos())
-                                          : (moveEvent != nullptr ? toPoint(moveEvent->lastScreenPos()) : screenPos_))
+                                          : (pressEvent != nullptr ? toPoint(pressEvent->screenPos())
+                                                                   : (moveEvent != nullptr ? toPoint(moveEvent->lastScreenPos()) : screenPos_)))
     , buttons_(moveEvent != nullptr ? moveEvent->buttons()
                                     : (pressEvent != nullptr ? pressEvent->buttons() : Qt::MouseButtons(Qt::NoButton)))
     , button_(pressEvent != nullptr ? pressEvent->button()
@@ -162,7 +164,7 @@ HoverEvent::HoverEvent(QGraphicsSceneMouseEvent* moveEvent, bool acceptable)
     , buttons_(moveEvent != nullptr ? moveEvent->buttons() : Qt::MouseButtons(Qt::NoButton))
     , modifiers_(moveEvent != nullptr ? moveEvent->modifiers() : Qt::KeyboardModifiers(Qt::NoModifier))
     , acceptable_(acceptable)
-    , enter_(moveEvent != nullptr && scenePos_ == lastScenePos_)
+    , enter_(false)
     , exit_(moveEvent == nullptr)
 {
 }
@@ -170,6 +172,8 @@ HoverEvent::HoverEvent(QGraphicsSceneMouseEvent* moveEvent, bool acceptable)
 void HoverEvent::setCurrentItem(QGraphicsItem* item) noexcept { currentItem_ = item; }
 
 QGraphicsItem* HoverEvent::currentItem() const noexcept { return currentItem_; }
+
+void HoverEvent::setEnter(bool enter) noexcept { enter_ = enter; }
 
 bool HoverEvent::isEnter() const noexcept { return enter_; }
 

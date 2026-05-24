@@ -2,7 +2,7 @@
 
 ## Summary
 - Added native C++/Qt `MouseDragEvent`, `MouseClickEvent`, and `HoverEvent` skeletons under `pyqtgraph::GraphicsScene`.
-- Implemented copied event state, item-relative coordinate mapping, acceptance/current-item tracking, hover enter/exit detection, and click/drag claim maps.
+- Implemented copied event state, item-relative coordinate mapping, acceptance/current-item tracking, dispatcher-settable hover enter state, hover exit state, and click/drag claim maps.
 - Added focused unit coverage for API shape, stored accessors, acceptance behavior, item mapping, and hover claim behavior.
 - Wired `mouseEvents.hpp/.cpp` into the Qt Widgets library build and added the focused CTest executable `pyqtgraph_cpp_graphicsscene_mouseevents`.
 
@@ -30,6 +30,6 @@
 - `python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md` — exit 0.
 
 ## Handoff risks
-- Hover enter semantics are intentionally minimal because full scene dispatch is out of scope.
+- Hover enter defaults to false and is dispatcher-settable so future per-item scene dispatch can mark enter state without position-based inference.
 - Claim maps hold raw item pointers; future full dispatch may need a lifetime-aware owner strategy for `QGraphicsObject` versus plain `QGraphicsItem`.
 - No PR was opened from this Pi handoff because the workflow/user instructions forbid committing, pushing, or merging; release automation can commit/push/open the PR after review.

@@ -107,6 +107,7 @@ public:
     void setCurrentItem(QGraphicsItem* item) noexcept;
     [[nodiscard]] QGraphicsItem* currentItem() const noexcept;
 
+    void setEnter(bool enter) noexcept;
     [[nodiscard]] bool isEnter() const noexcept;
     [[nodiscard]] bool isExit() const noexcept;
 

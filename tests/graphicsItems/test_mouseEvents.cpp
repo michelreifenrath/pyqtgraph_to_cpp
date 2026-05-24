@@ -158,6 +158,10 @@ bool testMouseDragEventShapeAndAccessors()
     CHECK(!event.isAccepted());
     CHECK(event.acceptedItem() == nullptr);
 
+    MouseDragEvent firstDragEvent(&moveEvent, &pressEvent, nullptr, true, false);
+    CHECK(samePoint(firstDragEvent.lastScenePos(), 10.0, 20.0));
+    CHECK(samePoint(firstDragEvent.lastScreenPos(), 100.0, 200.0));
+
     MouseDragEvent finishEvent(&moveEvent, &pressEvent, &lastEvent, false, true);
     CHECK(!finishEvent.isStart());
     CHECK(finishEvent.isFinish());
@@ -221,8 +225,12 @@ bool testHoverEventShapeAccessorsAndClaims()
     enterMove.setLastScenePos(QPointF(3.0, 4.0));
     enterMove.setLastScreenPos(QPoint(30, 40));
     HoverEvent enterEvent(&enterMove, true);
-    CHECK(enterEvent.isEnter());
+    CHECK(!enterEvent.isEnter());
     CHECK(!enterEvent.isExit());
+    enterEvent.setEnter(true);
+    CHECK(enterEvent.isEnter());
+    enterEvent.setEnter(false);
+    CHECK(!enterEvent.isEnter());
 
     return true;
 }
