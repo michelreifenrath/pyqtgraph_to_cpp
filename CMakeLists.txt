@@ -50,6 +50,7 @@ endif()
 add_library(pyqtgraph_cpp
     src/pyqtgraph/core/ArrayView.cpp
     src/pyqtgraph/functions.cpp
+    src/pyqtgraph/PlotData.cpp
 )
 target_include_directories(pyqtgraph_cpp
     PUBLIC
@@ -124,6 +125,16 @@ if(BUILD_TESTING)
     )
     pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_nan_minmax)
     add_test(NAME pyqtgraph_cpp.core.nan_minmax COMMAND pyqtgraph_cpp_core_nan_minmax)
+
+    add_executable(pyqtgraph_cpp_core_plotdata tests/core/test_PlotData.cpp)
+    target_link_libraries(pyqtgraph_cpp_core_plotdata
+        PRIVATE
+            pyqtgraph_cpp
+            pyqtgraph_cpp_project_options
+            pyqtgraph_cpp_project_warnings
+    )
+    pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_plotdata)
+    add_test(NAME pyqtgraph_cpp.core.PlotData COMMAND pyqtgraph_cpp_core_plotdata)
 
     if(_pyqtgraph_cpp_has_qtcore)
         add_executable(pyqtgraph_cpp_core_point tests/core/test_Point.cpp)
