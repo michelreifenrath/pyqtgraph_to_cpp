@@ -74,6 +74,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         PRIVATE
             src/pyqtgraph/graphicsItems/GraphicsItem.cpp
             src/pyqtgraph/graphicsItems/GraphicsObject.cpp
+            src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
     )
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
@@ -167,6 +168,16 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_graphicsobject)
         add_test(NAME pyqtgraph_cpp.graphicsItems.GraphicsObject COMMAND pyqtgraph_cpp_graphicsitems_graphicsobject)
+
+        add_executable(pyqtgraph_cpp_graphicsitems_graphicswidget tests/graphicsItems/test_GraphicsWidget.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsitems_graphicswidget
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_graphicswidget)
+        add_test(NAME pyqtgraph_cpp.graphicsItems.GraphicsWidget COMMAND pyqtgraph_cpp_graphicsitems_graphicswidget)
 
         add_executable(pyqtgraph_cpp_hierarchy_cpp tests/hierarchy/test_cpp_hierarchy.cpp)
         target_link_libraries(pyqtgraph_cpp_hierarchy_cpp
