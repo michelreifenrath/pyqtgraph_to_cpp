@@ -113,7 +113,9 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     target_sources(pyqtgraph_cpp
         PRIVATE
             include/pyqtgraph/GraphicsScene/GraphicsScene.hpp
+            include/pyqtgraph/GraphicsScene/mouseEvents.hpp
             src/pyqtgraph/GraphicsScene/GraphicsScene.cpp
+            src/pyqtgraph/GraphicsScene/mouseEvents.cpp
             src/pyqtgraph/graphicsItems/GraphicsItem.cpp
             src/pyqtgraph/graphicsItems/GraphicsObject.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
@@ -277,6 +279,16 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsscene_graphicsscene)
         add_test(NAME pyqtgraph_cpp.GraphicsScene.GraphicsScene COMMAND pyqtgraph_cpp_graphicsscene_graphicsscene)
+
+        add_executable(pyqtgraph_cpp_graphicsscene_mouseevents tests/graphicsItems/test_mouseEvents.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsscene_mouseevents
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsscene_mouseevents)
+        add_test(NAME pyqtgraph_cpp.GraphicsScene.mouseEvents COMMAND pyqtgraph_cpp_graphicsscene_mouseevents)
 
         add_executable(pyqtgraph_cpp_graphicsitems_axisitem tests/graphicsItems/test_AxisItem.cpp)
         target_link_libraries(pyqtgraph_cpp_graphicsitems_axisitem
