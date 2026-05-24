@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""Generate and validate the repository-level PyQtGraph port manifest."""
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+ORACLE_SCRIPT_DIR = REPO_ROOT / "oracle" / "scripts"
+MANIFEST_PATH = Path("port_manifest.yaml")
+GENERATED_MANIFEST_KEYS = (
+    "reference",
+    "source_files",
+    "examples",
+    "example_assets",
+    "example_inventory_summary",
+    "classes",
+    "excluded",
+    "summary",
+)
+MANIFEST_REFERENCE_KEYS = ("repo", "ref", "pinned_commit", "docs_url")
+
+
+class ManifestError(RuntimeError):
+    """Raised when manifest generation cannot be completed safely."""
+
+
+def load_oracle_module(name: str, filename: str) -> Any:
+    module_path = ORACLE_SCRIPT_DIR / filename
+    spec = importlib.util.spec_from_file_location(name, module_path)
+    if spec is None or spec.loader is None:
+        raise ManifestError(f"could not load oracle script: {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+source_inventory = load_oracle_module(
+    "pginv_source_inventory", "generate_source_inventory.py"
+)
+example_inventory = load_oracle_module(
+    "pginv_example_inventory", "generate_example_manifest.py"
+)
+class_inventory = load_oracle_module("pginv_class_inventory", "generate_class_inventory.py")
+InventoryError = source_inventory.InventoryError
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate the deterministic PyQtGraph port manifest."
+    )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="repository root containing reference/source.lock",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("yaml", "json"),
+        default="yaml",
+        help="manifest serialization format for stdout",
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--check",
+        action="store_true",
+        help="validate port_manifest.yaml without writing persistent files",
+    )
+    mode.add_argument(
+        "--update-manifest",
+        action="store_true",
+        help="update generated sections in port_manifest.yaml",
+    )
+    return parser.parse_args(argv)
+
+
+def build_manifest(root: Path) -> dict[str, Any]:
+    lock = source_inventory.load_lock(root)
+    with source_inventory.source_checkout(root, lock) as checkout:
+        source = source_inventory.enumerate_inventory(checkout, lock)
+        examples = example_inventory.enumerate_inventory(checkout, lock)
+        classes = class_inventory.enumerate_inventory(checkout, lock)
+
+    if source["reference"] != examples["reference"] or source["reference"] != classes["reference"]:
+        raise ManifestError("inventory reference metadata disagree")
+    if source["excluded"] != classes["excluded"]:
+        raise ManifestError("source and class inventory exclusions disagree")
+
+    example_summary = examples["summary"]
+    return {
+        "reference": {
+            key: source["reference"][key] for key in MANIFEST_REFERENCE_KEYS
+        },
+        "source_files": source["source_files"],
+        "examples": examples["examples"],
+        "example_assets": examples["assets"],
+        "example_inventory_summary": example_summary,
+        "classes": classes["classes"],
+        "excluded": source["excluded"],
+        "summary": {
+            "source_file_count": len(source["source_files"]),
+            "example_count": example_summary["example_count"],
+            "example_asset_count": example_summary["asset_count"],
+            "total_example_tree_file_count": example_summary[
+                "total_example_tree_file_count"
+            ],
+            "class_count": len(classes["classes"]),
+            "excluded_example_count": len(source["excluded"]["examples"]),
+            "excluded_test_count": len(source["excluded"]["tests"]),
+        },
+    }
+
+
+def render_manifest(manifest: dict[str, Any], output_format: str) -> str:
+    if output_format == "json":
+        return json.dumps(manifest, indent=2, sort_keys=False) + "\n"
+    return yaml.safe_dump(manifest, sort_keys=False)
+
+
+def load_existing_manifest(manifest_path: Path) -> dict[str, Any]:
+    if not manifest_path.exists():
+        return {}
+    data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ManifestError("port_manifest.yaml must contain a YAML mapping")
+    return data
+
+
+def merged_manifest(existing: dict[str, Any], generated: dict[str, Any]) -> dict[str, Any]:
+    merged = {key: generated[key] for key in GENERATED_MANIFEST_KEYS}
+    for key, value in existing.items():
+        if key not in GENERATED_MANIFEST_KEYS:
+            merged[key] = value
+    return merged
+
+
+def update_manifest(root: Path, generated: dict[str, Any]) -> None:
+    manifest_path = root / MANIFEST_PATH
+    existing = load_existing_manifest(manifest_path)
+    manifest_path.write_text(
+        yaml.safe_dump(merged_manifest(existing, generated), sort_keys=False),
+        encoding="utf-8",
+    )
+
+
+def validate_manifest_current(root: Path, generated: dict[str, Any]) -> None:
+    manifest_path = root / MANIFEST_PATH
+    if not manifest_path.exists():
+        raise ManifestError(
+            "port_manifest.yaml is missing; run --update-manifest to create it"
+        )
+    existing = load_existing_manifest(manifest_path)
+    stale_keys = [
+        key for key in GENERATED_MANIFEST_KEYS if existing.get(key) != generated[key]
+    ]
+    if stale_keys:
+        raise ManifestError(
+            "port_manifest.yaml is stale; run --update-manifest "
+            "to refresh generated section(s): " + ", ".join(stale_keys)
+        )
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    root = args.root.resolve()
+
+    try:
+        manifest = build_manifest(root)
+        if args.check:
+            render_manifest(manifest, args.format)
+            validate_manifest_current(root, manifest)
+            print(
+                "port manifest verified "
+                f"({manifest['summary']['source_file_count']} source files, "
+                f"{manifest['summary']['example_count']} examples, "
+                f"{manifest['summary']['class_count']} classes)"
+            )
+        elif args.update_manifest:
+            update_manifest(root, manifest)
+            print("updated port_manifest.yaml")
+        else:
+            sys.stdout.write(render_manifest(manifest, args.format))
+        return 0
+    except (InventoryError, ManifestError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
