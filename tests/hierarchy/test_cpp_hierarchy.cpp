@@ -3,6 +3,7 @@
 #include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsWidget.hpp>
 #include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -182,6 +183,34 @@ bool testViewBoxApiShape()
     return true;
 }
 
+bool testPlotCurveItemApiShape()
+{
+    using pyqtgraph::graphicsItems::GraphicsItem;
+    using pyqtgraph::graphicsItems::GraphicsObject;
+    using pyqtgraph::graphicsItems::PlotCurveItem;
+
+    static_assert(std::is_constructible_v<PlotCurveItem>);
+    static_assert(std::is_constructible_v<PlotCurveItem, QGraphicsItem*>);
+    static_assert(std::is_destructible_v<PlotCurveItem>);
+    static_assert(!std::is_copy_constructible_v<PlotCurveItem>);
+    static_assert(!std::is_copy_assignable_v<PlotCurveItem>);
+    static_assert(!std::is_move_constructible_v<PlotCurveItem>);
+    static_assert(!std::is_move_assignable_v<PlotCurveItem>);
+    static_assert(std::is_base_of_v<GraphicsObject, PlotCurveItem>);
+    static_assert(std::is_base_of_v<GraphicsItem, PlotCurveItem>);
+    static_assert(std::is_base_of_v<QGraphicsObject, PlotCurveItem>);
+    static_assert(std::is_base_of_v<QObject, PlotCurveItem>);
+    static_assert(std::is_base_of_v<QGraphicsItem, PlotCurveItem>);
+
+    PlotCurveItem curve;
+    CHECK(curve.graphicsItem() == static_cast<QGraphicsItem*>(&curve));
+    CHECK(curve.toGraphicsObject() == &curve);
+    CHECK(curve.boundingRect().isNull());
+    CHECK(curve.flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges));
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -202,6 +231,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testViewBoxApiShape()) {
+        return 1;
+    }
+    if (!testPlotCurveItemApiShape()) {
         return 1;
     }
 
