@@ -111,10 +111,13 @@ endif()
 if(_pyqtgraph_cpp_has_graphicsitem)
     target_sources(pyqtgraph_cpp
         PRIVATE
+            include/pyqtgraph/GraphicsScene/GraphicsScene.hpp
+            src/pyqtgraph/GraphicsScene/GraphicsScene.cpp
             src/pyqtgraph/graphicsItems/GraphicsItem.cpp
             src/pyqtgraph/graphicsItems/GraphicsObject.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
     )
+    set_target_properties(pyqtgraph_cpp PROPERTIES AUTOMOC ON)
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
             Qt6::Widgets
@@ -251,6 +254,17 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_graphicswidget)
         add_test(NAME pyqtgraph_cpp.graphicsItems.GraphicsWidget COMMAND pyqtgraph_cpp_graphicsitems_graphicswidget)
+
+        add_executable(pyqtgraph_cpp_graphicsscene_graphicsscene tests/graphicsItems/test_GraphicsScene.cpp)
+        set_target_properties(pyqtgraph_cpp_graphicsscene_graphicsscene PROPERTIES AUTOMOC ON)
+        target_link_libraries(pyqtgraph_cpp_graphicsscene_graphicsscene
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsscene_graphicsscene)
+        add_test(NAME pyqtgraph_cpp.GraphicsScene.GraphicsScene COMMAND pyqtgraph_cpp_graphicsscene_graphicsscene)
 
         add_executable(pyqtgraph_cpp_hierarchy_cpp tests/hierarchy/test_cpp_hierarchy.cpp)
         target_link_libraries(pyqtgraph_cpp_hierarchy_cpp
