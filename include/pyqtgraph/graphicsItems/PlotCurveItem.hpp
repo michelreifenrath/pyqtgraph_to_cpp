@@ -16,7 +16,7 @@ class QWidget;
 
 namespace pyqtgraph::graphicsItems {
 
-class PlotCurveItem final : public GraphicsObject {
+class PlotCurveItem : public GraphicsObject {
 public:
     explicit PlotCurveItem(QGraphicsItem* parent = nullptr);
     ~PlotCurveItem() override;

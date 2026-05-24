@@ -201,6 +201,16 @@ bool testPlotCurveItemApiShape()
     static_assert(std::is_base_of_v<QGraphicsObject, PlotCurveItem>);
     static_assert(std::is_base_of_v<QObject, PlotCurveItem>);
     static_assert(std::is_base_of_v<QGraphicsItem, PlotCurveItem>);
+    static_assert(!std::is_final_v<PlotCurveItem>);
+
+    class DerivedPlotCurveItem final : public PlotCurveItem {
+    public:
+        using PlotCurveItem::PlotCurveItem;
+    };
+
+    static_assert(std::is_base_of_v<PlotCurveItem, DerivedPlotCurveItem>);
+    static_assert(std::is_constructible_v<DerivedPlotCurveItem>);
+    static_assert(std::is_constructible_v<DerivedPlotCurveItem, QGraphicsItem*>);
 
     PlotCurveItem curve;
     CHECK(curve.graphicsItem() == static_cast<QGraphicsItem*>(&curve));
