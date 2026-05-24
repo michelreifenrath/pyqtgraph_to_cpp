@@ -5,8 +5,14 @@
 
 #include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
 
+#include <QtCore/QVariant>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
+
+#include <memory>
+
+using PyQtGraphItemLifetimeToken = std::shared_ptr<void>;
+Q_DECLARE_METATYPE(PyQtGraphItemLifetimeToken)
 
 namespace {
 
@@ -26,6 +32,25 @@ pyqtgraph::Point mapFromScene(QGraphicsItem* item, const pyqtgraph::Point& scene
         return scenePos;
     }
     return pyqtgraph::Point(item->mapFromScene(scenePos));
+}
+
+PyQtGraphItemLifetimeToken lifetimeTokenFor(QGraphicsItem* item)
+{
+    // Plain QGraphicsItem has no QObject destruction signal. Store a shared token
+    // in item data so HoverEvent can keep only a weak reference to item lifetime.
+    constexpr int claimLifetimeTokenKey = 0x70716734;
+
+    const QVariant storedToken = item->data(claimLifetimeTokenKey);
+    if (storedToken.isValid()) {
+        PyQtGraphItemLifetimeToken token = storedToken.value<PyQtGraphItemLifetimeToken>();
+        if (token != nullptr) {
+            return token;
+        }
+    }
+
+    PyQtGraphItemLifetimeToken token = std::make_shared<char>();
+    item->setData(claimLifetimeTokenKey, QVariant::fromValue(token));
+    return token;
 }
 
 } // namespace
@@ -169,6 +194,25 @@ HoverEvent::HoverEvent(QGraphicsSceneMouseEvent* moveEvent, bool acceptable)
 {
 }
 
+HoverEvent::ItemClaim HoverEvent::makeItemClaim(QGraphicsItem* item)
+{
+    if (item == nullptr) {
+        return {};
+    }
+    return ItemClaim { item, lifetimeTokenFor(item) };
+}
+
+QHash<Qt::MouseButton, QGraphicsItem*> HoverEvent::exposedClaims(const QHash<Qt::MouseButton, ItemClaim>& claims)
+{
+    QHash<Qt::MouseButton, QGraphicsItem*> exposedItems;
+    for (auto claim = claims.constBegin(); claim != claims.constEnd(); ++claim) {
+        if (claim.value().isLive()) {
+            exposedItems.insert(claim.key(), claim.value().item);
+        }
+    }
+    return exposedItems;
+}
+
 void HoverEvent::setCurrentItem(QGraphicsItem* item) noexcept { currentItem_ = item; }
 
 QGraphicsItem* HoverEvent::currentItem() const noexcept { return currentItem_; }
@@ -181,19 +225,45 @@ bool HoverEvent::isExit() const noexcept { return exit_; }
 
 bool HoverEvent::acceptClicks(Qt::MouseButton button, QGraphicsItem* item)
 {
-    if (!acceptable_ || clickItems_.contains(button)) {
+    if (!acceptable_) {
         return false;
     }
-    clickItems_.insert(button, item != nullptr ? item : currentItem_);
+
+    auto claim = clickItems_.find(button);
+    if (claim != clickItems_.end()) {
+        if (claim.value().isLive()) {
+            return false;
+        }
+        clickItems_.erase(claim);
+    }
+
+    ItemClaim itemClaim = makeItemClaim(item != nullptr ? item : currentItem_);
+    if (!itemClaim.isLive()) {
+        return false;
+    }
+    clickItems_.insert(button, itemClaim);
     return true;
 }
 
 bool HoverEvent::acceptDrags(Qt::MouseButton button, QGraphicsItem* item)
 {
-    if (!acceptable_ || dragItems_.contains(button)) {
+    if (!acceptable_) {
         return false;
     }
-    dragItems_.insert(button, item != nullptr ? item : currentItem_);
+
+    auto claim = dragItems_.find(button);
+    if (claim != dragItems_.end()) {
+        if (claim.value().isLive()) {
+            return false;
+        }
+        dragItems_.erase(claim);
+    }
+
+    ItemClaim itemClaim = makeItemClaim(item != nullptr ? item : currentItem_);
+    if (!itemClaim.isLive()) {
+        return false;
+    }
+    dragItems_.insert(button, itemClaim);
     return true;
 }
 
@@ -213,8 +283,8 @@ Qt::MouseButtons HoverEvent::buttons() const noexcept { return buttons_; }
 
 Qt::KeyboardModifiers HoverEvent::modifiers() const noexcept { return modifiers_; }
 
-QHash<Qt::MouseButton, QGraphicsItem*> HoverEvent::clickItems() const { return clickItems_; }
+QHash<Qt::MouseButton, QGraphicsItem*> HoverEvent::clickItems() const { return exposedClaims(clickItems_); }
 
-QHash<Qt::MouseButton, QGraphicsItem*> HoverEvent::dragItems() const { return dragItems_; }
+QHash<Qt::MouseButton, QGraphicsItem*> HoverEvent::dragItems() const { return exposedClaims(dragItems_); }
 
 } // namespace pyqtgraph::GraphicsScene

@@ -2,7 +2,7 @@
 
 ## Summary
 - Added native C++/Qt `MouseDragEvent`, `MouseClickEvent`, and `HoverEvent` skeletons under `pyqtgraph::GraphicsScene`.
-- Implemented copied event state, item-relative coordinate mapping, acceptance/current-item tracking, dispatcher-settable hover enter state, hover exit state, and click/drag claim maps.
+- Implemented copied event state, item-relative coordinate mapping, acceptance/current-item tracking, dispatcher-settable hover enter state, hover exit state, and lifetime-guarded click/drag claim maps.
 - Added focused unit coverage for API shape, stored accessors, acceptance behavior, item mapping, and hover claim behavior.
 - Wired `mouseEvents.hpp/.cpp` into the Qt Widgets library build and added the focused CTest executable `pyqtgraph_cpp_graphicsscene_mouseevents`.
 
@@ -15,21 +15,17 @@
 
 ## Notes
 - No Python wrappers or numeric oracle fixtures were added.
-- The approved plan requested `QPointer<QGraphicsItem>` claim maps, but `QPointer` only supports QObject-derived types and plain `QGraphicsItem` is not QObject-derived. I attempted to escalate this decision, but supervisor routing was ambiguous/unavailable. To keep the generic `QGraphicsItem` API compiling, hover claim maps use raw `QGraphicsItem*`, consistent with `currentItem()` and `acceptedItem()`.
+- Hover claim maps keep the public `QGraphicsItem*` API but store a per-item lifetime token internally, so claims for deleted items are filtered out before `clickItems()`/`dragItems()` expose them.
 - `MouseClickEvent::lastPos()` intentionally mirrors current `pos()` because upstream exposes `lastPos()` without a separately initialized last scene position in the constructor.
 
 ## Validation
-- `cmake --preset dev` — exit 0.
+- `git diff --check` — exit 0.
 - `cmake --build build/dev --target pyqtgraph_cpp_graphicsscene_mouseevents` — exit 0.
 - `ctest --test-dir build/dev --output-on-failure -R '^pyqtgraph_cpp\.GraphicsScene\.mouseEvents$'` — exit 0, 1/1 test passed.
-- `git diff --check` — exit 0.
-- `scripts/gate focus PGSCENE-002` — exit 2; gate does not accept an issue argument.
-- `scripts/gate focus` — exit 0 as the available equivalent focused gate.
+- `scripts/gate focus` — exit 0.
 - `scripts/gate commit` — exit 0.
-- `python3 -m pytest -q` — exit 0, 221 passed.
-- `python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md` — exit 0.
 
 ## Handoff risks
 - Hover enter defaults to false and is dispatcher-settable so future per-item scene dispatch can mark enter state without position-based inference.
-- Claim maps hold raw item pointers; future full dispatch may need a lifetime-aware owner strategy for `QGraphicsObject` versus plain `QGraphicsItem`.
+- Hover claim maps now drop deleted-item claims before exposing them; future full dispatch can consume `clickItems()`/`dragItems()` without retaining stale hover claims.
 - No PR was opened from this Pi handoff because the workflow/user instructions forbid committing, pushing, or merging; release automation can commit/push/open the PR after review.

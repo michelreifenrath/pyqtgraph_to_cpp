@@ -11,6 +11,8 @@
 #include <QtCore/Qt>
 #include <QtCore/qglobal.h>
 
+#include <memory>
+
 class QGraphicsItem;
 class QGraphicsSceneMouseEvent;
 
@@ -127,6 +129,16 @@ public:
     [[nodiscard]] QHash<Qt::MouseButton, QGraphicsItem*> dragItems() const;
 
 private:
+    struct ItemClaim {
+        QGraphicsItem* item = nullptr;
+        std::weak_ptr<void> lifetimeToken;
+
+        [[nodiscard]] bool isLive() const noexcept { return item != nullptr && !lifetimeToken.expired(); }
+    };
+
+    static ItemClaim makeItemClaim(QGraphicsItem* item);
+    static QHash<Qt::MouseButton, QGraphicsItem*> exposedClaims(const QHash<Qt::MouseButton, ItemClaim>& claims);
+
     pyqtgraph::Point scenePos_;
     pyqtgraph::Point screenPos_;
     pyqtgraph::Point lastScenePos_;
@@ -137,8 +149,8 @@ private:
     bool enter_ = false;
     bool exit_ = false;
     QGraphicsItem* currentItem_ = nullptr;
-    QHash<Qt::MouseButton, QGraphicsItem*> clickItems_;
-    QHash<Qt::MouseButton, QGraphicsItem*> dragItems_;
+    QHash<Qt::MouseButton, ItemClaim> clickItems_;
+    QHash<Qt::MouseButton, ItemClaim> dragItems_;
 };
 
 } // namespace pyqtgraph::GraphicsScene

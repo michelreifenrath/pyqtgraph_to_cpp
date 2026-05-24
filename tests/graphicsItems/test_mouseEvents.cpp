@@ -207,6 +207,24 @@ bool testHoverEventShapeAccessorsAndClaims()
     CHECK(event.dragItems().value(Qt::RightButton) == &item);
     CHECK(!event.acceptDrags(Qt::RightButton));
 
+    auto deletedClickItem = std::make_unique<QGraphicsRectItem>();
+    CHECK(event.acceptClicks(Qt::MiddleButton, deletedClickItem.get()));
+    CHECK(event.clickItems().value(Qt::MiddleButton) == deletedClickItem.get());
+    deletedClickItem.reset();
+    CHECK(!event.clickItems().contains(Qt::MiddleButton));
+    auto replacementClickItem = std::make_unique<QGraphicsRectItem>();
+    CHECK(event.acceptClicks(Qt::MiddleButton, replacementClickItem.get()));
+    CHECK(event.clickItems().value(Qt::MiddleButton) == replacementClickItem.get());
+
+    auto deletedDragItem = std::make_unique<QGraphicsRectItem>();
+    CHECK(event.acceptDrags(Qt::LeftButton, deletedDragItem.get()));
+    CHECK(event.dragItems().value(Qt::LeftButton) == deletedDragItem.get());
+    deletedDragItem.reset();
+    CHECK(!event.dragItems().contains(Qt::LeftButton));
+    auto replacementDragItem = std::make_unique<QGraphicsRectItem>();
+    CHECK(event.acceptDrags(Qt::LeftButton, replacementDragItem.get()));
+    CHECK(event.dragItems().value(Qt::LeftButton) == replacementDragItem.get());
+
     HoverEvent unavailable(&moveEvent, false);
     CHECK(!unavailable.acceptClicks(Qt::LeftButton, &item));
     CHECK(!unavailable.acceptDrags(Qt::LeftButton, &item));
