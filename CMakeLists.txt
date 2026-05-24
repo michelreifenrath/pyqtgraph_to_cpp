@@ -146,6 +146,16 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_colormap_lut)
         add_test(NAME pyqtgraph_cpp.core.ColorMap.LUT COMMAND pyqtgraph_cpp_core_colormap_lut)
+
+        add_executable(pyqtgraph_cpp_core_mkpen_mkbrush tests/core/test_mkPen_mkBrush.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_mkpen_mkbrush
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_mkpen_mkbrush)
+        add_test(NAME pyqtgraph_cpp.core.mkPen_mkBrush COMMAND pyqtgraph_cpp_core_mkpen_mkbrush)
     endif()
 
     if(_pyqtgraph_cpp_has_graphicsitem)
