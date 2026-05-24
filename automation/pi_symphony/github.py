@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 from automation.pi_symphony.config import GithubConfig, WorkflowConfig
 from automation.pi_symphony.process import run, run_json
@@ -80,82 +81,85 @@ def list_ready_issues(config: WorkflowConfig, *, limit: int | None = None) -> li
     raw = run_json(
         [
             "gh",
-            "issue",
-            "list",
-            "--repo",
-            config.tracker.repo,
-            "--state",
-            "open",
-            "--label",
-            labels.ready_label,
-            "--limit",
-            str(limit or config.agent.max_concurrent_issues),
-            "--json",
-            "number,title,body,labels,url,author",
+            "api",
+            "-X",
+            "GET",
+            f"repos/{config.tracker.repo}/issues",
+            "-f",
+            "state=open",
+            "-f",
+            f"labels={labels.ready_label}",
+            "-f",
+            f"per_page={min(limit or config.agent.max_concurrent_issues, 100)}",
+            "-f",
+            "sort=created",
+            "-f",
+            "direction=asc",
         ]
     )
     candidates: list[Issue] = []
     for item in raw:
-        label_names = [label["name"] if isinstance(label, dict) else str(label) for label in item.get("labels", [])]
+        if item.get("pull_request"):
+            continue
+        issue = _issue_from_rest_item(item)
+        label_names = issue.labels
         if any(label in label_names for label in (labels.claimed_label, labels.blocked_label, labels.rework_label, labels.ignore_label, labels.done_label)):
             continue
-        author = item.get("author") or {}
-        candidates.append(
-            Issue(
-                number=int(item["number"]),
-                title=str(item.get("title") or ""),
-                body=str(item.get("body") or ""),
-                labels=label_names,
-                url=str(item.get("url") or ""),
-                author=str(author.get("login") if isinstance(author, dict) else author or ""),
-            )
-        )
+        candidates.append(issue)
+    if limit is not None:
+        candidates = candidates[:limit]
     return candidates
 
 
 def view_issue(config: WorkflowConfig, number: int) -> Issue:
-    item = run_json(
-        [
-            "gh",
-            "issue",
-            "view",
-            str(number),
-            "--repo",
-            config.tracker.repo,
-            "--json",
-            "number,title,body,labels,url,author",
-        ]
-    )
+    item = run_json(["gh", "api", "-X", "GET", f"repos/{config.tracker.repo}/issues/{number}"])
+    return _issue_from_rest_item(item)
+
+
+def _issue_from_rest_item(item: dict[str, Any]) -> Issue:
     label_names = [label["name"] if isinstance(label, dict) else str(label) for label in item.get("labels", [])]
-    author = item.get("author") or {}
+    author = item.get("user") or item.get("author") or {}
     return Issue(
         number=int(item["number"]),
         title=str(item.get("title") or ""),
         body=str(item.get("body") or ""),
         labels=label_names,
-        url=str(item.get("url") or ""),
+        url=str(item.get("html_url") or item.get("url") or ""),
         author=str(author.get("login") if isinstance(author, dict) else author or ""),
     )
 
 
 def add_labels(config: WorkflowConfig, number: int, labels: list[str]) -> None:
     if labels:
-        run(["gh", "issue", "edit", str(number), "--repo", config.tracker.repo, "--add-label", ",".join(labels)], timeout=60)
+        cmd = ["gh", "api", "-X", "POST", f"repos/{config.tracker.repo}/issues/{number}/labels"]
+        for label in labels:
+            cmd.extend(["-f", f"labels[]={label}"])
+        run(cmd, timeout=60)
 
 
 def remove_labels(config: WorkflowConfig, number: int, labels: list[str]) -> None:
     for label in labels:
         result = run(
-            ["gh", "issue", "edit", str(number), "--repo", config.tracker.repo, "--remove-label", label],
+            ["gh", "api", "-X", "DELETE", f"repos/{config.tracker.repo}/issues/{number}/labels/{quote(label, safe='')}"],
             timeout=60,
             check=False,
         )
-        if result.returncode != 0 and "could not remove" not in result.combined_output.lower():
+        if result.returncode != 0 and not _is_missing_label_error(result.combined_output):
             raise RuntimeError(result.combined_output)
 
 
+def _is_missing_label_error(output: str) -> bool:
+    normalized = output.lower()
+    return (
+        "not found" in normalized
+        or "label does not exist" in normalized
+        or "http 404" in normalized
+        or '"status":"404"' in normalized
+    )
+
+
 def comment_issue(config: WorkflowConfig, number: int, body: str) -> None:
-    run(["gh", "issue", "comment", str(number), "--repo", config.tracker.repo, "--body", body], timeout=120)
+    run(["gh", "api", "-X", "POST", f"repos/{config.tracker.repo}/issues/{number}/comments", "-f", f"body={body}"], timeout=120)
 
 
 def find_pr_for_branch(config: WorkflowConfig, branch: str) -> dict[str, Any] | None:
