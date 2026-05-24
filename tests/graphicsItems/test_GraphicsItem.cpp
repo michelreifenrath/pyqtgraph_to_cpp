@@ -86,22 +86,28 @@ bool testViewWidgetCachingAndForget()
     return true;
 }
 
-bool testDeletedViewClearsCachedPointer()
+bool testDeletedCachedViewStaysNullUntilForgotten()
 {
     QGraphicsScene scene;
     QGraphicsRectItem host(QRectF(0.0, 0.0, 1.0, 1.0));
     scene.addItem(&host);
     pyqtgraph::graphicsItems::GraphicsItem item(&host);
 
-    auto view = std::make_unique<QGraphicsView>(&scene);
-    QPointer<QGraphicsView> viewPointer(view.get());
+    auto firstView = std::make_unique<QGraphicsView>(&scene);
+    QPointer<QGraphicsView> firstViewPointer(firstView.get());
 
-    CHECK(item.getViewWidget() == view.get());
-    CHECK(item.getViewWidget() == viewPointer.data());
+    CHECK(item.getViewWidget() == firstView.get());
+    CHECK(item.getViewWidget() == firstViewPointer.data());
 
-    view.reset();
-    CHECK(viewPointer.isNull());
+    QGraphicsView secondView(&scene);
+    CHECK(item.getViewWidget() == firstViewPointer.data());
+
+    firstView.reset();
+    CHECK(firstViewPointer.isNull());
     CHECK(item.getViewWidget() == nullptr);
+
+    item.forgetViewWidget();
+    CHECK(item.getViewWidget() == &secondView);
 
     scene.removeItem(&host);
     return true;
@@ -120,7 +126,7 @@ int main(int argc, char** argv)
     if (!testViewWidgetCachingAndForget()) {
         return 1;
     }
-    if (!testDeletedViewClearsCachedPointer()) {
+    if (!testDeletedCachedViewStaysNullUntilForgotten()) {
         return 1;
     }
 

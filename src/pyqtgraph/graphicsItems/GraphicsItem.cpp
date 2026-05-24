@@ -23,6 +23,7 @@ struct GraphicsItem::Private {
 
     QGraphicsItem* host = nullptr;
     mutable QPointer<QGraphicsView> viewWidget;
+    mutable bool viewWidgetCachePopulated = false;
 };
 
 GraphicsItem::GraphicsItem(QGraphicsItem* host)
@@ -53,7 +54,7 @@ QGraphicsItem* GraphicsItem::graphicsItem() const noexcept
 
 QGraphicsView* GraphicsItem::getViewWidget() const
 {
-    if (!d_->viewWidget.isNull()) {
+    if (d_->viewWidgetCachePopulated) {
         return d_->viewWidget.data();
     }
 
@@ -67,12 +68,14 @@ QGraphicsView* GraphicsItem::getViewWidget() const
     }
 
     d_->viewWidget = views.front();
+    d_->viewWidgetCachePopulated = true;
     return d_->viewWidget.data();
 }
 
 void GraphicsItem::forgetViewWidget() const noexcept
 {
     d_->viewWidget.clear();
+    d_->viewWidgetCachePopulated = false;
 }
 
 } // namespace pyqtgraph::graphicsItems
