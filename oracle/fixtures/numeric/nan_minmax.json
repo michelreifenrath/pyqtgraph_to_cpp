@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "case": "nan_minmax",
+  "reference": {
+    "ref": "pyqtgraph-0.14.0",
+    "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788"
+  },
+  "inputs": {
+    "cases": [
+      {
+        "name": "finite",
+        "values": [
+          4.0,
+          -2.5,
+          9.25
+        ]
+      },
+      {
+        "name": "mixed_nan",
+        "values": [
+          "NaN",
+          3.0,
+          "NaN",
+          -7.0,
+          2.0
+        ]
+      },
+      {
+        "name": "infinities",
+        "values": [
+          "NaN",
+          "Infinity",
+          "-Infinity",
+          5.0
+        ]
+      },
+      {
+        "name": "all_nan",
+        "values": [
+          "NaN",
+          "NaN"
+        ]
+      },
+      {
+        "name": "empty",
+        "values": []
+      }
+    ]
+  },
+  "expected": {
+    "cases": [
+      {
+        "name": "finite",
+        "nanmin": {
+          "value": -2.5
+        },
+        "nanmax": {
+          "value": 9.25
+        }
+      },
+      {
+        "name": "mixed_nan",
+        "nanmin": {
+          "value": -7.0
+        },
+        "nanmax": {
+          "value": 3.0
+        }
+      },
+      {
+        "name": "infinities",
+        "nanmin": {
+          "value": "-Infinity"
+        },
+        "nanmax": {
+          "value": "Infinity"
+        }
+      },
+      {
+        "name": "all_nan",
+        "nanmin": {
+          "value": "NaN"
+        },
+        "nanmax": {
+          "value": "NaN"
+        }
+      },
+      {
+        "name": "empty",
+        "nanmin": {
+          "error": {
+            "type": "ValueError",
+            "message": "zero-size array to reduction operation fmin which has no identity"
+          }
+        },
+        "nanmax": {
+          "error": {
+            "type": "ValueError",
+            "message": "zero-size array to reduction operation fmax which has no identity"
+          }
+        }
+      }
+    ]
+  },
+  "tolerance": {
+    "absolute": 0.0,
+    "relative": 0.0
+  }
+}

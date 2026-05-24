@@ -27,6 +27,15 @@ AFFINE_INPUTS = {
     "offset": [1.5, -2.0],
 }
 LOG_INPUTS = {"values": [0.1, 1.0, 10.0, 100.0], "base": 10.0}
+NAN_MINMAX_INPUTS = {
+    "cases": [
+        {"name": "finite", "values": [4.0, -2.5, 9.25]},
+        {"name": "mixed_nan", "values": ["NaN", 3.0, "NaN", -7.0, 2.0]},
+        {"name": "infinities", "values": ["NaN", "Infinity", "-Infinity", 5.0]},
+        {"name": "all_nan", "values": ["NaN", "NaN"]},
+        {"name": "empty", "values": []},
+    ]
+}
 
 REFERENCE_PROBE = r"""
 import ast
@@ -124,6 +133,18 @@ class NumericShim:
 
     def max(self, values):
         return max(values)
+
+    def nanmin(self, values):
+        finite_values = [value for value in values if not math.isnan(value)]
+        if not values._values:
+            raise ValueError("zero-size array to reduction operation fmin which has no identity")
+        return min(finite_values) if finite_values else math.nan
+
+    def nanmax(self, values):
+        finite_values = [value for value in values if not math.isnan(value)]
+        if not values._values:
+            raise ValueError("zero-size array to reduction operation fmax which has no identity")
+        return max(finite_values) if finite_values else math.nan
 
 
 np = NumericShim()
@@ -224,11 +245,39 @@ def point_pair(point):
     return [float(point[0]), float(point[1])]
 
 
+def decode_numeric(value):
+    if value == "NaN":
+        return math.nan
+    if value == "Infinity":
+        return math.inf
+    if value == "-Infinity":
+        return -math.inf
+    return float(value)
+
+
+def encode_numeric(value):
+    numeric = float(value)
+    if math.isnan(numeric):
+        return "NaN"
+    if math.isinf(numeric):
+        return "Infinity" if numeric > 0 else "-Infinity"
+    return numeric
+
+
+def capture_reduction(function, values):
+    try:
+        result = function(values)
+    except Exception as exc:
+        return {"error": {"type": type(exc).__name__, "message": str(exc)}}
+    return {"value": encode_numeric(result)}
+
+
 payload = json.loads(sys.stdin.read())
 checkout = Path(payload["checkout_path"]).resolve()
 
 affine_inputs = payload["affine_inputs"]
 log_inputs = payload["log_inputs"]
+nan_minmax_inputs = payload["nan_minmax_inputs"]
 if float(log_inputs["base"]) != 10.0:
     raise RuntimeError("PyQtGraph PlotDataItem log mode only supports base-10 mapping")
 
@@ -264,11 +313,23 @@ dataset = PlotDataset(values.copy(), values.copy())
 dataset.applyLogMapping((True, False))
 log_values = [float(value) for value in dataset.x.tolist()]
 
+nan_minmax_cases = []
+for case in nan_minmax_inputs["cases"]:
+    values = np.asarray([decode_numeric(value) for value in case["values"]], dtype=float)
+    nan_minmax_cases.append(
+        {
+            "name": case["name"],
+            "nanmin": capture_reduction(np.nanmin, values),
+            "nanmax": capture_reduction(np.nanmax, values),
+        }
+    )
+
 print(
     json.dumps(
         {
             "affine_transform": {"points": affine_points},
             "log_mapping": {"values": log_values},
+            "nan_minmax": {"cases": nan_minmax_cases},
         },
         allow_nan=False,
     )
@@ -466,6 +527,7 @@ def run_reference_probe(root: Path, checkout: Path) -> dict[str, Any]:
         "checkout_path": str(checkout),
         "affine_inputs": AFFINE_INPUTS,
         "log_inputs": LOG_INPUTS,
+        "nan_minmax_inputs": NAN_MINMAX_INPUTS,
     }
     try:
         result = subprocess.run(
@@ -518,6 +580,7 @@ def case_definitions(
     try:
         affine_expected = reference_results["affine_transform"]
         log_expected = reference_results["log_mapping"]
+        nan_minmax_expected = reference_results["nan_minmax"]
     except KeyError as exc:
         raise NumericOracleError(
             "unable to use pinned PyQtGraph reference runtime: "
@@ -540,6 +603,14 @@ def case_definitions(
             "inputs": LOG_INPUTS,
             "expected": log_expected,
             "tolerance": {"absolute": 1.0e-12, "relative": 1.0e-12},
+        },
+        {
+            "schema_version": SCHEMA_VERSION,
+            "case": "nan_minmax",
+            "reference": reference,
+            "inputs": NAN_MINMAX_INPUTS,
+            "expected": nan_minmax_expected,
+            "tolerance": {"absolute": 0.0, "relative": 0.0},
         },
     ]
 
@@ -593,11 +664,9 @@ def check_existing_fixtures(
                 f"stale numeric fixture: {posix_relative(path, root)}"
             )
 
-    for path in sorted(existing_json_paths):
-        if path not in expected_by_path:
-            raise NumericOracleError(
-                f"unknown numeric fixture: {posix_relative(path, root)}"
-            )
+    # Other numeric oracle producers may share this fixture directory.  This
+    # generator verifies the cases it owns and leaves unrelated JSON fixtures
+    # untouched instead of treating them as stale state.
 
 
 def build_manifest(

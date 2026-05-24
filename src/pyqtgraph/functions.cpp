@@ -5,8 +5,18 @@
 
 #include "../../include/pyqtgraph/functions.hpp"
 
+#if PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
+#if __has_include(<QByteArray>)
 #include <QByteArray>
+#else
+#include <QtCore/QByteArray>
+#endif
+#if __has_include(<QLatin1Char>)
 #include <QLatin1Char>
+#else
+#include <QtCore/QLatin1Char>
+#endif
+#endif
 
 #include <algorithm>
 #include <cctype>
@@ -18,6 +28,8 @@
 
 namespace pyqtgraph {
 namespace {
+
+#if PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
 
 [[nodiscard]] int finiteChannelToInt(double value)
 {
@@ -123,7 +135,37 @@ namespace {
                   static_cast<unsigned char>(bytes[3]));
 }
 
+#endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
+
+template <typename T, typename Compare>
+[[nodiscard]] T nanExtrema(std::span<const T> values, Compare compare)
+{
+    if (values.empty()) {
+        throw std::invalid_argument("nanmin/nanmax requires at least one value");
+    }
+
+    bool hasValue = false;
+    T result{};
+    for (const T value : values) {
+        if (std::isnan(value)) {
+            continue;
+        }
+        if (!hasValue) {
+            result = value;
+            hasValue = true;
+            continue;
+        }
+        if (compare(value, result)) {
+            result = value;
+        }
+    }
+
+    return hasValue ? result : std::numeric_limits<T>::quiet_NaN();
+}
+
 } // namespace
+
+#if PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
 
 QColor intColor(int index,
                 int hues,
@@ -253,6 +295,38 @@ QColor mkColor(std::initializer_list<double> values)
     }
 
     throw std::invalid_argument("mkColor sequence input must contain 2, 3, or 4 values");
+}
+
+#endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
+
+float nanmin(std::span<const float> values)
+{
+    return nanExtrema(values, [](float lhs, float rhs) { return lhs < rhs; });
+}
+
+double nanmin(std::span<const double> values)
+{
+    return nanExtrema(values, [](double lhs, double rhs) { return lhs < rhs; });
+}
+
+long double nanmin(std::span<const long double> values)
+{
+    return nanExtrema(values, [](long double lhs, long double rhs) { return lhs < rhs; });
+}
+
+float nanmax(std::span<const float> values)
+{
+    return nanExtrema(values, [](float lhs, float rhs) { return lhs > rhs; });
+}
+
+double nanmax(std::span<const double> values)
+{
+    return nanExtrema(values, [](double lhs, double rhs) { return lhs > rhs; });
+}
+
+long double nanmax(std::span<const long double> values)
+{
+    return nanExtrema(values, [](long double lhs, long double rhs) { return lhs > rhs; });
 }
 
 } // namespace pyqtgraph

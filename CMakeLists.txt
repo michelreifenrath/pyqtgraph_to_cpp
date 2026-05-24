@@ -38,7 +38,10 @@ else()
     message(STATUS "Qt6 Widgets was not found; skipping the GraphicsItem library source and test targets")
 endif()
 
-add_library(pyqtgraph_cpp src/pyqtgraph/core/ArrayView.cpp)
+add_library(pyqtgraph_cpp
+    src/pyqtgraph/core/ArrayView.cpp
+    src/pyqtgraph/functions.cpp
+)
 target_include_directories(pyqtgraph_cpp
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -53,8 +56,11 @@ if(_pyqtgraph_cpp_has_mkcolor)
     target_sources(pyqtgraph_cpp
         PRIVATE
             src/pyqtgraph/colormap.cpp
-            src/pyqtgraph/functions.cpp
             src/pyqtgraph/functions_qimage.cpp
+    )
+    target_compile_definitions(pyqtgraph_cpp
+        PUBLIC
+            PYQTGRAPH_CPP_ENABLE_QT_COLOR=1
     )
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
@@ -87,6 +93,16 @@ if(BUILD_TESTING)
     )
     pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_arrayview)
     add_test(NAME pyqtgraph_cpp.core.ArrayView COMMAND pyqtgraph_cpp_core_arrayview)
+
+    add_executable(pyqtgraph_cpp_core_nan_minmax tests/core/test_nan_minmax.cpp)
+    target_link_libraries(pyqtgraph_cpp_core_nan_minmax
+        PRIVATE
+            pyqtgraph_cpp
+            pyqtgraph_cpp_project_options
+            pyqtgraph_cpp_project_warnings
+    )
+    pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_nan_minmax)
+    add_test(NAME pyqtgraph_cpp.core.nan_minmax COMMAND pyqtgraph_cpp_core_nan_minmax)
 
     if(_pyqtgraph_cpp_has_mkcolor)
         add_executable(pyqtgraph_cpp_core_mkcolor tests/core/test_mkColor.cpp)

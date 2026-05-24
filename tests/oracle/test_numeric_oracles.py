@@ -208,10 +208,11 @@ def test_yaml_manifest_is_deterministic_and_has_stable_schema(tmp_path: Path) ->
         "docs_url": DOCS_URL,
         "checkout_path": CHECKOUT_PATH,
     }
-    assert manifest["summary"] == {"case_count": 2}
+    assert manifest["summary"] == {"case_count": 3}
     assert [case["id"] for case in manifest["cases"]] == [
         "affine_transform",
         "log_mapping",
+        "nan_minmax",
     ]
 
 
@@ -246,11 +247,14 @@ def test_normal_mode_writes_deterministic_numeric_fixtures(tmp_path: Path) -> No
     fixture_dir = root / "oracle" / "fixtures" / "numeric"
     affine_path = fixture_dir / "affine_transform.json"
     log_path = fixture_dir / "log_mapping.json"
+    nan_minmax_path = fixture_dir / "nan_minmax.json"
     assert affine_path.is_file()
     assert log_path.is_file()
+    assert nan_minmax_path.is_file()
 
     affine = load_json(affine_path)
     log_mapping = load_json(log_path)
+    nan_minmax = load_json(nan_minmax_path)
     assert list(affine) == [
         "schema_version",
         "case",
@@ -270,6 +274,34 @@ def test_normal_mode_writes_deterministic_numeric_fixtures(tmp_path: Path) -> No
     assert log_mapping["expected"]["values"] == [-1.0, 0.0, 1.0, 2.0]
     assert log_mapping["tolerance"] == {"absolute": 1.0e-12, "relative": 1.0e-12}
 
+    assert nan_minmax["schema_version"] == 1
+    assert nan_minmax["case"] == "nan_minmax"
+    assert nan_minmax["inputs"]["cases"][-1] == {"name": "empty", "values": []}
+    expected_by_name = {case["name"]: case for case in nan_minmax["expected"]["cases"]}
+    assert expected_by_name["finite"] == {
+        "name": "finite",
+        "nanmin": {"value": -2.5},
+        "nanmax": {"value": 9.25},
+    }
+    assert expected_by_name["mixed_nan"] == {
+        "name": "mixed_nan",
+        "nanmin": {"value": -7.0},
+        "nanmax": {"value": 3.0},
+    }
+    assert expected_by_name["infinities"] == {
+        "name": "infinities",
+        "nanmin": {"value": "-Infinity"},
+        "nanmax": {"value": "Infinity"},
+    }
+    assert expected_by_name["all_nan"] == {
+        "name": "all_nan",
+        "nanmin": {"value": "NaN"},
+        "nanmax": {"value": "NaN"},
+    }
+    assert expected_by_name["empty"]["nanmin"]["error"]["type"] == "ValueError"
+    assert expected_by_name["empty"]["nanmax"]["error"]["type"] == "ValueError"
+    assert nan_minmax["tolerance"] == {"absolute": 0.0, "relative": 0.0}
+
 
 def test_expected_values_come_from_reference_runtime(tmp_path: Path) -> None:
     root = tmp_path / "workspace"
@@ -281,6 +313,7 @@ def test_expected_values_come_from_reference_runtime(tmp_path: Path) -> None:
     fixture_dir = root / "oracle" / "fixtures" / "numeric"
     affine = load_json(fixture_dir / "affine_transform.json")
     log_mapping = load_json(fixture_dir / "log_mapping.json")
+    nan_minmax = load_json(fixture_dir / "nan_minmax.json")
     assert affine["expected"]["points"] == [
         [11.5, 8.0],
         [13.5, 14.0],
@@ -288,6 +321,13 @@ def test_expected_values_come_from_reference_runtime(tmp_path: Path) -> None:
     ]
     assert affine["expected"]["points"] != [[1.5, -2.0], [3.5, 4.0], [-4.5, 11.5]]
     assert log_mapping["expected"]["values"] == [4.0, 5.0, 6.0, 7.0]
+    assert [case["name"] for case in nan_minmax["expected"]["cases"]] == [
+        "finite",
+        "mixed_nan",
+        "infinities",
+        "all_nan",
+        "empty",
+    ]
 
 
 def test_materializes_missing_reference_checkout_from_lock(tmp_path: Path) -> None:
