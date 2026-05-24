@@ -1,6 +1,9 @@
 #include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
 
 #include <QtCore/QObject>
+#include <QtCore/QRectF>
+#include <QtGui/QImage>
+#include <QtGui/QPainter>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsRectItem>
@@ -100,6 +103,26 @@ bool testPrepareForPaintSignal()
     return true;
 }
 
+bool testRenderEmitsPrepareForPaintSignal()
+{
+    pyqtgraph::GraphicsScene::GraphicsScene scene;
+    int prepareCount = 0;
+    QObject::connect(&scene, &pyqtgraph::GraphicsScene::GraphicsScene::sigPrepareForPaint, [&prepareCount]() {
+        ++prepareCount;
+    });
+
+    QImage image(16, 16, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+
+    scene.render(&painter, QRectF(0.0, 0.0, 16.0, 16.0), QRectF(0.0, 0.0, 16.0, 16.0), Qt::IgnoreAspectRatio);
+    painter.end();
+
+    CHECK(prepareCount == 1);
+
+    return true;
+}
+
 bool testAddRemoveSignals()
 {
     pyqtgraph::GraphicsScene::GraphicsScene scene;
@@ -162,6 +185,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPrepareForPaintSignal()) {
+        return 1;
+    }
+    if (!testRenderEmitsPrepareForPaintSignal()) {
         return 1;
     }
     if (!testAddRemoveSignals()) {

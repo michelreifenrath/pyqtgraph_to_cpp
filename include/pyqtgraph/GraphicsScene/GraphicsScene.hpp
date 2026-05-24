@@ -10,6 +10,7 @@
 class QGraphicsItem;
 class QGraphicsView;
 class QObject;
+class QPainter;
 
 namespace pyqtgraph::GraphicsScene {
 
@@ -35,6 +36,9 @@ public:
 
     void addItem(QGraphicsItem* item);
     void removeItem(QGraphicsItem* item);
+
+    void render(QPainter* painter, const QRectF& target = QRectF(), const QRectF& source = QRectF(),
+        Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio);
 
 public slots:
     void prepareForPaint();

@@ -61,6 +61,13 @@ void GraphicsScene::removeItem(QGraphicsItem* item)
     emit sigItemRemoved(item);
 }
 
+void GraphicsScene::render(QPainter* painter, const QRectF& target, const QRectF& source,
+    Qt::AspectRatioMode aspectRatioMode)
+{
+    prepareForPaint();
+    QGraphicsScene::render(painter, target, source, aspectRatioMode);
+}
+
 void GraphicsScene::prepareForPaint()
 {
     emit sigPrepareForPaint();
