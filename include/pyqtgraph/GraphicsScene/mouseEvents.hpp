@@ -18,10 +18,14 @@ class QGraphicsSceneMouseEvent;
 
 namespace pyqtgraph::GraphicsScene {
 
+class MouseClickEvent;
+
 class MouseDragEvent {
 public:
     MouseDragEvent(QGraphicsSceneMouseEvent* moveEvent, QGraphicsSceneMouseEvent* pressEvent,
         QGraphicsSceneMouseEvent* lastEvent, bool start = false, bool finish = false);
+    MouseDragEvent(QGraphicsSceneMouseEvent* moveEvent, const MouseClickEvent& pressEvent,
+        const MouseDragEvent* lastEvent, bool start = false, bool finish = false);
 
     void accept(QGraphicsItem* item = nullptr) noexcept;
     void ignore() noexcept;
@@ -34,12 +38,15 @@ public:
     [[nodiscard]] pyqtgraph::Point scenePos() const;
     [[nodiscard]] pyqtgraph::Point screenPos() const;
     [[nodiscard]] pyqtgraph::Point buttonDownScenePos() const;
+    [[nodiscard]] pyqtgraph::Point buttonDownScenePos(Qt::MouseButton button) const;
     [[nodiscard]] pyqtgraph::Point buttonDownScreenPos() const;
+    [[nodiscard]] pyqtgraph::Point buttonDownScreenPos(Qt::MouseButton button) const;
     [[nodiscard]] pyqtgraph::Point lastScenePos() const;
     [[nodiscard]] pyqtgraph::Point lastScreenPos() const;
     [[nodiscard]] pyqtgraph::Point pos() const;
     [[nodiscard]] pyqtgraph::Point lastPos() const;
     [[nodiscard]] pyqtgraph::Point buttonDownPos() const;
+    [[nodiscard]] pyqtgraph::Point buttonDownPos(Qt::MouseButton button) const;
 
     [[nodiscard]] Qt::MouseButtons buttons() const noexcept;
     [[nodiscard]] Qt::MouseButton button() const noexcept;
@@ -50,8 +57,8 @@ public:
 private:
     pyqtgraph::Point scenePos_;
     pyqtgraph::Point screenPos_;
-    pyqtgraph::Point buttonDownScenePos_;
-    pyqtgraph::Point buttonDownScreenPos_;
+    QHash<Qt::MouseButton, pyqtgraph::Point> buttonDownScenePos_;
+    QHash<Qt::MouseButton, pyqtgraph::Point> buttonDownScreenPos_;
     pyqtgraph::Point lastScenePos_;
     pyqtgraph::Point lastScreenPos_;
     Qt::MouseButtons buttons_ = Qt::NoButton;
@@ -110,6 +117,7 @@ public:
     [[nodiscard]] QGraphicsItem* currentItem() const noexcept;
 
     void setEnter(bool enter) noexcept;
+    void setExit(bool exit) noexcept;
     [[nodiscard]] bool isEnter() const noexcept;
     [[nodiscard]] bool isExit() const noexcept;
 

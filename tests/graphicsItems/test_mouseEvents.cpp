@@ -100,10 +100,13 @@ bool testMouseClickEventShapeAndAccessors()
 
 bool testMouseDragEventShapeAndAccessors()
 {
+    using pyqtgraph::GraphicsScene::MouseClickEvent;
     using pyqtgraph::GraphicsScene::MouseDragEvent;
 
     static_assert(std::is_constructible_v<MouseDragEvent, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*>);
     static_assert(std::is_constructible_v<MouseDragEvent, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*, bool, bool>);
+    static_assert(std::is_constructible_v<MouseDragEvent, QGraphicsSceneMouseEvent*, const MouseClickEvent&, const MouseDragEvent*>);
+    static_assert(std::is_constructible_v<MouseDragEvent, QGraphicsSceneMouseEvent*, const MouseClickEvent&, const MouseDragEvent*, bool, bool>);
     static_assert(std::is_destructible_v<MouseDragEvent>);
 
     QGraphicsSceneMouseEvent pressEvent(QEvent::GraphicsSceneMousePress);
@@ -127,6 +130,10 @@ bool testMouseDragEventShapeAndAccessors()
     moveEvent.setLastScreenPos(QPoint(130, 250));
     moveEvent.setButtonDownScenePos(Qt::LeftButton, QPointF(10.0, 20.0));
     moveEvent.setButtonDownScreenPos(Qt::LeftButton, QPoint(100, 200));
+    moveEvent.setButtonDownScenePos(Qt::MiddleButton, QPointF(30.0, 40.0));
+    moveEvent.setButtonDownScreenPos(Qt::MiddleButton, QPoint(300, 400));
+    moveEvent.setButtonDownScenePos(Qt::RightButton, QPointF(45.0, 55.0));
+    moveEvent.setButtonDownScreenPos(Qt::RightButton, QPoint(450, 550));
     moveEvent.setButton(Qt::NoButton);
     moveEvent.setButtons(Qt::LeftButton | Qt::RightButton);
     moveEvent.setModifiers(Qt::AltModifier | Qt::ShiftModifier);
@@ -137,7 +144,13 @@ bool testMouseDragEventShapeAndAccessors()
     CHECK(samePoint(event.lastScenePos(), 13.0, 25.0));
     CHECK(samePoint(event.lastScreenPos(), 130.0, 250.0));
     CHECK(samePoint(event.buttonDownScenePos(), 10.0, 20.0));
+    CHECK(samePoint(event.buttonDownScenePos(Qt::LeftButton), 10.0, 20.0));
+    CHECK(samePoint(event.buttonDownScenePos(Qt::MiddleButton), 30.0, 40.0));
+    CHECK(samePoint(event.buttonDownScenePos(Qt::RightButton), 45.0, 55.0));
     CHECK(samePoint(event.buttonDownScreenPos(), 100.0, 200.0));
+    CHECK(samePoint(event.buttonDownScreenPos(Qt::LeftButton), 100.0, 200.0));
+    CHECK(samePoint(event.buttonDownScreenPos(Qt::MiddleButton), 300.0, 400.0));
+    CHECK(samePoint(event.buttonDownScreenPos(Qt::RightButton), 450.0, 550.0));
     CHECK(event.button() == Qt::LeftButton);
     CHECK(event.buttons() == (Qt::LeftButton | Qt::RightButton));
     CHECK(event.modifiers() == (Qt::AltModifier | Qt::ShiftModifier));
@@ -151,6 +164,8 @@ bool testMouseDragEventShapeAndAccessors()
     CHECK(samePoint(event.pos(), 5.0, 8.0));
     CHECK(samePoint(event.lastPos(), 3.0, 5.0));
     CHECK(samePoint(event.buttonDownPos(), 0.0, 0.0));
+    CHECK(samePoint(event.buttonDownPos(Qt::MiddleButton), 20.0, 20.0));
+    CHECK(samePoint(event.buttonDownPos(Qt::RightButton), 35.0, 35.0));
     event.accept();
     CHECK(event.isAccepted());
     CHECK(event.acceptedItem() == &item);
@@ -165,6 +180,43 @@ bool testMouseDragEventShapeAndAccessors()
     MouseDragEvent finishEvent(&moveEvent, &pressEvent, &lastEvent, false, true);
     CHECK(!finishEvent.isStart());
     CHECK(finishEvent.isFinish());
+
+    MouseClickEvent pressWrapper(&pressEvent);
+    pressEvent.setScenePos(QPointF(1000.0, 2000.0));
+    pressEvent.setScreenPos(QPoint(10000, 20000));
+    pressEvent.setButton(Qt::RightButton);
+
+    QGraphicsSceneMouseEvent followMove(QEvent::GraphicsSceneMouseMove);
+    followMove.setScenePos(QPointF(22.0, 33.0));
+    followMove.setScreenPos(QPoint(220, 330));
+    followMove.setButtonDownScenePos(Qt::LeftButton, QPointF(99.0, 199.0));
+    followMove.setButtonDownScreenPos(Qt::LeftButton, QPoint(990, 1990));
+    followMove.setButtonDownScenePos(Qt::RightButton, QPointF(45.0, 55.0));
+    followMove.setButtonDownScreenPos(Qt::RightButton, QPoint(450, 550));
+    followMove.setButton(Qt::NoButton);
+    followMove.setButtons(Qt::LeftButton | Qt::RightButton);
+    followMove.setModifiers(Qt::ControlModifier);
+
+    MouseDragEvent durableStart(&followMove, pressWrapper, nullptr, true, false);
+    CHECK(durableStart.button() == Qt::LeftButton);
+    CHECK(samePoint(durableStart.buttonDownScenePos(), 10.0, 20.0));
+    CHECK(samePoint(durableStart.buttonDownScenePos(Qt::RightButton), 45.0, 55.0));
+    CHECK(samePoint(durableStart.lastScenePos(), 10.0, 20.0));
+    CHECK(samePoint(durableStart.lastScreenPos(), 100.0, 200.0));
+
+    QGraphicsSceneMouseEvent continueMove(QEvent::GraphicsSceneMouseMove);
+    continueMove.setScenePos(QPointF(25.0, 36.0));
+    continueMove.setScreenPos(QPoint(250, 360));
+    continueMove.setButtonDownScenePos(Qt::LeftButton, QPointF(10.0, 20.0));
+    continueMove.setButtonDownScreenPos(Qt::LeftButton, QPoint(100, 200));
+    continueMove.setButton(Qt::NoButton);
+    continueMove.setButtons(Qt::LeftButton);
+    continueMove.setModifiers(Qt::AltModifier);
+
+    MouseDragEvent durableContinuation(&continueMove, pressWrapper, &durableStart, false, false);
+    CHECK(samePoint(durableContinuation.lastScenePos(), 22.0, 33.0));
+    CHECK(samePoint(durableContinuation.lastScreenPos(), 220.0, 330.0));
+    CHECK(samePoint(durableContinuation.buttonDownScenePos(), 10.0, 20.0));
 
     return true;
 }
@@ -249,6 +301,12 @@ bool testHoverEventShapeAccessorsAndClaims()
     CHECK(enterEvent.isEnter());
     enterEvent.setEnter(false);
     CHECK(!enterEvent.isEnter());
+    enterEvent.setExit(true);
+    CHECK(enterEvent.isExit());
+    CHECK(samePoint(enterEvent.scenePos(), 3.0, 4.0));
+    CHECK(samePoint(enterEvent.lastScenePos(), 3.0, 4.0));
+    enterEvent.setExit(false);
+    CHECK(!enterEvent.isExit());
 
     return true;
 }

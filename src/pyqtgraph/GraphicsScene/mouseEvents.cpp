@@ -9,6 +9,7 @@
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
 
+#include <array>
 #include <memory>
 
 using PyQtGraphItemLifetimeToken = std::shared_ptr<void>;
@@ -32,6 +33,53 @@ pyqtgraph::Point mapFromScene(QGraphicsItem* item, const pyqtgraph::Point& scene
         return scenePos;
     }
     return pyqtgraph::Point(item->mapFromScene(scenePos));
+}
+
+constexpr std::array<Qt::MouseButton, 3> trackedMouseButtons {
+    Qt::LeftButton,
+    Qt::MiddleButton,
+    Qt::RightButton,
+};
+
+void copyButtonDownPositions(QGraphicsSceneMouseEvent* moveEvent,
+    QHash<Qt::MouseButton, pyqtgraph::Point>& scenePositions,
+    QHash<Qt::MouseButton, pyqtgraph::Point>& screenPositions)
+{
+    if (moveEvent == nullptr) {
+        return;
+    }
+
+    for (Qt::MouseButton button : trackedMouseButtons) {
+        scenePositions.insert(button, toPoint(moveEvent->buttonDownScenePos(button)));
+        screenPositions.insert(button, toPoint(moveEvent->buttonDownScreenPos(button)));
+    }
+}
+
+void insertButtonDownPosition(Qt::MouseButton button,
+    const pyqtgraph::Point& scenePos,
+    const pyqtgraph::Point& screenPos,
+    QHash<Qt::MouseButton, pyqtgraph::Point>& scenePositions,
+    QHash<Qt::MouseButton, pyqtgraph::Point>& screenPositions)
+{
+    if (button == Qt::NoButton) {
+        return;
+    }
+
+    scenePositions.insert(button, scenePos);
+    screenPositions.insert(button, screenPos);
+}
+
+pyqtgraph::Point pointForButton(
+    const QHash<Qt::MouseButton, pyqtgraph::Point>& positions,
+    Qt::MouseButton requestedButton,
+    Qt::MouseButton defaultButton)
+{
+    const Qt::MouseButton resolvedButton = requestedButton == Qt::NoButton ? defaultButton : requestedButton;
+    const auto position = positions.constFind(resolvedButton);
+    if (position == positions.constEnd()) {
+        return pyqtgraph::Point();
+    }
+    return position.value();
 }
 
 PyQtGraphItemLifetimeToken lifetimeTokenFor(QGraphicsItem* item)
@@ -61,8 +109,6 @@ MouseDragEvent::MouseDragEvent(QGraphicsSceneMouseEvent* moveEvent, QGraphicsSce
     QGraphicsSceneMouseEvent* lastEvent, bool start, bool finish)
     : scenePos_(moveEvent != nullptr ? toPoint(moveEvent->scenePos()) : pyqtgraph::Point())
     , screenPos_(moveEvent != nullptr ? toPoint(moveEvent->screenPos()) : pyqtgraph::Point())
-    , buttonDownScenePos_(pressEvent != nullptr ? toPoint(pressEvent->scenePos()) : pyqtgraph::Point())
-    , buttonDownScreenPos_(pressEvent != nullptr ? toPoint(pressEvent->screenPos()) : pyqtgraph::Point())
     , lastScenePos_(lastEvent != nullptr ? toPoint(lastEvent->scenePos())
                                          : (pressEvent != nullptr ? toPoint(pressEvent->scenePos())
                                                                   : (moveEvent != nullptr ? toPoint(moveEvent->lastScenePos()) : scenePos_)))
@@ -78,10 +124,28 @@ MouseDragEvent::MouseDragEvent(QGraphicsSceneMouseEvent* moveEvent, QGraphicsSce
     , start_(start)
     , finish_(finish)
 {
-    if (pressEvent == nullptr && moveEvent != nullptr && button_ != Qt::NoButton) {
-        buttonDownScenePos_ = toPoint(moveEvent->buttonDownScenePos(button_));
-        buttonDownScreenPos_ = toPoint(moveEvent->buttonDownScreenPos(button_));
+    copyButtonDownPositions(moveEvent, buttonDownScenePos_, buttonDownScreenPos_);
+    if (moveEvent == nullptr && pressEvent != nullptr) {
+        insertButtonDownPosition(button_, toPoint(pressEvent->scenePos()), toPoint(pressEvent->screenPos()),
+            buttonDownScenePos_, buttonDownScreenPos_);
     }
+}
+
+MouseDragEvent::MouseDragEvent(QGraphicsSceneMouseEvent* moveEvent, const MouseClickEvent& pressEvent,
+    const MouseDragEvent* lastEvent, bool start, bool finish)
+    : scenePos_(moveEvent != nullptr ? toPoint(moveEvent->scenePos()) : pressEvent.scenePos())
+    , screenPos_(moveEvent != nullptr ? toPoint(moveEvent->screenPos()) : pressEvent.screenPos())
+    , lastScenePos_(lastEvent != nullptr ? lastEvent->scenePos() : pressEvent.scenePos())
+    , lastScreenPos_(lastEvent != nullptr ? lastEvent->screenPos() : pressEvent.screenPos())
+    , buttons_(moveEvent != nullptr ? moveEvent->buttons() : pressEvent.buttons())
+    , button_(pressEvent.button())
+    , modifiers_(moveEvent != nullptr ? moveEvent->modifiers() : pressEvent.modifiers())
+    , start_(start)
+    , finish_(finish)
+{
+    copyButtonDownPositions(moveEvent, buttonDownScenePos_, buttonDownScreenPos_);
+    insertButtonDownPosition(pressEvent.button(), pressEvent.scenePos(), pressEvent.screenPos(),
+        buttonDownScenePos_, buttonDownScreenPos_);
 }
 
 void MouseDragEvent::accept(QGraphicsItem* item) noexcept
@@ -108,9 +172,19 @@ pyqtgraph::Point MouseDragEvent::scenePos() const { return scenePos_; }
 
 pyqtgraph::Point MouseDragEvent::screenPos() const { return screenPos_; }
 
-pyqtgraph::Point MouseDragEvent::buttonDownScenePos() const { return buttonDownScenePos_; }
+pyqtgraph::Point MouseDragEvent::buttonDownScenePos() const { return buttonDownScenePos(button_); }
 
-pyqtgraph::Point MouseDragEvent::buttonDownScreenPos() const { return buttonDownScreenPos_; }
+pyqtgraph::Point MouseDragEvent::buttonDownScenePos(Qt::MouseButton button) const
+{
+    return pointForButton(buttonDownScenePos_, button, button_);
+}
+
+pyqtgraph::Point MouseDragEvent::buttonDownScreenPos() const { return buttonDownScreenPos(button_); }
+
+pyqtgraph::Point MouseDragEvent::buttonDownScreenPos(Qt::MouseButton button) const
+{
+    return pointForButton(buttonDownScreenPos_, button, button_);
+}
 
 pyqtgraph::Point MouseDragEvent::lastScenePos() const { return lastScenePos_; }
 
@@ -120,7 +194,12 @@ pyqtgraph::Point MouseDragEvent::pos() const { return mapFromScene(currentItem_,
 
 pyqtgraph::Point MouseDragEvent::lastPos() const { return mapFromScene(currentItem_, lastScenePos_); }
 
-pyqtgraph::Point MouseDragEvent::buttonDownPos() const { return mapFromScene(currentItem_, buttonDownScenePos_); }
+pyqtgraph::Point MouseDragEvent::buttonDownPos() const { return buttonDownPos(button_); }
+
+pyqtgraph::Point MouseDragEvent::buttonDownPos(Qt::MouseButton button) const
+{
+    return mapFromScene(currentItem_, buttonDownScenePos(button));
+}
 
 Qt::MouseButtons MouseDragEvent::buttons() const noexcept { return buttons_; }
 
@@ -218,6 +297,8 @@ void HoverEvent::setCurrentItem(QGraphicsItem* item) noexcept { currentItem_ = i
 QGraphicsItem* HoverEvent::currentItem() const noexcept { return currentItem_; }
 
 void HoverEvent::setEnter(bool enter) noexcept { enter_ = enter; }
+
+void HoverEvent::setExit(bool exit) noexcept { exit_ = exit; }
 
 bool HoverEvent::isEnter() const noexcept { return enter_; }
 
