@@ -29,6 +29,15 @@ else()
     message(STATUS "Qt6 Core was not found; skipping the Point library source and test target")
 endif()
 
+set(_pyqtgraph_cpp_has_vector FALSE)
+if(TARGET Qt6::Core AND TARGET Qt6::Gui)
+    set(_pyqtgraph_cpp_has_vector TRUE)
+elseif(PYQTGRAPH_CPP_REQUIRE_QT)
+    message(FATAL_ERROR "Qt 6 Gui is required for PGCORE-004 Vector. Install Qt 6 Gui, or configure with -DPYQTGRAPH_CPP_REQUIRE_QT=OFF only if intentionally skipping Qt-dependent targets.")
+else()
+    message(STATUS "Qt6 Core/Gui was not found; skipping the Vector library source and test target")
+endif()
+
 set(_pyqtgraph_cpp_has_mkcolor FALSE)
 if(TARGET Qt6::Core AND TARGET Qt6::Gui)
     set(_pyqtgraph_cpp_has_mkcolor TRUE)
@@ -69,6 +78,17 @@ if(_pyqtgraph_cpp_has_qtcore)
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
             Qt6::Core
+    )
+endif()
+
+if(_pyqtgraph_cpp_has_vector)
+    target_sources(pyqtgraph_cpp
+        PRIVATE
+            src/pyqtgraph/Vector.cpp
+    )
+    target_link_libraries(pyqtgraph_cpp
+        PUBLIC
+            Qt6::Gui
     )
 endif()
 
@@ -135,6 +155,18 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_point)
         add_test(NAME pyqtgraph_cpp.core.Point COMMAND pyqtgraph_cpp_core_point)
+    endif()
+
+    if(_pyqtgraph_cpp_has_vector)
+        add_executable(pyqtgraph_cpp_core_vector tests/core/test_Vector.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_vector
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_vector)
+        add_test(NAME pyqtgraph_cpp.core.Vector COMMAND pyqtgraph_cpp_core_vector)
     endif()
 
     if(_pyqtgraph_cpp_has_mkcolor)
