@@ -10,16 +10,20 @@
 #endif
 
 #if PYQTGRAPH_CPP_ENABLE_QT_COLOR
-#if __has_include(<QColor>) && __has_include(<QString>)
+#if __has_include(<QBrush>) && __has_include(<QColor>) && __has_include(<QPen>) && __has_include(<QString>)
+#include <QBrush>
 #include <QColor>
+#include <QPen>
 #include <QString>
 #define PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS 1
-#elif __has_include(<QtGui/QColor>) && __has_include(<QtCore/QString>)
+#elif __has_include(<QtGui/QBrush>) && __has_include(<QtGui/QColor>) && __has_include(<QtGui/QPen>) && __has_include(<QtCore/QString>)
 #include <QtCore/QString>
+#include <QtGui/QBrush>
 #include <QtGui/QColor>
+#include <QtGui/QPen>
 #define PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS 1
 #else
-#error "PYQTGRAPH_CPP_ENABLE_QT_COLOR requires Qt QColor and QString headers"
+#error "PYQTGRAPH_CPP_ENABLE_QT_COLOR requires Qt QBrush, QColor, QPen, and QString headers"
 #endif
 #else
 #define PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS 0
@@ -85,6 +89,10 @@ inline constexpr bool is_character_integral_v =
     std::is_same_v<remove_cvref_t<T>, char16_t> || std::is_same_v<remove_cvref_t<T>, char32_t>;
 
 inline constexpr int defaultIntColorSpan = 9;
+
+template <typename T>
+inline constexpr bool is_numeric_channel_integral_v =
+    std::is_integral_v<remove_cvref_t<T>> && !std::is_same_v<remove_cvref_t<T>, bool>;
 
 template <typename T>
 [[nodiscard]] constexpr int reduceDefaultIntColorIndex(T index)
@@ -214,6 +222,124 @@ template <typename... Values>
 [[nodiscard]] QColor mkColor(const std::tuple<Values...>& values)
 {
     return detail::mkColorFromTupleImpl(values, std::index_sequence_for<Values...>{});
+}
+
+
+QPen mkPen();
+QPen mkPen(std::nullptr_t, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(const QPen& pen);
+QPen mkPen(const QColor& color, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(const QString& color, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(const char* color, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(std::string_view color, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(char color, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(signed char color, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(unsigned char color, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(int index, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+
+template <typename T>
+    requires(std::is_integral_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, int> &&
+             !detail::is_character_integral_v<T>)
+[[nodiscard]] QPen mkPen(T index, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true)
+{
+    return mkPen(mkColor(index), width, style, cosmetic);
+}
+
+QPen mkPen(double gray, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
+QPen mkPen(double red, double green, double blue);
+QPen mkPen(double red,
+           double green,
+           double blue,
+           double alpha,
+           double width = 1.0,
+           Qt::PenStyle style = Qt::SolidLine,
+           bool cosmetic = true);
+
+template <typename Red, typename Green, typename Blue>
+    requires(detail::is_numeric_channel_integral_v<Red> && detail::is_numeric_channel_integral_v<Green> &&
+             detail::is_numeric_channel_integral_v<Blue>)
+[[nodiscard]] QPen mkPen(Red red, Green green, Blue blue)
+{
+    return mkPen(static_cast<double>(red), static_cast<double>(green), static_cast<double>(blue));
+}
+
+template <typename Red, typename Green, typename Blue, typename Alpha>
+    requires(detail::is_numeric_channel_integral_v<Red> && detail::is_numeric_channel_integral_v<Green> &&
+             detail::is_numeric_channel_integral_v<Blue> && detail::is_numeric_channel_integral_v<Alpha>)
+[[nodiscard]] QPen mkPen(Red red,
+                         Green green,
+                         Blue blue,
+                         Alpha alpha,
+                         double width = 1.0,
+                         Qt::PenStyle style = Qt::SolidLine,
+                         bool cosmetic = true)
+{
+    return mkPen(static_cast<double>(red),
+                 static_cast<double>(green),
+                 static_cast<double>(blue),
+                 static_cast<double>(alpha),
+                 width,
+                 style,
+                 cosmetic);
+}
+
+QPen mkPen(std::initializer_list<double> values,
+           double width = 1.0,
+           Qt::PenStyle style = Qt::SolidLine,
+           bool cosmetic = true);
+
+template <typename T, std::size_t N>
+[[nodiscard]] QPen mkPen(const std::array<T, N>& values,
+                         double width = 1.0,
+                         Qt::PenStyle style = Qt::SolidLine,
+                         bool cosmetic = true)
+{
+    return mkPen(mkColor(values), width, style, cosmetic);
+}
+
+template <typename... Values>
+[[nodiscard]] QPen mkPen(const std::tuple<Values...>& values,
+                         double width = 1.0,
+                         Qt::PenStyle style = Qt::SolidLine,
+                         bool cosmetic = true)
+{
+    return mkPen(mkColor(values), width, style, cosmetic);
+}
+
+QBrush mkBrush(std::nullptr_t);
+QBrush mkBrush(const QBrush& brush);
+QBrush mkBrush(const QColor& color, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(const QString& color, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(const char* color, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(std::string_view color, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(char color, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(signed char color, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(unsigned char color, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(int index, Qt::BrushStyle style = Qt::SolidPattern);
+
+template <typename T>
+    requires(std::is_integral_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, int> &&
+             !detail::is_character_integral_v<T>)
+[[nodiscard]] QBrush mkBrush(T index, Qt::BrushStyle style = Qt::SolidPattern)
+{
+    return mkBrush(mkColor(index), style);
+}
+
+QBrush mkBrush(double gray, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(double red, double green, double blue);
+QBrush mkBrush(double red, double green, double blue, double alpha, Qt::BrushStyle style = Qt::SolidPattern);
+QBrush mkBrush(std::initializer_list<double> values, Qt::BrushStyle style = Qt::SolidPattern);
+
+template <typename T, std::size_t N>
+[[nodiscard]] QBrush mkBrush(const std::array<T, N>& values, Qt::BrushStyle style = Qt::SolidPattern)
+{
+    return mkBrush(mkColor(values), style);
+}
+
+template <typename... Values>
+[[nodiscard]] QBrush mkBrush(const std::tuple<Values...>& values, Qt::BrushStyle style = Qt::SolidPattern)
+{
+    return mkBrush(mkColor(values), style);
 }
 
 #endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS

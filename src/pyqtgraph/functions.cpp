@@ -102,6 +102,27 @@ namespace {
     });
 }
 
+[[nodiscard]] QPen makePenFromColor(const QColor& color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    QPen pen;
+    pen.setColor(color);
+    pen.setWidthF(width);
+    pen.setStyle(style);
+    pen.setCosmetic(cosmetic);
+    if (width > 4.0) {
+        pen.setCapStyle(Qt::RoundCap);
+    }
+    return pen;
+}
+
+[[nodiscard]] QBrush makeBrushFromColor(const QColor& color, Qt::BrushStyle style)
+{
+    QBrush brush;
+    brush.setColor(color);
+    brush.setStyle(style);
+    return brush;
+}
+
 [[nodiscard]] QColor hexColor(const QString& text)
 {
     QString hex = text.mid(1);
@@ -295,6 +316,161 @@ QColor mkColor(std::initializer_list<double> values)
     }
 
     throw std::invalid_argument("mkColor sequence input must contain 2, 3, or 4 values");
+}
+
+
+QPen mkPen()
+{
+    return mkPen(mkColor("l"), 1.0, Qt::SolidLine, true);
+}
+
+QPen mkPen(std::nullptr_t, double width, Qt::PenStyle style, bool cosmetic)
+{
+    (void)style;
+    QPen pen;
+    pen.setColor(mkColor("l"));
+    pen.setWidthF(width);
+    pen.setStyle(Qt::NoPen);
+    pen.setCosmetic(cosmetic);
+    if (width > 4.0) {
+        pen.setCapStyle(Qt::RoundCap);
+    }
+    return pen;
+}
+
+QPen mkPen(const QPen& pen)
+{
+    return QPen(pen);
+}
+
+QPen mkPen(const QColor& color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(color), width, style, cosmetic);
+}
+
+QPen mkPen(const QString& color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(color), width, style, cosmetic);
+}
+
+QPen mkPen(const char* color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(color), width, style, cosmetic);
+}
+
+QPen mkPen(std::string_view color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(color), width, style, cosmetic);
+}
+
+QPen mkPen(char color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(color), width, style, cosmetic);
+}
+
+QPen mkPen(signed char color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(color), width, style, cosmetic);
+}
+
+QPen mkPen(unsigned char color, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(color), width, style, cosmetic);
+}
+
+QPen mkPen(int index, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(index), width, style, cosmetic);
+}
+
+QPen mkPen(double gray, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(gray), width, style, cosmetic);
+}
+
+QPen mkPen(double red, double green, double blue)
+{
+    return makePenFromColor(mkColor(red, green, blue), 1.0, Qt::SolidLine, true);
+}
+
+QPen mkPen(double red, double green, double blue, double alpha, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(red, green, blue, alpha), width, style, cosmetic);
+}
+
+QPen mkPen(std::initializer_list<double> values, double width, Qt::PenStyle style, bool cosmetic)
+{
+    return makePenFromColor(mkColor(values), width, style, cosmetic);
+}
+
+QBrush mkBrush(std::nullptr_t)
+{
+    return QBrush(Qt::NoBrush);
+}
+
+QBrush mkBrush(const QBrush& brush)
+{
+    return QBrush(brush);
+}
+
+QBrush mkBrush(const QColor& color, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(color), style);
+}
+
+QBrush mkBrush(const QString& color, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(color), style);
+}
+
+QBrush mkBrush(const char* color, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(color), style);
+}
+
+QBrush mkBrush(std::string_view color, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(color), style);
+}
+
+QBrush mkBrush(char color, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(color), style);
+}
+
+QBrush mkBrush(signed char color, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(color), style);
+}
+
+QBrush mkBrush(unsigned char color, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(color), style);
+}
+
+QBrush mkBrush(int index, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(index), style);
+}
+
+QBrush mkBrush(double gray, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(gray), style);
+}
+
+QBrush mkBrush(double red, double green, double blue)
+{
+    return makeBrushFromColor(mkColor(red, green, blue), Qt::SolidPattern);
+}
+
+QBrush mkBrush(double red, double green, double blue, double alpha, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(red, green, blue, alpha), style);
+}
+
+QBrush mkBrush(std::initializer_list<double> values, Qt::BrushStyle style)
+{
+    return makeBrushFromColor(mkColor(values), style);
 }
 
 #endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
