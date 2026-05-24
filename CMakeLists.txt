@@ -33,9 +33,9 @@ set(_pyqtgraph_cpp_has_graphicsitem FALSE)
 if(TARGET Qt6::Core AND TARGET Qt6::Gui AND TARGET Qt6::Widgets)
     set(_pyqtgraph_cpp_has_graphicsitem TRUE)
 elseif(PYQTGRAPH_CPP_REQUIRE_QT)
-    message(FATAL_ERROR "Qt 6 Widgets is required for PGGI-001 GraphicsItem. Install Qt 6 Widgets, or configure with -DPYQTGRAPH_CPP_REQUIRE_QT=OFF only if intentionally skipping Qt Widgets-dependent targets.")
+    message(FATAL_ERROR "Qt 6 Widgets is required for PGGI-001 GraphicsItem and PGGI-002 GraphicsObject. Install Qt 6 Widgets, or configure with -DPYQTGRAPH_CPP_REQUIRE_QT=OFF only if intentionally skipping Qt Widgets-dependent targets.")
 else()
-    message(STATUS "Qt6 Widgets was not found; skipping the GraphicsItem library source and test targets")
+    message(STATUS "Qt6 Widgets was not found; skipping the GraphicsItem/GraphicsObject library sources and test targets")
 endif()
 
 add_library(pyqtgraph_cpp
@@ -73,6 +73,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     target_sources(pyqtgraph_cpp
         PRIVATE
             src/pyqtgraph/graphicsItems/GraphicsItem.cpp
+            src/pyqtgraph/graphicsItems/GraphicsObject.cpp
     )
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
@@ -156,6 +157,16 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_graphicsitem)
         add_test(NAME pyqtgraph_cpp.graphicsItems.GraphicsItem COMMAND pyqtgraph_cpp_graphicsitems_graphicsitem)
+
+        add_executable(pyqtgraph_cpp_graphicsitems_graphicsobject tests/graphicsItems/test_GraphicsObject.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsitems_graphicsobject
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_graphicsobject)
+        add_test(NAME pyqtgraph_cpp.graphicsItems.GraphicsObject COMMAND pyqtgraph_cpp_graphicsitems_graphicsobject)
 
         add_executable(pyqtgraph_cpp_hierarchy_cpp tests/hierarchy/test_cpp_hierarchy.cpp)
         target_link_libraries(pyqtgraph_cpp_hierarchy_cpp
