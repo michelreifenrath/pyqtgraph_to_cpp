@@ -41,7 +41,11 @@ target_link_libraries(pyqtgraph_cpp
         pyqtgraph_cpp_project_warnings
 )
 if(_pyqtgraph_cpp_has_mkcolor)
-    target_sources(pyqtgraph_cpp PRIVATE src/pyqtgraph/functions.cpp)
+    target_sources(pyqtgraph_cpp
+        PRIVATE
+            src/pyqtgraph/colormap.cpp
+            src/pyqtgraph/functions.cpp
+    )
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
             Qt6::Core
@@ -73,5 +77,15 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_mkcolor)
         add_test(NAME pyqtgraph_cpp.core.mkColor COMMAND pyqtgraph_cpp_core_mkcolor)
+
+        add_executable(pyqtgraph_cpp_core_colormap tests/core/test_ColorMap.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_colormap
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_colormap)
+        add_test(NAME pyqtgraph_cpp.core.ColorMap COMMAND pyqtgraph_cpp_core_colormap)
     endif()
 endif()
