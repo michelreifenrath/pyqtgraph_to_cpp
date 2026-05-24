@@ -19,7 +19,7 @@ target_compile_features(pyqtgraph_cpp_project_options INTERFACE cxx_std_20)
 
 pyqtgraph_cpp_create_warnings_target(pyqtgraph_cpp_project_warnings)
 
-find_package(Qt6 6 COMPONENTS Core Gui QUIET)
+find_package(Qt6 6 COMPONENTS Core Gui Widgets QUIET)
 set(_pyqtgraph_cpp_has_mkcolor FALSE)
 if(TARGET Qt6::Core AND TARGET Qt6::Gui)
     set(_pyqtgraph_cpp_has_mkcolor TRUE)
@@ -27,6 +27,15 @@ elseif(PYQTGRAPH_CPP_REQUIRE_QT)
     message(FATAL_ERROR "Qt 6 Gui is required for PGCORE-005 mkColor. Install Qt 6 Gui, or configure with -DPYQTGRAPH_CPP_REQUIRE_QT=OFF only if intentionally skipping Qt-dependent targets.")
 else()
     message(STATUS "Qt6 Core/Gui was not found; skipping the mkColor library source and test target")
+endif()
+
+set(_pyqtgraph_cpp_has_graphicsitem FALSE)
+if(TARGET Qt6::Core AND TARGET Qt6::Gui AND TARGET Qt6::Widgets)
+    set(_pyqtgraph_cpp_has_graphicsitem TRUE)
+elseif(PYQTGRAPH_CPP_REQUIRE_QT)
+    message(FATAL_ERROR "Qt 6 Widgets is required for PGGI-001 GraphicsItem. Install Qt 6 Widgets, or configure with -DPYQTGRAPH_CPP_REQUIRE_QT=OFF only if intentionally skipping Qt Widgets-dependent targets.")
+else()
+    message(STATUS "Qt6 Widgets was not found; skipping the GraphicsItem library source and test targets")
 endif()
 
 add_library(pyqtgraph_cpp src/pyqtgraph/core/ArrayView.cpp)
@@ -51,6 +60,17 @@ if(_pyqtgraph_cpp_has_mkcolor)
         PUBLIC
             Qt6::Core
             Qt6::Gui
+    )
+endif()
+
+if(_pyqtgraph_cpp_has_graphicsitem)
+    target_sources(pyqtgraph_cpp
+        PRIVATE
+            src/pyqtgraph/graphicsItems/GraphicsItem.cpp
+    )
+    target_link_libraries(pyqtgraph_cpp
+        PUBLIC
+            Qt6::Widgets
     )
 endif()
 
@@ -108,5 +128,27 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_colormap_lut)
         add_test(NAME pyqtgraph_cpp.core.ColorMap.LUT COMMAND pyqtgraph_cpp_core_colormap_lut)
+    endif()
+
+    if(_pyqtgraph_cpp_has_graphicsitem)
+        add_executable(pyqtgraph_cpp_graphicsitems_graphicsitem tests/graphicsItems/test_GraphicsItem.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsitems_graphicsitem
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_graphicsitem)
+        add_test(NAME pyqtgraph_cpp.graphicsItems.GraphicsItem COMMAND pyqtgraph_cpp_graphicsitems_graphicsitem)
+
+        add_executable(pyqtgraph_cpp_hierarchy_cpp tests/hierarchy/test_cpp_hierarchy.cpp)
+        target_link_libraries(pyqtgraph_cpp_hierarchy_cpp
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_hierarchy_cpp)
+        add_test(NAME pyqtgraph_cpp.hierarchy.cpp COMMAND pyqtgraph_cpp_hierarchy_cpp)
     endif()
 endif()
