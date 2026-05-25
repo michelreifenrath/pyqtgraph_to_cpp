@@ -209,6 +209,7 @@ def main() -> int:
         report["baseline"] = {
             "path": str(args.baseline),
             "baseline_id": baseline.get("baseline_id"),
+            "baseline_stats": baseline["baseline_stats"],
             "threshold": baseline["threshold"],
         }
         report["threshold_decision"] = decision
