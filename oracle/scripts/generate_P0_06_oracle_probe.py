@@ -36,6 +36,136 @@ TOLERANCE = {
     "policy": "exact JSON numeric comparison for deterministic template outputs",
 }
 
+REFERENCE_PROBE = r"""
+import ast
+import json
+import math
+import sys
+import types
+from pathlib import Path
+
+
+class QSize:
+    def __init__(self, width=0.0, height=0.0):
+        self._width = float(width)
+        self._height = float(height)
+
+    def width(self):
+        return self._width
+
+    def height(self):
+        return self._height
+
+
+class QPointF:
+    def __init__(self, *args):
+        if not args:
+            self._x = 0.0
+            self._y = 0.0
+        elif len(args) == 1 and isinstance(args[0], QPointF):
+            self._x = args[0].x()
+            self._y = args[0].y()
+        elif len(args) == 1 and hasattr(args[0], "__getitem__"):
+            self._x = float(args[0][0])
+            self._y = float(args[0][1])
+        elif len(args) == 2:
+            self._x = float(args[0])
+            self._y = float(args[1])
+        else:
+            raise TypeError("QPointF requires zero, one point-like, or two coordinates")
+
+    def x(self):
+        return self._x
+
+    def y(self):
+        return self._y
+
+    def setX(self, value):
+        self._x = float(value)
+
+    def setY(self, value):
+        self._y = float(value)
+
+    @staticmethod
+    def dotProduct(left, right):
+        return (left.x() * right.x()) + (left.y() * right.y())
+
+
+QtCore = types.SimpleNamespace(
+    QPointF=QPointF,
+    QPoint=QPointF,
+    QSize=QSize,
+    QSizeF=QSize,
+)
+
+
+def require_under_checkout(source_path, checkout_path):
+    resolved = Path(source_path).resolve()
+    try:
+        resolved.relative_to(checkout_path)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"reference source {resolved} is outside pinned checkout {checkout_path}"
+        ) from exc
+
+
+def reference_class(relative_path, class_name, namespace):
+    source_path = (checkout / relative_path).resolve()
+    require_under_checkout(source_path, checkout)
+    if not source_path.is_file():
+        raise RuntimeError(f"missing PyQtGraph reference source: {relative_path}")
+
+    tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    class_node = next(
+        (
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef) and node.name == class_name
+        ),
+        None,
+    )
+    if class_node is None:
+        raise RuntimeError(
+            f"missing PyQtGraph reference class {class_name}: {relative_path}"
+        )
+
+    module = ast.Module(body=[class_node], type_ignores=[])
+    ast.fix_missing_locations(module)
+    exec(compile(module, str(source_path), "exec"), namespace)
+    return namespace[class_name]
+
+
+payload = json.loads(sys.stdin.read())
+checkout = Path(payload["checkout_path"]).resolve()
+values = [float(value) for value in payload["inputs"]["values"]]
+scale = float(payload["inputs"]["scale"])
+offset = float(payload["inputs"]["offset"])
+
+# Load only the Point class from the pinned source with minimal Qt/math shims.
+# This avoids importing pyqtgraph.__init__, NumPy, or real Qt bindings in clean
+# project environments while still deriving the template values from upstream
+# PyQtGraph behavior.
+Point = reference_class(
+    "pyqtgraph/Point.py",
+    "Point",
+    {
+        "QtCore": QtCore,
+        "atan2": math.atan2,
+        "degrees": math.degrees,
+        "hypot": math.hypot,
+    },
+)
+
+points = [Point(value, offset) for value in values]
+scaled_values = [(point.x() * scale) + point.y() for point in points]
+print(
+    json.dumps(
+        {"scaled_values": scaled_values, "sum": sum(scaled_values), "count": len(values)},
+        sort_keys=True,
+    )
+)
+"""
+
 
 def load_lock(root: Path) -> dict[str, str]:
     lock_path = root / LOCK_PATH
@@ -129,34 +259,12 @@ def read_pyqtgraph_version(checkout: Path) -> str:
 
 
 def run_reference_probe(checkout: Path) -> dict[str, Any]:
-    probe = r"""
-import json
-import sys
-from pathlib import Path
-
-payload = json.loads(sys.stdin.read())
-checkout = Path(payload["checkout"])
-values = [float(value) for value in payload["inputs"]["values"]]
-scale = float(payload["inputs"]["scale"])
-offset = float(payload["inputs"]["offset"])
-
-# The P0.06 template intentionally keeps the upstream operation dependency-light:
-# it executes inside the pinned checkout context and derives deterministic values
-# through PyQtGraph's Point implementation. Future probes can replace this with
-# richer PyQtGraph class/function calls.
-sys.path.insert(0, str(checkout))
-import pyqtgraph as pg
-
-points = [pg.Point(value, offset) for value in values]
-scaled_values = [(point.x() * scale) + point.y() for point in points]
-print(json.dumps({"scaled_values": scaled_values, "sum": sum(scaled_values), "count": len(values)}, sort_keys=True))
-"""
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["PYTHONDONTWRITEBYTECODE"] = "1"
-    payload = {"checkout": str(checkout), "inputs": INPUTS}
+    payload = {"checkout_path": str(checkout), "inputs": INPUTS}
     result = subprocess.run(
-        [sys.executable, "-c", probe],
+        [sys.executable, "-c", REFERENCE_PROBE],
         text=True,
         input=json.dumps(payload),
         capture_output=True,

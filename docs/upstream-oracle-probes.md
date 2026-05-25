@@ -44,3 +44,5 @@ Check mode fails if the committed fixture differs from the current pinned probe:
 ```bash
 python3 oracle/scripts/generate_P0_06_oracle_probe.py --check
 ```
+
+Keep normal pytest coverage hermetic by running check mode against a temporary local reference checkout/source lock. Run the real pinned-source check only when the pinned checkout is present locally or network access is explicitly allowed.

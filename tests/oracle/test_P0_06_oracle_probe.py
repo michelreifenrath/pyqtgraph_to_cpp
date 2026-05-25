@@ -46,17 +46,21 @@ def write_reference_checkout(
         "\n".join(
             [
                 f'__version__ = "{version}"',
-                "",
-                "class Point:",
+                'raise RuntimeError("full pyqtgraph import is forbidden in P0.06 probe")',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (package / "Point.py").write_text(
+        "\n".join(
+            [
+                "class Point(QtCore.QPointF):",
                 "    def __init__(self, x, y):",
-                "        self._x = float(x)",
-                "        self._y = float(y)",
-                "",
-                "    def x(self):",
-                "        return self._x",
+                "        super().__init__(float(x), float(y))",
                 "",
                 "    def y(self):",
-                f"        return self._y + {point_y_offset!r}",
+                f"        return super().y() + {point_y_offset!r}",
             ]
         )
         + "\n",
@@ -220,8 +224,13 @@ def test_P0_06_committed_mismatch_example_documents_failure_contract() -> None:
     ) in example
 
 
-def test_P0_06_committed_fixture_is_current() -> None:
-    result = run_cli("--check")
+def test_P0_06_check_mode_accepts_current_fixture_offline(tmp_path: Path) -> None:
+    root = tmp_path / "workspace"
+    write_source_lock(root)
+    generated = run_cli("--root", str(root), "--emit-mismatch-example")
+    assert generated.returncode == 0, generated.stderr
+
+    result = run_cli("--root", str(root), "--check")
 
     assert result.returncode == 0, result.stderr
     assert "P0.06 oracle fixture is current" in result.stdout

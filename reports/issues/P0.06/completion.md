@@ -27,35 +27,22 @@ Initial failure was the expected missing-generator failure for `oracle/scripts/g
 
 ## Final validation
 
+Latest commands run after bounded rework:
+
 | Command | Exit code | Result |
 | --- | ---: | --- |
-| `python3 -m pytest -q` | 0 | `263 passed` |
-| `python3 -m pytest -q tests -k P0_06` | 0 | `4 passed, 259 deselected` |
-| `python3 oracle/scripts/generate_P0_06_oracle_probe.py --check` | 0 | committed fixture is current after materializing/verifying the pinned PyQtGraph reference |
+| `python3 -m pytest -q` | 0 | `265 passed in 50.19s` |
+| `python3 -m pytest -q tests -k P0_06` | 0 | `6 passed, 259 deselected in 1.31s` |
 | `cmake --preset dev` | 0 | configured `build/dev` |
 | `cmake --build --preset dev --parallel` | 0 | build completed |
 | `ctest --preset dev -L P0.06 --output-on-failure` | 0 | `2/2` labeled tests passed, including `WILL_FAIL` mismatch mode |
 | `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` | 1 | pre-existing proposed-issue metadata failures: multiple issues reference missing local blocker `P0.01` |
 | `git diff --check` | 0 | no whitespace errors |
-| `git diff --name-only origin/main...HEAD` | 0 | listed existing tracked branch files only: `issue-100/plan.md`, `issue-100/scout.md`, `tests/oracle/test_P0_06_oracle_probe.py` |
-
-`git status --short` at handoff showed the actual working-tree changes, including untracked new oracle/docs/report/C++ files.
+| `git diff --name-only origin/main` | 0 | worktree diff lists only owned oracle/docs/report paths plus narrow `CMakeLists.txt` focused-test wiring; no `issue-100/*` scratch artifacts remain |
 
 ## Rework validation
 
-Addressed autoreview findings by deriving the probe output through `pyqtgraph.Point`, comparing `$.expected.scaled_values` element-by-element in C++, and stripping trailing whitespace from the red-run artifact.
-
-| Command | Exit code | Result |
-| --- | ---: | --- |
-| `python3 -m pytest -q tests -k P0_06` | 0 | `5 passed, 259 deselected` |
-| `python3 oracle/scripts/generate_P0_06_oracle_probe.py --check` | 0 | committed fixture is current |
-| `cmake --preset dev` | 0 | configured `build/dev` |
-| `cmake --build --preset dev --parallel` | 0 | build completed |
-| `ctest --preset dev -L P0.06 --output-on-failure` | 0 | `2/2` labeled tests passed, including `WILL_FAIL` mismatch mode |
-| `./build/dev/pyqtgraph_cpp_oracle_P0_06 --mismatch` | 1 | expected mismatch reports `$.expected.scaled_values[0]` |
-| `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` | 1 | pre-existing proposed-issue metadata failures: multiple issues reference missing local blocker `P0.01` |
-| `git diff --check` | 0 | no whitespace errors in the current worktree diff |
-| `git diff --name-only` | 0 | rework touched only `oracle/scripts/generate_P0_06_oracle_probe.py`, `reports/issues/P0.06/red_failure.txt`, `tests/oracle/P0_06_oracle_comparison.cpp`, and `tests/oracle/test_P0_06_oracle_probe.py` |
+Addressed autoreview findings by making normal pytest hermetic/offline, loading only the upstream `Point` class through an AST shim instead of importing full `pyqtgraph`, and removing the out-of-scope `issue-100/plan.md` and `issue-100/scout.md` artifacts from the worktree diff. The real pinned-source `--check` remains a manual freshness check and is not run by normal pytest.
 
 ## Artifact paths
 
