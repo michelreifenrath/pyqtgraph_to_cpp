@@ -205,6 +205,21 @@ def test_P0_06_check_mode_reports_stale_fixture_with_json_path(tmp_path: Path) -
     assert "tolerance absolute=0.0 relative=0.0" in result.stderr
 
 
+def test_P0_06_committed_mismatch_example_documents_failure_contract() -> None:
+    example = MISMATCH.read_text(encoding="utf-8")
+
+    assert "oracle fixture mismatch" in example
+    assert "fixture: oracle/fixtures/P0_06/probe_contract.json" in example
+    assert "path: $.expected.scaled_values[0]" in example
+    assert "expected fixture value: -999.0" in example
+    assert "actual probe value: 3.0" in example
+    assert "tolerance absolute=0.0 relative=0.0" in example
+    assert (
+        "Regenerate with: python3 oracle/scripts/generate_P0_06_oracle_probe.py "
+        "--emit-mismatch-example"
+    ) in example
+
+
 def test_P0_06_committed_fixture_is_current() -> None:
     result = run_cli("--check")
 
