@@ -5,6 +5,7 @@
 #include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 #include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 #include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <pyqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -22,6 +23,7 @@
 #include <memory>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 namespace {
 
@@ -236,6 +238,36 @@ bool testPlotItemApiShape()
     return true;
 }
 
+bool testPlotWidgetApiShape()
+{
+    using pyqtgraph::graphicsItems::PlotItem;
+    using pyqtgraph::widgets::PlotWidget;
+
+    static_assert(std::is_constructible_v<PlotWidget>);
+    static_assert(std::is_constructible_v<PlotWidget, QWidget*>);
+    static_assert(std::is_destructible_v<PlotWidget>);
+    static_assert(!std::is_copy_constructible_v<PlotWidget>);
+    static_assert(!std::is_copy_assignable_v<PlotWidget>);
+    static_assert(!std::is_move_constructible_v<PlotWidget>);
+    static_assert(!std::is_move_assignable_v<PlotWidget>);
+    static_assert(std::is_base_of_v<QGraphicsView, PlotWidget>);
+    static_assert(std::is_base_of_v<QWidget, PlotWidget>);
+    static_assert(!std::is_final_v<PlotWidget>);
+    static_assert(std::is_same_v<decltype(std::declval<PlotWidget&>().getPlotItem()), PlotItem*>);
+    static_assert(std::is_same_v<decltype(std::declval<const PlotWidget&>().getPlotItem()), const PlotItem*>);
+
+    PlotWidget widget;
+    CHECK(widget.scene() != nullptr);
+    CHECK(widget.getPlotItem() != nullptr);
+    CHECK(widget.getPlotItem()->scene() == widget.scene());
+    CHECK(widget.getPlotItem()->getViewWidget() == &widget);
+
+    const PlotWidget& constWidget = widget;
+    CHECK(constWidget.getPlotItem() == widget.getPlotItem());
+
+    return true;
+}
+
 bool testPlotCurveItemApiShape()
 {
     using pyqtgraph::graphicsItems::GraphicsItem;
@@ -297,6 +329,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPlotItemApiShape()) {
+        return 1;
+    }
+    if (!testPlotWidgetApiShape()) {
         return 1;
     }
     if (!testPlotCurveItemApiShape()) {
