@@ -430,6 +430,47 @@ def _is_repeated_review_finding(previous_reason: object, current_reason: str) ->
     return bool(previous_signature and current_signature and previous_signature == current_signature)
 
 
+def _superseded_task_ids_for_phase_failure(
+    state: dict[str, Any],
+    phase: str,
+    *,
+    current_task_id: str | None = None,
+) -> list[str]:
+    """Return current/later task ids in the active graph that a new rework attempt supersedes."""
+    rework_graph = state.get("rework_task_ids")
+    original_graph = state.get("task_ids")
+    if phase in {"rework", "review", "release"} and isinstance(rework_graph, dict):
+        graph = rework_graph
+        order = ["rework", "review", "release"]
+    elif isinstance(original_graph, dict):
+        graph = original_graph
+        order = ["implement", "review", "release"]
+    else:
+        graph = {}
+        order = []
+
+    if phase in order:
+        phases_to_archive = order[order.index(phase) :]
+    else:
+        phases_to_archive = []
+
+    ids: list[str] = []
+    if current_task_id:
+        ids.append(current_task_id)
+    for task_phase in phases_to_archive:
+        task_id = graph.get(task_phase)
+        if isinstance(task_id, str) and task_id:
+            ids.append(task_id)
+
+    unique_ids: list[str] = []
+    seen: set[str] = set()
+    for task_id in ids:
+        if task_id in seen:
+            continue
+        seen.add(task_id)
+        unique_ids.append(task_id)
+    return unique_ids
+
 def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: str, reason: str) -> dict[str, Any]:
     """Classify a phase failure and either schedule bounded rework or surface a human blocker."""
     config = loaded.config
@@ -438,6 +479,11 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
     current_attempt = int(state.get("rework_attempts", 0))
     repeated_review_finding = phase == "review" and _is_repeated_review_finding(state.get("last_failure"), reason)
     if _phase_failure_can_try_rework(phase, lower_reason) and not repeated_review_finding and current_attempt < config.agent.max_attempts:
+        superseded_tasks = _superseded_task_ids_for_phase_failure(
+            state,
+            phase,
+            current_task_id=os.environ.get("HERMES_KANBAN_TASK"),
+        )
         issue = view_issue(config, issue_number)
         next_attempt = current_attempt + 1
         task_ids = create_rework_task_graph(config, loaded.repo_root, issue, reason=reason, attempt=next_attempt)
@@ -451,6 +497,7 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
                     "last_failure": reason,
                     "rework_task_ids": task_ids,
                     "rework_scheduled_at": utc_now(),
+                    "superseded_task_ids": superseded_tasks,
                 }
             ),
         )
@@ -458,7 +505,13 @@ def _handle_phase_failure(loaded: LoadedWorkflow, *, issue_number: int, phase: s
         remove_labels(config, issue_number, [config.github.blocked_label, config.github.human_review_label, config.github.failed_label])
         if config.github_output.comments.rework_scheduled:
             _comment_issue_compact(config, issue_number, f"Rework {next_attempt}/{config.agent.max_attempts} scheduled: {phase} failed.")
-        return {"action": "scheduled_rework", "issue": issue_number, "attempt": next_attempt, "tasks": task_ids}
+        return {
+            "action": "scheduled_rework",
+            "issue": issue_number,
+            "attempt": next_attempt,
+            "tasks": task_ids,
+            "superseded_tasks": superseded_tasks,
+        }
 
     if repeated_review_finding:
         human_reason = f"repeated review finding after {current_attempt} rework attempts; manual inspection required to avoid an autonomous loop"
@@ -545,9 +598,9 @@ def run_issue_phase(loaded: LoadedWorkflow, *, issue_number: int, phase: str, co
         if complete_current_task:
             failure = _handle_phase_failure(loaded, issue_number=issue_number, phase=phase, reason=str(exc))
             if failure.get("action") == "scheduled_rework":
-                _block_current_task(loaded.config, f"{phase} failed for issue #{issue_number}; automatic rework was scheduled")
-            else:
-                _block_current_task(loaded.config, f"{phase} failed for issue #{issue_number}: {exc}")
+                _archive_task_ids(loaded.config, list(failure.get("superseded_tasks") or []))
+                return failure
+            _block_current_task(loaded.config, f"{phase} failed for issue #{issue_number}: {exc}")
         raise
     if complete_current_task:
         _complete_current_task(loaded.config, f"{phase} complete for issue #{issue_number}", result)
@@ -993,6 +1046,30 @@ def _complete_current_task(config: WorkflowConfig, summary: str, metadata: dict[
             summary,
             "--metadata",
             json.dumps(metadata)[:12000],
+        ],
+        timeout=120,
+        check=False,
+    )
+
+
+def _archive_task_ids(config: WorkflowConfig, task_ids: list[str]) -> None:
+    unique_task_ids: list[str] = []
+    seen: set[str] = set()
+    for task_id in task_ids:
+        if not task_id or task_id in seen:
+            continue
+        seen.add(task_id)
+        unique_task_ids.append(task_id)
+    if not unique_task_ids:
+        return
+    run(
+        [
+            "hermes",
+            "kanban",
+            "--board",
+            os.environ.get("HERMES_KANBAN_BOARD", config.kanban.board_slug),
+            "archive",
+            *unique_task_ids,
         ],
         timeout=120,
         check=False,
