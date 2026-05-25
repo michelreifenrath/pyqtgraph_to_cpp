@@ -1,0 +1,254 @@
+#!/usr/bin/env python3
+"""Write and validate canonical visual-diff artifact layouts."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from typing import Callable
+
+ROOT = Path(__file__).resolve().parents[1]
+ORACLE_SCRIPTS = ROOT / "oracle" / "scripts"
+if str(ORACLE_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(ORACLE_SCRIPTS))
+
+from compare_screenshots import PngError, compare_images  # noqa: E402
+
+Runner = Callable[..., subprocess.CompletedProcess[object]]
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Create reports/visual-diffs/<case>/ canonical visual artifacts."
+    )
+    parser.add_argument("--case", required=True, help="Visual fixture/case name")
+    parser.add_argument(
+        "--reference", type=Path, help="Existing reference PNG for fixture mode"
+    )
+    parser.add_argument("--actual", type=Path, help="Existing actual PNG for fixture mode")
+    parser.add_argument(
+        "--reference-command",
+        help="Shell command that writes PG_VISUAL_REFERENCE_PATH for command mode",
+    )
+    parser.add_argument(
+        "--actual-command",
+        help="Shell command that writes PG_VISUAL_ACTUAL_PATH for command mode",
+    )
+    parser.add_argument(
+        "--reports-root",
+        type=Path,
+        default=Path("reports/visual-diffs"),
+        help="Root directory that receives the per-case artifact directory",
+    )
+    parser.add_argument(
+        "--cwd",
+        type=Path,
+        default=ROOT,
+        help="Working directory for command mode; defaults to repository root",
+    )
+    parser.add_argument(
+        "--gpt-visual-review",
+        choices=("not_applicable", "optional", "required_for_pr"),
+        default="not_applicable",
+        help="Semantic visual-review applicability for this fixture",
+    )
+    parser.add_argument(
+        "--review-report",
+        type=Path,
+        help="Existing semantic review markdown to copy to gpt5_vision_review.md",
+    )
+    parser.add_argument(
+        "--max-mean-delta",
+        type=float,
+        default=0.0,
+        help="Maximum allowed mean absolute channel delta",
+    )
+    parser.add_argument(
+        "--max-pixel-delta",
+        type=float,
+        default=0.0,
+        help="Maximum allowed per-channel pixel delta",
+    )
+    parser.add_argument(
+        "--max-changed-percent",
+        type=float,
+        default=0.0,
+        help="Maximum allowed percentage of changed pixels",
+    )
+    parser.add_argument(
+        "--min-ssim",
+        type=float,
+        default=1.0,
+        help="Minimum acceptable SSIM value recorded in canonical metrics",
+    )
+    return parser
+
+
+def _validate_inputs(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    file_mode = args.reference is not None or args.actual is not None
+    command_mode = args.reference_command is not None or args.actual_command is not None
+    if file_mode and command_mode:
+        parser.error("use either --reference/--actual or command mode, not both")
+    if file_mode and (args.reference is None or args.actual is None):
+        parser.error("fixture mode requires both --reference and --actual")
+    if command_mode and (args.reference_command is None or args.actual_command is None):
+        parser.error("command mode requires both --reference-command and --actual-command")
+    if not file_mode and not command_mode:
+        parser.error("provide --reference/--actual or --reference-command/--actual-command")
+
+
+def _review_required_error(args: argparse.Namespace) -> str | None:
+    if args.gpt_visual_review == "required_for_pr" and args.review_report is None:
+        return "--review-report is required when --gpt-visual-review required_for_pr"
+    if args.review_report is not None and not args.review_report.is_file():
+        return f"--review-report does not exist: {args.review_report}"
+    return None
+
+
+def _artifact_env(args: argparse.Namespace, case_dir: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    env.update(
+        {
+            "PG_VISUAL_CASE": args.case,
+            "PG_VISUAL_ARTIFACT_DIR": str(case_dir),
+            "PG_VISUAL_REFERENCE_PATH": str(case_dir / "reference.png"),
+            "PG_VISUAL_ACTUAL_PATH": str(case_dir / "actual.png"),
+            "PG_VISUAL_DIFF_PATH": str(case_dir / "diff.png"),
+            "PG_VISUAL_METRICS_PATH": str(case_dir / "metrics.json"),
+            "PG_VISUAL_REVIEW_REPORT_PATH": str(case_dir / "gpt5_vision_review.md"),
+        }
+    )
+    return env
+
+
+def _run_command_mode(
+    args: argparse.Namespace, case_dir: Path, runner: Runner
+) -> int | None:
+    env = _artifact_env(args, case_dir)
+    cwd = str(args.cwd)
+    for command in (args.reference_command, args.actual_command):
+        result = runner(command, cwd=cwd, env=env, shell=True, check=False)
+        if result.returncode != 0:
+            return int(result.returncode)
+    return None
+
+
+def _copy_fixture_inputs(args: argparse.Namespace, case_dir: Path) -> None:
+    shutil.copyfile(args.reference, case_dir / "reference.png")
+    shutil.copyfile(args.actual, case_dir / "actual.png")
+
+
+def _canonical_ssim(raw_metrics: dict[str, object]) -> float | None:
+    mean_delta = raw_metrics.get("mean_absolute_delta")
+    if mean_delta is None:
+        return None
+    value = 1.0 - (float(mean_delta) / 255.0)
+    return max(0.0, min(1.0, value))
+
+
+def _dimensions(raw_metrics: dict[str, object]) -> list[int] | None:
+    dimensions = raw_metrics.get("dimensions")
+    if not isinstance(dimensions, dict):
+        return None
+    reference = dimensions.get("reference")
+    candidate = dimensions.get("candidate")
+    if reference != candidate or not isinstance(reference, dict):
+        return None
+    return [int(reference["width"]), int(reference["height"])]
+
+
+def _canonical_metrics(
+    args: argparse.Namespace,
+    case_dir: Path,
+    raw_metrics: dict[str, object],
+    review_path: Path | None,
+) -> dict[str, object]:
+    tolerance = {
+        "max_mean_delta": args.max_mean_delta,
+        "max_pixel_delta": args.max_pixel_delta,
+        "max_changed_percent": args.max_changed_percent,
+        "min_ssim": args.min_ssim,
+    }
+    ssim = _canonical_ssim(raw_metrics)
+    failed_tolerances = list(raw_metrics.get("failed_tolerances", []))
+    passed = bool(raw_metrics["passed"])
+    if ssim is not None and ssim < args.min_ssim:
+        passed = False
+        if "ssim" not in failed_tolerances:
+            failed_tolerances.append("ssim")
+
+    return {
+        "case": args.case,
+        "dimensions": _dimensions(raw_metrics),
+        "mean_abs_delta": raw_metrics.get("mean_absolute_delta"),
+        "max_delta": raw_metrics.get("max_delta"),
+        "changed_pixel_percent": raw_metrics.get("changed_pixel_percentage"),
+        "ssim": ssim,
+        "tolerance": tolerance,
+        "deterministic_verdict": "pass" if passed else "fail",
+        "artifact_paths": {
+            "reference": str(case_dir / "reference.png"),
+            "actual": str(case_dir / "actual.png"),
+            "diff": str(case_dir / "diff.png"),
+            "metrics": str(case_dir / "metrics.json"),
+        },
+        "review_report_path": str(review_path) if review_path is not None else None,
+        "passed": passed,
+        "failed_tolerances": failed_tolerances,
+    }
+
+
+def main(argv: list[str] | None = None, *, runner: Runner = subprocess.run) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    _validate_inputs(parser, args)
+
+    case_dir = args.reports_root / args.case
+    case_dir.mkdir(parents=True, exist_ok=True)
+
+    review_error = _review_required_error(args)
+    if review_error is not None:
+        print(f"check_visual_artifacts: {review_error}", file=sys.stderr)
+        return 2
+
+    review_path = None
+    if args.review_report is not None:
+        review_path = case_dir / "gpt5_vision_review.md"
+        shutil.copyfile(args.review_report, review_path)
+
+    try:
+        if args.reference_command is not None:
+            child_status = _run_command_mode(args, case_dir, runner)
+            if child_status is not None:
+                return child_status
+        else:
+            _copy_fixture_inputs(args, case_dir)
+
+        tolerances = {
+            "max_mean_delta": args.max_mean_delta,
+            "max_pixel_delta": args.max_pixel_delta,
+            "max_changed_percent": args.max_changed_percent,
+        }
+        raw_metrics = compare_images(
+            case_dir / "reference.png",
+            case_dir / "actual.png",
+            case_dir / "diff.png",
+            tolerances,
+        )
+        metrics = _canonical_metrics(args, case_dir, raw_metrics, review_path)
+        metrics_text = json.dumps(metrics, sort_keys=True, indent=2) + "\n"
+        (case_dir / "metrics.json").write_text(metrics_text, encoding="utf-8")
+        sys.stdout.write(metrics_text)
+        return 0 if metrics["passed"] else 1
+    except (OSError, PngError, ValueError) as exc:
+        print(f"check_visual_artifacts: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

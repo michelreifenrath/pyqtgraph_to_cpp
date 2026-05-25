@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.machinery
 import importlib.util
 import json
 import os
@@ -24,10 +25,17 @@ def run_script(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def write_pair(tmp_path: Path, actual_pixels: list[tuple[int, ...]] | None = None) -> tuple[Path, Path]:
+def write_pair(
+    tmp_path: Path, actual_pixels: list[tuple[int, ...]] | None = None
+) -> tuple[Path, Path]:
     reference = tmp_path / "reference-source.png"
     actual = tmp_path / "actual-source.png"
-    pixels = [(10, 20, 30, 255), (40, 50, 60, 255), (70, 80, 90, 255), (100, 110, 120, 255)]
+    pixels = [
+        (10, 20, 30, 255),
+        (40, 50, 60, 255),
+        (70, 80, 90, 255),
+        (100, 110, 120, 255),
+    ]
     write_png(reference, 2, 2, pixels)
     write_png(actual, 2, 2, actual_pixels or pixels)
     return reference, actual
@@ -107,8 +115,12 @@ def test_P0_07_required_gpt_review_is_copied_to_canonical_name(tmp_path: Path) -
 
     assert result.returncode == 0, result.stderr
     copied_review = reports_root / "P0_07_reviewed" / "gpt5_vision_review.md"
-    assert copied_review.read_text(encoding="utf-8") == review.read_text(encoding="utf-8")
-    metrics = json.loads((reports_root / "P0_07_reviewed" / "metrics.json").read_text(encoding="utf-8"))
+    assert copied_review.read_text(encoding="utf-8") == review.read_text(
+        encoding="utf-8"
+    )
+    metrics = json.loads(
+        (reports_root / "P0_07_reviewed" / "metrics.json").read_text(encoding="utf-8")
+    )
     assert metrics["review_report_path"] == str(copied_review)
 
 
@@ -163,20 +175,25 @@ def test_P0_07_mismatch_returns_1_and_preserves_artifacts(tmp_path: Path) -> Non
 
 
 def load_script_module():
-    spec = importlib.util.spec_from_file_location("check_visual_artifacts", SCRIPT)
-    assert spec is not None and spec.loader is not None
+    loader = importlib.machinery.SourceFileLoader("check_visual_artifacts", str(SCRIPT))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    assert spec is not None
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    loader.exec_module(module)
     return module
 
 
-def test_P0_07_command_runner_sets_env_and_runs_reference_before_actual(tmp_path: Path) -> None:
+def test_P0_07_command_runner_sets_env_and_runs_reference_before_actual(
+    tmp_path: Path,
+) -> None:
     module = load_script_module()
     reports_root = tmp_path / "reports" / "visual-diffs"
     calls = []
 
     def fake_runner(command, *, cwd, env, shell, check):
-        calls.append({"command": command, "cwd": cwd, "env": env, "shell": shell, "check": check})
+        calls.append(
+            {"command": command, "cwd": cwd, "env": env, "shell": shell, "check": check}
+        )
         artifact_dir = Path(env["PG_VISUAL_ARTIFACT_DIR"])
         artifact_dir.mkdir(parents=True, exist_ok=True)
         if command == "make-reference":
@@ -209,11 +226,15 @@ def test_P0_07_command_runner_sets_env_and_runs_reference_before_actual(tmp_path
         assert call["env"]["PATH"] == os.environ["PATH"]
         assert call["env"]["PG_VISUAL_CASE"] == "P0_07_command"
         assert call["env"]["PG_VISUAL_ARTIFACT_DIR"] == str(case_dir)
-        assert call["env"]["PG_VISUAL_REFERENCE_PATH"] == str(case_dir / "reference.png")
+        assert call["env"]["PG_VISUAL_REFERENCE_PATH"] == str(
+            case_dir / "reference.png"
+        )
         assert call["env"]["PG_VISUAL_ACTUAL_PATH"] == str(case_dir / "actual.png")
         assert call["env"]["PG_VISUAL_DIFF_PATH"] == str(case_dir / "diff.png")
         assert call["env"]["PG_VISUAL_METRICS_PATH"] == str(case_dir / "metrics.json")
-        assert call["env"]["PG_VISUAL_REVIEW_REPORT_PATH"] == str(case_dir / "gpt5_vision_review.md")
+        assert call["env"]["PG_VISUAL_REVIEW_REPORT_PATH"] == str(
+            case_dir / "gpt5_vision_review.md"
+        )
 
 
 def test_P0_07_command_runner_propagates_nonzero_child_exit(tmp_path: Path) -> None:
@@ -224,6 +245,7 @@ def test_P0_07_command_runner_propagates_nonzero_child_exit(tmp_path: Path) -> N
         calls.append(command)
         if command == "make-reference":
             write_png(Path(env["PG_VISUAL_REFERENCE_PATH"]), 1, 1, [(1, 2, 3, 255)])
+            return subprocess.CompletedProcess(command, 0)
         return subprocess.CompletedProcess(command, 17)
 
     result = module.main(
@@ -241,4 +263,4 @@ def test_P0_07_command_runner_propagates_nonzero_child_exit(tmp_path: Path) -> N
     )
 
     assert result == 17
-    assert calls == ["make-reference"]
+    assert calls == ["make-reference", "make-actual"]
