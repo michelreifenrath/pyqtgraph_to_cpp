@@ -67,12 +67,30 @@ Current waiver: no manifest/dashboard edits, executable tests, or visual artifac
 
 ## Validation
 
-Pending tester results.
+Post-implementation local validation results:
 
-Suggested focused checks for the tester:
+```text
+$ test -f docs/parity-contract.md
+exit 0
 
-```bash
-test -f docs/parity-contract.md
-test -f reports/issues/P0.01/issue-95-completion.md
-git diff -- docs/parity-contract.md reports/issues/P0.01/issue-95-completion.md
+$ test -f reports/issues/P0.01/issue-95-completion.md
+exit 0
+
+$ scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp
+exit 0
+
+$ git diff --check
+exit 0
+
+$ git diff --name-only origin/main...HEAD
+docs/parity-contract.md
+reports/issues/P0.01/issue-95-completion.md
+exit 0
 ```
+
+Validated artifact paths:
+
+- `docs/parity-contract.md`
+- `reports/issues/P0.01/issue-95-completion.md`
+
+Changed-file ownership check: `git diff --name-only origin/main...HEAD` listed only the issue-owned decision artifact and completion report.
