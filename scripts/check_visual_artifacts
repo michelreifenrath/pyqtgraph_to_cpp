@@ -21,6 +21,9 @@ if str(ORACLE_SCRIPTS) not in sys.path:
 from compare_screenshots import PngError, compare_images, read_png_rgba  # noqa: E402
 
 Runner = Callable[..., subprocess.CompletedProcess[object]]
+COMMAND_ARTIFACT_NAMES = ("reference.png", "actual.png", "diff.png", "metrics.json")
+REQUIRED_REVIEW_PASS_VERDICT = "pass"
+REQUIRED_REVIEW_PASS_RECOMMENDATION = "merge_ok"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -146,12 +149,29 @@ def _artifact_env(args: argparse.Namespace, case_dir: Path) -> dict[str, str]:
     return env
 
 
+def _clear_command_artifacts(case_dir: Path) -> None:
+    for artifact_name in COMMAND_ARTIFACT_NAMES:
+        try:
+            (case_dir / artifact_name).unlink()
+        except FileNotFoundError:
+            pass
+
+
 def _run_command_mode(
     args: argparse.Namespace, case_dir: Path, runner: Runner
 ) -> int | None:
     env = _artifact_env(args, case_dir)
+    _clear_command_artifacts(case_dir)
     cwd = str(args.cwd)
-    for command in (args.reference_command, args.actual_command):
+    commands = (
+        ("reference", args.reference_command, case_dir / "reference.png"),
+        ("actual", args.actual_command, case_dir / "actual.png"),
+    )
+    for label, command, expected_artifact in commands:
+        try:
+            expected_artifact.unlink()
+        except FileNotFoundError:
+            pass
         result = runner(
             command,
             cwd=cwd,
@@ -163,6 +183,10 @@ def _run_command_mode(
         )
         if result.returncode != 0:
             return int(result.returncode)
+        if not expected_artifact.is_file():
+            raise ValueError(
+                f"{label} command did not create expected artifact: {expected_artifact}"
+            )
     return None
 
 
@@ -283,6 +307,50 @@ def _dimensions(raw_metrics: dict[str, object]) -> list[int] | None:
     return [int(reference["width"]), int(reference["height"])]
 
 
+def _review_field_value(raw_value: str) -> str:
+    return raw_value.split("#", 1)[0].strip().strip("'\"").lower()
+
+
+def _structured_review_fields(review_path: Path) -> dict[str, str]:
+    fields = {}
+    for line in review_path.read_text(encoding="utf-8").splitlines():
+        key, separator, value = line.partition(":")
+        normalized_key = key.strip().lower()
+        if separator and normalized_key in {"verdict", "recommendation"}:
+            fields[normalized_key] = _review_field_value(value)
+    return fields
+
+
+def _semantic_review_status(
+    args: argparse.Namespace, review_path: Path | None
+) -> dict[str, object] | None:
+    if review_path is None:
+        return None
+
+    fields = _structured_review_fields(review_path)
+    verdict = fields.get("verdict")
+    recommendation = fields.get("recommendation")
+    accepted = (
+        verdict == REQUIRED_REVIEW_PASS_VERDICT
+        and recommendation == REQUIRED_REVIEW_PASS_RECOMMENDATION
+    )
+    required = args.gpt_visual_review == "required_for_pr"
+    blocks_gate = required and not accepted
+    return {
+        "mode": args.gpt_visual_review,
+        "verdict": verdict,
+        "recommendation": recommendation,
+        "accepted": accepted,
+        "blocks_gate": blocks_gate,
+        "failure_reason": (
+            "required GPT visual review must report verdict: pass and "
+            "recommendation: merge_ok"
+            if blocks_gate
+            else None
+        ),
+    }
+
+
 def _canonical_metrics(
     args: argparse.Namespace,
     case_dir: Path,
@@ -297,11 +365,17 @@ def _canonical_metrics(
         "min_ssim": args.min_ssim,
     }
     failed_tolerances = list(raw_metrics.get("failed_tolerances", []))
-    passed = bool(raw_metrics["passed"])
+    deterministic_passed = bool(raw_metrics["passed"])
     if ssim is not None and ssim < args.min_ssim:
-        passed = False
+        deterministic_passed = False
         if "ssim" not in failed_tolerances:
             failed_tolerances.append("ssim")
+
+    semantic_review = _semantic_review_status(args, review_path)
+    failed_checks = list(failed_tolerances)
+    if semantic_review is not None and semantic_review["blocks_gate"]:
+        failed_checks.append("gpt_visual_review")
+    passed = deterministic_passed and "gpt_visual_review" not in failed_checks
 
     return {
         "case": args.case,
@@ -311,7 +385,7 @@ def _canonical_metrics(
         "changed_pixel_percent": raw_metrics.get("changed_pixel_percentage"),
         "ssim": ssim,
         "tolerance": tolerance,
-        "deterministic_verdict": "pass" if passed else "fail",
+        "deterministic_verdict": "pass" if deterministic_passed else "fail",
         "artifact_paths": {
             "reference": str(case_dir / "reference.png"),
             "actual": str(case_dir / "actual.png"),
@@ -319,8 +393,10 @@ def _canonical_metrics(
             "metrics": str(case_dir / "metrics.json"),
         },
         "review_report_path": str(review_path) if review_path is not None else None,
+        "semantic_review": semantic_review,
         "passed": passed,
         "failed_tolerances": failed_tolerances,
+        "failed_checks": failed_checks,
     }
 
 

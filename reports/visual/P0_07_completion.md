@@ -27,11 +27,14 @@ Issue-owned/supporting paths changed:
 ## Focused proof coverage
 
 - Normal fixture path: `test_P0_07_writes_canonical_visual_artifact_tree`
-- Review-report path: `test_P0_07_required_gpt_review_is_copied_to_canonical_name`
+- Structured review-report pass path: `test_P0_07_required_gpt_review_is_copied_to_canonical_name`
+- Required semantic review non-pass gate path: `test_P0_07_required_gpt_review_non_pass_blocks_gate`
 - Failure path: `test_P0_07_required_gpt_review_without_report_exits_2`
 - Case path escape failure path: `test_P0_07_rejects_case_paths_outside_reports_root`
 - Visual mismatch path: `test_P0_07_mismatch_returns_1_and_preserves_artifacts`
 - Command-mode child stdout isolation: `test_P0_07_command_runner_keeps_child_stdout_out_of_metrics_json`
+- Command-mode stale output rejection: `test_P0_07_command_runner_rejects_stale_outputs_when_children_write_nothing`
+- Command-mode missing actual-output rejection: `test_P0_07_command_runner_rejects_missing_actual_output`
 - Fake-runner subprocess plan/cwd/env/order/stdout-stderr capture: `test_P0_07_command_runner_sets_env_and_runs_reference_before_actual`
 - Fake-runner nonzero child exit propagation: `test_P0_07_command_runner_propagates_nonzero_child_exit`
 - Default reports root is repository-anchored when invoked from another process cwd: `test_P0_07_default_reports_root_is_repo_anchored`
@@ -57,11 +60,11 @@ Final local validation after autoreview rework:
 
 | Command | Exit code | Result |
 | --- | ---: | --- |
-| `python3 -m pytest -q tests/visual/test_P0_07_visual_artifact_layout.py` | 0 | `12 passed in 3.10s` |
-| `python3 -m pytest -q tests -k P0_07` | 0 | `12 passed, 259 deselected in 2.97s` |
+| `python3 -m pytest -q tests/visual/test_P0_07_visual_artifact_layout.py` | 0 | `18 passed in 3.11s` |
+| `python3 -m pytest -q tests -k P0_07` | 0 | `18 passed, 259 deselected in 3.18s` |
 | `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` | 1 | Fails on existing proposed-issue metadata: `github-issue-{96,100,101,102,105,108,129,166,195,197,207}.md: blocked-by entry does not match a local issue: P0.01` |
 | `git diff --check` | 0 | No whitespace errors |
-| `git diff --name-only origin/main...HEAD` | 0 | Pre-rework branch HEAD still lists `tests/examples/test_SimplePlot_visual.py` until this rework is committed; current cumulative worktree diff against `origin/main` is limited to `reports/visual/P0_07_completion.md`, `scripts/check_visual_artifacts`, and `tests/visual/test_P0_07_visual_artifact_layout.py`. |
+| `git diff --name-only origin/main...HEAD` | 0 | `reports/visual/P0_07_completion.md`; `scripts/check_visual_artifacts`; `tests/visual/test_P0_07_visual_artifact_layout.py` |
 | `git diff --name-only origin/main` | 0 | `reports/visual/P0_07_completion.md`; `scripts/check_visual_artifacts`; `tests/visual/test_P0_07_visual_artifact_layout.py` |
 
 ### `scripts/check_proposed_issues` failure output

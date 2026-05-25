@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from test_compare_screenshots import write_png
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -133,7 +135,14 @@ def test_P0_07_rejects_case_paths_outside_reports_root(tmp_path: Path) -> None:
 def test_P0_07_required_gpt_review_is_copied_to_canonical_name(tmp_path: Path) -> None:
     reference, actual = write_pair(tmp_path)
     review = tmp_path / "review.md"
-    review.write_text("# semantic review\n\nPASS\n", encoding="utf-8")
+    review.write_text(
+        "verdict: pass\n"
+        "blocking_differences: []\n"
+        "non_blocking_differences: []\n"
+        "likely_causes: []\n"
+        "recommendation: merge_ok\n",
+        encoding="utf-8",
+    )
     reports_root = tmp_path / "reports" / "visual-diffs"
 
     result = run_script(
@@ -160,6 +169,76 @@ def test_P0_07_required_gpt_review_is_copied_to_canonical_name(tmp_path: Path) -
         (reports_root / "P0_07_reviewed" / "metrics.json").read_text(encoding="utf-8")
     )
     assert metrics["review_report_path"] == str(copied_review)
+    assert metrics["semantic_review"] == {
+        "mode": "required_for_pr",
+        "verdict": "pass",
+        "recommendation": "merge_ok",
+        "accepted": True,
+        "blocks_gate": False,
+        "failure_reason": None,
+    }
+
+
+@pytest.mark.parametrize(
+    ("review_text", "expected_verdict", "expected_recommendation"),
+    [
+        ("verdict: fail\nrecommendation: needs_fix\n", "fail", "needs_fix"),
+        (
+            "verdict: uncertain\nrecommendation: human_review\n",
+            "uncertain",
+            "human_review",
+        ),
+        ("verdict: pass\nrecommendation: human_review\n", "pass", "human_review"),
+        ("recommendation: merge_ok\n", None, "merge_ok"),
+    ],
+)
+def test_P0_07_required_gpt_review_non_pass_blocks_gate(
+    tmp_path: Path,
+    review_text: str,
+    expected_verdict: str | None,
+    expected_recommendation: str,
+) -> None:
+    reference, actual = write_pair(tmp_path)
+    review = tmp_path / "review.md"
+    review.write_text(review_text, encoding="utf-8")
+    reports_root = tmp_path / "reports" / "visual-diffs"
+
+    result = run_script(
+        "--case",
+        "P0_07_review_blocks_gate",
+        "--reference",
+        str(reference),
+        "--actual",
+        str(actual),
+        "--reports-root",
+        str(reports_root),
+        "--gpt-visual-review",
+        "required_for_pr",
+        "--review-report",
+        str(review),
+    )
+
+    assert result.returncode == 1, result.stdout
+    case_dir = reports_root / "P0_07_review_blocks_gate"
+    copied_review = case_dir / "gpt5_vision_review.md"
+    assert copied_review.read_text(encoding="utf-8") == review_text
+    metrics = json.loads((case_dir / "metrics.json").read_text(encoding="utf-8"))
+    assert json.loads(result.stdout) == metrics
+    assert metrics["passed"] is False
+    assert metrics["deterministic_verdict"] == "pass"
+    assert metrics["failed_tolerances"] == []
+    assert metrics["failed_checks"] == ["gpt_visual_review"]
+    assert metrics["semantic_review"] == {
+        "mode": "required_for_pr",
+        "verdict": expected_verdict,
+        "recommendation": expected_recommendation,
+        "accepted": False,
+        "blocks_gate": True,
+        "failure_reason": (
+            "required GPT visual review must report verdict: pass and "
+            "recommendation: merge_ok"
+        ),
+    }
 
 
 def test_P0_07_required_gpt_review_without_report_exits_2(tmp_path: Path) -> None:
@@ -258,6 +337,71 @@ def test_P0_07_command_runner_keeps_child_stdout_out_of_metrics_json(
             encoding="utf-8"
         )
     )
+
+
+def test_P0_07_command_runner_rejects_stale_outputs_when_children_write_nothing(
+    tmp_path: Path,
+) -> None:
+    reports_root = tmp_path / "reports" / "visual-diffs"
+    case_dir = reports_root / "P0_07_stale_command"
+    case_dir.mkdir(parents=True)
+    write_png(case_dir / "reference.png", 1, 1, [(1, 2, 3, 255)])
+    write_png(case_dir / "actual.png", 1, 1, [(1, 2, 3, 255)])
+
+    result = run_script(
+        "--case",
+        "P0_07_stale_command",
+        "--reference-command",
+        "true",
+        "--actual-command",
+        "true",
+        "--reports-root",
+        str(reports_root),
+    )
+
+    assert result.returncode == 2
+    assert "reference command did not create expected artifact" in result.stderr
+    assert not (case_dir / "reference.png").exists()
+    assert not (case_dir / "actual.png").exists()
+    assert not (case_dir / "metrics.json").exists()
+
+
+def test_P0_07_command_runner_rejects_missing_actual_output(
+    tmp_path: Path, capsys
+) -> None:
+    module = load_script_module()
+    reports_root = tmp_path / "reports" / "visual-diffs"
+    calls = []
+
+    def fake_runner(command, *, cwd, env, shell, check, stdout, stderr):
+        calls.append(command)
+        if command == "make-reference":
+            write_png(Path(env["PG_VISUAL_REFERENCE_PATH"]), 1, 1, [(1, 2, 3, 255)])
+            write_png(Path(env["PG_VISUAL_ACTUAL_PATH"]), 1, 1, [(1, 2, 3, 255)])
+        return subprocess.CompletedProcess(command, 0)
+
+    result = module.main(
+        [
+            "--case",
+            "P0_07_missing_actual",
+            "--reference-command",
+            "make-reference",
+            "--actual-command",
+            "make-actual",
+            "--reports-root",
+            str(reports_root),
+        ],
+        runner=fake_runner,
+    )
+
+    captured = capsys.readouterr()
+    case_dir = reports_root / "P0_07_missing_actual"
+    assert result == 2
+    assert "actual command did not create expected artifact" in captured.err
+    assert calls == ["make-reference", "make-actual"]
+    assert (case_dir / "reference.png").is_file()
+    assert not (case_dir / "actual.png").exists()
+    assert not (case_dir / "metrics.json").exists()
 
 
 def test_P0_07_command_runner_sets_env_and_runs_reference_before_actual(
