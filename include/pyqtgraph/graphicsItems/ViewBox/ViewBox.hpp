@@ -7,6 +7,7 @@
 
 #include "../GraphicsWidget.hpp"
 
+#include <QtCore/QPointF>
 #include <QtCore/QRectF>
 #include <QtCore/Qt>
 #include <QtWidgets/QGraphicsItem>
@@ -60,6 +61,10 @@ public:
                   bool disableAutoRange = true);
     void setXRange(qreal min, qreal max, qreal padding = 0.02, bool update = true);
     void setYRange(qreal min, qreal max, qreal padding = 0.02, bool update = true);
+    void scaleBy(std::optional<qreal> x, std::optional<qreal> y, std::optional<QPointF> center = std::nullopt);
+    void scaleBy(const QPointF& scale, std::optional<QPointF> center = std::nullopt);
+    void translateBy(std::optional<qreal> x, std::optional<qreal> y);
+    void translateBy(const QPointF& offset);
     void setLimits(const Limits& limits);
 
 private:

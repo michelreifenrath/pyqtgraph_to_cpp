@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "steps": [],
+  "cases": [
+    {
+      "name": "scale-default-center-both-axes",
+      "initial": { "x": [0.0, 10.0], "y": [-2.0, 8.0] },
+      "operations": [
+        { "type": "scaleBy", "scale": [0.5, 2.0] }
+      ],
+      "expected": { "x": [2.5, 7.5], "y": [-7.0, 13.0] }
+    },
+    {
+      "name": "scale-explicit-center-x-only",
+      "initial": { "x": [0.0, 10.0], "y": [0.0, 10.0] },
+      "operations": [
+        { "type": "scaleBy", "x": 0.5, "center": [0.0, 0.0] }
+      ],
+      "expected": { "x": [0.0, 5.0], "y": [0.0, 10.0] }
+    },
+    {
+      "name": "translate-point-both-axes",
+      "initial": { "x": [-1.0, 3.0], "y": [2.0, 6.0] },
+      "operations": [
+        { "type": "translateBy", "offset": [2.0, -3.0] }
+      ],
+      "expected": { "x": [1.0, 5.0], "y": [-1.0, 3.0] }
+    },
+    {
+      "name": "translate-optional-y-only",
+      "initial": { "x": [1.0, 4.0], "y": [-5.0, 5.0] },
+      "operations": [
+        { "type": "translateBy", "y": 2.5 }
+      ],
+      "expected": { "x": [1.0, 4.0], "y": [-2.5, 7.5] }
+    }
+  ]
+}
