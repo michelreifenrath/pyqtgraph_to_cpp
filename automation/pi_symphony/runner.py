@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,6 +18,7 @@ from automation.pi_symphony.github import (
     ensure_labels,
     find_pr_for_branch,
     list_ai_prs,
+    list_issue_items,
     list_ready_issues,
     remove_labels,
     view_issue,
@@ -73,6 +75,118 @@ def ensure_board(config: WorkflowConfig, repo_root: Path) -> str:
     return slug
 
 
+def _local_id_from_title(title: str) -> str | None:
+    match = re.match(r"\[(P\d+(?:\.\d+)?)\]", title or "")
+    return match.group(1) if match else None
+
+
+def _dependency_tokens(issue: Issue) -> list[str]:
+    body = issue.body or ""
+    tokens: list[str] = []
+    for line in body.splitlines():
+        stripped = line.strip()
+        lower = stripped.lower()
+        if lower.startswith("**blocked by:**") or lower.startswith("blocked by:"):
+            value = stripped.split(":", 1)[1].strip().strip("` ")
+            if value.lower() in {"", "none", "n/a", "na", "not applicable"}:
+                continue
+            tokens.extend(re.findall(r"P\d+(?:\.\d+)?(?:\s*-\s*P?\d+(?:\.\d+)?)?|#\d+", value))
+    in_deps = False
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.lower().startswith("## dependencies"):
+            in_deps = True
+            continue
+        if in_deps and stripped.startswith("## "):
+            break
+        if in_deps:
+            tokens.extend(re.findall(r"P\d+(?:\.\d+)?(?:\s*-\s*P?\d+(?:\.\d+)?)?|#\d+", stripped))
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for token in tokens:
+        token = re.sub(r"\s+", "", token)
+        if token and token not in seen:
+            seen.add(token)
+            ordered.append(token)
+    return ordered
+
+
+def _expand_local_dependency_token(token: str, local_to_num: dict[str, int]) -> tuple[list[tuple[str, int]], list[str]]:
+    if "-" not in token:
+        num = local_to_num.get(token)
+        return ([(token, num)] if num is not None else [], [] if num is not None else [token])
+    start, end = token.split("-", 1)
+    end = end if end.startswith("P") else "P" + end
+    start_match = re.fullmatch(r"P(\d+)(?:\.(\d+))?", start)
+    end_match = re.fullmatch(r"P(\d+)(?:\.(\d+))?", end)
+    if not start_match or not end_match:
+        return [], [token]
+    start_phase, start_step = int(start_match.group(1)), start_match.group(2)
+    end_phase, end_step = int(end_match.group(1)), end_match.group(2)
+    if start_step is not None and end_step is not None and start_phase == end_phase:
+        pairs: list[tuple[str, int]] = []
+        unresolved: list[str] = []
+        for step in range(int(start_step), int(end_step) + 1):
+            local_id = f"P{start_phase}.{step:02d}"
+            num = local_to_num.get(local_id)
+            if num is None:
+                unresolved.append(local_id)
+            else:
+                pairs.append((local_id, num))
+        return pairs, unresolved
+    if start_step is None and end_step is None:
+        pairs = []
+        for phase in range(start_phase, end_phase + 1):
+            prefix = f"P{phase}."
+            pairs.extend((local_id, num) for local_id, num in local_to_num.items() if local_id.startswith(prefix))
+        if pairs:
+            return sorted(pairs), []
+    return [], [token]
+
+
+def _unmet_dependency_labels(issue: Issue, all_issue_items: list[dict[str, Any]]) -> list[str]:
+    state_by_num = {int(item["number"]): str(item.get("state") or "").lower() for item in all_issue_items if "number" in item}
+    local_to_num = {
+        local_id: int(item["number"])
+        for item in all_issue_items
+        if "number" in item
+        for local_id in [_local_id_from_title(str(item.get("title") or ""))]
+        if local_id
+    }
+    unmet: list[str] = []
+    for token in _dependency_tokens(issue):
+        if token.startswith("#"):
+            number = int(token[1:])
+            if state_by_num.get(number) != "closed":
+                unmet.append(token)
+            continue
+        pairs, unresolved = _expand_local_dependency_token(token, local_to_num)
+        unmet.extend(unresolved)
+        for label, number in pairs:
+            if state_by_num.get(number) != "closed":
+                unmet.append(label)
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for item in unmet:
+        if item not in seen:
+            seen.add(item)
+            ordered.append(item)
+    return ordered
+
+
+def _dependency_eligible_ready_issues(config: WorkflowConfig, candidates: list[Issue]) -> tuple[list[Issue], dict[int, list[str]]]:
+    all_items = list_issue_items(config)
+    eligible: list[Issue] = []
+    blocked: dict[int, list[str]] = {}
+    for issue in candidates:
+        unmet = _unmet_dependency_labels(issue, all_items)
+        if unmet:
+            blocked[issue.number] = unmet
+        else:
+            eligible.append(issue)
+    return eligible, blocked
+
+
 def intake(loaded: LoadedWorkflow, *, limit: int | None = None, dry_run: bool = False) -> dict[str, Any]:
     config = loaded.config
     repo_root = loaded.repo_root
@@ -85,9 +199,14 @@ def intake(loaded: LoadedWorkflow, *, limit: int | None = None, dry_run: bool = 
     created_labels = [] if dry_run else ensure_labels(config)
     if not dry_run:
         ensure_board(config, repo_root)
-    issues = list_ready_issues(config, limit=limit)
-    actions: list[dict[str, Any]] = []
-    for issue in issues:
+    ready_candidates = list_ready_issues(config, limit=100)
+    issues, dependency_blocked = _dependency_eligible_ready_issues(config, ready_candidates)
+    claim_limit = limit or config.agent.max_concurrent_issues
+    actions: list[dict[str, Any]] = [
+        {"issue": issue_number, "action": "skipped_dependencies", "unmet_dependencies": unmet}
+        for issue_number, unmet in dependency_blocked.items()
+    ]
+    for issue in issues[:claim_limit]:
         state = get_issue(repo_root, issue.number)
         if state.get("status") in {"claimed", "implemented", "reviewed", "released", "done"}:
             continue
@@ -619,7 +738,7 @@ def implement_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]
         issue.number,
         lambda item: item.update({"status": "implementing", "attempts": int(item.get("attempts", 0)) + 1, "branch": branch, "worktree": str(worktree), "implementation_started_at": utc_now()}),
     )
-    prompt = _pi_prompt(config, issue, branch)
+    prompt = _pi_prompt(config, issue, branch, repo_root=loaded.repo_root)
     (issue_log_dir / "pi-prompt.md").write_text(prompt, encoding="utf-8")
     pi_cmd = _pi_command(config, thinking=config.pi.implementation_thinking, prompt=prompt)
     pi_result = run(pi_cmd, cwd=worktree, timeout=3600, check=False)
@@ -638,7 +757,7 @@ def implement_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]
     if not status:
         raise GateFailure("Pi completed but left no git changes")
     validations = run_validations(config, worktree, issue_log_dir)
-    review_commit = _commit_worktree_changes_for_review(worktree, issue_number=issue.number)
+    review_commit = _commit_worktree_changes_for_review(worktree, issue=issue, validations=validations)
     changed_files, changed_lines = diff_stats(worktree, config.autoreview.base)
     if not changed_files:
         raise GateFailure("review diff is empty after implementation commit; refusing to attest an empty branch diff")
@@ -675,7 +794,7 @@ def rework_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
         issue.number,
         lambda item: item.update({"status": "reworking", "branch": branch, "worktree": str(worktree), "rework_started_at": utc_now()}),
     )
-    prompt = _pi_rework_prompt(config, issue, branch, reason)
+    prompt = _pi_rework_prompt(config, issue, branch, reason, repo_root=loaded.repo_root)
     (issue_log_dir / "pi-rework-prompt.md").write_text(prompt, encoding="utf-8")
     pi_cmd = _pi_command(config, thinking=config.pi.implementation_thinking, prompt=prompt)
     pi_result = run(pi_cmd, cwd=worktree, timeout=3600, check=False)
@@ -694,7 +813,7 @@ def rework_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     if not status:
         raise GateFailure("Pi rework completed but left no git changes")
     validations = run_validations(config, worktree, issue_log_dir)
-    review_commit = _commit_worktree_changes_for_review(worktree, issue_number=issue.number)
+    review_commit = _commit_worktree_changes_for_review(worktree, issue=issue, validations=validations, phase="rework")
     changed_files, changed_lines = diff_stats(worktree, config.autoreview.base)
     if not changed_files:
         raise GateFailure("review diff is empty after rework commit; refusing to attest an empty branch diff")
@@ -724,21 +843,136 @@ def _pi_command(config: WorkflowConfig, *, thinking: str, prompt: str) -> list[s
     return cmd
 
 
-def _commit_worktree_changes_for_review(worktree: Path, *, issue_number: int) -> str | None:
+def _commit_worktree_changes_for_review(
+    worktree: Path,
+    *,
+    issue: Issue,
+    validations: list[dict[str, Any]] | None = None,
+    phase: str = "implement",
+) -> str | None:
     """Create the local review commit that branch-diff autoreview will inspect."""
     if not git_status_short(worktree):
         return None
     run(["git", "add", "-A"], cwd=worktree, timeout=120)
-    commit_message = (
-        f"fix: address issue #{issue_number}\n\n"
-        "Automated Pi Symphony implementation.\n\n"
-        "Create a local review commit before autoreview so branch diffs include newly created files."
-    )
-    commit_result = run(["git", "commit", "-m", commit_message], cwd=worktree, timeout=300, check=False)
+    subject = _review_commit_subject(issue, phase=phase)
+    body = _review_commit_body(issue, validations=validations or [])
+    commit_result = run(["git", "commit", "-m", subject, "-m", body], cwd=worktree, timeout=300, check=False)
     if commit_result.returncode != 0:
         if "nothing to commit" in commit_result.combined_output.lower():
             return None
         raise GateFailure(f"git commit failed before review: {commit_result.combined_output}")
+    return run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
+
+
+def _review_commit_subject(issue: Issue, *, phase: str) -> str:
+    summary = _issue_change_summary(issue.title)
+    scope = _issue_commit_scope(issue)
+    if phase == "rework":
+        subject = f"fix({scope}): address review findings for {summary}"
+    else:
+        subject = f"{_issue_commit_type(summary)}({scope}): {summary}"
+    return _truncate_commit_subject(subject)
+
+
+def _review_commit_body(issue: Issue, *, validations: list[dict[str, Any]]) -> str:
+    validation_lines = [
+        f"- {item.get('command', 'validation')}: passed"
+        for item in validations
+        if int(item.get("returncode", 0)) == 0
+    ]
+    if not validation_lines:
+        validation_lines = ["- focused validation completed before review"]
+    return "\n".join(
+        [
+            f"Addresses #{issue.number}.",
+            "",
+            "What changed:",
+            f"- {_sentence_case(_issue_change_summary(issue.title))}.",
+            "",
+            "Why:",
+            "- Captures the issue-scoped implementation in a reviewed branch commit.",
+            "- Makes newly created files visible to branch-diff autoreview and PR release.",
+            "",
+            "Validation:",
+            *validation_lines,
+        ]
+    )
+
+
+def _issue_change_summary(title: str) -> str:
+    cleaned = re.sub(r"^\[AI\]\s*", "", title).strip()
+    cleaned = re.sub(r"^[A-Z]+-\d+:\s*", "", cleaned).strip()
+    cleaned = cleaned.rstrip(".")
+    if not cleaned:
+        return "update tracked issue scope"
+    return cleaned[:1].lower() + cleaned[1:]
+
+
+def _sentence_case(text: str) -> str:
+    if not text:
+        return text
+    return text[:1].upper() + text[1:]
+
+
+def _issue_commit_type(summary: str) -> str:
+    verb = summary.split(maxsplit=1)[0].lower() if summary.split() else "update"
+    if verb in {"add", "create", "implement", "port"}:
+        return "feat"
+    if verb in {"fix", "repair"}:
+        return "fix"
+    if verb in {"test", "validate"}:
+        return "test"
+    if verb in {"document", "docs"}:
+        return "docs"
+    if verb in {"refactor", "simplify"}:
+        return "refactor"
+    return "chore"
+
+
+def _issue_commit_scope(issue: Issue) -> str:
+    title_scope = _scope_from_title(issue.title)
+    if title_scope:
+        return title_scope
+    for label in issue.labels:
+        if label.startswith("tag:"):
+            return re.sub(r"[^a-z0-9-]", "-", label[4:].lower()).strip("-")
+    return "automation"
+
+
+def _scope_from_title(title: str) -> str | None:
+    for symbol in re.findall(r"\b[A-Z][A-Za-z0-9]*(?:Item|Box|Widget|View|Plot|Layout|Axis|ROI|Cpp)\b", title):
+        return re.sub(r"[^a-z0-9]", "", symbol.lower())
+    code_match = re.search(r"\b(PG[A-Z]+)-\d+\b", title)
+    if not code_match:
+        return None
+    return {
+        "PGBOOT": "automation",
+        "PGCORE": "core",
+        "PGEXAMPLE": "examples",
+        "PGINV": "inventory",
+        "PGORACLE": "oracle",
+        "PGPLOT": "plot",
+        "PGVIEW": "view",
+    }.get(code_match.group(1), code_match.group(1).removeprefix("PG").lower())
+
+
+def _truncate_commit_subject(subject: str) -> str:
+    if len(subject) <= 72:
+        return subject
+    return subject[:71].rstrip(" -:,.()") + "…"
+
+
+def _ensure_descriptive_review_commit(worktree: Path, *, issue: Issue, validations: list[dict[str, Any]]) -> str | None:
+    """Rewrite legacy generic automation commits before autoreview/release."""
+    subject = run(["git", "log", "-1", "--pretty=%s"], cwd=worktree, timeout=60).stdout.strip()
+    body = run(["git", "log", "-1", "--pretty=%B"], cwd=worktree, timeout=60).stdout
+    expected_subject = _review_commit_subject(issue, phase="implement")
+    if subject == expected_subject:
+        return None
+    if not (subject.startswith("fix: address issue #") or "Automated Pi Symphony implementation" in body):
+        return None
+    new_body = _review_commit_body(issue, validations=validations)
+    run(["git", "commit", "--amend", "-m", expected_subject, "-m", new_body], cwd=worktree, timeout=300)
     return run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
 
 
@@ -792,6 +1026,7 @@ def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     changed_files, changed_lines = diff_stats(worktree, config.autoreview.base)
     if not changed_files:
         raise GateFailure("review diff is empty; refusing to run autoreview without branch changes")
+    amended_head = _ensure_descriptive_review_commit(worktree, issue=issue, validations=validations)
     changed_file_stats = diff_file_stats(worktree, config.autoreview.base)
     review_surface_files, review_surface_lines, verified_generated_files, generated_checks = _review_surface_after_verified_generated_exceptions(
         config,
@@ -806,6 +1041,7 @@ def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
         )
     review = run_autoreview(config, worktree, issue_log_dir)
     reviewed_head = run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
+    autoreviewed_head = reviewed_head
     summary = {
         "status": "reviewed",
         "issue": issue.number,
@@ -817,7 +1053,9 @@ def review_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
         "generated_diff_checks": generated_checks,
         "validations": validations,
         "autoreview": review,
+        "amended_review_commit": amended_head,
         "reviewed_head": reviewed_head,
+        "autoreviewed_head": autoreviewed_head,
         "reviewed_at": utc_now(),
     }
     (issue_log_dir / "review.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -837,6 +1075,11 @@ def release_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     branch = str(state.get("branch") or branch_name(issue.number, issue.title))
     if branch in {config.workspace.base_branch, "main", "master"}:
         raise GateFailure(f"refusing to release protected branch {branch!r}")
+    autoreviewed_head = str(state.get("autoreviewed_head") or "")
+    if config.policy.require_autoreview_before_pr:
+        autoreview = state.get("autoreview")
+        if not isinstance(autoreview, dict) or autoreview.get("engine") != "autoreview" or not autoreviewed_head:
+            raise GateFailure("release requires mandatory autoreview evidence from the review phase")
     issue_log_dir = logs_dir(loaded.repo_root, issue.number)
     validations = run_validations(config, worktree, issue_log_dir)
     status = git_status_short(worktree)
@@ -848,11 +1091,13 @@ def release_issue(loaded: LoadedWorkflow, issue_number: int) -> dict[str, Any]:
     current_head = run(["git", "rev-parse", "HEAD"], cwd=worktree, timeout=60).stdout.strip()
     if current_head != reviewed_head:
         raise GateFailure(f"release HEAD {current_head} does not match reviewed head {reviewed_head}; rerun review before release")
+    if config.policy.require_autoreview_before_pr and current_head != autoreviewed_head:
+        raise GateFailure(f"release HEAD {current_head} does not match autoreviewed head {autoreviewed_head}; rerun review before release")
     run(["git", "push", "-u", "origin", branch], cwd=worktree, timeout=300)
     existing_pr = find_pr_for_branch(config, branch)
     if existing_pr is None:
         pr_body = _pr_body(config, issue, state, validations)
-        pr = create_pr(config, branch=branch, title=f"fix: address issue #{issue.number} - {issue.title}", body=pr_body)
+        pr = create_pr(config, branch=branch, title=_review_commit_subject(issue, phase="implement"), body=pr_body)
     else:
         pr = existing_pr
     if pr.get("number"):
@@ -891,13 +1136,21 @@ def run_autoreview(config: WorkflowConfig, worktree: Path, issue_log_dir: Path) 
     if command_path and Path(command_path).exists() and Path(command_path).name == "autoreview":
         json_output = issue_log_dir / "autoreview.json"
         prompt_file = issue_log_dir / "review-context.md"
-        prompt_file.write_text("Review this branch diff for correctness, regressions, tests, and security. Return actionable findings only.\n", encoding="utf-8")
+        prompt_template = _load_prompt_template(
+            worktree,
+            config.prompts.review_context,
+            "Review this branch diff for correctness, regressions, tests, and security. Return actionable findings only.\n",
+        )
+        prompt_file.write_text(_render_template(prompt_template, _prompt_context(config)), encoding="utf-8")
         cmd = [command_path, "--mode", config.autoreview.mode, "--base", config.autoreview.base, "--prompt-file", str(prompt_file), "--json-output", str(json_output)]
         result = run(cmd, cwd=worktree, timeout=1800, check=False)
         (issue_log_dir / "autoreview.log").write_text(result.combined_output + "\n", encoding="utf-8")
         if result.returncode != 0:
             raise GateFailure(f"autoreview failed: {result.combined_output[-2000:]}")
         return {"engine": "autoreview", "command": shell_join(cmd), "log": str(issue_log_dir / "autoreview.log"), "json": str(json_output)}
+
+    if config.autoreview.mandatory_gate:
+        raise GateFailure(f"mandatory autoreview command is unavailable: {config.autoreview.command}")
 
     if shutil.which("codex"):
         cmd = ["codex", "review", "--base", config.autoreview.base]
@@ -933,21 +1186,53 @@ def _issue_number_from_branch(branch: str) -> int | None:
     return int(rest) if rest.isdigit() else None
 
 
-def _pi_prompt(config: WorkflowConfig, issue: Issue, branch: str) -> str:
-    return f"""Use pi subagents for this implementation: first have a scout inspect the repo, then a planner make a file-level plan, then an implementer change code, then a tester run checks. Do not commit, push, or merge. Leave a clean git diff in the current worktree.
+def _prompt_context(config: WorkflowConfig, issue: Issue | None = None, branch: str = "", reason: str = "") -> dict[str, str]:
+    return {
+        "repo": config.tracker.repo,
+        "branch": branch,
+        "issue_number": "" if issue is None else str(issue.number),
+        "issue_title": "" if issue is None else issue.title,
+        "issue_author": "" if issue is None else issue.author,
+        "issue_url": "" if issue is None else issue.url,
+        "issue_labels": "" if issue is None else (", ".join(issue.labels) or "(none)"),
+        "issue_body": "" if issue is None else (issue.body or "(no body)"),
+        "workflow_body": config.body.strip(),
+        "failure_reason": reason[:4000],
+    }
 
-Repository: {config.tracker.repo}
-Branch: {branch}
-Issue: #{issue.number} {issue.title}
-Author: {issue.author}
-URL: {issue.url}
-Labels: {', '.join(issue.labels) or '(none)'}
+
+def _render_template(text: str, context: dict[str, str]) -> str:
+    rendered = text
+    for key, value in context.items():
+        rendered = rendered.replace("{{ " + key + " }}", value).replace("{{" + key + "}}", value)
+    return rendered.strip()
+
+
+def _load_prompt_template(repo_root: Path | None, relative_path: str, fallback: str) -> str:
+    if repo_root is not None:
+        path = Path(relative_path).expanduser()
+        if not path.is_absolute():
+            path = repo_root / path
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+    return fallback
+
+
+def _pi_prompt(config: WorkflowConfig, issue: Issue, branch: str, *, repo_root: Path | None = None) -> str:
+    fallback = """Use pi subagents for this implementation: first have a scout inspect the repo, then a planner make a file-level plan, then an implementer change code, then a tester run checks. Do not commit, push, merge, or create PRs. Leave a clean git diff in the current worktree.
+
+Repository: {{ repo }}
+Branch: {{ branch }}
+Issue: #{{ issue_number }} {{ issue_title }}
+Author: {{ issue_author }}
+URL: {{ issue_url }}
+Labels: {{ issue_labels }}
 
 Issue body:
-{issue.body or '(no body)'}
+{{ issue_body }}
 
 Repo-owned workflow:
-{config.body}
+{{ workflow_body }}
 
 Acceptance rules:
 - Implement only the issue scope: the issue-owned files plus directly required shared integration files listed in `policy.shared_integration_files`.
@@ -956,26 +1241,28 @@ Acceptance rules:
 - Do not leave scratch artifacts such as .pi-lens, temp files, or debug logs in the diff.
 - Do not modify WORKFLOW.md or automation policy files unless the issue explicitly asks for it.
 """
+    template = _load_prompt_template(repo_root, config.prompts.implement, fallback)
+    return _render_template(template, _prompt_context(config, issue, branch))
 
 
-def _pi_rework_prompt(config: WorkflowConfig, issue: Issue, branch: str, reason: str) -> str:
-    return f"""Use pi subagents for a bounded rework pass. Do not start over. Inspect the current branch, the prior review finding, then make the smallest safe changes that address only that finding. Do not commit, push, or merge. Leave a clean git diff in the current worktree.
+def _pi_rework_prompt(config: WorkflowConfig, issue: Issue, branch: str, reason: str, *, repo_root: Path | None = None) -> str:
+    fallback = """Use pi subagents for a bounded rework pass. Do not start over. Inspect the current branch and prior review finding, then make the smallest safe changes that address only that finding. Do not commit, push, merge, or create PRs. Leave a clean git diff in the current worktree.
 
-Repository: {config.tracker.repo}
-Branch: {branch}
-Issue: #{issue.number} {issue.title}
-Author: {issue.author}
-URL: {issue.url}
-Labels: {', '.join(issue.labels) or '(none)'}
+Repository: {{ repo }}
+Branch: {{ branch }}
+Issue: #{{ issue_number }} {{ issue_title }}
+Author: {{ issue_author }}
+URL: {{ issue_url }}
+Labels: {{ issue_labels }}
 
 Review/gate finding to fix:
-{reason[:4000]}
+{{ failure_reason }}
 
 Issue body:
-{issue.body or '(no body)'}
+{{ issue_body }}
 
 Repo-owned workflow:
-{config.body}
+{{ workflow_body }}
 
 Rework rules:
 - Fix only the listed review/gate finding and directly required tests/shared integration wiring.
@@ -984,6 +1271,8 @@ Rework rules:
 - Do not leave scratch artifacts such as .pi-lens, temp files, or debug logs in the diff.
 - Do not modify WORKFLOW.md or automation policy files unless the finding explicitly requires it.
 """
+    template = _load_prompt_template(repo_root, config.prompts.rework, fallback)
+    return _render_template(template, _prompt_context(config, issue, branch, reason))
 
 
 def _comment_issue_compact(config: WorkflowConfig, issue_number: int, body: str) -> None:

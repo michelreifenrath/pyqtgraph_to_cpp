@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from automation.pi_symphony.config import ConfigError, WorkflowConfig, load_workflow
+from automation.pi_symphony.config import ConfigError, WorkflowConfig, load_workflow, validate_workflow_contract
 
 
 VALID_WORKFLOW = """---
@@ -109,6 +109,79 @@ def test_config_parser_reads_kanban_settings_from_workflow(tmp_path: Path):
     assert config.github_output.issue_body.include_workflow_rules is False
     assert config.validation.commands == ["python3 -m pytest -q"]
     assert config.body == "# Workflow body\n"
+
+
+def _contract_workflow_text() -> str:
+    return """---
+tracker:
+  repo: owner/repo
+workspace:
+  root: /tmp/workspaces
+pi:
+  use_subagents: auto
+  resources_dir: .pi
+  resources_required: false
+prompts:
+  implement: prompts/implement-ticket.md
+  rework: prompts/fix-review-findings.md
+  review_context: prompts/review-context.md
+policy:
+  auto_merge: false
+autoreview:
+  enabled: true
+  advisory: true
+  mandatory_gate: true
+---
+# Lean workflow body
+"""
+
+
+def _write_contract_files(root: Path, *, unsafe_prompt: str | None = None) -> Path:
+    workflow_path = root / "WORKFLOW.md"
+    workflow_path.write_text(_contract_workflow_text(), encoding="utf-8")
+    (root / "AGENTS.md").write_text("Follow the repo workflow.\n", encoding="utf-8")
+    prompt_dir = root / "prompts"
+    prompt_dir.mkdir()
+    safe_prompt = "Do not commit, push, merge, or create PRs. Work in the assigned worktree only."
+    for name in ("implement-ticket.md", "fix-review-findings.md", "review-context.md"):
+        (prompt_dir / name).write_text(unsafe_prompt if unsafe_prompt is not None else safe_prompt, encoding="utf-8")
+    return workflow_path
+
+
+def test_config_parser_reads_prompt_and_optional_pi_resource_settings(tmp_path: Path):
+    workflow_path = _write_contract_files(tmp_path)
+
+    config = load_workflow(workflow_path)
+
+    assert config.pi.use_subagents == "auto"
+    assert config.pi.resources_dir == ".pi"
+    assert config.pi.resources_required is False
+    assert config.prompts.implement == "prompts/implement-ticket.md"
+    assert config.prompts.rework == "prompts/fix-review-findings.md"
+    assert config.prompts.review_context == "prompts/review-context.md"
+
+
+def test_workflow_contract_accepts_lean_prompt_file_contract(tmp_path: Path):
+    workflow_path = _write_contract_files(tmp_path)
+
+    assert validate_workflow_contract(workflow_path) == []
+
+
+def test_workflow_contract_reports_missing_required_files(tmp_path: Path):
+    workflow_path = _write_contract_files(tmp_path)
+    (tmp_path / "prompts" / "implement-ticket.md").unlink()
+
+    errors = validate_workflow_contract(workflow_path)
+
+    assert any("prompts.implement" in error and "does not exist" in error for error in errors)
+
+
+def test_workflow_contract_requires_prompt_authority_boundaries(tmp_path: Path):
+    workflow_path = _write_contract_files(tmp_path, unsafe_prompt="You may commit and open a PR when done.")
+
+    errors = validate_workflow_contract(workflow_path)
+
+    assert any("must prohibit commit/push/merge/PR creation" in error for error in errors)
 
 
 def test_workflow_defaults_are_production_safe():

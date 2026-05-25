@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from automation.pi_symphony.board_policy import derive_tags, derive_tenant
-from automation.pi_symphony.config import ConfigError, load_workflow, load_workflow_with_context
+from automation.pi_symphony.config import ConfigError, load_workflow, load_workflow_with_context, validate_workflow_contract
 from automation.pi_symphony.runner import GateFailure, ensure_board, ensure_runtime_prereqs, intake, reconcile, run_issue_phase, check_prs
 
 
@@ -72,8 +72,14 @@ def build_parser() -> argparse.ArgumentParser:
 def _validate_workflow(args: argparse.Namespace) -> int:
     try:
         config = load_workflow(args.workflow)
+        contract_errors = validate_workflow_contract(args.workflow)
     except (ConfigError, OSError, TypeError) as exc:
         print(f"workflow invalid: {exc}", file=sys.stderr)
+        return 1
+    if contract_errors:
+        print("workflow contract invalid:", file=sys.stderr)
+        for error in contract_errors:
+            print(f"- {error}", file=sys.stderr)
         return 1
     print(f"workflow valid: {args.workflow}")
     print(f"tracker.repo: {config.tracker.repo}")

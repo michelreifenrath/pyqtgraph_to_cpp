@@ -111,6 +111,40 @@ def list_ready_issues(config: WorkflowConfig, *, limit: int | None = None) -> li
     return candidates
 
 
+def list_issue_items(config: WorkflowConfig, *, state: str = "all", max_pages: int = 5) -> list[dict[str, Any]]:
+    """Return raw issue/PR items from GitHub's REST issues endpoint.
+
+    Dependency gates need the state and title of the wider backlog, not just the
+    first page of `ai:ready` candidates.
+    """
+    ensure_gh_authenticated()
+    items: list[dict[str, Any]] = []
+    for page in range(1, max_pages + 1):
+        page_items = run_json(
+            [
+                "gh",
+                "api",
+                "-X",
+                "GET",
+                f"repos/{config.tracker.repo}/issues",
+                "-f",
+                f"state={state}",
+                "-f",
+                "per_page=100",
+                "-f",
+                f"page={page}",
+            ]
+        )
+        if not page_items:
+            break
+        if not isinstance(page_items, list):
+            raise RuntimeError(f"GitHub issues endpoint returned {type(page_items).__name__}, expected list")
+        items.extend(page_items)
+        if len(page_items) < 100:
+            break
+    return items
+
+
 def view_issue(config: WorkflowConfig, number: int) -> Issue:
     item = run_json(["gh", "api", "-X", "GET", f"repos/{config.tracker.repo}/issues/{number}"])
     return _issue_from_rest_item(item)

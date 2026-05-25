@@ -7,7 +7,7 @@ from automation.pi_symphony import runner
 from automation.pi_symphony.config import LoadedWorkflow, WorkflowConfig
 from automation.pi_symphony.github import Issue
 from automation.pi_symphony.process import CommandResult, run
-from automation.pi_symphony.runner import GateFailure, _commit_worktree_changes_for_review, _handle_phase_failure, _pi_command, _pr_body
+from automation.pi_symphony.runner import GateFailure, _commit_worktree_changes_for_review, _ensure_descriptive_review_commit, _handle_phase_failure, _pi_command, _pr_body
 from automation.pi_symphony.state import update_issue
 from automation.pi_symphony.workspace import diff_stats
 
@@ -41,6 +41,92 @@ def test_pi_command_includes_configured_codex_model_and_thinking():
     ]
 
 
+def test_intake_skips_ready_issue_with_unmet_local_id_dependency(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    ready = [
+        Issue(214, "[P10.06] Run final acceptance", "**Blocked by:** P10.05\n", ["ai:ready"], "url", "michel"),
+        Issue(95, "[P0.01] Define parity contract", "**Blocked by:** None\n", ["ai:ready"], "url", "michel"),
+    ]
+    all_issues = [
+        {"number": 214, "title": "[P10.06] Run final acceptance", "state": "open", "labels": []},
+        {"number": 213, "title": "[P10.05] Complete final review", "state": "open", "labels": []},
+        {"number": 95, "title": "[P0.01] Define parity contract", "state": "open", "labels": []},
+    ]
+
+    monkeypatch.setattr(runner, "ensure_runtime_prereqs", lambda _config: [])
+    monkeypatch.setattr(runner, "list_ready_issues", lambda _config, limit=None: ready)
+    monkeypatch.setattr(runner, "list_issue_items", lambda _config: all_issues)
+    monkeypatch.setattr(runner, "get_issue", lambda _repo_root, _issue_number: {})
+
+    result = runner.intake(loaded, dry_run=True)
+
+    assert {action["issue"]: action["action"] for action in result["actions"]} == {
+        214: "skipped_dependencies",
+        95: "would_claim",
+    }
+    assert result["actions"][0]["unmet_dependencies"] == ["P10.05"]
+
+
+def test_intake_allows_ready_issue_when_local_dependency_is_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    ready = [Issue(96, "[P0.02] Build manifest", "**Blocked by:** P0.01\n", ["ai:ready"], "url", "michel")]
+    all_issues = [
+        {"number": 96, "title": "[P0.02] Build manifest", "state": "open", "labels": []},
+        {"number": 95, "title": "[P0.01] Define parity contract", "state": "closed", "labels": []},
+    ]
+
+    monkeypatch.setattr(runner, "ensure_runtime_prereqs", lambda _config: [])
+    monkeypatch.setattr(runner, "list_ready_issues", lambda _config, limit=None: ready)
+    monkeypatch.setattr(runner, "list_issue_items", lambda _config: all_issues)
+    monkeypatch.setattr(runner, "get_issue", lambda _repo_root, _issue_number: {})
+
+    result = runner.intake(loaded, dry_run=True)
+
+    assert result["actions"] == [{"issue": 96, "action": "would_claim"}]
+
+
+def test_intake_blocks_phase_range_until_all_phase_issues_are_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    ready = [Issue(209, "[P10.01] Achieve full manifest closure", "**Blocked by:** P2-P9\n", ["ai:ready"], "url", "michel")]
+    all_issues = [
+        {"number": 209, "title": "[P10.01] Achieve full manifest closure", "state": "open", "labels": []},
+        {"number": 120, "title": "[P2.01] Closed phase issue", "state": "closed", "labels": []},
+        {"number": 180, "title": "[P7.01] Still open phase issue", "state": "open", "labels": []},
+    ]
+
+    monkeypatch.setattr(runner, "ensure_runtime_prereqs", lambda _config: [])
+    monkeypatch.setattr(runner, "list_ready_issues", lambda _config, limit=None: ready)
+    monkeypatch.setattr(runner, "list_issue_items", lambda _config: all_issues)
+    monkeypatch.setattr(runner, "get_issue", lambda _repo_root, _issue_number: {})
+
+    result = runner.intake(loaded, dry_run=True)
+
+    assert result["actions"] == [
+        {"issue": 209, "action": "skipped_dependencies", "unmet_dependencies": ["P7.01"]}
+    ]
+
+
 def test_review_commit_makes_untracked_new_files_visible_to_branch_diff(tmp_path: Path):
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -56,11 +142,155 @@ def test_review_commit_makes_untracked_new_files_visible_to_branch_diff(tmp_path
     new_file.parent.mkdir()
     new_file.write_text("print('new')\n", encoding="utf-8")
 
-    commit = _commit_worktree_changes_for_review(repo, issue_number=16)
+    issue = Issue(16, "[AI] PGORACLE-006: Add SimplePlot numeric oracle", "body", ["tag:oracle"], "url", "michel")
+
+    commit = _commit_worktree_changes_for_review(
+        repo,
+        issue=issue,
+        validations=[{"command": "scripts/gate focus PGORACLE-006", "returncode": 0}],
+    )
 
     assert commit is not None
     assert run(["git", "status", "--short"], cwd=repo, timeout=60).stdout.strip() == ""
     assert run(["git", "diff", "--name-only", "origin/main...HEAD"], cwd=repo, timeout=60).stdout.splitlines() == ["oracle/new_tool.py"]
+    message = run(["git", "log", "-1", "--pretty=%B"], cwd=repo, timeout=60).stdout
+    assert message.startswith("feat(simpleplot): add SimplePlot numeric oracle\n")
+    assert "Addresses #16." in message
+    assert "What changed:\n- Add SimplePlot numeric oracle." in message
+    assert "Validation:\n- scripts/gate focus PGORACLE-006: passed" in message
+
+
+def test_review_phase_amends_legacy_generic_review_commit(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    run(["git", "init", "-b", "main"], cwd=repo, timeout=60)
+    run(["git", "config", "user.email", "pi-symphony@example.invalid"], cwd=repo, timeout=60)
+    run(["git", "config", "user.name", "Pi Symphony"], cwd=repo, timeout=60)
+    (repo / "README.md").write_text("base\n", encoding="utf-8")
+    run(["git", "add", "README.md"], cwd=repo, timeout=60)
+    run(["git", "commit", "-m", "base"], cwd=repo, timeout=60)
+    (repo / "README.md").write_text("base\nchange\n", encoding="utf-8")
+    run(
+        [
+            "git",
+            "commit",
+            "-am",
+            "fix: address issue #41",
+            "-m",
+            "Automated Pi Symphony implementation.",
+        ],
+        cwd=repo,
+        timeout=60,
+    )
+    old_head = run(["git", "rev-parse", "HEAD"], cwd=repo, timeout=60).stdout.strip()
+    issue = Issue(41, "[AI] PGPLOT-004: Implement PlotCurveItem QPainter paint path", "body", ["tag:plot"], "url", "michel")
+
+    new_head = _ensure_descriptive_review_commit(
+        repo,
+        issue=issue,
+        validations=[{"command": "python3 -m pytest -q", "returncode": 0}],
+    )
+
+    assert new_head is not None
+    assert new_head != old_head
+    message = run(["git", "log", "-1", "--pretty=%B"], cwd=repo, timeout=60).stdout
+    assert message.startswith("feat(plotcurveitem): implement PlotCurveItem QPainter paint path\n")
+    assert "Automated Pi Symphony implementation" not in message
+    assert "Validation:\n- python3 -m pytest -q: passed" in message
+
+
+def test_pi_prompt_renders_configured_implementation_template(tmp_path: Path):
+    template = tmp_path / "prompts" / "implement-ticket.md"
+    template.parent.mkdir()
+    template.write_text(
+        "Repo={{ repo }} Issue=#{{ issue_number }} {{ issue_title }} Branch={{ branch }} Body={{ issue_body }} Workflow={{ workflow_body }}",
+        encoding="utf-8",
+    )
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "prompts": {"implement": "prompts/implement-ticket.md"},
+        },
+        body="workflow contract",
+    )
+    issue = Issue(7, "[AI] Add widget", "Goal body", ["tag:plot"], "url", "michel")
+
+    prompt = runner._pi_prompt(config, issue, "ai/issue-7-add-widget", repo_root=tmp_path)
+
+    assert "Repo=owner/repo" in prompt
+    assert "Issue=#7 [AI] Add widget" in prompt
+    assert "Branch=ai/issue-7-add-widget" in prompt
+    assert "Body=Goal body" in prompt
+    assert "Workflow=workflow contract" in prompt
+
+
+def test_run_autoreview_uses_configured_review_context_prompt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    autoreview = tmp_path / "autoreview"
+    autoreview.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    autoreview.chmod(0o755)
+    review_prompt = tmp_path / "prompts" / "review-context.md"
+    review_prompt.parent.mkdir()
+    review_prompt.write_text("Review repo {{ repo }} under {{ workflow_body }}.", encoding="utf-8")
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "autoreview": {"command": str(autoreview)},
+            "prompts": {"review_context": "prompts/review-context.md"},
+        },
+        body="lean contract",
+    )
+    captured: dict[str, str] = {}
+
+    def fake_run(args, **_kwargs):
+        prompt_file = Path(args[args.index("--prompt-file") + 1])
+        captured["prompt"] = prompt_file.read_text(encoding="utf-8")
+        return CommandResult(args=args, returncode=0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(runner, "run", fake_run)
+
+    result = runner.run_autoreview(config, tmp_path, tmp_path)
+
+    assert result["engine"] == "autoreview"
+    assert captured["prompt"] == "Review repo owner/repo under lean contract."
+
+
+def test_mandatory_autoreview_does_not_fallback_to_codex(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "autoreview": {"command": "missing-autoreview", "mandatory_gate": True},
+        },
+        body="body",
+    )
+    monkeypatch.setattr(runner.shutil, "which", lambda command: "/usr/bin/codex" if command == "codex" else None)
+    monkeypatch.setattr(runner, "run", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("codex fallback must not run for mandatory autoreview")))
+
+    with pytest.raises(GateFailure, match="mandatory autoreview"):
+        runner.run_autoreview(config, tmp_path, tmp_path)
+
+
+def test_release_issue_requires_autoreview_evidence_before_pr(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    worktree = Path(config.workspace.root) / "issue-16"
+    worktree.mkdir(parents=True)
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: Issue(16, "new files", "body", [], "url", "michel"))
+    monkeypatch.setattr(runner, "get_issue", lambda _repo_root, _issue_number: {"status": "reviewed", "branch": "ai/issue-16-new-files", "reviewed_head": "reviewed-sha"})
+    monkeypatch.setattr(runner, "run_validations", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("release should fail before validation without autoreview evidence")))
+
+    with pytest.raises(GateFailure, match="autoreview evidence"):
+        runner.release_issue(loaded, 16)
 
 
 def test_diff_stats_uses_branch_diff_not_upstream_two_dot_changes(tmp_path: Path):
@@ -717,7 +947,16 @@ def test_release_issue_refuses_uncommitted_changes_after_review(tmp_path: Path, 
     loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
 
     monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: Issue(16, "new files", "body", [], "url", "michel"))
-    monkeypatch.setattr(runner, "get_issue", lambda _repo_root, _issue_number: {"status": "reviewed", "branch": "ai/issue-16-new-files"})
+    monkeypatch.setattr(
+        runner,
+        "get_issue",
+        lambda _repo_root, _issue_number: {
+            "status": "reviewed",
+            "branch": "ai/issue-16-new-files",
+            "autoreview": {"engine": "autoreview", "command": "autoreview --mode branch"},
+            "autoreviewed_head": "reviewed-sha",
+        },
+    )
     monkeypatch.setattr(runner, "run_validations", lambda _config, _worktree, _issue_log_dir: [])
     monkeypatch.setattr(runner, "git_status_short", lambda _worktree: "?? generated.log")
     monkeypatch.setattr(runner, "run", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("release must not push dirty worktree")))
@@ -740,7 +979,17 @@ def test_release_issue_refuses_head_that_was_not_reviewed(tmp_path: Path, monkey
     loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
 
     monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: Issue(16, "new files", "body", [], "url", "michel"))
-    monkeypatch.setattr(runner, "get_issue", lambda _repo_root, _issue_number: {"status": "reviewed", "branch": "ai/issue-16-new-files", "reviewed_head": "reviewed-sha"})
+    monkeypatch.setattr(
+        runner,
+        "get_issue",
+        lambda _repo_root, _issue_number: {
+            "status": "reviewed",
+            "branch": "ai/issue-16-new-files",
+            "reviewed_head": "reviewed-sha",
+            "autoreview": {"engine": "autoreview", "command": "autoreview --mode branch"},
+            "autoreviewed_head": "reviewed-sha",
+        },
+    )
     monkeypatch.setattr(runner, "run_validations", lambda _config, _worktree, _issue_log_dir: [])
     monkeypatch.setattr(runner, "git_status_short", lambda _worktree: "")
 
@@ -753,3 +1002,68 @@ def test_release_issue_refuses_head_that_was_not_reviewed(tmp_path: Path, monkey
 
     with pytest.raises(GateFailure, match="does not match reviewed head"):
         runner.release_issue(loaded, 16)
+
+
+def test_release_issue_uses_descriptive_pr_title(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    worktree = Path(config.workspace.root) / "issue-41"
+    worktree.mkdir(parents=True)
+    (tmp_path / ".hermes" / "pi-symphony" / "logs" / "issue-41").mkdir(parents=True)
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    created: dict[str, Any] = {}
+
+    monkeypatch.setattr(
+        runner,
+        "view_issue",
+        lambda _config, _issue_number: Issue(
+            41,
+            "[AI] PGPLOT-004: Implement PlotCurveItem QPainter paint path",
+            "body",
+            ["tag:plot"],
+            "url",
+            "michel",
+        ),
+    )
+    monkeypatch.setattr(
+        runner,
+        "get_issue",
+        lambda _repo_root, _issue_number: {
+            "status": "reviewed",
+            "branch": "ai/issue-41-plotcurveitem-paint",
+            "reviewed_head": "reviewed-sha",
+            "changed_files": ["src/pyqtgraph/graphicsItems/PlotCurveItem.cpp"],
+            "changed_lines": 25,
+            "autoreview": {"engine": "autoreview", "command": "autoreview --mode branch"},
+            "autoreviewed_head": "reviewed-sha",
+        },
+    )
+    monkeypatch.setattr(runner, "run_validations", lambda _config, _worktree, _issue_log_dir: [])
+    monkeypatch.setattr(runner, "git_status_short", lambda _worktree: "")
+
+    def fake_run(args, **_kwargs):
+        if args[:3] == ["git", "rev-parse", "HEAD"]:
+            return CommandResult(args=args, returncode=0, stdout="reviewed-sha\n", stderr="")
+        if args[:2] == ["git", "push"]:
+            return CommandResult(args=args, returncode=0, stdout="", stderr="")
+        raise AssertionError(f"unexpected command: {args}")
+
+    def fake_create_pr(_config, *, branch: str, title: str, body: str):
+        created.update({"branch": branch, "title": title, "body": body})
+        return {"number": 99, "url": "https://example.invalid/pr/99"}
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner, "find_pr_for_branch", lambda _config, _branch: None)
+    monkeypatch.setattr(runner, "create_pr", fake_create_pr)
+    monkeypatch.setattr(runner, "add_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+
+    runner.release_issue(loaded, 41)
+
+    assert created["title"] == "feat(plotcurveitem): implement PlotCurveItem QPainter paint path"

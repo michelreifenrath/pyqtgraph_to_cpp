@@ -42,8 +42,17 @@ class PiConfig:
     model: str | None = None
     default_thinking: str = "medium"
     implementation_thinking: str = "high"
-    use_subagents: bool = True
+    use_subagents: bool | str = True
     session_root: str | None = None
+    resources_dir: str = ".pi"
+    resources_required: bool = False
+
+
+@dataclass(frozen=True)
+class PromptConfig:
+    implement: str = "prompts/pi-implement.md"
+    rework: str = "prompts/pi-rework.md"
+    review_context: str = "prompts/autoreview-context.md"
 
 
 @dataclass(frozen=True)
@@ -156,6 +165,7 @@ class WorkflowConfig:
     pi: PiConfig = field(default_factory=PiConfig)
     github: GithubConfig = field(default_factory=GithubConfig)
     github_output: GithubOutputConfig = field(default_factory=GithubOutputConfig)
+    prompts: PromptConfig = field(default_factory=PromptConfig)
     policy: PolicyConfig = field(default_factory=PolicyConfig)
     autoreview: AutoreviewConfig = field(default_factory=AutoreviewConfig)
     kanban: KanbanConfig = field(default_factory=KanbanConfig)
@@ -172,6 +182,7 @@ class WorkflowConfig:
         pi_data = _optional_section(data, "pi")
         github_data = _optional_section(data, "github")
         github_output_data = _optional_section(data, "github_output")
+        prompts_data = _optional_section(data, "prompts")
         policy_data = _optional_section(data, "policy")
         autoreview_data = _optional_section(data, "autoreview")
         kanban_data = _optional_section(data, "kanban")
@@ -188,6 +199,7 @@ class WorkflowConfig:
             pi=PiConfig(**_dataclass_kwargs(PiConfig, pi_data)),
             github=GithubConfig(**_dataclass_kwargs(GithubConfig, github_data)),
             github_output=_github_output_config(github_output_data),
+            prompts=PromptConfig(**_dataclass_kwargs(PromptConfig, prompts_data)),
             policy=_policy_config(policy_data),
             autoreview=AutoreviewConfig(**_dataclass_kwargs(AutoreviewConfig, autoreview_data)),
             kanban=KanbanConfig(**_dataclass_kwargs(KanbanConfig, kanban_data)),
@@ -216,8 +228,13 @@ class WorkflowConfig:
         for name in ("default_thinking", "implementation_thinking"):
             if getattr(self.pi, name) not in {"off", "minimal", "low", "medium", "high", "xhigh"}:
                 raise ConfigError(f"pi.{name} must be one of: off, minimal, low, medium, high, xhigh")
-        if self.pi.use_subagents is not True:
-            raise ConfigError("pi.use_subagents must be true")
+        if self.pi.use_subagents not in {True, "auto"}:
+            raise ConfigError("pi.use_subagents must be true or auto")
+        _require_text(self.pi.resources_dir, "pi.resources_dir")
+        if not isinstance(self.pi.resources_required, bool):
+            raise ConfigError("pi.resources_required must be boolean")
+        for name in ("implement", "rework", "review_context"):
+            _require_text(getattr(self.prompts, name), f"prompts.{name}")
         for name in ("ready_label", "claimed_label", "blocked_label", "rework_label", "review_label", "merge_ready_label", "failed_label", "done_label", "ignore_label", "human_review_label"):
             _require_text(getattr(self.github, name), f"github.{name}")
         if self.github_output.style != "compact":
@@ -265,6 +282,80 @@ class LoadedWorkflow:
 def load_workflow(path: str | Path = "WORKFLOW.md") -> WorkflowConfig:
     text = Path(path).read_text(encoding="utf-8")
     return parse_workflow_text(text)
+
+
+def validate_workflow_contract(path: str | Path = "WORKFLOW.md") -> list[str]:
+    """Return static lean-workflow contract violations for a WORKFLOW.md file."""
+    workflow_path = Path(path).resolve()
+    errors: list[str] = []
+    try:
+        config = load_workflow(workflow_path)
+    except (ConfigError, OSError, TypeError) as exc:
+        return [str(exc)]
+
+    root = workflow_path.parent
+    required_files = {"WORKFLOW.md": workflow_path, "AGENTS.md": root / "AGENTS.md"}
+    for label, file_path in required_files.items():
+        if not file_path.exists():
+            errors.append(f"{label} does not exist: {file_path}")
+
+    prompt_fields = {
+        "prompts.implement": config.prompts.implement,
+        "prompts.rework": config.prompts.rework,
+        "prompts.review_context": config.prompts.review_context,
+    }
+    for field_name, relative_path in prompt_fields.items():
+        prompt_path = _contract_path(root, relative_path)
+        if not prompt_path.exists():
+            errors.append(f"{field_name} file does not exist: {prompt_path}")
+            continue
+        text = prompt_path.read_text(encoding="utf-8")
+        if not _prompt_has_authority_boundaries(text):
+            errors.append(f"{field_name} must prohibit commit/push/merge/PR creation: {prompt_path}")
+
+    resources_path = _contract_path(root, config.pi.resources_dir)
+    if config.pi.resources_required and not resources_path.exists():
+        errors.append(f"pi.resources_dir does not exist: {resources_path}")
+    if resources_path.exists():
+        errors.extend(_validate_pi_resources(resources_path))
+
+    if config.policy.auto_merge is not False:
+        errors.append("policy.auto_merge must be false")
+    if config.autoreview.enabled is not True or config.autoreview.mandatory_gate is not True:
+        errors.append("autoreview must be enabled with mandatory_gate=true")
+    if config.autoreview.advisory is not True:
+        errors.append("autoreview.advisory must remain true while mandatory_gate enforces release")
+    return errors
+
+
+def _contract_path(root: Path, value: str) -> Path:
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = root / path
+    return path
+
+
+def _prompt_has_authority_boundaries(text: str) -> bool:
+    lower = " ".join(text.lower().split())
+    if "do not" not in lower:
+        return False
+    return all(word in lower for word in ("commit", "push", "merge")) and ("pr" in lower or "pull request" in lower)
+
+
+def _validate_pi_resources(resources_path: Path) -> list[str]:
+    errors: list[str] = []
+    agents_dir = resources_path / "agents"
+    if agents_dir.exists():
+        for file_path in sorted(agents_dir.glob("*")):
+            if not file_path.is_file():
+                continue
+            text = file_path.read_text(encoding="utf-8").lower()
+            name = file_path.name.lower()
+            if any(role in name for role in ("scout", "review")) and not ("read-only" in text or "read only" in text):
+                errors.append(f"Pi resource {file_path} must mark scout/reviewer roles read-only")
+            if "implement" in name and ("read-only" in text or "read only" in text) and "write" not in text:
+                errors.append(f"Pi resource {file_path} should leave implementer write-capable")
+    return errors
 
 
 def load_workflow_with_context(path: str | Path = "WORKFLOW.md") -> LoadedWorkflow:

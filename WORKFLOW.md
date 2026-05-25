@@ -22,6 +22,12 @@ pi:
   implementation_thinking: xhigh
   use_subagents: true
   session_root: /home/michel/code/ai-workspaces/pyqtgraph_to_cpp/.pi-sessions
+  resources_dir: .pi
+  resources_required: false
+prompts:
+  implement: prompts/pi-implement.md
+  rework: prompts/pi-rework.md
+  review_context: prompts/autoreview-context.md
 autoreview:
   enabled: true
   command: /home/michel/.hermes/profiles/pi-reviewer/skills/external/autoreview/scripts/autoreview
