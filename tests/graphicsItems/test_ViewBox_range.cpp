@@ -199,7 +199,7 @@ bool testLargeFiniteRangeNormalization()
     const auto beforeTargetRange = rejectsOverflow.targetRange();
     bool threw = false;
     try {
-        rejectsOverflow.setXRange(-1.0e308, 1.0e308, 0.02);
+        rejectsOverflow.setXRange(-1.0e308, 1.0e308, 0.0);
     } catch (const std::invalid_argument&) {
         threw = true;
     }

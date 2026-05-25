@@ -19,7 +19,7 @@ No visual artifacts are applicable: this issue changes non-pixel numeric state o
 - Rect accessors map `[xMin, xMax]`/`[yMin, yMax]` to `QRectF(xMin, yMin, width, height)`.
 - Reversed endpoints are normalized.
 - Zero-span requests expand around a stable center using the previous target span when representable, then a quantization-sized fallback for large offsets where the previous span collapses.
-- Derived non-finite endpoints/padding expansions and no-axis optional `setRange` calls throw `std::invalid_argument` before mutating state.
+- Derived non-finite spans/endpoints/padding expansions and no-axis optional `setRange` calls throw `std::invalid_argument` before mutating state.
 - Non-finite range endpoints, non-finite padding, non-finite limits, inverted hard bounds, negative span limits, and min-span greater than max-span throw `std::invalid_argument` before mutating state.
 - Limit clamping applies max span, min span, then hard-bound shifting while preserving span when possible. If a span is wider than both hard bounds, the bounded interval is used deterministically.
 - `update=false` updates `targetRange_` only; `viewRange_` is left unchanged.

@@ -139,7 +139,7 @@ AxisRange ensureQuantizedRange(AxisRange range)
 
     const qreal span = range[1] - range[0];
     if (!isFinite(span)) {
-        return range;
+        throw std::invalid_argument("range span must be finite");
     }
 
     const qreal limit = quantizationLimit(stableCenter(range));
