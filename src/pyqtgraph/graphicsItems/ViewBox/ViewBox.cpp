@@ -165,6 +165,20 @@ void validateFiniteOptional(const std::optional<qreal>& value, const char* name)
     }
 }
 
+void validateFinitePoint(const QPointF& point, const char* message)
+{
+    if (!isFinite(point.x()) || !isFinite(point.y())) {
+        throw std::invalid_argument(message);
+    }
+}
+
+void validateFiniteOptionalPoint(const std::optional<QPointF>& point, const char* message)
+{
+    if (point.has_value()) {
+        validateFinitePoint(*point, message);
+    }
+}
+
 void validateLimits(const Limits& limits)
 {
     validateFiniteOptional(limits.xMin, "xMin must be finite");
@@ -392,6 +406,60 @@ void ViewBox::setXRange(qreal min, qreal max, qreal padding, bool update)
 void ViewBox::setYRange(qreal min, qreal max, qreal padding, bool update)
 {
     setRange(std::nullopt, AxisRange{min, max}, padding, update);
+}
+
+void ViewBox::scaleBy(std::optional<qreal> x, std::optional<qreal> y, std::optional<QPointF> center)
+{
+    if (!x.has_value() && !y.has_value()) {
+        return;
+    }
+    validateFiniteOptional(x, "x scale must be finite");
+    validateFiniteOptional(y, "y scale must be finite");
+    validateFiniteOptionalPoint(center, "scale center must be finite");
+
+    const QRectF rect = targetRect();
+    const QPointF scale{x.value_or(1.0), y.value_or(1.0)};
+    const QPointF scaleCenter = center.value_or(rect.center());
+    const QPointF topLeft = scaleCenter + QPointF((rect.left() - scaleCenter.x()) * scale.x(), (rect.top() - scaleCenter.y()) * scale.y());
+    const QPointF bottomRight = scaleCenter + QPointF((rect.right() - scaleCenter.x()) * scale.x(), (rect.bottom() - scaleCenter.y()) * scale.y());
+
+    if (x.has_value() && y.has_value()) {
+        setRange(QRectF(topLeft, bottomRight), 0.0);
+    } else if (x.has_value()) {
+        setXRange(topLeft.x(), bottomRight.x(), 0.0);
+    } else {
+        setYRange(topLeft.y(), bottomRight.y(), 0.0);
+    }
+}
+
+void ViewBox::scaleBy(const QPointF& scale, std::optional<QPointF> center)
+{
+    validateFinitePoint(scale, "scale must be finite");
+    scaleBy(scale.x(), scale.y(), center);
+}
+
+void ViewBox::translateBy(std::optional<qreal> x, std::optional<qreal> y)
+{
+    if (!x.has_value() && !y.has_value()) {
+        return;
+    }
+    validateFiniteOptional(x, "x translation must be finite");
+    validateFiniteOptional(y, "y translation must be finite");
+
+    const QRectF rect = targetRect();
+    const std::optional<AxisRange> xRange = x.has_value()
+        ? std::optional<AxisRange>{AxisRange{rect.left() + *x, rect.right() + *x}}
+        : std::nullopt;
+    const std::optional<AxisRange> yRange = y.has_value()
+        ? std::optional<AxisRange>{AxisRange{rect.top() + *y, rect.bottom() + *y}}
+        : std::nullopt;
+    setRange(xRange, yRange, 0.0);
+}
+
+void ViewBox::translateBy(const QPointF& offset)
+{
+    validateFinitePoint(offset, "translation offset must be finite");
+    setRange(targetRect().translated(offset), 0.0);
 }
 
 void ViewBox::setLimits(const Limits& limits)

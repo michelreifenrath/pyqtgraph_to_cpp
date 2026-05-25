@@ -324,6 +324,20 @@ if(BUILD_TESTING)
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_viewbox_range)
         add_test(NAME pyqtgraph_cpp.graphicsItems.ViewBox.range COMMAND pyqtgraph_cpp_graphicsitems_viewbox_range)
 
+        add_executable(pyqtgraph_cpp_graphicsitems_viewbox_pan_zoom tests/graphicsItems/test_ViewBox_pan_zoom.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsitems_viewbox_pan_zoom
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        target_compile_definitions(pyqtgraph_cpp_graphicsitems_viewbox_pan_zoom
+            PRIVATE
+                PYQTGRAPH_CPP_INTERACTION_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/oracle/fixtures/interactions"
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_viewbox_pan_zoom)
+        add_test(NAME pyqtgraph_cpp.graphicsItems.ViewBox.pan_zoom COMMAND pyqtgraph_cpp_graphicsitems_viewbox_pan_zoom)
+
         add_executable(pyqtgraph_cpp_graphicsitems_plotitem tests/graphicsItems/test_PlotItem.cpp)
         target_link_libraries(pyqtgraph_cpp_graphicsitems_plotitem
             PRIVATE
