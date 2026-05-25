@@ -3,6 +3,7 @@
 #include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
 #include <pyqtgraph/graphicsItems/GraphicsWidget.hpp>
 #include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 #include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
 
 #include <QtCore/QObject>
@@ -12,6 +13,8 @@
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsObject>
 #include <QtWidgets/QGraphicsRectItem>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QGraphicsWidget>
 #include <QtWidgets/QStyleOptionGraphicsItem>
 
@@ -183,6 +186,56 @@ bool testViewBoxApiShape()
     return true;
 }
 
+bool testPlotItemApiShape()
+{
+    using pyqtgraph::graphicsItems::GraphicsItem;
+    using pyqtgraph::graphicsItems::GraphicsWidget;
+    using pyqtgraph::graphicsItems::PlotItem;
+
+    static_assert(std::is_constructible_v<PlotItem>);
+    static_assert(std::is_constructible_v<PlotItem, QGraphicsItem*>);
+    static_assert(std::is_destructible_v<PlotItem>);
+    static_assert(!std::is_copy_constructible_v<PlotItem>);
+    static_assert(!std::is_copy_assignable_v<PlotItem>);
+    static_assert(!std::is_move_constructible_v<PlotItem>);
+    static_assert(!std::is_move_assignable_v<PlotItem>);
+    static_assert(std::is_base_of_v<GraphicsWidget, PlotItem>);
+    static_assert(std::is_base_of_v<GraphicsItem, PlotItem>);
+    static_assert(std::is_base_of_v<QGraphicsWidget, PlotItem>);
+    static_assert(std::is_base_of_v<QGraphicsItem, PlotItem>);
+    static_assert(!std::is_final_v<PlotItem>);
+
+    class DerivedPlotItem final : public PlotItem {
+    public:
+        using PlotItem::PlotItem;
+    };
+
+    static_assert(std::is_base_of_v<PlotItem, DerivedPlotItem>);
+    static_assert(std::is_constructible_v<DerivedPlotItem>);
+    static_assert(std::is_constructible_v<DerivedPlotItem, QGraphicsItem*>);
+
+    PlotItem plot;
+    CHECK(plot.graphicsItem() == static_cast<QGraphicsItem*>(&plot));
+    CHECK(plot.getViewWidget() == nullptr);
+
+    QGraphicsScene scene;
+    scene.addItem(&plot);
+    CHECK(plot.getViewWidget() == nullptr);
+
+    QGraphicsView view(&scene);
+    CHECK(plot.getViewWidget() == &view);
+
+    scene.removeItem(&plot);
+    CHECK(plot.getViewWidget() == nullptr);
+
+    QGraphicsRectItem parent(QRectF(0.0, 0.0, 1.0, 1.0));
+    PlotItem child(&parent);
+    CHECK(child.parentItem() == &parent);
+    CHECK(child.graphicsItem() == static_cast<QGraphicsItem*>(&child));
+
+    return true;
+}
+
 bool testPlotCurveItemApiShape()
 {
     using pyqtgraph::graphicsItems::GraphicsItem;
@@ -241,6 +294,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testViewBoxApiShape()) {
+        return 1;
+    }
+    if (!testPlotItemApiShape()) {
         return 1;
     }
     if (!testPlotCurveItemApiShape()) {

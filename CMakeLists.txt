@@ -121,6 +121,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
             src/pyqtgraph/graphicsItems/AxisItem.cpp
             src/pyqtgraph/graphicsItems/ViewBox/ViewBox.cpp
+            src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp
             src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
     )
     set_target_properties(pyqtgraph_cpp PROPERTIES AUTOMOC ON)
@@ -311,6 +312,16 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_viewbox)
         add_test(NAME pyqtgraph_cpp.graphicsItems.ViewBox COMMAND pyqtgraph_cpp_graphicsitems_viewbox)
+
+        add_executable(pyqtgraph_cpp_graphicsitems_plotitem tests/graphicsItems/test_PlotItem.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsitems_plotitem
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_plotitem)
+        add_test(NAME pyqtgraph_cpp.graphicsItems.PlotItem COMMAND pyqtgraph_cpp_graphicsitems_plotitem)
 
         add_executable(pyqtgraph_cpp_graphicsitems_plotcurveitem tests/graphicsItems/test_PlotCurveItem.cpp)
         target_link_libraries(pyqtgraph_cpp_graphicsitems_plotcurveitem
