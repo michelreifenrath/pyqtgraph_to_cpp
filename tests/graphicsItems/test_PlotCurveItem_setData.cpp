@@ -118,6 +118,38 @@ bool testXYDataIsCopied()
     return true;
 }
 
+bool testReturnedSpansCanBePassedBackToSetData()
+{
+    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    const std::vector<double> originalX{-2.0, 1.0, 5.0};
+    const std::vector<double> originalY{10.0, -4.0, 6.0};
+    const std::vector<double> replacementY{4.0, 5.0, 6.0};
+
+    curve.setData(originalX, originalY);
+
+    curve.setData(curve.xData(), replacementY);
+    CHECK(spanEquals(curve.xData(), originalX));
+    CHECK(spanEquals(curve.yData(), replacementY));
+    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(-2.0, 4.0, 7.0, 2.0)));
+
+    curve.setData(curve.yData());
+    CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0}));
+    CHECK(spanEquals(curve.yData(), replacementY));
+    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, 4.0, 2.0, 2.0)));
+
+    curve.setData(curve.xData(), curve.yData());
+    CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0}));
+    CHECK(spanEquals(curve.yData(), replacementY));
+    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, 4.0, 2.0, 2.0)));
+
+    curve.setData(curve.xData());
+    CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0}));
+    CHECK(spanEquals(curve.yData(), {0.0, 1.0, 2.0}));
+    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, 0.0, 2.0, 2.0)));
+
+    return true;
+}
+
 bool testRepeatedSetDataReplacesDataAndBounds()
 {
     pyqtgraph::graphicsItems::PlotCurveItem curve;
@@ -240,6 +272,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testXYDataIsCopied()) {
+        return 1;
+    }
+    if (!testReturnedSpansCanBePassedBackToSetData()) {
         return 1;
     }
     if (!testRepeatedSetDataReplacesDataAndBounds()) {

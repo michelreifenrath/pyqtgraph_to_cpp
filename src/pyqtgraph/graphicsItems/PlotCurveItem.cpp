@@ -81,13 +81,16 @@ void PlotCurveItem::setData(std::span<const double> x, std::span<const double> y
         throw std::invalid_argument("PlotCurveItem::setData requires x and y to have the same length");
     }
 
-    const QRectF newBounds = computeBounds(x, y);
+    std::vector<double> newX(x.begin(), x.end());
+    std::vector<double> newY(y.begin(), y.end());
+
+    const QRectF newBounds = computeBounds(newX, newY);
     if (newBounds != bounds_) {
         prepareGeometryChange();
     }
 
-    xData_.assign(x.begin(), x.end());
-    yData_.assign(y.begin(), y.end());
+    xData_.swap(newX);
+    yData_.swap(newY);
     bounds_ = newBounds;
     update();
 }

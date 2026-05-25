@@ -4,6 +4,7 @@
 - Implemented minimal native C++ `PlotCurveItem::setData` behavior for data storage, y-only auto-x generation, data replacement, mismatch validation, and cached bounding rect updates.
 - No painting/path/options/visual behavior was added; `paint()` remains a no-op.
 - Rework addressed the autoreview finding for non-finite NaN/Inf bounds without expanding painting/path/options/visual behavior.
+- Latest rework addressed the autoreview finding for span self-aliasing by snapshotting setData inputs before mutating internal vectors.
 
 ## API and behavior
 - Added `setData(std::span<const double> y)`; generates x values `0.0..n-1` and stores copies.
@@ -20,6 +21,7 @@
   - empty data clearing data and bounds,
   - non-finite NaN/Inf samples being stored while skipped for cached bounds,
   - all-non-finite axes producing null bounds,
+  - returned `xData()` / `yData()` spans being passed back to `setData`,
   - mismatched lengths throwing while preserving previous data/bounds.
 - Registered as CTest `pyqtgraph_cpp.graphicsItems.PlotCurveItem.setData`.
 
@@ -39,6 +41,7 @@
 - `git diff --check` — exit 0.
 - `scripts/gate focus` — exit 0.
 - `scripts/gate commit` — exit 0.
+- `python3 -m pytest -q` — exit 0 (`225 passed`).
 - `python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md` — exit 0.
 
 ## Rework cleanup
