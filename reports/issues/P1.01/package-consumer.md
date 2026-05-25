@@ -111,4 +111,13 @@ git diff --name-only origin/main...HEAD
 
 Exit code: 0
 
-Output: no paths (the working tree changes are uncommitted).
+Output:
+
+```text
+CMakeLists.txt
+cmake/pyqtgraph-cppConfig.cmake.in
+reports/issues/P1.01/consumer/CMakeLists.txt
+reports/issues/P1.01/consumer/main.cpp
+reports/issues/P1.01/package-consumer-preimplementation.md
+reports/issues/P1.01/package-consumer.md
+```
