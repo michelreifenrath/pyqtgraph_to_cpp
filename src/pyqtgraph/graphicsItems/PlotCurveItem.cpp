@@ -9,8 +9,9 @@
 #include <QtWidgets/QStyleOptionGraphicsItem>
 #include <QtWidgets/QWidget>
 
-#include <algorithm>
+#include <cmath>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -27,15 +28,42 @@ PlotCurveItem::~PlotCurveItem() = default;
 
 namespace {
 
+struct BoundsRange {
+    double minimum;
+    double maximum;
+};
+
+std::optional<BoundsRange> finiteBounds(std::span<const double> values)
+{
+    std::optional<BoundsRange> bounds;
+    for (const double value : values) {
+        if (!std::isfinite(value)) {
+            continue;
+        }
+        if (!bounds.has_value()) {
+            bounds = BoundsRange{value, value};
+            continue;
+        }
+        if (value < bounds->minimum) {
+            bounds->minimum = value;
+        }
+        if (value > bounds->maximum) {
+            bounds->maximum = value;
+        }
+    }
+    return bounds;
+}
+
 QRectF computeBounds(std::span<const double> x, std::span<const double> y)
 {
-    if (x.empty()) {
+    const auto xBounds = finiteBounds(x);
+    const auto yBounds = finiteBounds(y);
+    if (!xBounds.has_value() || !yBounds.has_value()) {
         return QRectF{};
     }
 
-    const auto [minX, maxX] = std::minmax_element(x.begin(), x.end());
-    const auto [minY, maxY] = std::minmax_element(y.begin(), y.end());
-    return QRectF(*minX, *minY, *maxX - *minX, *maxY - *minY);
+    return QRectF(xBounds->minimum, yBounds->minimum, xBounds->maximum - xBounds->minimum,
+                  yBounds->maximum - yBounds->minimum);
 }
 
 } // namespace

@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string_view>
@@ -80,6 +81,26 @@ bool testYOnlyGeneratesXData()
     return true;
 }
 
+bool testYOnlyNonFiniteValuesAreIgnoredForBounds()
+{
+    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const double inf = std::numeric_limits<double>::infinity();
+    const std::vector<double> y{nan, 2.0, inf, -1.0};
+
+    curve.setData(y);
+
+    CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0, 3.0}));
+    CHECK(curve.yData().size() == y.size());
+    CHECK(std::isnan(curve.yData()[0]));
+    CHECK(nearlyEqual(curve.yData()[1], 2.0));
+    CHECK(std::isinf(curve.yData()[2]));
+    CHECK(nearlyEqual(curve.yData()[3], -1.0));
+    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, -1.0, 3.0, 3.0)));
+
+    return true;
+}
+
 bool testXYDataIsCopied()
 {
     pyqtgraph::graphicsItems::PlotCurveItem curve;
@@ -134,6 +155,51 @@ bool testEmptyDataClearsDataAndBounds()
     return true;
 }
 
+bool testNonFiniteValuesAreIgnoredForBounds()
+{
+    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const double inf = std::numeric_limits<double>::infinity();
+    const std::vector<double> x{-inf, 2.0, inf, 4.0};
+    const std::vector<double> y{nan, -1.0, 7.0, inf};
+
+    curve.setData(x, y);
+
+    CHECK(curve.xData().size() == x.size());
+    CHECK(std::isinf(curve.xData()[0]) && curve.xData()[0] < 0.0);
+    CHECK(nearlyEqual(curve.xData()[1], 2.0));
+    CHECK(std::isinf(curve.xData()[2]) && curve.xData()[2] > 0.0);
+    CHECK(nearlyEqual(curve.xData()[3], 4.0));
+    CHECK(curve.yData().size() == y.size());
+    CHECK(std::isnan(curve.yData()[0]));
+    CHECK(nearlyEqual(curve.yData()[1], -1.0));
+    CHECK(nearlyEqual(curve.yData()[2], 7.0));
+    CHECK(std::isinf(curve.yData()[3]));
+    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(2.0, -1.0, 2.0, 8.0)));
+
+    return true;
+}
+
+bool testAllNonFiniteAxisClearsBounds()
+{
+    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const double inf = std::numeric_limits<double>::infinity();
+
+    const std::vector<double> nonFiniteX{nan, inf};
+    const std::vector<double> finiteY{1.0, 2.0};
+    const std::vector<double> finiteX{1.0, 2.0};
+    const std::vector<double> nonFiniteY{nan, -inf};
+
+    curve.setData(nonFiniteX, finiteY);
+    CHECK(curve.boundingRect().isNull());
+
+    curve.setData(finiteX, nonFiniteY);
+    CHECK(curve.boundingRect().isNull());
+
+    return true;
+}
+
 bool testMismatchedLengthsThrowAndLeaveDataUnchanged()
 {
     pyqtgraph::graphicsItems::PlotCurveItem curve;
@@ -170,6 +236,9 @@ int main(int argc, char** argv)
     if (!testYOnlyGeneratesXData()) {
         return 1;
     }
+    if (!testYOnlyNonFiniteValuesAreIgnoredForBounds()) {
+        return 1;
+    }
     if (!testXYDataIsCopied()) {
         return 1;
     }
@@ -177,6 +246,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testEmptyDataClearsDataAndBounds()) {
+        return 1;
+    }
+    if (!testNonFiniteValuesAreIgnoredForBounds()) {
+        return 1;
+    }
+    if (!testAllNonFiniteAxisClearsBounds()) {
         return 1;
     }
     if (!testMismatchedLengthsThrowAndLeaveDataUnchanged()) {
