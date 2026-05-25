@@ -70,7 +70,6 @@ def environment() -> dict[str, Any]:
         "machine": platform.machine(),
         "processor": platform.processor(),
         "cpu_count": os.cpu_count(),
-        "cwd": str(Path.cwd()),
     }
 
 

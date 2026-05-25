@@ -38,7 +38,7 @@ The P0.08 workload is `python-deterministic-transform-sort`:
 Reports and baselines use `schema_version: p0.08-performance-v1` and include:
 
 - workload name, description, dataset size, warmup count, and repetition count
-- environment capture: Python version, platform, machine, processor, CPU count, and current working directory
+- environment capture: Python version, platform, machine, processor, and CPU count
 - raw distribution samples in seconds
 - measured stats: min, median, p95, and max seconds
 - checksum for workload sanity

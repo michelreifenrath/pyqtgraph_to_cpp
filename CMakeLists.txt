@@ -134,6 +134,8 @@ endif()
 
 include(CTest)
 if(BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
     add_subdirectory(tests)
 
     add_executable(pyqtgraph_cpp_core_arrayview tests/core/test_ArrayView.cpp)
@@ -410,7 +412,7 @@ if(BUILD_TESTING)
 
     add_test(
         NAME P0.08.performance.schema
-        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_performance"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_performance"
             --mode compare
             --baseline "${CMAKE_CURRENT_SOURCE_DIR}/reports/performance/P0.08/baseline.json"
             --output "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/metrics.json"
