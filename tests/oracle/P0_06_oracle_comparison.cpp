@@ -1,9 +1,11 @@
 #include <cmath>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -37,6 +39,89 @@ double expected_number(const std::string& fixture, const std::string& key) {
         throw std::runtime_error("missing numeric fixture key: " + key);
     }
     return std::stod(match[1].str());
+}
+
+std::size_t find_matching_bracket(
+    const std::string& text,
+    const std::size_t open_index,
+    const char open_char,
+    const char close_char
+) {
+    int depth = 0;
+    bool in_string = false;
+    bool escaped = false;
+    for (std::size_t index = open_index; index < text.size(); ++index) {
+        const char character = text[index];
+        if (in_string) {
+            if (escaped) {
+                escaped = false;
+            } else if (character == '\\') {
+                escaped = true;
+            } else if (character == '"') {
+                in_string = false;
+            }
+            continue;
+        }
+        if (character == '"') {
+            in_string = true;
+        } else if (character == open_char) {
+            ++depth;
+        } else if (character == close_char) {
+            --depth;
+            if (depth == 0) {
+                return index;
+            }
+        }
+    }
+    throw std::runtime_error("unclosed JSON bracket");
+}
+
+std::string expected_object(const std::string& fixture) {
+    std::smatch match;
+    const std::regex object_start_pattern("\\\"expected\\\"\\s*:\\s*\\{");
+    if (!std::regex_search(fixture, match, object_start_pattern)) {
+        throw std::runtime_error("missing $.expected object");
+    }
+    const auto object_start = static_cast<std::size_t>(match.position(0) + match.length(0) - 1);
+    const auto object_end = find_matching_bracket(fixture, object_start, '{', '}');
+    return fixture.substr(object_start, object_end - object_start + 1);
+}
+
+std::string trim(std::string value) {
+    while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front())) != 0) {
+        value.erase(value.begin());
+    }
+    while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back())) != 0) {
+        value.pop_back();
+    }
+    return value;
+}
+
+std::vector<double> expected_scaled_values(const std::string& fixture) {
+    const auto expected = expected_object(fixture);
+    std::smatch match;
+    const std::regex array_start_pattern("\\\"scaled_values\\\"\\s*:\\s*\\[");
+    if (!std::regex_search(expected, match, array_start_pattern)) {
+        throw std::runtime_error("missing $.expected.scaled_values array");
+    }
+    const auto array_start = static_cast<std::size_t>(match.position(0) + match.length(0) - 1);
+    const auto array_end = find_matching_bracket(expected, array_start, '[', ']');
+    std::stringstream input(expected.substr(array_start + 1, array_end - array_start - 1));
+    std::vector<double> values;
+    std::string item;
+    while (std::getline(input, item, ',')) {
+        item = trim(item);
+        if (item.empty()) {
+            throw std::runtime_error("empty $.expected.scaled_values entry");
+        }
+        std::size_t parsed = 0;
+        const double value = std::stod(item, &parsed);
+        if (parsed != item.size()) {
+            throw std::runtime_error("non-numeric $.expected.scaled_values entry: " + item);
+        }
+        values.push_back(value);
+    }
+    return values;
 }
 
 int report_mismatch(const std::string& path, const std::string& expected, const std::string& actual) {
@@ -94,11 +179,27 @@ int main(int argc, char** argv) {
     if (std::abs(expected_sum - sum) > 0.0) {
         return report_mismatch("$.expected.sum", std::to_string(expected_sum), std::to_string(sum));
     }
-    if (!contains(fixture, "      3.0,") || !contains(fixture, "      -4.5,") || !contains(fixture, "      8.0")) {
-        return report_mismatch("$.expected.scaled_values", "[3.0, -4.5, 8.0]", "fixture text differed");
+    std::vector<double> fixture_scaled_values;
+    try {
+        fixture_scaled_values = expected_scaled_values(fixture);
+    } catch (const std::exception& exception) {
+        return report_mismatch("$.expected.scaled_values", "JSON numeric array", exception.what());
     }
-    if (std::abs(scaled_values[0] - 3.0) > 0.0) {
-        return report_mismatch("$.expected.scaled_values[0]", "3.0", std::to_string(scaled_values[0]));
+    if (fixture_scaled_values.size() != scaled_values.size()) {
+        return report_mismatch(
+            "$.expected.scaled_values.size",
+            std::to_string(fixture_scaled_values.size()),
+            std::to_string(scaled_values.size())
+        );
+    }
+    for (std::size_t index = 0; index < scaled_values.size(); ++index) {
+        if (std::abs(fixture_scaled_values[index] - scaled_values[index]) > 0.0) {
+            return report_mismatch(
+                "$.expected.scaled_values[" + std::to_string(index) + "]",
+                std::to_string(fixture_scaled_values[index]),
+                std::to_string(scaled_values[index])
+            );
+        }
     }
 
     return 0;

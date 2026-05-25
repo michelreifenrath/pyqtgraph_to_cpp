@@ -141,12 +141,14 @@ scale = float(payload["inputs"]["scale"])
 offset = float(payload["inputs"]["offset"])
 
 # The P0.06 template intentionally keeps the upstream operation dependency-light:
-# it executes inside the pinned checkout context and emits deterministic values
-# future probes can replace with PyQtGraph class/function calls.
+# it executes inside the pinned checkout context and derives deterministic values
+# through PyQtGraph's Point implementation. Future probes can replace this with
+# richer PyQtGraph class/function calls.
 sys.path.insert(0, str(checkout))
-import pyqtgraph as pg  # noqa: F401
+import pyqtgraph as pg
 
-scaled_values = [(value * scale) + offset for value in values]
+points = [pg.Point(value, offset) for value in values]
+scaled_values = [(point.x() * scale) + point.y() for point in points]
 print(json.dumps({"scaled_values": scaled_values, "sum": sum(scaled_values), "count": len(values)}, sort_keys=True))
 """
     env = os.environ.copy()

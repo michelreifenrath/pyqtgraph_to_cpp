@@ -36,12 +36,31 @@ def run_git(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def write_reference_checkout(root: Path, version: str = "fixture-reference") -> str:
+def write_reference_checkout(
+    root: Path, version: str = "fixture-reference", point_y_offset: float = 0.0
+) -> str:
     checkout = root / CHECKOUT_PATH
     package = checkout / "pyqtgraph"
     package.mkdir(parents=True, exist_ok=True)
     (package / "__init__.py").write_text(
-        f'__version__ = "{version}"\n', encoding="utf-8"
+        "\n".join(
+            [
+                f'__version__ = "{version}"',
+                "",
+                "class Point:",
+                "    def __init__(self, x, y):",
+                "        self._x = float(x)",
+                "        self._y = float(y)",
+                "",
+                "    def x(self):",
+                "        return self._x",
+                "",
+                "    def y(self):",
+                f"        return self._y + {point_y_offset!r}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
     )
     run_git(checkout, "init", "-q")
     run_git(checkout, "add", ".")
@@ -60,8 +79,10 @@ def write_reference_checkout(root: Path, version: str = "fixture-reference") -> 
     return run_git(checkout, "rev-parse", "HEAD").stdout.strip()
 
 
-def write_source_lock(root: Path, *, commit: str | None = None) -> str:
-    actual_commit = write_reference_checkout(root)
+def write_source_lock(
+    root: Path, *, commit: str | None = None, point_y_offset: float = 0.0
+) -> str:
+    actual_commit = write_reference_checkout(root, point_y_offset=point_y_offset)
     pinned_commit = commit if commit is not None else actual_commit
     (root / "reference").mkdir(parents=True, exist_ok=True)
     (root / "reference" / "source.lock").write_text(
@@ -145,6 +166,20 @@ def test_P0_06_generates_fixture_and_mismatch_example(tmp_path: Path) -> None:
     assert "expected fixture value" in example
     assert "actual probe value" in example
     assert "tolerance absolute=0.0 relative=0.0" in example
+
+
+def test_P0_06_probe_output_changes_with_pyqtgraph_point_behavior(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "workspace"
+    write_source_lock(root, point_y_offset=10.0)
+
+    result = run_cli("--root", str(root), "--format", "json")
+
+    assert result.returncode == 0, result.stderr
+    fixture = load_json(root / FIXTURE)
+    assert fixture["expected"]["scaled_values"] == [13.0, 5.5, 18.0]
+    assert fixture["expected"]["sum"] == 36.5
 
 
 def test_P0_06_check_mode_reports_stale_fixture_with_json_path(tmp_path: Path) -> None:
