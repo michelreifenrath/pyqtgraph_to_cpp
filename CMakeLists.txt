@@ -414,6 +414,7 @@ if(BUILD_TESTING)
             --mode compare
             --baseline "${CMAKE_CURRENT_SOURCE_DIR}/reports/performance/P0.08/baseline.json"
             --output "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/metrics.json"
+            --synthetic-regression-check
     )
     set_tests_properties(P0.08.performance.schema PROPERTIES LABELS "performance;P0.08")
 endif()

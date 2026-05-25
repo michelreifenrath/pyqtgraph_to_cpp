@@ -174,7 +174,7 @@
     },
     {
       "name": "performance",
-      "configurePreset": "dev",
+      "configurePreset": "release",
       "filter": {
         "include": {
           "label": "performance"
