@@ -32,7 +32,8 @@ Issue-owned/supporting paths changed:
 - Failure path: `test_P0_07_required_gpt_review_without_report_exits_2`
 - Case path escape failure path: `test_P0_07_rejects_case_paths_outside_reports_root`
 - Visual mismatch path: `test_P0_07_mismatch_returns_1_and_preserves_artifacts`
-- Fake-runner subprocess plan/cwd/env/order: `test_P0_07_command_runner_sets_env_and_runs_reference_before_actual`
+- Command-mode child stdout isolation: `test_P0_07_command_runner_keeps_child_stdout_out_of_metrics_json`
+- Fake-runner subprocess plan/cwd/env/order/stdout-stderr capture: `test_P0_07_command_runner_sets_env_and_runs_reference_before_actual`
 - Fake-runner nonzero child exit propagation: `test_P0_07_command_runner_propagates_nonzero_child_exit`
 - Command-mode custom-cwd absolute artifact paths: `test_P0_07_command_runner_exports_absolute_artifacts_for_custom_cwd`
 - Real SSIM gate, not mean-delta surrogate: `test_P0_07_min_ssim_gate_uses_structural_similarity_not_mean_delta`
@@ -56,8 +57,9 @@ Final local validation after autoreview rework:
 
 | Command | Exit code | Result |
 | --- | ---: | --- |
-| `python3 -m pytest -q tests -k P0_07` | 0 | `9 passed, 259 deselected in 0.30s` |
-| `python3 -m pytest -q tests/examples/test_SimplePlot_visual.py` | 0 | `4 passed in 3.89s` |
+| `python3 -m pytest -q tests/visual/test_P0_07_visual_artifact_layout.py -k command_runner` | 0 | `4 passed, 6 deselected in 0.08s` |
+| `python3 -m pytest -q tests -k P0_07` | 0 | `10 passed, 259 deselected in 0.36s` |
+| `python3 -m pytest -q tests/examples/test_SimplePlot_visual.py` | 0 | `4 passed in 3.81s` |
 | `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` | 1 | Fails on existing proposed-issue metadata: `github-issue-{96,100,101,102,105,108,129,166,195,197,207}.md: blocked-by entry does not match a local issue: P0.01` |
 | `git diff --check` | 0 | No whitespace errors |
 | `git diff --name-only origin/main...HEAD` | 0 | `reports/visual/P0_07_completion.md`; `scripts/check_visual_artifacts`; `tests/examples/test_SimplePlot_visual.py`; `tests/visual/test_P0_07_visual_artifact_layout.py` |

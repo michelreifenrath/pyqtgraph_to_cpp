@@ -4,6 +4,7 @@ import importlib.machinery
 import importlib.util
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -213,6 +214,45 @@ def load_script_module():
     return module
 
 
+def noisy_copy_command(source: Path, target_env: str, message: str) -> str:
+    code = (
+        "import os, shutil; "
+        f"print({message!r}); "
+        f"shutil.copyfile({str(source)!r}, os.environ[{target_env!r}])"
+    )
+    return f"{shlex.quote(sys.executable)} -c {shlex.quote(code)}"
+
+
+def test_P0_07_command_runner_keeps_child_stdout_out_of_metrics_json(
+    tmp_path: Path,
+) -> None:
+    reference, actual = write_pair(tmp_path)
+    reports_root = tmp_path / "reports" / "visual-diffs"
+
+    result = run_script(
+        "--case",
+        "P0_07_noisy_command",
+        "--reference-command",
+        noisy_copy_command(
+            reference, "PG_VISUAL_REFERENCE_PATH", "reference child stdout"
+        ),
+        "--actual-command",
+        noisy_copy_command(actual, "PG_VISUAL_ACTUAL_PATH", "actual child stdout"),
+        "--reports-root",
+        str(reports_root),
+    )
+
+    assert result.returncode == 0, result.stderr
+    metrics = json.loads(result.stdout)
+    assert "reference child stdout" not in result.stdout
+    assert "actual child stdout" not in result.stdout
+    assert metrics == json.loads(
+        (reports_root / "P0_07_noisy_command" / "metrics.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+
 def test_P0_07_command_runner_sets_env_and_runs_reference_before_actual(
     tmp_path: Path,
 ) -> None:
@@ -220,9 +260,17 @@ def test_P0_07_command_runner_sets_env_and_runs_reference_before_actual(
     reports_root = tmp_path / "reports" / "visual-diffs"
     calls = []
 
-    def fake_runner(command, *, cwd, env, shell, check):
+    def fake_runner(command, *, cwd, env, shell, check, stdout, stderr):
         calls.append(
-            {"command": command, "cwd": cwd, "env": env, "shell": shell, "check": check}
+            {
+                "command": command,
+                "cwd": cwd,
+                "env": env,
+                "shell": shell,
+                "check": check,
+                "stdout": stdout,
+                "stderr": stderr,
+            }
         )
         artifact_dir = Path(env["PG_VISUAL_ARTIFACT_DIR"])
         artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -253,6 +301,8 @@ def test_P0_07_command_runner_sets_env_and_runs_reference_before_actual(
         assert call["cwd"] == str(ROOT)
         assert call["shell"] is True
         assert call["check"] is False
+        assert call["stdout"] == subprocess.PIPE
+        assert call["stderr"] == subprocess.PIPE
         assert call["env"]["PATH"] == os.environ["PATH"]
         assert call["env"]["PG_VISUAL_CASE"] == "P0_07_command"
         assert call["env"]["PG_VISUAL_ARTIFACT_DIR"] == str(case_dir)
@@ -271,7 +321,9 @@ def test_P0_07_command_runner_propagates_nonzero_child_exit(tmp_path: Path) -> N
     module = load_script_module()
     calls = []
 
-    def fake_runner(command, *, cwd, env, shell, check):
+    def fake_runner(command, *, cwd, env, shell, check, stdout, stderr):
+        assert stdout == subprocess.PIPE
+        assert stderr == subprocess.PIPE
         calls.append(command)
         if command == "make-reference":
             write_png(Path(env["PG_VISUAL_REFERENCE_PATH"]), 1, 1, [(1, 2, 3, 255)])
@@ -311,9 +363,17 @@ def test_P0_07_command_runner_exports_absolute_artifacts_for_custom_cwd(
         path = Path(raw_path)
         return path if path.is_absolute() else Path(cwd) / path
 
-    def fake_runner(command, *, cwd, env, shell, check):
+    def fake_runner(command, *, cwd, env, shell, check, stdout, stderr):
         calls.append(
-            {"command": command, "cwd": cwd, "env": env, "shell": shell, "check": check}
+            {
+                "command": command,
+                "cwd": cwd,
+                "env": env,
+                "shell": shell,
+                "check": check,
+                "stdout": stdout,
+                "stderr": stderr,
+            }
         )
         artifact_dir = child_path(cwd, env["PG_VISUAL_ARTIFACT_DIR"])
         artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -359,6 +419,8 @@ def test_P0_07_command_runner_exports_absolute_artifacts_for_custom_cwd(
     assert [call["command"] for call in calls] == ["make-reference", "make-actual"]
     for call in calls:
         assert call["cwd"] == str(command_cwd)
+        assert call["stdout"] == subprocess.PIPE
+        assert call["stderr"] == subprocess.PIPE
         assert call["env"]["PG_VISUAL_ARTIFACT_DIR"] == str(case_dir)
         assert call["env"]["PG_VISUAL_REFERENCE_PATH"] == str(
             case_dir / "reference.png"

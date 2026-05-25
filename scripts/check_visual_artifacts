@@ -148,7 +148,15 @@ def _run_command_mode(
     env = _artifact_env(args, case_dir)
     cwd = str(args.cwd)
     for command in (args.reference_command, args.actual_command):
-        result = runner(command, cwd=cwd, env=env, shell=True, check=False)
+        result = runner(
+            command,
+            cwd=cwd,
+            env=env,
+            shell=True,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         if result.returncode != 0:
             return int(result.returncode)
     return None
