@@ -17,7 +17,7 @@ ORACLE_SCRIPTS = ROOT / "oracle" / "scripts"
 if str(ORACLE_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(ORACLE_SCRIPTS))
 
-from compare_screenshots import PngError, compare_images  # noqa: E402
+from compare_screenshots import PngError, compare_images, read_png_rgba  # noqa: E402
 
 Runner = Callable[..., subprocess.CompletedProcess[object]]
 
@@ -143,12 +143,105 @@ def _copy_fixture_inputs(args: argparse.Namespace, case_dir: Path) -> None:
     shutil.copyfile(args.actual, case_dir / "actual.png")
 
 
-def _canonical_ssim(raw_metrics: dict[str, object]) -> float | None:
-    mean_delta = raw_metrics.get("mean_absolute_delta")
-    if mean_delta is None:
+def _luminance_values(rgba: bytes) -> list[float]:
+    values = []
+    for offset in range(0, len(rgba), 4):
+        red = rgba[offset]
+        green = rgba[offset + 1]
+        blue = rgba[offset + 2]
+        values.append((0.299 * red) + (0.587 * green) + (0.114 * blue))
+    return values
+
+
+def _integral_image(values: list[float], width: int, height: int) -> list[float]:
+    stride = width + 1
+    integral = [0.0] * ((height + 1) * stride)
+    for y in range(height):
+        row_sum = 0.0
+        source_row = y * width
+        target_row = (y + 1) * stride
+        previous_row = y * stride
+        for x in range(width):
+            row_sum += values[source_row + x]
+            integral[target_row + x + 1] = integral[previous_row + x + 1] + row_sum
+    return integral
+
+
+def _region_sum(
+    integral: list[float], width: int, left: int, top: int, right: int, bottom: int
+) -> float:
+    stride = width + 1
+    return (
+        integral[bottom * stride + right]
+        - integral[top * stride + right]
+        - integral[bottom * stride + left]
+        + integral[top * stride + left]
+    )
+
+
+def _windowed_ssim(reference_path: Path, candidate_path: Path) -> float | None:
+    ref_w, ref_h, ref_pixels = read_png_rgba(reference_path)
+    cand_w, cand_h, cand_pixels = read_png_rgba(candidate_path)
+    if (ref_w, ref_h) != (cand_w, cand_h):
         return None
-    value = 1.0 - (float(mean_delta) / 255.0)
-    return max(0.0, min(1.0, value))
+    if ref_pixels == cand_pixels:
+        return 1.0
+
+    ref_luma = _luminance_values(ref_pixels)
+    cand_luma = _luminance_values(cand_pixels)
+    ref_squared = [value * value for value in ref_luma]
+    cand_squared = [value * value for value in cand_luma]
+    cross = [ref * cand for ref, cand in zip(ref_luma, cand_luma, strict=True)]
+
+    ref_integral = _integral_image(ref_luma, ref_w, ref_h)
+    cand_integral = _integral_image(cand_luma, ref_w, ref_h)
+    ref_squared_integral = _integral_image(ref_squared, ref_w, ref_h)
+    cand_squared_integral = _integral_image(cand_squared, ref_w, ref_h)
+    cross_integral = _integral_image(cross, ref_w, ref_h)
+
+    window_size = min(11, ref_w, ref_h)
+    if window_size > 1 and window_size % 2 == 0:
+        window_size -= 1
+    half_window = window_size // 2
+    c1 = (0.01 * 255.0) ** 2
+    c2 = (0.03 * 255.0) ** 2
+    total = 0.0
+
+    for y in range(ref_h):
+        top = max(0, y - half_window)
+        bottom = min(ref_h, y + half_window + 1)
+        for x in range(ref_w):
+            left = max(0, x - half_window)
+            right = min(ref_w, x + half_window + 1)
+            count = float((right - left) * (bottom - top))
+            ref_sum = _region_sum(ref_integral, ref_w, left, top, right, bottom)
+            cand_sum = _region_sum(cand_integral, ref_w, left, top, right, bottom)
+            ref_mean = ref_sum / count
+            cand_mean = cand_sum / count
+            ref_variance = max(
+                _region_sum(ref_squared_integral, ref_w, left, top, right, bottom)
+                / count
+                - (ref_mean * ref_mean),
+                0.0,
+            )
+            cand_variance = max(
+                _region_sum(cand_squared_integral, ref_w, left, top, right, bottom)
+                / count
+                - (cand_mean * cand_mean),
+                0.0,
+            )
+            covariance = (
+                _region_sum(cross_integral, ref_w, left, top, right, bottom) / count
+            ) - (ref_mean * cand_mean)
+            numerator = ((2.0 * ref_mean * cand_mean) + c1) * (
+                (2.0 * covariance) + c2
+            )
+            denominator = ((ref_mean * ref_mean) + (cand_mean * cand_mean) + c1) * (
+                ref_variance + cand_variance + c2
+            )
+            total += numerator / denominator
+
+    return max(-1.0, min(1.0, total / (ref_w * ref_h)))
 
 
 def _dimensions(raw_metrics: dict[str, object]) -> list[int] | None:
@@ -167,6 +260,7 @@ def _canonical_metrics(
     case_dir: Path,
     raw_metrics: dict[str, object],
     review_path: Path | None,
+    ssim: float | None,
 ) -> dict[str, object]:
     tolerance = {
         "max_mean_delta": args.max_mean_delta,
@@ -174,7 +268,6 @@ def _canonical_metrics(
         "max_changed_pixel_percent": args.max_changed_percent,
         "min_ssim": args.min_ssim,
     }
-    ssim = _canonical_ssim(raw_metrics)
     failed_tolerances = list(raw_metrics.get("failed_tolerances", []))
     passed = bool(raw_metrics["passed"])
     if ssim is not None and ssim < args.min_ssim:
@@ -208,7 +301,7 @@ def main(argv: list[str] | None = None, *, runner: Runner = subprocess.run) -> i
     args = parser.parse_args(argv)
     _validate_inputs(parser, args)
 
-    case_dir = args.reports_root / args.case
+    case_dir = (args.reports_root / args.case).resolve()
     case_dir.mkdir(parents=True, exist_ok=True)
 
     review_error = _review_required_error(args)
@@ -240,7 +333,8 @@ def main(argv: list[str] | None = None, *, runner: Runner = subprocess.run) -> i
             case_dir / "diff.png",
             tolerances,
         )
-        metrics = _canonical_metrics(args, case_dir, raw_metrics, review_path)
+        ssim = _windowed_ssim(case_dir / "reference.png", case_dir / "actual.png")
+        metrics = _canonical_metrics(args, case_dir, raw_metrics, review_path, ssim)
         metrics_text = json.dumps(metrics, sort_keys=True, indent=2) + "\n"
         (case_dir / "metrics.json").write_text(metrics_text, encoding="utf-8")
         sys.stdout.write(metrics_text)

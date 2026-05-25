@@ -264,3 +264,133 @@ def test_P0_07_command_runner_propagates_nonzero_child_exit(tmp_path: Path) -> N
 
     assert result == 17
     assert calls == ["make-reference", "make-actual"]
+
+
+def test_P0_07_command_runner_exports_absolute_artifacts_for_custom_cwd(
+    tmp_path: Path, monkeypatch
+) -> None:
+    module = load_script_module()
+    process_cwd = tmp_path / "process-cwd"
+    command_cwd = tmp_path / "command-cwd"
+    process_cwd.mkdir()
+    command_cwd.mkdir()
+    monkeypatch.chdir(process_cwd)
+    calls = []
+
+    def child_path(cwd: str, raw_path: str) -> Path:
+        path = Path(raw_path)
+        return path if path.is_absolute() else Path(cwd) / path
+
+    def fake_runner(command, *, cwd, env, shell, check):
+        calls.append(
+            {"command": command, "cwd": cwd, "env": env, "shell": shell, "check": check}
+        )
+        artifact_dir = child_path(cwd, env["PG_VISUAL_ARTIFACT_DIR"])
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        if command == "make-reference":
+            write_png(
+                child_path(cwd, env["PG_VISUAL_REFERENCE_PATH"]),
+                1,
+                1,
+                [(1, 2, 3, 255)],
+            )
+        elif command == "make-actual":
+            write_png(
+                child_path(cwd, env["PG_VISUAL_ACTUAL_PATH"]),
+                1,
+                1,
+                [(1, 2, 3, 255)],
+            )
+        return subprocess.CompletedProcess(command, 0)
+
+    result = module.main(
+        [
+            "--case",
+            "P0_07_command_custom_cwd",
+            "--reference-command",
+            "make-reference",
+            "--actual-command",
+            "make-actual",
+            "--reports-root",
+            "reports/visual-diffs",
+            "--cwd",
+            str(command_cwd),
+        ],
+        runner=fake_runner,
+    )
+
+    assert result == 0
+    case_dir = process_cwd / "reports" / "visual-diffs" / "P0_07_command_custom_cwd"
+    assert (case_dir / "reference.png").is_file()
+    assert (case_dir / "actual.png").is_file()
+    assert (case_dir / "diff.png").is_file()
+    assert (case_dir / "metrics.json").is_file()
+    assert not (command_cwd / "reports").exists()
+    assert [call["command"] for call in calls] == ["make-reference", "make-actual"]
+    for call in calls:
+        assert call["cwd"] == str(command_cwd)
+        assert call["env"]["PG_VISUAL_ARTIFACT_DIR"] == str(case_dir)
+        assert call["env"]["PG_VISUAL_REFERENCE_PATH"] == str(
+            case_dir / "reference.png"
+        )
+        assert call["env"]["PG_VISUAL_ACTUAL_PATH"] == str(case_dir / "actual.png")
+
+
+def test_P0_07_min_ssim_gate_uses_structural_similarity_not_mean_delta(
+    tmp_path: Path,
+) -> None:
+    reference, actual = write_pair(
+        tmp_path,
+        [
+            (255, 255, 255, 255),
+            (0, 0, 0, 255),
+            (255, 255, 255, 255),
+            (0, 0, 0, 255),
+        ],
+    )
+    write_png(
+        reference,
+        2,
+        2,
+        [
+            (0, 0, 0, 255),
+            (255, 255, 255, 255),
+            (0, 0, 0, 255),
+            (255, 255, 255, 255),
+        ],
+    )
+    reports_root = tmp_path / "reports" / "visual-diffs"
+
+    result = run_script(
+        "--case",
+        "P0_07_ssim_inversion",
+        "--reference",
+        str(reference),
+        "--actual",
+        str(actual),
+        "--reports-root",
+        str(reports_root),
+        "--gpt-visual-review",
+        "not_applicable",
+        "--max-mean-delta",
+        "255",
+        "--max-pixel-delta",
+        "255",
+        "--max-changed-percent",
+        "100",
+        "--min-ssim",
+        "0.1",
+    )
+
+    assert result.returncode == 1, result.stdout
+    metrics = json.loads(
+        (reports_root / "P0_07_ssim_inversion" / "metrics.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    mean_delta_surrogate = 1.0 - (metrics["mean_abs_delta"] / 255.0)
+    assert metrics["ssim"] < 0.1
+    assert abs(metrics["ssim"] - mean_delta_surrogate) > 0.1
+    assert metrics["passed"] is False
+    assert metrics["deterministic_verdict"] == "fail"
+    assert "ssim" in metrics["failed_tolerances"]
