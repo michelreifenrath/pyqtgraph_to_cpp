@@ -1,0 +1,37 @@
+{
+  "expected": {
+    "count": 3,
+    "scaled_values": [
+      3.0,
+      -4.5,
+      8.0
+    ],
+    "sum": 6.5
+  },
+  "inputs": {
+    "description": "Reusable pinned-PyQtGraph oracle probe template sanity values",
+    "offset": 0.5,
+    "scale": 2.0,
+    "values": [
+      1.25,
+      -2.5,
+      3.75
+    ]
+  },
+  "issue": "P0.06",
+  "reference": {
+    "checkout_path": "reference/pyqtgraph",
+    "docs_url": "https://pyqtgraph.readthedocs.io/",
+    "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "pyqtgraph_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "pyqtgraph_version": "0.14.0",
+    "ref": "pyqtgraph-0.14.0",
+    "repo": "https://github.com/pyqtgraph/pyqtgraph"
+  },
+  "schema_version": 1,
+  "tolerance": {
+    "absolute": 0.0,
+    "policy": "exact JSON numeric comparison for deterministic template outputs",
+    "relative": 0.0
+  }
+}
