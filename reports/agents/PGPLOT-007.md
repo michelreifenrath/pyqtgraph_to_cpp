@@ -2,7 +2,7 @@
 
 ## Summary
 - Added `pyqtgraph::widgets::PlotWidget` as a `QGraphicsView` skeleton.
-- The widget owns a `QGraphicsScene`, creates a scene-owned `graphicsItems::PlotItem`, and exposes stable mutable/const `getPlotItem()` accessors.
+- The widget owns a ported `pyqtgraph::GraphicsScene::GraphicsScene`, creates a scene-owned `graphicsItems::PlotItem` through that concrete scene API, and exposes stable mutable/const `getPlotItem()` accessors.
 - Scope is intentionally limited to the skeleton API; plotting convenience forwarding is not implemented.
 
 ## Modified files
@@ -17,6 +17,8 @@
 - `cmake --preset dev` — passed.
 - `cmake --build --preset dev --target pyqtgraph_cpp_widgets_plotwidget pyqtgraph_cpp_hierarchy_cpp` — passed.
 - `ctest --preset dev -R 'pyqtgraph_cpp.widgets.PlotWidget|pyqtgraph_cpp.hierarchy.cpp' --output-on-failure` — passed.
+- `cmake --build --preset dev --target pyqtgraph_cpp_widgets_plotwidget --parallel` — passed.
+- `ctest --preset dev -R pyqtgraph_cpp.widgets.PlotWidget --output-on-failure` — passed.
 - `scripts/gate focus PGPLOT-007` — failed: this gate CLI does not accept an issue-id argument.
 - `scripts/gate focus` — passed.
 - `python3 -m pytest -q` — passed, 225 tests.

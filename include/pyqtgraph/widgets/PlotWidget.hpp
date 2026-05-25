@@ -5,9 +5,9 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
+#include "../GraphicsScene/GraphicsScene.hpp"
 #include "../graphicsItems/PlotItem/PlotItem.hpp"
 
-#include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
 
 #include <memory>
@@ -28,7 +28,7 @@ public:
     const graphicsItems::PlotItem* getPlotItem() const noexcept;
 
 private:
-    std::unique_ptr<QGraphicsScene> scene_;
+    std::unique_ptr<GraphicsScene::GraphicsScene> scene_;
     graphicsItems::PlotItem* plotItem_ = nullptr;
 };
 

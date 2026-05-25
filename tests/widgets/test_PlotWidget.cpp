@@ -1,3 +1,4 @@
+#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
 #include <pyqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QtGlobal>
@@ -80,6 +81,18 @@ bool testParentConstruction()
     return true;
 }
 
+bool testUsesPyqtgraphGraphicsScene()
+{
+    pyqtgraph::widgets::PlotWidget widget;
+
+    auto* scene = dynamic_cast<pyqtgraph::GraphicsScene::GraphicsScene*>(widget.scene());
+    CHECK(scene != nullptr);
+    CHECK(scene->clickRadius() == 2);
+    CHECK(scene->moveDistance() == 5.0);
+
+    return true;
+}
+
 bool testOwnedPlotItemInScene()
 {
     pyqtgraph::widgets::PlotWidget widget;
@@ -110,6 +123,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testParentConstruction()) {
+        return 1;
+    }
+    if (!testUsesPyqtgraphGraphicsScene()) {
         return 1;
     }
     if (!testOwnedPlotItemInScene()) {

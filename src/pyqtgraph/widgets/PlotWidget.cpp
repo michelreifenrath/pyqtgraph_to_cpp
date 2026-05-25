@@ -5,13 +5,11 @@
 
 #include "../../../include/pyqtgraph/widgets/PlotWidget.hpp"
 
-#include <QtWidgets/QGraphicsScene>
-
 namespace pyqtgraph::widgets {
 
 PlotWidget::PlotWidget(QWidget* parent)
     : QGraphicsView(parent)
-    , scene_(std::make_unique<QGraphicsScene>())
+    , scene_(std::make_unique<GraphicsScene::GraphicsScene>())
     , plotItem_(new graphicsItems::PlotItem())
 {
     setScene(scene_.get());
