@@ -7,7 +7,7 @@ import struct
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 ROOT = Path(__file__).resolve().parents[2]
 REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "SimplePlot.reference.png"
@@ -16,6 +16,13 @@ CPP_RENDERER = ROOT / "oracle" / "scripts" / "render_cpp_example.py"
 COMPARATOR = ROOT / "oracle" / "scripts" / "compare_screenshots.py"
 INTERACTION_RUNNER = ROOT / "oracle" / "scripts" / "run_interaction_script.py"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+
+class PngContentSummary(TypedDict):
+    dimensions: tuple[int, int]
+    unique_colors: int
+    dark_plot_pixels: int
+    bright_plot_pixels: int
 
 
 def run_cli(script: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -29,7 +36,19 @@ def run_cli(script: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 def import_interaction_runner() -> Any:
-    spec = importlib.util.spec_from_file_location("run_interaction_script", INTERACTION_RUNNER)
+    spec = importlib.util.spec_from_file_location(
+        "run_interaction_script", INTERACTION_RUNNER
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def import_comparator() -> Any:
+    spec = importlib.util.spec_from_file_location("compare_screenshots", COMPARATOR)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -72,9 +91,43 @@ def run_compare(
     )
 
 
-def test_reference_screenshot_fixture_is_800x600_png() -> None:
+def summarize_png_content(path: Path) -> PngContentSummary:
+    comparator = import_comparator()
+    width, height, rgba = comparator.read_png_rgba(path)
+    unique_colors: set[bytes] = set()
+    dark_plot_pixels = 0
+    bright_plot_pixels = 0
+    plot_x_min = width // 10
+    plot_x_max = width - plot_x_min
+    plot_y_min = height // 10
+    plot_y_max = height - plot_y_min
+
+    for y in range(height):
+        for x in range(width):
+            offset = (y * width + x) * 4
+            rgb = rgba[offset : offset + 3]
+            unique_colors.add(rgb)
+            if plot_x_min <= x < plot_x_max and plot_y_min <= y < plot_y_max:
+                if max(rgb) < 80:
+                    dark_plot_pixels += 1
+                if min(rgb) > 180:
+                    bright_plot_pixels += 1
+
+    return {
+        "dimensions": (width, height),
+        "unique_colors": len(unique_colors),
+        "dark_plot_pixels": dark_plot_pixels,
+        "bright_plot_pixels": bright_plot_pixels,
+    }
+
+
+def test_reference_screenshot_fixture_has_simpleplot_content() -> None:
     assert REFERENCE.is_file()
-    assert read_png_dimensions(REFERENCE) == (800, 600)
+    content = summarize_png_content(REFERENCE)
+    assert content["dimensions"] == (800, 600)
+    assert content["unique_colors"] > 100
+    assert content["dark_plot_pixels"] > 100_000
+    assert content["bright_plot_pixels"] > 1_000
 
 
 def test_simpleplot_interaction_fixture_loads_as_empty_yaml_compatible_json() -> None:
