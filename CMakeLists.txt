@@ -136,6 +136,22 @@ include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
 
+    add_executable(pyqtgraph_cpp_oracle_P0_06 tests/oracle/P0_06_oracle_comparison.cpp)
+    target_link_libraries(pyqtgraph_cpp_oracle_P0_06
+        PRIVATE
+            pyqtgraph_cpp_project_options
+            pyqtgraph_cpp_project_warnings
+    )
+    target_compile_definitions(pyqtgraph_cpp_oracle_P0_06
+        PRIVATE
+            PYQTGRAPH_CPP_P0_06_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/oracle/fixtures/P0_06/probe_contract.json"
+    )
+    pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_oracle_P0_06)
+    add_test(NAME pyqtgraph_cpp.oracle.P0_06 COMMAND pyqtgraph_cpp_oracle_P0_06)
+    set_tests_properties(pyqtgraph_cpp.oracle.P0_06 PROPERTIES LABELS P0.06)
+    add_test(NAME pyqtgraph_cpp.oracle.P0_06.mismatch COMMAND pyqtgraph_cpp_oracle_P0_06 --mismatch)
+    set_tests_properties(pyqtgraph_cpp.oracle.P0_06.mismatch PROPERTIES LABELS P0.06 WILL_FAIL TRUE)
+
     add_executable(pyqtgraph_cpp_core_arrayview tests/core/test_ArrayView.cpp)
     target_link_libraries(pyqtgraph_cpp_core_arrayview
         PRIVATE

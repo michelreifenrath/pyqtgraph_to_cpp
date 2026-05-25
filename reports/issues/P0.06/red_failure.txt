@@ -1,0 +1,64 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+__________________ test_P0_06_help_exposes_probe_cli_options ___________________
+
+    def test_P0_06_help_exposes_probe_cli_options() -> None:
+        result = run_cli("--help")
+    
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: /home/michel/.hermes/hermes-agent/venv/bin/python3: can't open file '/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/home/michel/.hermes/hermes-agent/venv/bin/python3', '/home/michel/code/ai-workspaces/pyqtgrap...aces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory\n").returncode
+
+tests/oracle/test_P0_06_oracle_probe.py:89: AssertionError
+______________ test_P0_06_generates_fixture_and_mismatch_example _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-michel/pytest-1100/test_P0_06_generates_fixture_a0')
+
+    def test_P0_06_generates_fixture_and_mismatch_example(tmp_path: Path) -> None:
+        root = tmp_path / "workspace"
+        commit = write_source_lock(root)
+    
+        result = run_cli("--root", str(root), "--format", "json", "--emit-mismatch-example")
+    
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: /home/michel/.hermes/hermes-agent/venv/bin/python3: can't open file '/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/home/michel/.hermes/hermes-agent/venv/bin/python3', '/home/michel/code/ai-workspaces/pyqtgrap...aces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory\n").returncode
+
+tests/oracle/test_P0_06_oracle_probe.py:102: AssertionError
+__________ test_P0_06_check_mode_reports_stale_fixture_with_json_path __________
+
+tmp_path = PosixPath('/tmp/pytest-of-michel/pytest-1100/test_P0_06_check_mode_reports_0')
+
+    def test_P0_06_check_mode_reports_stale_fixture_with_json_path(tmp_path: Path) -> None:
+        root = tmp_path / "workspace"
+        write_source_lock(root)
+        generated = run_cli("--root", str(root), "--emit-mismatch-example")
+>       assert generated.returncode == 0, generated.stderr
+E       AssertionError: /home/michel/.hermes/hermes-agent/venv/bin/python3: can't open file '/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/home/michel/.hermes/hermes-agent/venv/bin/python3', '/home/michel/code/ai-workspaces/pyqtgrap...aces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory\n").returncode
+
+tests/oracle/test_P0_06_oracle_probe.py:153: AssertionError
+___________________ test_P0_06_committed_fixture_is_current ____________________
+
+    def test_P0_06_committed_fixture_is_current() -> None:
+        result = run_cli("--check")
+    
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: /home/michel/.hermes/hermes-agent/venv/bin/python3: can't open file '/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['/home/michel/.hermes/hermes-agent/venv/bin/python3', '/home/michel/code/ai-workspaces/pyqtgrap...aces/pyqtgraph_to_cpp/issue-100/oracle/scripts/generate_P0_06_oracle_probe.py': [Errno 2] No such file or directory\n").returncode
+
+tests/oracle/test_P0_06_oracle_probe.py:173: AssertionError
+=========================== short test summary info ============================
+FAILED tests/oracle/test_P0_06_oracle_probe.py::test_P0_06_help_exposes_probe_cli_options
+FAILED tests/oracle/test_P0_06_oracle_probe.py::test_P0_06_generates_fixture_and_mismatch_example
+FAILED tests/oracle/test_P0_06_oracle_probe.py::test_P0_06_check_mode_reports_stale_fixture_with_json_path
+FAILED tests/oracle/test_P0_06_oracle_probe.py::test_P0_06_committed_fixture_is_current
+4 failed, 259 deselected in 0.47s

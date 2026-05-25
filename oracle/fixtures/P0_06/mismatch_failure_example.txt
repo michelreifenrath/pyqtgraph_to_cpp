@@ -1,0 +1,7 @@
+oracle fixture mismatch
+fixture: oracle/fixtures/P0_06/probe_contract.json
+path: $.expected.scaled_values[0]
+expected fixture value: -999.0
+actual probe value: 3.0
+tolerance absolute=0.0 relative=0.0
+Regenerate with: python3 oracle/scripts/generate_P0_06_oracle_probe.py --emit-mismatch-example

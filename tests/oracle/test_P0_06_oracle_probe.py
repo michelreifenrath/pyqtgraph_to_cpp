@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import pytest
 import yaml
 
 SCRIPT = Path("oracle/scripts/generate_P0_06_oracle_probe.py")
@@ -41,7 +40,9 @@ def write_reference_checkout(root: Path, version: str = "fixture-reference") -> 
     checkout = root / CHECKOUT_PATH
     package = checkout / "pyqtgraph"
     package.mkdir(parents=True, exist_ok=True)
-    (package / "__init__.py").write_text(f'__version__ = "{version}"\n', encoding="utf-8")
+    (package / "__init__.py").write_text(
+        f'__version__ = "{version}"\n', encoding="utf-8"
+    )
     run_git(checkout, "init", "-q")
     run_git(checkout, "add", ".")
     run_git(
@@ -128,7 +129,7 @@ def test_P0_06_generates_fixture_and_mismatch_example(tmp_path: Path) -> None:
         },
         "expected": {
             "scaled_values": [3.0, -4.5, 8.0],
-            "sum": 4.5,
+            "sum": 6.5,
             "count": 3,
         },
         "tolerance": {
@@ -154,7 +155,9 @@ def test_P0_06_check_mode_reports_stale_fixture_with_json_path(tmp_path: Path) -
     fixture_path = root / FIXTURE
     fixture = load_json(fixture_path)
     fixture["expected"]["scaled_values"][0] = -999.0
-    fixture_path.write_text(json.dumps(fixture, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    fixture_path.write_text(
+        json.dumps(fixture, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
     result = run_cli("--root", str(root), "--check")
 
