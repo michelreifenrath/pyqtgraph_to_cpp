@@ -131,7 +131,7 @@ def baseline_from_report(report: dict[str, Any], mode: str, rationale: str | Non
 
 
 def validate_baseline(baseline: dict[str, Any]) -> None:
-    required = ["schema_version", "workload", "baseline_stats", "threshold", "samples_seconds"]
+    required = ["schema_version", "workload", "baseline_stats", "threshold", "samples_seconds", "checksum"]
     missing = [key for key in required if key not in baseline]
     if missing:
         raise ValueError(f"baseline missing required keys: {', '.join(missing)}")
@@ -152,13 +152,19 @@ def compare(report: dict[str, Any], baseline: dict[str, Any], *, synthetic: bool
     if synthetic:
         current = baseline_value * (max_ratio + 1.0)
     ratio = current / baseline_value if baseline_value > 0 else math.inf
-    passed = ratio <= max_ratio
+    checksum_matches = report["checksum"] == baseline["checksum"]
+    passed = checksum_matches and ratio <= max_ratio
     return {
         "metric": metric,
         "current": current,
         "baseline": baseline_value,
         "ratio": ratio,
         "max_ratio": max_ratio,
+        "checksum": {
+            "current": report["checksum"],
+            "baseline": baseline["checksum"],
+            "matches": checksum_matches,
+        },
         "passed": passed,
     }
 
@@ -175,6 +181,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.output and args.baseline.resolve() == args.output.resolve():
+        print(f"{args.mode} mode refuses to use the same path for --baseline and --output", file=sys.stderr)
+        return 2
+
     invocation_id = str(uuid.uuid4())
     invocation_started_unix = time.time()
     samples, checksum = measure(DEFAULT_WORKLOAD)
@@ -186,9 +196,6 @@ def main() -> int:
         return 2
 
     if args.mode == "compare":
-        if args.output and args.baseline.resolve() == args.output.resolve():
-            print("compare mode refuses to use the same path for --baseline and --output", file=sys.stderr)
-            return 2
         baseline = read_json(args.baseline)
         try:
             validate_baseline(baseline)
