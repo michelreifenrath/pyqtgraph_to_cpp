@@ -261,6 +261,67 @@ def test_P0_07_required_gpt_review_without_report_exits_2(tmp_path: Path) -> Non
     assert "--review-report is required" in result.stderr
 
 
+def test_P0_07_optional_gpt_review_without_report_exits_2(tmp_path: Path) -> None:
+    reference, actual = write_pair(tmp_path)
+    reports_root = tmp_path / "reports" / "visual-diffs"
+    case_dir = reports_root / "P0_07_missing_optional_review"
+    case_dir.mkdir(parents=True)
+    stale_review = case_dir / "gpt5_vision_review.md"
+    stale_review.write_text(
+        "verdict: pass\nrecommendation: merge_ok\n", encoding="utf-8"
+    )
+
+    result = run_script(
+        "--case",
+        "P0_07_missing_optional_review",
+        "--reference",
+        str(reference),
+        "--actual",
+        str(actual),
+        "--reports-root",
+        str(reports_root),
+        "--gpt-visual-review",
+        "optional",
+    )
+
+    assert result.returncode == 2
+    assert "--review-report is required" in result.stderr
+    assert "optional" in result.stderr
+    assert not stale_review.exists()
+
+
+def test_P0_07_run_without_review_report_removes_stale_review_artifact(
+    tmp_path: Path,
+) -> None:
+    reference, actual = write_pair(tmp_path)
+    reports_root = tmp_path / "reports" / "visual-diffs"
+    case_dir = reports_root / "P0_07_stale_review"
+    case_dir.mkdir(parents=True)
+    stale_review = case_dir / "gpt5_vision_review.md"
+    stale_review.write_text(
+        "verdict: pass\nrecommendation: merge_ok\n", encoding="utf-8"
+    )
+
+    result = run_script(
+        "--case",
+        "P0_07_stale_review",
+        "--reference",
+        str(reference),
+        "--actual",
+        str(actual),
+        "--reports-root",
+        str(reports_root),
+        "--gpt-visual-review",
+        "not_applicable",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert not stale_review.exists()
+    metrics = json.loads((case_dir / "metrics.json").read_text(encoding="utf-8"))
+    assert metrics["review_report_path"] is None
+    assert metrics["semantic_review"] is None
+
+
 def test_P0_07_mismatch_returns_1_and_preserves_artifacts(tmp_path: Path) -> None:
     reference, actual = write_pair(
         tmp_path,

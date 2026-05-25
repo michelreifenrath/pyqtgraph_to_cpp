@@ -126,8 +126,11 @@ def _case_dir(reports_root: Path, case_name: str) -> Path:
 
 
 def _review_required_error(args: argparse.Namespace) -> str | None:
-    if args.gpt_visual_review == "required_for_pr" and args.review_report is None:
-        return "--review-report is required when --gpt-visual-review required_for_pr"
+    if args.gpt_visual_review != "not_applicable" and args.review_report is None:
+        return (
+            "--review-report is required when --gpt-visual-review "
+            f"{args.gpt_visual_review}"
+        )
     if args.review_report is not None and not args.review_report.is_file():
         return f"--review-report does not exist: {args.review_report}"
     return None
@@ -412,6 +415,13 @@ def main(argv: list[str] | None = None, *, runner: Runner = subprocess.run) -> i
         return 2
     case_dir.mkdir(parents=True, exist_ok=True)
 
+    canonical_review_path = case_dir / "gpt5_vision_review.md"
+    if args.review_report is None:
+        try:
+            canonical_review_path.unlink()
+        except FileNotFoundError:
+            pass
+
     review_error = _review_required_error(args)
     if review_error is not None:
         print(f"check_visual_artifacts: {review_error}", file=sys.stderr)
@@ -419,7 +429,7 @@ def main(argv: list[str] | None = None, *, runner: Runner = subprocess.run) -> i
 
     review_path = None
     if args.review_report is not None:
-        review_path = case_dir / "gpt5_vision_review.md"
+        review_path = canonical_review_path
         shutil.copyfile(args.review_report, review_path)
 
     try:
