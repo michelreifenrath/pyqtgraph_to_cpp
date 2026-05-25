@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import shutil
 import struct
 import subprocess
 import sys
@@ -13,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "SimplePlot.reference.png"
 INTERACTION = ROOT / "oracle" / "fixtures" / "interactions" / "SimplePlot.json"
 CPP_RENDERER = ROOT / "oracle" / "scripts" / "render_cpp_example.py"
+CHECKER = ROOT / "scripts" / "check_visual_artifacts"
 COMPARATOR = ROOT / "oracle" / "scripts" / "compare_screenshots.py"
 INTERACTION_RUNNER = ROOT / "oracle" / "scripts" / "run_interaction_script.py"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
@@ -144,19 +144,19 @@ def test_simpleplot_interaction_fixture_loads_as_empty_yaml_compatible_json() ->
 def test_simpleplot_visual_oracle_generates_placeholder_diff_artifacts(
     tmp_path: Path,
 ) -> None:
-    artifact_dir = tmp_path / "reports" / "visual-diffs" / "SimplePlot"
+    reports_root = tmp_path / "reports" / "visual-diffs"
+    artifact_dir = reports_root / "SimplePlot"
     reference = artifact_dir / "reference.png"
     actual = artifact_dir / "actual.png"
     diff = artifact_dir / "diff.png"
     metrics_path = artifact_dir / "metrics.json"
-    artifact_dir.mkdir(parents=True)
-    shutil.copyfile(REFERENCE, reference)
+    rendered_actual = tmp_path / "SimplePlot.actual.png"
 
     render_result = run_cli(
         CPP_RENDERER,
         "SimplePlot",
         "--output",
-        str(actual),
+        str(rendered_actual),
         "--width",
         "800",
         "--height",
@@ -169,28 +169,45 @@ def test_simpleplot_visual_oracle_generates_placeholder_diff_artifacts(
     assert render_status["example"] == "SimplePlot"
     assert render_status["dimensions"] == {"width": 800, "height": 600}
     assert render_status["placeholder"] is True
-    assert read_png_dimensions(actual) == (800, 600)
+    assert read_png_dimensions(rendered_actual) == (800, 600)
 
-    compare_result = run_compare(reference, actual, diff, metrics_path)
+    checker_result = run_cli(
+        CHECKER,
+        "--case",
+        "SimplePlot",
+        "--reference",
+        str(REFERENCE),
+        "--actual",
+        str(rendered_actual),
+        "--reports-root",
+        str(reports_root),
+        "--gpt-visual-review",
+        "not_applicable",
+    )
 
-    assert compare_result.returncode == 1, compare_result.stderr
-    assert compare_result.stderr == ""
+    assert checker_result.returncode == 1, checker_result.stderr
+    assert checker_result.stderr == ""
+    assert reference.is_file()
+    assert actual.is_file()
     assert diff.is_file()
     assert metrics_path.is_file()
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
-    assert json.loads(compare_result.stdout) == metrics
+    assert json.loads(checker_result.stdout) == metrics
     assert metrics["passed"] is False
     assert metrics["deterministic_verdict"] == "fail"
-    assert metrics["dimensions"] == {
-        "reference": {"width": 800, "height": 600},
-        "candidate": {"width": 800, "height": 600},
+    assert metrics["dimensions"] == [800, 600]
+    assert metrics["artifact_paths"] == {
+        "reference": str(reference),
+        "actual": str(actual),
+        "diff": str(diff),
+        "metrics": str(metrics_path),
     }
-    assert metrics["reference_path"] == str(reference)
-    assert metrics["candidate_path"] == str(actual)
-    assert metrics["diff_image_path"] == str(diff)
-    assert metrics["changed_pixel_percentage"] > 0
-    assert metrics["mean_absolute_delta"] > 0
+    assert metrics["review_report_path"] is None
+    assert metrics["changed_pixel_percent"] > 0
+    assert metrics["mean_abs_delta"] > 0
     assert metrics["max_delta"] > 0
+    assert metrics["tolerance"]["max_changed_pixel_percent"] == 0.0
+    assert "max_changed_percent" not in metrics["tolerance"]
     assert metrics["failed_tolerances"]
 
 

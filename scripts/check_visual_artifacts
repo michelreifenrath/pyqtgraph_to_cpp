@@ -171,7 +171,7 @@ def _canonical_metrics(
     tolerance = {
         "max_mean_delta": args.max_mean_delta,
         "max_pixel_delta": args.max_pixel_delta,
-        "max_changed_percent": args.max_changed_percent,
+        "max_changed_pixel_percent": args.max_changed_percent,
         "min_ssim": args.min_ssim,
     }
     ssim = _canonical_ssim(raw_metrics)

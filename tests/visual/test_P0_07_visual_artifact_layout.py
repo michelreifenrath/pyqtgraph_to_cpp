@@ -8,7 +8,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 from test_compare_screenshots import write_png
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -77,9 +76,10 @@ def test_P0_07_writes_canonical_visual_artifact_tree(tmp_path: Path) -> None:
     assert metrics["tolerance"] == {
         "max_mean_delta": 0.0,
         "max_pixel_delta": 0.0,
-        "max_changed_percent": 0.0,
+        "max_changed_pixel_percent": 0.0,
         "min_ssim": 1.0,
     }
+    assert "max_changed_percent" not in metrics["tolerance"]
     assert metrics["deterministic_verdict"] == "pass"
     assert metrics["passed"] is True
     assert metrics["failed_tolerances"] == []
