@@ -143,12 +143,14 @@ AxisRange normalizeRequestedRange(AxisRange requested, AxisRange previous, qreal
 
     qreal span = requested[1] - requested[0];
     const qreal center = (requested[0] + requested[1]) / 2.0;
+    bool preservingPreviousSpan = false;
     if (span == 0.0) {
         span = previous[1] - previous[0];
         requested = AxisRange{center - span / 2.0, center + span / 2.0};
+        preservingPreviousSpan = true;
     }
 
-    if (padding != 0.0) {
+    if (padding != 0.0 && !preservingPreviousSpan) {
         span = requested[1] - requested[0];
         const qreal expansion = span * padding;
         requested[0] -= expansion;

@@ -126,6 +126,16 @@ bool testNormalizationAndValidation()
     zeroSpanViewBox.setXRange(5.0, 5.0, 0.0);
     CHECK(checkRange(zeroSpanViewBox.viewRange(), 4.5, 5.5, 0.0, 1.0));
 
+    pyqtgraph::graphicsItems::ViewBox zeroSpanDefaultPaddingX;
+    zeroSpanDefaultPaddingX.setXRange(5.0, 5.0);
+    CHECK(checkRange(zeroSpanDefaultPaddingX.viewRange(), 4.5, 5.5, 0.0, 1.0));
+    CHECK(checkRange(zeroSpanDefaultPaddingX.targetRange(), 4.5, 5.5, 0.0, 1.0));
+
+    pyqtgraph::graphicsItems::ViewBox zeroSpanDefaultPaddingY;
+    zeroSpanDefaultPaddingY.setYRange(-2.0, -2.0);
+    CHECK(checkRange(zeroSpanDefaultPaddingY.viewRange(), 0.0, 1.0, -2.5, -1.5));
+    CHECK(checkRange(zeroSpanDefaultPaddingY.targetRange(), 0.0, 1.0, -2.5, -1.5));
+
     const auto beforeInvalidX = viewBox.viewRange();
     bool threw = false;
     try {
