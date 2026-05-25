@@ -8,6 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 include(PyQtGraphCppOptions)
 include(PyQtGraphCppWarnings)
 include(PyQtGraphCppSanitizers)
@@ -63,13 +65,16 @@ add_library(pyqtgraph_cpp
 )
 target_include_directories(pyqtgraph_cpp
     PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_libraries(pyqtgraph_cpp
     PUBLIC
         pyqtgraph_cpp_project_options
+)
+target_compile_options(pyqtgraph_cpp
     PRIVATE
-        pyqtgraph_cpp_project_warnings
+        $<TARGET_PROPERTY:pyqtgraph_cpp_project_warnings,INTERFACE_COMPILE_OPTIONS>
 )
 if(_pyqtgraph_cpp_has_qtcore)
     target_sources(pyqtgraph_cpp
@@ -131,6 +136,54 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             Qt6::Widgets
     )
 endif()
+
+set(_pyqtgraph_cpp_public_qt_components)
+if(_pyqtgraph_cpp_has_qtcore)
+    list(APPEND _pyqtgraph_cpp_public_qt_components Core)
+endif()
+if(_pyqtgraph_cpp_has_vector OR _pyqtgraph_cpp_has_mkcolor)
+    list(APPEND _pyqtgraph_cpp_public_qt_components Gui)
+endif()
+if(_pyqtgraph_cpp_has_graphicsitem)
+    list(APPEND _pyqtgraph_cpp_public_qt_components Widgets)
+endif()
+list(REMOVE_DUPLICATES _pyqtgraph_cpp_public_qt_components)
+set(PYQTGRAPH_CPP_PACKAGE_QT_COMPONENTS "${_pyqtgraph_cpp_public_qt_components}")
+
+set(_pyqtgraph_cpp_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/pyqtgraph-cpp")
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/pyqtgraph-cppConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/pyqtgraph-cppConfig.cmake"
+    INSTALL_DESTINATION "${_pyqtgraph_cpp_package_dir}"
+)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/pyqtgraph-cppConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY SameMajorVersion
+)
+
+install(TARGETS
+    pyqtgraph_cpp
+    pyqtgraph_cpp_project_options
+    EXPORT pyqtgraph-cppTargets
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    FILES_MATCHING PATTERN "*.hpp"
+)
+install(EXPORT pyqtgraph-cppTargets
+    FILE pyqtgraph-cppTargets.cmake
+    NAMESPACE pyqtgraph_cpp::
+    DESTINATION "${_pyqtgraph_cpp_package_dir}"
+)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/pyqtgraph-cppConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/pyqtgraph-cppConfigVersion.cmake"
+    DESTINATION "${_pyqtgraph_cpp_package_dir}"
+)
 
 include(CTest)
 if(BUILD_TESTING)
