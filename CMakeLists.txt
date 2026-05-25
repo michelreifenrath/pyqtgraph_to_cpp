@@ -378,6 +378,25 @@ if(BUILD_TESTING)
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_plotcurveitem_setdata)
         add_test(NAME pyqtgraph_cpp.graphicsItems.PlotCurveItem.setData COMMAND pyqtgraph_cpp_graphicsitems_plotcurveitem_setdata)
 
+        add_executable(pyqtgraph_cpp_examples_simpleplot examples/SimplePlot.cpp)
+        target_link_libraries(pyqtgraph_cpp_examples_simpleplot
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_examples_simpleplot)
+
+        add_executable(pyqtgraph_cpp_examples_simpleplot_test tests/examples/test_SimplePlot.cpp)
+        target_link_libraries(pyqtgraph_cpp_examples_simpleplot_test
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_examples_simpleplot_test)
+        add_test(NAME pyqtgraph_cpp.examples.SimplePlot COMMAND pyqtgraph_cpp_examples_simpleplot_test)
+
         add_executable(pyqtgraph_cpp_hierarchy_cpp tests/hierarchy/test_cpp_hierarchy.cpp)
         target_link_libraries(pyqtgraph_cpp_hierarchy_cpp
             PRIVATE
