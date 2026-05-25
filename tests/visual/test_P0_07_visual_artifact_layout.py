@@ -5,6 +5,7 @@ import importlib.util
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -12,17 +13,23 @@ from pathlib import Path
 from test_compare_screenshots import write_png
 
 ROOT = Path(__file__).resolve().parents[2]
+REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "SimplePlot.reference.png"
+CPP_RENDERER = ROOT / "oracle" / "scripts" / "render_cpp_example.py"
 SCRIPT = ROOT / "scripts" / "check_visual_artifacts"
 
 
-def run_script(*args: str) -> subprocess.CompletedProcess[str]:
+def run_cli(script: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
+        [sys.executable, str(script), *args],
         cwd=ROOT,
         text=True,
         capture_output=True,
         check=False,
     )
+
+
+def run_script(*args: str) -> subprocess.CompletedProcess[str]:
+    return run_cli(SCRIPT, *args)
 
 
 def write_pair(
@@ -348,6 +355,63 @@ def test_P0_07_command_runner_propagates_nonzero_child_exit(tmp_path: Path) -> N
     assert calls == ["make-reference", "make-actual"]
 
 
+def test_P0_07_default_reports_root_is_repo_anchored(
+    tmp_path: Path, monkeypatch
+) -> None:
+    module = load_script_module()
+    process_cwd = tmp_path / "process-cwd"
+    command_cwd = tmp_path / "command-cwd"
+    process_cwd.mkdir()
+    command_cwd.mkdir()
+    monkeypatch.chdir(process_cwd)
+    case_name = "P0_07_default_reports_root"
+    case_dir = ROOT / "reports" / "visual-diffs" / case_name
+    calls = []
+
+    def fake_runner(command, *, cwd, env, shell, check, stdout, stderr):
+        calls.append({"command": command, "cwd": cwd, "env": env})
+        Path(env["PG_VISUAL_ARTIFACT_DIR"]).mkdir(parents=True, exist_ok=True)
+        if command == "make-reference":
+            write_png(Path(env["PG_VISUAL_REFERENCE_PATH"]), 1, 1, [(1, 2, 3, 255)])
+        elif command == "make-actual":
+            write_png(Path(env["PG_VISUAL_ACTUAL_PATH"]), 1, 1, [(1, 2, 3, 255)])
+        return subprocess.CompletedProcess(command, 0)
+
+    shutil.rmtree(case_dir, ignore_errors=True)
+    try:
+        result = module.main(
+            [
+                "--case",
+                case_name,
+                "--reference-command",
+                "make-reference",
+                "--actual-command",
+                "make-actual",
+                "--cwd",
+                str(command_cwd),
+            ],
+            runner=fake_runner,
+        )
+
+        assert result == 0
+        assert (case_dir / "reference.png").is_file()
+        assert (case_dir / "actual.png").is_file()
+        assert (case_dir / "diff.png").is_file()
+        assert (case_dir / "metrics.json").is_file()
+        assert not (process_cwd / "reports").exists()
+        assert not (command_cwd / "reports").exists()
+        assert [call["command"] for call in calls] == ["make-reference", "make-actual"]
+        for call in calls:
+            assert call["cwd"] == str(command_cwd)
+            assert call["env"]["PG_VISUAL_ARTIFACT_DIR"] == str(case_dir)
+            assert call["env"]["PG_VISUAL_REFERENCE_PATH"] == str(
+                case_dir / "reference.png"
+            )
+            assert call["env"]["PG_VISUAL_ACTUAL_PATH"] == str(case_dir / "actual.png")
+    finally:
+        shutil.rmtree(case_dir, ignore_errors=True)
+
+
 def test_P0_07_command_runner_exports_absolute_artifacts_for_custom_cwd(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -426,6 +490,63 @@ def test_P0_07_command_runner_exports_absolute_artifacts_for_custom_cwd(
             case_dir / "reference.png"
         )
         assert call["env"]["PG_VISUAL_ACTUAL_PATH"] == str(case_dir / "actual.png")
+
+
+def test_P0_07_simpleplot_smoke_writes_canonical_artifacts(tmp_path: Path) -> None:
+    reports_root = tmp_path / "reports" / "visual-diffs"
+    case_dir = reports_root / "P0_07_SimplePlot_smoke"
+    rendered_actual = tmp_path / "SimplePlot.actual.png"
+
+    render_result = run_cli(
+        CPP_RENDERER,
+        "SimplePlot",
+        "--output",
+        str(rendered_actual),
+        "--width",
+        "800",
+        "--height",
+        "600",
+    )
+
+    assert render_result.returncode == 0, render_result.stderr
+    render_status = json.loads(render_result.stdout)
+    assert render_status["example"] == "SimplePlot"
+    assert render_status["dimensions"] == {"width": 800, "height": 600}
+    assert render_status["placeholder"] is True
+
+    checker_result = run_script(
+        "--case",
+        "P0_07_SimplePlot_smoke",
+        "--reference",
+        str(REFERENCE),
+        "--actual",
+        str(rendered_actual),
+        "--reports-root",
+        str(reports_root),
+        "--gpt-visual-review",
+        "not_applicable",
+    )
+
+    assert checker_result.returncode == 1, checker_result.stderr
+    assert checker_result.stderr == ""
+    for name in ("reference.png", "actual.png", "diff.png", "metrics.json"):
+        assert (case_dir / name).is_file()
+    metrics = json.loads((case_dir / "metrics.json").read_text(encoding="utf-8"))
+    assert json.loads(checker_result.stdout) == metrics
+    assert metrics["passed"] is False
+    assert metrics["deterministic_verdict"] == "fail"
+    assert metrics["dimensions"] == [800, 600]
+    assert metrics["artifact_paths"] == {
+        "reference": str(case_dir / "reference.png"),
+        "actual": str(case_dir / "actual.png"),
+        "diff": str(case_dir / "diff.png"),
+        "metrics": str(case_dir / "metrics.json"),
+    }
+    assert metrics["review_report_path"] is None
+    assert metrics["changed_pixel_percent"] > 0
+    assert metrics["mean_abs_delta"] > 0
+    assert metrics["max_delta"] > 0
+    assert metrics["failed_tolerances"]
 
 
 def test_P0_07_min_ssim_gate_uses_structural_similarity_not_mean_delta(

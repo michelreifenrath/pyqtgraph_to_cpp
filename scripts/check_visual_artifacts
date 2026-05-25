@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_REPORTS_ROOT = ROOT / "reports" / "visual-diffs"
 ORACLE_SCRIPTS = ROOT / "oracle" / "scripts"
 if str(ORACLE_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(ORACLE_SCRIPTS))
@@ -42,8 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--reports-root",
         type=Path,
-        default=Path("reports/visual-diffs"),
-        help="Root directory that receives the per-case artifact directory",
+        default=DEFAULT_REPORTS_ROOT,
+        help=(
+            "Root directory that receives the per-case artifact directory "
+            "(default: repository reports/visual-diffs)"
+        ),
     )
     parser.add_argument(
         "--cwd",
