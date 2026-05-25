@@ -7,7 +7,7 @@ This document defines the default parity policy for the native C++ port. It is a
 ## Source-of-truth policy
 
 - The canonical port specification is `docs/pyqtgraph-cpp-port-workflow.md`, which defines the project goal as translating PyQtGraph into a native C++ library for direct C++ use, with Qt/C++ rendering and local validation gates.
-- Decision-only parity questions use `docs/proposed-issues/VALIDATION-GUIDE.md#decision-doc`: proof is this decision/equivalence document, not a code test. The document records conservative defaults, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decisions, and follow-up placeholders for disputed or out-of-scope behavior.
+- Decision-only parity questions use `docs/proposed-issues/VALIDATION-GUIDE.md#decision-doc`: proof is this decision/equivalence document, not a code test. The document records conservative defaults, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decisions, and follow-up issue links or waivers for disputed or out-of-scope behavior.
 - Issue-owned scope controls edits. This contract does not modify manifest inventory, dashboard state, source, examples, tests, or automation.
 
 ## Native C++ parity contract
@@ -52,9 +52,11 @@ The following Python-ecosystem areas are out of C++ port scope by default unless
 - `pyqtgraph/multiprocess/parallelizer.py`
 - `pyqtgraph/multiprocess/processes.py`
 - `pyqtgraph/multiprocess/remoteproxy.py`
+- `pyqtgraph/examples/multiprocess.py` -> non-port as a Python multiprocessing/proxy example; equivalent C++ coverage is native concurrency/process usage only if a future concrete C++ runtime feature requires it.
+- `pyqtgraph/examples/parallelize.py` -> non-port as a Python `Parallelize`/multiprocessing example; equivalent C++ coverage is native C++ task/concurrency behavior only if a future concrete C++ runtime feature requires it.
 - Key classes: `Parallelize`, `Tasker`, `Process`, `ForkedProcess`, `RemoteQtEventHandler`, `QtProcess`, `RemoteEventHandler`, `Request`, `LocalObjectProxy`, `ObjectProxy`, `DeferredObjectProxy`.
 
-Default decision: non-port for Python multiprocessing/proxy infrastructure. Native C++ concurrency, worker process, or async behavior may be implemented in later issues only when required by a C++ plotting/runtime feature.
+Default decision: non-port for Python multiprocessing/proxy infrastructure and its multiprocessing examples. Native C++ concurrency, worker process, or async behavior may be implemented in later issues only when required by a C++ plotting/runtime feature.
 
 ### Numba
 
@@ -89,16 +91,18 @@ Default decision: non-port for examples/support files that are templates, packag
 
 - Jupyter wrappers are non-port. Equivalent C++ behavior is native Qt widget/view usage and any future explicitly scoped C++ embedding surface.
 - Matplotlib bridge classes are non-port. Equivalent C++ behavior is native C++ rendering/export functionality owned by later exporter issues.
-- Python multiprocessing proxy infrastructure is non-port. Equivalent C++ behavior is native C++ concurrency/process/runtime support only where required by concrete C++ features.
+- Python multiprocessing proxy infrastructure and the `pyqtgraph/examples/multiprocess.py` and `pyqtgraph/examples/parallelize.py` examples are non-port. Equivalent C++ behavior is native C++ concurrency/process/runtime support only where required by concrete C++ features.
 - Numba helpers are non-port. Equivalent C++ behavior is native optimized code and benchmark-backed performance work.
 - Python reload/frozen-app helpers are non-port. Equivalent C++ packaging/deployment behavior requires future owned packaging issues.
 - Not-applicable example/support files are non-port. Equivalent C++ coverage is provided by standalone examples for core plotting/runtime features, not by porting Python package scaffolding or test harness files.
 
-## Follow-up issue links/placeholders
+## Follow-up issue links and waivers
 
-- Follow-up: mark Jupyter manifest entries as non-port/not-applicable or create a dedicated native embedding issue if needed. Placeholder: `P0.xx-jupyter-policy-application`.
-- Follow-up: mark Matplotlib manifest entries/classes as non-port or replace with native exporter parity issues. Placeholder: `P0.xx-matplotlib-policy-application`.
-- Follow-up: mark multiprocessing/proxy entries/classes as non-port or open scoped native C++ concurrency issues only for concrete runtime needs. Placeholder: `P0.xx-multiprocess-policy-application`.
-- Follow-up: mark Numba entries as non-port and ensure performance issues cite native C++ benchmarks. Placeholder: `P0.xx-numba-policy-application`.
-- Follow-up: mark reload/frozen packaging helpers as non-port unless C++ packaging support is explicitly required. Placeholder: `P0.xx-packaging-policy-application`.
-- Follow-up: mark not-applicable examples/support entries as non-port/not-applicable and keep standalone plotting examples in normal port scope. Placeholder: `P0.xx-example-na-policy-application`.
+Existing GitHub issues that can apply or revisit this contract when their owned scope is reached:
+
+- Jupyter/native embedding equivalence: [#197](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/197) Resolve jupyter embedded graphics equivalent.
+- Matplotlib exporter/widget equivalence: [#194](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/194) Resolve Matplotlib exporter equivalent and [#166](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/166) Resolve MatplotlibWidget equivalent.
+- Multiprocessing/proxy infrastructure and the `multiprocess.py`/`parallelize.py` examples: [#195](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/195) Resolve multiprocess remote proxy equivalents.
+- Not-applicable examples/support manifest application: [#207](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/207) Resolve not-applicable examples.
+
+Waiver: no new follow-up issue creation is required for the Numba helpers or Python reload/frozen-app helpers in this policy-only issue. They are explicit non-port decisions; future native C++ performance or packaging work should open scoped issues only when a concrete C++ plotting/runtime requirement exists.
