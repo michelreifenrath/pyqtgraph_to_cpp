@@ -407,4 +407,13 @@ if(BUILD_TESTING)
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_hierarchy_cpp)
         add_test(NAME pyqtgraph_cpp.hierarchy.cpp COMMAND pyqtgraph_cpp_hierarchy_cpp)
     endif()
+
+    add_test(
+        NAME P0.08.performance.schema
+        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_performance"
+            --mode compare
+            --baseline "${CMAKE_CURRENT_SOURCE_DIR}/reports/performance/P0.08/baseline.json"
+            --output "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/metrics.json"
+    )
+    set_tests_properties(P0.08.performance.schema PROPERTIES LABELS "performance;P0.08")
 endif()
