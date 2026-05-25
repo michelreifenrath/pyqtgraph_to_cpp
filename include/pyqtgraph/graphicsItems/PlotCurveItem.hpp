@@ -10,6 +10,9 @@
 #include <QtCore/QRectF>
 #include <QtWidgets/QGraphicsItem>
 
+#include <span>
+#include <vector>
+
 class QPainter;
 class QStyleOptionGraphicsItem;
 class QWidget;
@@ -26,8 +29,19 @@ public:
     PlotCurveItem(PlotCurveItem&&) = delete;
     PlotCurveItem& operator=(PlotCurveItem&&) = delete;
 
+    void setData(std::span<const double> y);
+    void setData(std::span<const double> x, std::span<const double> y);
+
+    [[nodiscard]] std::span<const double> xData() const noexcept;
+    [[nodiscard]] std::span<const double> yData() const noexcept;
+
     [[nodiscard]] QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+
+private:
+    std::vector<double> xData_;
+    std::vector<double> yData_;
+    QRectF bounds_;
 };
 
 } // namespace pyqtgraph::graphicsItems
