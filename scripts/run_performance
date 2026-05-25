@@ -29,6 +29,7 @@ DEFAULT_THRESHOLD = {
     "max_ratio": 20.0,
     "rationale": "P0.08 validates schema and regression-gate mechanics; product benchmarks set tighter thresholds per workload.",
 }
+VERSIONED_BASELINE_CWD = "<repo-root>"
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -70,6 +71,7 @@ def environment() -> dict[str, Any]:
         "machine": platform.machine(),
         "processor": platform.processor(),
         "cpu_count": os.cpu_count(),
+        "cwd": str(Path.cwd()),
     }
 
 
@@ -110,6 +112,8 @@ def build_report(invocation_id: str, invocation_started_unix: float, samples: li
 
 
 def baseline_from_report(report: dict[str, Any], mode: str, rationale: str | None) -> dict[str, Any]:
+    baseline_environment = dict(report["environment"])
+    baseline_environment["cwd"] = VERSIONED_BASELINE_CWD
     return {
         "schema_version": SCHEMA_VERSION,
         "baseline_id": str(uuid.uuid4()),
@@ -118,7 +122,7 @@ def baseline_from_report(report: dict[str, Any], mode: str, rationale: str | Non
         "mode": mode,
         "update_rationale": rationale,
         "workload": report["workload"],
-        "environment": report["environment"],
+        "environment": baseline_environment,
         "baseline_stats": report["stats"],
         "threshold": DEFAULT_THRESHOLD,
         "samples_seconds": report["samples_seconds"],

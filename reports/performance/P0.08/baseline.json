@@ -9,6 +9,7 @@
   "checksum": 590949,
   "environment": {
     "cpu_count": 32,
+    "cwd": "<repo-root>",
     "machine": "x86_64",
     "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
     "processor": "x86_64",
