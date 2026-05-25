@@ -37,6 +37,14 @@ void validateFiniteRange(const AxisRange& range, const char* message)
     }
 }
 
+void validateFiniteIncreasingRange(const AxisRange& range, const char* message)
+{
+    validateFiniteRange(range, message);
+    if (range[1] <= range[0]) {
+        throw std::invalid_argument(message);
+    }
+}
+
 void validateFiniteRange(const Range2D& range, const char* message)
 {
     validateFiniteRange(range[xAxis], message);
@@ -217,7 +225,9 @@ AxisRange clampAxisToLimits(AxisRange range,
         const qreal boundedSpan = *upperLimit - *lowerLimit;
         span = range[1] - range[0];
         if (span >= boundedSpan) {
-            return AxisRange{*lowerLimit, *upperLimit};
+            AxisRange boundedRange{*lowerLimit, *upperLimit};
+            validateFiniteIncreasingRange(boundedRange, "range limits produced non-increasing range");
+            return boundedRange;
         }
     }
 
@@ -238,7 +248,7 @@ AxisRange clampAxisToLimits(AxisRange range,
         range[1] = *upperLimit;
     }
 
-    validateFiniteRange(range, "range limits produced non-finite range");
+    validateFiniteIncreasingRange(range, "range limits produced non-increasing range");
     return range;
 }
 

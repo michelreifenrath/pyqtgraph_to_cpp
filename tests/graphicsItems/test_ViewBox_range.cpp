@@ -264,6 +264,32 @@ bool testLimitsClampPanningAndSpan()
     return true;
 }
 
+bool testLargeFiniteHardLimitsCannotCollapseRanges()
+{
+    using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+
+    ViewBox lowerLimited;
+    const auto beforeLimits = lowerLimited.limits();
+    const auto beforeViewRange = lowerLimited.viewRange();
+    const auto beforeTargetRange = lowerLimited.targetRange();
+
+    ViewBox::Limits limits;
+    limits.xMin = 1.0e308;
+
+    bool threw = false;
+    try {
+        lowerLimited.setLimits(limits);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    CHECK(threw);
+    CHECK(lowerLimited.limits().xMin == beforeLimits.xMin);
+    CHECK(lowerLimited.viewRange() == beforeViewRange);
+    CHECK(lowerLimited.targetRange() == beforeTargetRange);
+
+    return true;
+}
+
 bool testInvalidLimitsThrowAndPreserveState()
 {
     using ViewBox = pyqtgraph::graphicsItems::ViewBox;
@@ -329,6 +355,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testLimitsClampPanningAndSpan()) {
+        return 1;
+    }
+    if (!testLargeFiniteHardLimitsCannotCollapseRanges()) {
         return 1;
     }
     if (!testInvalidLimitsThrowAndPreserveState()) {
