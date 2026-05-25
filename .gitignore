@@ -2,6 +2,7 @@
 .hermes/pi-symphony/logs/
 .hermes/pi-symphony/pi-sessions/
 .hermes/plans/
+.hermes/proposed-issue-sync/
 .pytest_cache/
 __pycache__/
 *.pyc
