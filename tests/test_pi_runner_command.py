@@ -247,6 +247,72 @@ def test_review_failure_schedules_rework_without_human_label(tmp_path: Path, mon
     assert all(len(body) <= config.github_output.comment_max_chars for body in comments)
 
 
+def test_scheduled_rework_supersedes_current_and_downstream_attempt_tasks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+            "validation": {"commands": []},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    issue = Issue(5, "Pin reference", "body", ["tag:bootstrap"], "url", "michel")
+    created: list[dict[str, Any]] = []
+    archived: list[list[str]] = []
+
+    update_issue(
+        tmp_path,
+        5,
+        lambda item: item.update(
+            {
+                "rework_attempts": 1,
+                "rework_task_ids": {
+                    "rework": "old-rework",
+                    "review": "old-review",
+                    "release": "old-release",
+                },
+            }
+        ),
+    )
+
+    def fake_create(_config, _repo_root, **kwargs):
+        created.append(kwargs)
+        return f"new-task-{len(created)}"
+
+    monkeypatch.setenv("HERMES_KANBAN_TASK", "old-review")
+    monkeypatch.setattr(runner, "view_issue", lambda _config, _issue_number: issue)
+    monkeypatch.setattr(runner, "_kanban_create", fake_create)
+    monkeypatch.setattr(runner, "add_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "comment_issue", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(runner, "review_issue", lambda *_args, **_kwargs: (_ for _ in ()).throw(GateFailure("autoreview failed: fix me")))
+    monkeypatch.setattr(runner, "_archive_task_ids", lambda _config, task_ids: archived.append(task_ids))
+    monkeypatch.setattr(runner, "_block_current_task", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("scheduled rework should not leave stale blocked cards")))
+
+    result = runner.run_issue_phase(loaded, issue_number=5, phase="review", complete_current_task=True)
+
+    assert result["action"] == "scheduled_rework"
+    assert result["superseded_tasks"] == ["old-review", "old-release"]
+    assert archived == [["old-review", "old-release"]]
+    assert [item["metadata"]["phase"] for item in created] == ["rework", "review", "release"]
+
+
+def test_superseded_task_ids_keep_completed_rework_history():
+    state = {
+        "rework_task_ids": {
+            "rework": "done-rework",
+            "review": "current-review",
+            "release": "downstream-release",
+        }
+    }
+
+    assert runner._superseded_task_ids_for_phase_failure(state, "review", current_task_id="current-review") == [
+        "current-review",
+        "downstream-release",
+    ]
+
+
 def test_compact_pr_body_contains_only_summary_validation_and_closer():
     config = WorkflowConfig.from_mapping(
         {
