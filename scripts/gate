@@ -29,6 +29,30 @@ EXTRA_COMMANDS = {
     ],
 }
 
+VISUAL_COMMANDS = {
+    "SimplePlot": ["python3 -m pytest tests/examples/test_SimplePlot_visual.py -q"],
+}
+
+
+def visual_gate_commands(example: str) -> list[str]:
+    """Return focused visual oracle validation commands for an example."""
+    try:
+        return list(VISUAL_COMMANDS[example])
+    except KeyError as error:
+        known = ", ".join(sorted(VISUAL_COMMANDS))
+        raise ValueError(f"unsupported visual gate target: {example}; known targets: {known}") from error
+
+
+def validate_visual_target(parser: argparse.ArgumentParser, mode: str, target: str | None) -> None:
+    """Validate the optional visual example argument before running commands."""
+    if mode == "visual":
+        if target is None:
+            parser.error("visual mode requires an example name, e.g. SimplePlot")
+        if not target.replace("_", "").isalnum():
+            parser.error("visual example name may only contain letters, numbers, and underscores")
+    elif target is not None:
+        parser.error(f"{mode} mode does not accept an example name")
+
 
 def diff_check_commands(base: str) -> list[str]:
     """Return local and branch diff checks for pre-PR validation."""
@@ -41,7 +65,8 @@ def diff_check_commands(base: str) -> list[str]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run configured repository validation gates.")
-    parser.add_argument("mode", choices=["focus", "commit", "merge"])
+    parser.add_argument("mode", choices=["focus", "commit", "merge", "visual"])
+    parser.add_argument("target", nargs="?", help="example name for visual gates, e.g. SimplePlot")
     parser.add_argument("--workflow", default="WORKFLOW.md", help="workflow file to load")
     parser.add_argument(
         "--base",
@@ -53,7 +78,13 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def command_plan(mode: str, validation_commands: list[str], diff_check: bool, base: str) -> list[str]:
+def command_plan(
+    mode: str,
+    validation_commands: list[str],
+    diff_check: bool,
+    base: str,
+    target: str | None = None,
+) -> list[str]:
     if mode == "focus":
         return list(validation_commands)
     if mode == "commit":
@@ -61,6 +92,10 @@ def command_plan(mode: str, validation_commands: list[str], diff_check: bool, ba
         return [*commands, *validation_commands]
     if mode == "merge":
         return [*command_plan("commit", validation_commands, diff_check, base), *EXTRA_COMMANDS["merge"]]
+    if mode == "visual":
+        if target is None:
+            raise ValueError("visual mode requires an example name")
+        return visual_gate_commands(target)
     raise ValueError(f"unsupported gate mode: {mode}")
 
 
@@ -110,6 +145,7 @@ def run_gate_command(command: str, *, cwd: Path, timeout: int) -> CommandResult:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    validate_visual_target(parser, args.mode, args.target)
 
     try:
         workflow = load_workflow_with_context(args.workflow)
@@ -118,12 +154,17 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     base = args.base or workflow.config.autoreview.base
-    commands = command_plan(
-        args.mode,
-        workflow.config.validation.commands,
-        workflow.config.validation.diff_check,
-        base,
-    )
+    try:
+        commands = command_plan(
+            args.mode,
+            workflow.config.validation.commands,
+            workflow.config.validation.diff_check,
+            base,
+            target=args.target,
+        )
+    except ValueError as error:
+        print(f"gate configuration failed: {error}", file=sys.stderr)
+        return 2
 
     if args.dry_run:
         for command in commands:
@@ -141,6 +182,8 @@ def main(argv: list[str] | None = None) -> int:
         "status": "passed",
         "commands": [],
     }
+    if args.target is not None:
+        summary["target"] = args.target
 
     for index, command in enumerate(commands, start=1):
         print(f"[{args.mode}] {command}")

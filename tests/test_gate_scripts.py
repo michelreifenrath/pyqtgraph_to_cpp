@@ -93,9 +93,8 @@ def test_gate_help_lists_required_modes() -> None:
     result = run_script("scripts/gate", "--help")
 
     assert result.returncode == 0
-    for mode in ["focus", "commit", "merge"]:
+    for mode in ["focus", "commit", "merge", "visual"]:
         assert mode in result.stdout
-    assert "visual" not in result.stdout
     assert "performance" not in result.stdout
 
 
@@ -312,6 +311,53 @@ def test_gate_dry_run_command_plans(tmp_path: Path) -> None:
         assert result.returncode == 0, result.stderr
         assert result.stdout.splitlines() == commands
     assert not reports.exists()
+
+
+def test_gate_visual_dry_run_targets_example_pytest(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    write_workflow(workflow)
+
+    result = run_script(
+        "scripts/gate",
+        "visual",
+        "SimplePlot",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        "--dry-run",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        "python3 -m pytest tests/examples/test_SimplePlot_visual.py -q"
+    ]
+    assert not reports.exists()
+
+
+def test_gate_visual_requires_example_name() -> None:
+    result = run_script("scripts/gate", "visual", "--dry-run")
+
+    assert result.returncode == 2
+    assert "requires an example name" in result.stderr
+
+
+def test_gate_visual_requires_known_target(tmp_path: Path) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    write_workflow(workflow)
+
+    result = run_script(
+        "scripts/gate",
+        "visual",
+        "MissingCase",
+        "--workflow",
+        str(workflow),
+        "--dry-run",
+    )
+
+    assert result.returncode == 2
+    assert "unsupported visual gate target" in result.stderr
 
 
 def test_run_autoreview_fails_safely_when_tools_unavailable(tmp_path: Path) -> None:
