@@ -48,6 +48,26 @@ bool nearlyEqual(qreal lhs, qreal rhs)
     return std::abs(lhs - rhs) <= 1.0e-12;
 }
 
+bool nearlyRelative(qreal lhs, qreal rhs)
+{
+    const qreal scale = std::abs(rhs) > 1.0 ? std::abs(rhs) : 1.0;
+    return std::abs(lhs - rhs) <= scale * 1.0e-12;
+}
+
+qreal stableAxisCenter(const pyqtgraph::graphicsItems::ViewBox::AxisRange& range)
+{
+    const qreal span = range[1] - range[0];
+    return std::isfinite(span) ? range[0] + span / 2.0 : range[0] / 2.0 + range[1] / 2.0;
+}
+
+bool checkFiniteIncreasingAxis(const pyqtgraph::graphicsItems::ViewBox::AxisRange& range)
+{
+    CHECK(std::isfinite(range[0]));
+    CHECK(std::isfinite(range[1]));
+    CHECK(range[0] < range[1]);
+    return true;
+}
+
 bool checkRange(const pyqtgraph::graphicsItems::ViewBox::Range2D& range,
                 qreal xMin,
                 qreal xMax,
@@ -159,6 +179,57 @@ bool testNormalizationAndValidation()
     return true;
 }
 
+bool testLargeFiniteRangeNormalization()
+{
+    pyqtgraph::graphicsItems::ViewBox largeZeroSpan;
+    largeZeroSpan.setXRange(1.0e308, 1.0e308, 0.0);
+    const auto largeXRange = largeZeroSpan.viewRange();
+    CHECK(checkFiniteIncreasingAxis(largeXRange[0]));
+    CHECK(nearlyRelative(stableAxisCenter(largeXRange[0]), 1.0e308));
+
+    pyqtgraph::graphicsItems::ViewBox collapsedAtLargeOffset;
+    const qreal largeOffset = 1.0e20;
+    collapsedAtLargeOffset.setYRange(largeOffset, largeOffset + 1.0, 0.0);
+    const auto largeYRange = collapsedAtLargeOffset.viewRange();
+    CHECK(checkFiniteIncreasingAxis(largeYRange[1]));
+    CHECK(nearlyRelative(stableAxisCenter(largeYRange[1]), largeOffset));
+
+    pyqtgraph::graphicsItems::ViewBox rejectsOverflow;
+    const auto beforeViewRange = rejectsOverflow.viewRange();
+    const auto beforeTargetRange = rejectsOverflow.targetRange();
+    bool threw = false;
+    try {
+        rejectsOverflow.setXRange(-1.0e308, 1.0e308, 0.02);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    CHECK(threw);
+    CHECK(rejectsOverflow.viewRange() == beforeViewRange);
+    CHECK(rejectsOverflow.targetRange() == beforeTargetRange);
+
+    return true;
+}
+
+bool testEmptyOptionalRangeThrowsAndPreservesState()
+{
+    pyqtgraph::graphicsItems::ViewBox viewBox;
+    viewBox.setXRange(10.0, 12.0, 0.0, false);
+    const auto beforeViewRange = viewBox.viewRange();
+    const auto beforeTargetRange = viewBox.targetRange();
+
+    bool threw = false;
+    try {
+        viewBox.setRange(std::nullopt, std::nullopt);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    CHECK(threw);
+    CHECK(viewBox.viewRange() == beforeViewRange);
+    CHECK(viewBox.targetRange() == beforeTargetRange);
+
+    return true;
+}
+
 bool testLimitsClampPanningAndSpan()
 {
     using ViewBox = pyqtgraph::graphicsItems::ViewBox;
@@ -249,6 +320,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testNormalizationAndValidation()) {
+        return 1;
+    }
+    if (!testLargeFiniteRangeNormalization()) {
+        return 1;
+    }
+    if (!testEmptyOptionalRangeThrowsAndPreservesState()) {
         return 1;
     }
     if (!testLimitsClampPanningAndSpan()) {

@@ -25,6 +25,131 @@ bool isFinite(qreal value)
     return std::isfinite(static_cast<double>(value));
 }
 
+bool rangeIsFinite(const AxisRange& range)
+{
+    return isFinite(range[0]) && isFinite(range[1]);
+}
+
+void validateFiniteRange(const AxisRange& range, const char* message)
+{
+    if (!rangeIsFinite(range)) {
+        throw std::invalid_argument(message);
+    }
+}
+
+void validateFiniteRange(const Range2D& range, const char* message)
+{
+    validateFiniteRange(range[xAxis], message);
+    validateFiniteRange(range[yAxis], message);
+}
+
+qreal stableCenter(const AxisRange& range)
+{
+    const qreal span = range[1] - range[0];
+    if (isFinite(span)) {
+        const qreal center = range[0] + span / 2.0;
+        if (isFinite(center)) {
+            return center;
+        }
+    }
+
+    const qreal center = range[0] / 2.0 + range[1] / 2.0;
+    if (!isFinite(center)) {
+        throw std::invalid_argument("range center must be finite");
+    }
+    return center;
+}
+
+qreal quantizationLimit(qreal center)
+{
+    const qreal magnitude = std::abs(center);
+    if (!isFinite(magnitude) || magnitude == 0.0) {
+        return 0.0;
+    }
+
+    const qreal limit = magnitude * 3.0e-15;
+    if (!isFinite(limit) || limit <= 0.0) {
+        return 0.0;
+    }
+    return limit;
+}
+
+std::optional<AxisRange> expandedAroundCenter(qreal center, qreal halfSpan)
+{
+    if (!isFinite(center) || !isFinite(halfSpan) || halfSpan <= 0.0) {
+        return std::nullopt;
+    }
+
+    const AxisRange symmetric{center - halfSpan, center + halfSpan};
+    if (rangeIsFinite(symmetric) && symmetric[0] < symmetric[1]) {
+        return symmetric;
+    }
+
+    if (center > 0.0) {
+        const AxisRange below{center - halfSpan, center};
+        if (rangeIsFinite(below) && below[0] < below[1]) {
+            return below;
+        }
+    } else if (center < 0.0) {
+        const AxisRange above{center, center + halfSpan};
+        if (rangeIsFinite(above) && above[0] < above[1]) {
+            return above;
+        }
+    }
+
+    return std::nullopt;
+}
+
+AxisRange rangeAroundCenter(qreal center, qreal halfSpan)
+{
+    if (auto range = expandedAroundCenter(center, halfSpan)) {
+        return *range;
+    }
+
+    const qreal quantizedHalfSpan = quantizationLimit(center);
+    if (auto range = expandedAroundCenter(center, quantizedHalfSpan)) {
+        return *range;
+    }
+
+    if (auto range = expandedAroundCenter(center, 0.5)) {
+        return *range;
+    }
+
+    throw std::invalid_argument("cannot construct finite range around center");
+}
+
+AxisRange expandCollapsedRange(qreal center, const AxisRange& previous)
+{
+    const qreal previousSpan = previous[1] - previous[0];
+    if (isFinite(previousSpan) && previousSpan > 0.0) {
+        if (auto range = expandedAroundCenter(center, previousSpan / 2.0)) {
+            return *range;
+        }
+    }
+
+    return rangeAroundCenter(center, 0.0);
+}
+
+AxisRange ensureQuantizedRange(AxisRange range)
+{
+    validateFiniteRange(range, "range endpoints must be finite");
+    if (range[1] <= range[0]) {
+        throw std::invalid_argument("range endpoints must be increasing");
+    }
+
+    const qreal span = range[1] - range[0];
+    if (!isFinite(span)) {
+        return range;
+    }
+
+    const qreal limit = quantizationLimit(stableCenter(range));
+    if (limit > 0.0 && span < 2.0 * limit) {
+        return rangeAroundCenter(stableCenter(range), limit);
+    }
+
+    return range;
+}
+
 void validateFiniteOptional(const std::optional<qreal>& value, const char* name)
 {
     if (value.has_value() && !isFinite(*value)) {
@@ -77,15 +202,15 @@ AxisRange clampAxisToLimits(AxisRange range,
                             const std::optional<qreal>& maxSpanLimit)
 {
     qreal span = range[1] - range[0];
-    qreal center = (range[0] + range[1]) / 2.0;
+    const qreal center = stableCenter(range);
 
     if (maxSpanLimit.has_value() && span > *maxSpanLimit) {
         span = *maxSpanLimit;
-        range = AxisRange{center - span / 2.0, center + span / 2.0};
+        range = rangeAroundCenter(center, span / 2.0);
     }
     if (minSpanLimit.has_value() && span < *minSpanLimit) {
         span = *minSpanLimit;
-        range = AxisRange{center - span / 2.0, center + span / 2.0};
+        range = rangeAroundCenter(center, span / 2.0);
     }
 
     if (lowerLimit.has_value() && upperLimit.has_value()) {
@@ -113,6 +238,7 @@ AxisRange clampAxisToLimits(AxisRange range,
         range[1] = *upperLimit;
     }
 
+    validateFiniteRange(range, "range limits produced non-finite range");
     return range;
 }
 
@@ -142,22 +268,35 @@ AxisRange normalizeRequestedRange(AxisRange requested, AxisRange previous, qreal
     }
 
     qreal span = requested[1] - requested[0];
-    const qreal center = (requested[0] + requested[1]) / 2.0;
+    const qreal center = stableCenter(requested);
     bool preservingPreviousSpan = false;
     if (span == 0.0) {
-        span = previous[1] - previous[0];
-        requested = AxisRange{center - span / 2.0, center + span / 2.0};
+        requested = expandCollapsedRange(center, previous);
         preservingPreviousSpan = true;
+    } else {
+        requested = ensureQuantizedRange(requested);
     }
 
     if (padding != 0.0 && !preservingPreviousSpan) {
         span = requested[1] - requested[0];
+        if (!isFinite(span)) {
+            throw std::invalid_argument("range span and padding must produce finite endpoints");
+        }
         const qreal expansion = span * padding;
+        if (!isFinite(expansion)) {
+            throw std::invalid_argument("range padding must produce finite endpoints");
+        }
         requested[0] -= expansion;
         requested[1] += expansion;
+        validateFiniteRange(requested, "range padding produced non-finite endpoints");
+        if (requested[0] == requested[1]) {
+            requested = expandCollapsedRange(stableCenter(requested), previous);
+        } else if (requested[1] < requested[0]) {
+            throw std::invalid_argument("range padding produced inverted endpoints");
+        }
     }
 
-    return requested;
+    return ensureQuantizedRange(requested);
 }
 
 } // namespace
@@ -205,6 +344,10 @@ void ViewBox::setRange(std::optional<AxisRange> xRange,
                        bool update,
                        bool disableAutoRange)
 {
+    if (!xRange.has_value() && !yRange.has_value()) {
+        throw std::invalid_argument("at least one axis range must be provided");
+    }
+
     Range2D nextTargetRange = targetRange_;
 
     if (xRange.has_value()) {
@@ -214,6 +357,7 @@ void ViewBox::setRange(std::optional<AxisRange> xRange,
         nextTargetRange[yAxis] = clampAxisToLimits(normalizeRequestedRange(*yRange, targetRange_[yAxis], padding), limits_, yAxis);
     }
 
+    validateFiniteRange(nextTargetRange, "setRange produced non-finite target range");
     targetRange_ = nextTargetRange;
 
     if (disableAutoRange) {
