@@ -314,6 +314,16 @@ if(BUILD_TESTING)
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_viewbox)
         add_test(NAME pyqtgraph_cpp.graphicsItems.ViewBox COMMAND pyqtgraph_cpp_graphicsitems_viewbox)
 
+        add_executable(pyqtgraph_cpp_graphicsitems_viewbox_range tests/graphicsItems/test_ViewBox_range.cpp)
+        target_link_libraries(pyqtgraph_cpp_graphicsitems_viewbox_range
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_graphicsitems_viewbox_range)
+        add_test(NAME pyqtgraph_cpp.graphicsItems.ViewBox.range COMMAND pyqtgraph_cpp_graphicsitems_viewbox_range)
+
         add_executable(pyqtgraph_cpp_graphicsitems_plotitem tests/graphicsItems/test_PlotItem.cpp)
         target_link_libraries(pyqtgraph_cpp_graphicsitems_plotitem
             PRIVATE
