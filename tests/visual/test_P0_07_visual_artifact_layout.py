@@ -92,6 +92,36 @@ def test_P0_07_writes_canonical_visual_artifact_tree(tmp_path: Path) -> None:
     assert metrics["review_report_path"] is None
 
 
+def test_P0_07_rejects_case_paths_outside_reports_root(tmp_path: Path) -> None:
+    reference, actual = write_pair(tmp_path)
+    reports_root = tmp_path / "reports" / "visual-diffs"
+    escaped_parent_case = tmp_path / "reports" / "P0_07_escape"
+    escaped_absolute_case = tmp_path / "absolute-case"
+
+    for case, escaped_dir in (
+        ("../P0_07_escape", escaped_parent_case),
+        (str(escaped_absolute_case), escaped_absolute_case),
+    ):
+        result = run_script(
+            "--case",
+            case,
+            "--reference",
+            str(reference),
+            "--actual",
+            str(actual),
+            "--reports-root",
+            str(reports_root),
+            "--gpt-visual-review",
+            "not_applicable",
+        )
+
+        assert result.returncode == 2
+        assert "--case must be a relative path inside --reports-root" in result.stderr
+        assert not escaped_dir.exists()
+
+    assert not reports_root.exists()
+
+
 def test_P0_07_required_gpt_review_is_copied_to_canonical_name(tmp_path: Path) -> None:
     reference, actual = write_pair(tmp_path)
     review = tmp_path / "review.md"

@@ -102,6 +102,22 @@ def _validate_inputs(parser: argparse.ArgumentParser, args: argparse.Namespace) 
         parser.error("provide --reference/--actual or --reference-command/--actual-command")
 
 
+def _case_dir(reports_root: Path, case_name: str) -> Path:
+    case_path = Path(case_name)
+    if case_path.is_absolute() or not case_path.parts or ".." in case_path.parts:
+        raise ValueError("--case must be a relative path inside --reports-root")
+
+    resolved_root = reports_root.resolve()
+    resolved_case = (resolved_root / case_path).resolve()
+    try:
+        resolved_case.relative_to(resolved_root)
+    except ValueError as exc:
+        raise ValueError(
+            "--case must be a relative path inside --reports-root"
+        ) from exc
+    return resolved_case
+
+
 def _review_required_error(args: argparse.Namespace) -> str | None:
     if args.gpt_visual_review == "required_for_pr" and args.review_report is None:
         return "--review-report is required when --gpt-visual-review required_for_pr"
@@ -301,7 +317,11 @@ def main(argv: list[str] | None = None, *, runner: Runner = subprocess.run) -> i
     args = parser.parse_args(argv)
     _validate_inputs(parser, args)
 
-    case_dir = (args.reports_root / args.case).resolve()
+    try:
+        case_dir = _case_dir(args.reports_root, args.case)
+    except ValueError as exc:
+        print(f"check_visual_artifacts: {exc}", file=sys.stderr)
+        return 2
     case_dir.mkdir(parents=True, exist_ok=True)
 
     review_error = _review_required_error(args)

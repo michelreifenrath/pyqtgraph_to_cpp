@@ -30,6 +30,7 @@ Issue-owned/supporting paths changed:
 - Normal fixture path: `test_P0_07_writes_canonical_visual_artifact_tree`
 - Review-report path: `test_P0_07_required_gpt_review_is_copied_to_canonical_name`
 - Failure path: `test_P0_07_required_gpt_review_without_report_exits_2`
+- Case path escape failure path: `test_P0_07_rejects_case_paths_outside_reports_root`
 - Visual mismatch path: `test_P0_07_mismatch_returns_1_and_preserves_artifacts`
 - Fake-runner subprocess plan/cwd/env/order: `test_P0_07_command_runner_sets_env_and_runs_reference_before_actual`
 - Fake-runner nonzero child exit propagation: `test_P0_07_command_runner_propagates_nonzero_child_exit`
@@ -55,8 +56,8 @@ Final local validation after autoreview rework:
 
 | Command | Exit code | Result |
 | --- | ---: | --- |
-| `python3 -m pytest -q tests -k P0_07` | 0 | `8 passed, 259 deselected in 0.24s` |
-| `python3 -m pytest -q tests/examples/test_SimplePlot_visual.py` | 0 | `4 passed in 4.00s` |
+| `python3 -m pytest -q tests -k P0_07` | 0 | `9 passed, 259 deselected in 0.30s` |
+| `python3 -m pytest -q tests/examples/test_SimplePlot_visual.py` | 0 | `4 passed in 3.89s` |
 | `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` | 1 | Fails on existing proposed-issue metadata: `github-issue-{96,100,101,102,105,108,129,166,195,197,207}.md: blocked-by entry does not match a local issue: P0.01` |
 | `git diff --check` | 0 | No whitespace errors |
 | `git diff --name-only origin/main...HEAD` | 0 | `reports/visual/P0_07_completion.md`; `scripts/check_visual_artifacts`; `tests/examples/test_SimplePlot_visual.py`; `tests/visual/test_P0_07_visual_artifact_layout.py` |
