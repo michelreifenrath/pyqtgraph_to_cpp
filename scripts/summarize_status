@@ -1,0 +1,353 @@
+#!/usr/bin/env python3
+"""Summarize the PyQtGraph C++ port manifest as a completion dashboard."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+MANIFEST_PATH = Path("port_manifest.yaml")
+DASHBOARD_PATH = Path("reports/dashboard/status.md")
+COMPLETION_VALUES = ("complete", "partial", "missing")
+EXPECTED_COMPLETION_BY_STATUS = {
+    "ported": "complete",
+    "partial": "partial",
+    "not_started": "missing",
+}
+DASHBOARD_SECTIONS = (
+    ("source_files", "Source files", "source_file_count"),
+    ("classes", "Classes", "class_count"),
+    ("examples", "Examples", "example_count"),
+    ("example_assets", "Example assets", "example_asset_count"),
+)
+
+
+class DashboardError(RuntimeError):
+    """Raised when the dashboard cannot be generated or verified."""
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Summarize port_manifest.yaml into a deterministic completion dashboard."
+    )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=Path.cwd(),
+        help="repository root containing port_manifest.yaml",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=None,
+        help="manifest path to read instead of <root>/port_manifest.yaml",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("markdown", "json"),
+        default="markdown",
+        help="dashboard serialization for stdout",
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--check",
+        action="store_true",
+        help="verify reports/dashboard/status.md is current without writing files",
+    )
+    mode.add_argument(
+        "--update-dashboard",
+        action="store_true",
+        help="write reports/dashboard/status.md from port_manifest.yaml",
+    )
+    parser.add_argument(
+        "--require-complete",
+        action="store_true",
+        help="exit nonzero if any manifest row is not complete",
+    )
+    return parser.parse_args(argv)
+
+
+def resolve_manifest_path(root: Path, manifest: Path | None) -> Path:
+    if manifest is None:
+        return root / MANIFEST_PATH
+    if manifest.is_absolute():
+        return manifest
+    return root / manifest
+
+
+def load_manifest(manifest_path: Path) -> dict[str, Any]:
+    if not manifest_path.exists():
+        raise DashboardError(f"{manifest_path.as_posix()} is missing")
+    data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise DashboardError("port_manifest.yaml must contain a YAML mapping")
+    return data
+
+
+def require_mapping(data: dict[str, Any], key: str) -> dict[str, Any]:
+    value = data.get(key)
+    if not isinstance(value, dict):
+        raise DashboardError(f"port_manifest.yaml {key} must be a mapping")
+    return value
+
+
+def require_list(data: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    value = data.get(key)
+    if not isinstance(value, list):
+        raise DashboardError(f"port_manifest.yaml {key} must be a list")
+    rows: list[dict[str, Any]] = []
+    for index, row in enumerate(value):
+        if not isinstance(row, dict):
+            raise DashboardError(f"port_manifest.yaml {key}[{index}] must be a mapping")
+        rows.append(row)
+    return rows
+
+
+def validate_summary(manifest: dict[str, Any]) -> dict[str, Any]:
+    summary = require_mapping(manifest, "summary")
+    errors: list[str] = []
+    for section, _label, summary_key in DASHBOARD_SECTIONS:
+        rows = require_list(manifest, section)
+        actual = len(rows)
+        expected = summary.get(summary_key)
+        if expected != actual:
+            errors.append(
+                f"{summary_key}={expected!r} does not match {section} count {actual}"
+            )
+    total_examples = len(require_list(manifest, "examples")) + len(
+        require_list(manifest, "example_assets")
+    )
+    if summary.get("total_example_tree_file_count") != total_examples:
+        errors.append(
+            "total_example_tree_file_count="
+            f"{summary.get('total_example_tree_file_count')!r} does not match "
+            f"examples+example_assets count {total_examples}"
+        )
+    excluded = require_mapping(manifest, "excluded")
+    for excluded_key, summary_key in (
+        ("examples", "excluded_example_count"),
+        ("tests", "excluded_test_count"),
+    ):
+        value = excluded.get(excluded_key)
+        if not isinstance(value, list):
+            raise DashboardError(f"port_manifest.yaml excluded.{excluded_key} must be a list")
+        if summary.get(summary_key) != len(value):
+            errors.append(
+                f"{summary_key}={summary.get(summary_key)!r} does not match "
+                f"excluded.{excluded_key} count {len(value)}"
+            )
+    if errors:
+        raise DashboardError(
+            "port_manifest.yaml summary is inconsistent: " + "; ".join(errors)
+        )
+    return summary
+
+
+def validate_row_metadata(manifest: dict[str, Any]) -> None:
+    errors: list[str] = []
+    for section, _label, _summary_key in DASHBOARD_SECTIONS:
+        for index, row in enumerate(require_list(manifest, section)):
+            if "status" not in row or "completion" not in row:
+                errors.append(f"{section}[{index}] missing status/completion metadata")
+                continue
+            status = row["status"]
+            completion = row["completion"]
+            expected_completion = EXPECTED_COMPLETION_BY_STATUS.get(status)
+            if expected_completion is None:
+                errors.append(f"{section}[{index}] has unknown status {status!r}")
+            elif completion != expected_completion:
+                errors.append(
+                    f"{section}[{index}] has inconsistent status/completion "
+                    f"metadata: status={status!r}, completion={completion!r}"
+                )
+    if errors:
+        raise DashboardError(
+            "port_manifest.yaml row metadata is inconsistent: " + "; ".join(errors)
+        )
+
+
+def build_dashboard(root: Path, manifest_path: Path) -> dict[str, Any]:
+    manifest = load_manifest(manifest_path)
+    summary = validate_summary(manifest)
+    validate_row_metadata(manifest)
+
+    counts: dict[str, dict[str, int]] = {}
+    incomplete: dict[str, int] = {}
+    for section, label, _summary_key in DASHBOARD_SECTIONS:
+        rows = require_list(manifest, section)
+        completion_counts = Counter(row["completion"] for row in rows)
+        section_counts = {"total": len(rows)}
+        section_counts.update(
+            {value: completion_counts.get(value, 0) for value in COMPLETION_VALUES}
+        )
+        counts[section] = section_counts
+        incomplete_count = section_counts["total"] - section_counts["complete"]
+        if incomplete_count:
+            incomplete[label] = incomplete_count
+
+    manifest_display = (
+        manifest_path.relative_to(root).as_posix()
+        if manifest_path.is_relative_to(root)
+        else manifest_path.as_posix()
+    )
+    return {
+        "manifest": manifest_display,
+        "dashboard": DASHBOARD_PATH.as_posix(),
+        "reference": require_mapping(manifest, "reference"),
+        "summary": summary,
+        "counts": counts,
+        "incomplete": incomplete,
+    }
+
+
+def expected_metadata(dashboard: dict[str, Any]) -> dict[str, str]:
+    metadata = {
+        "dashboard-manifest": dashboard["manifest"],
+        "dashboard-pinned-commit": str(dashboard["reference"].get("pinned_commit", "")),
+    }
+    for section, counts in dashboard["counts"].items():
+        for key in ("total", *COMPLETION_VALUES):
+            metadata[f"dashboard-{section}-{key}"] = str(counts[key])
+    return metadata
+
+
+def render_metadata_comments(dashboard: dict[str, Any]) -> list[str]:
+    return [
+        f"<!-- {key}: {value} -->"
+        for key, value in expected_metadata(dashboard).items()
+    ]
+
+
+def validate_dashboard_metadata(text: str, dashboard: dict[str, Any]) -> None:
+    missing: list[str] = []
+    stale: list[str] = []
+    for key, expected in expected_metadata(dashboard).items():
+        prefix = f"<!-- {key}: "
+        line = next(
+            (line for line in text.splitlines() if line.startswith(prefix)), None
+        )
+        if line is None:
+            missing.append(key)
+            continue
+        actual = line.removeprefix(prefix).removesuffix(" -->")
+        if actual != expected:
+            stale.append(f"{key}={actual!r} expected {expected!r}")
+    if missing:
+        raise DashboardError(
+            "reports/dashboard/status.md is missing dashboard metadata: "
+            + ", ".join(missing)
+            + "; run scripts/summarize_status --update-dashboard"
+        )
+    if stale:
+        raise DashboardError(
+            "reports/dashboard/status.md has stale dashboard metadata: "
+            + "; ".join(stale)
+            + "; run scripts/summarize_status --update-dashboard"
+        )
+
+
+def render_markdown(dashboard: dict[str, Any]) -> str:
+    reference = dashboard["reference"]
+    summary = dashboard["summary"]
+    counts = dashboard["counts"]
+    incomplete = dashboard["incomplete"]
+    lines = [
+        "# PyQtGraph C++ port completion dashboard",
+        "",
+        *render_metadata_comments(dashboard),
+        f"Manifest: `{dashboard['manifest']}`",
+        f"Reference repo: `{reference.get('repo', '')}`",
+        f"Reference ref: `{reference.get('ref', '')}`",
+        f"Pinned commit: `{reference.get('pinned_commit', '')}`",
+        "",
+        "| Area | Total | Complete | Partial | Missing |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for section, label, _summary_key in DASHBOARD_SECTIONS:
+        section_counts = counts[section]
+        lines.append(
+            f"| {label} | {section_counts['total']} | {section_counts['complete']} | "
+            f"{section_counts['partial']} | {section_counts['missing']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Inventory summary",
+            f"- Total example tree files: {summary['total_example_tree_file_count']}",
+            f"- Excluded examples: {summary['excluded_example_count']}",
+            f"- Excluded tests: {summary['excluded_test_count']}",
+            "",
+            "## Completion gate",
+        ]
+    )
+    if incomplete:
+        for label, count in incomplete.items():
+            lines.append(f"- {label}: {count} incomplete")
+    else:
+        lines.append("- All tracked rows complete")
+    return "\n".join(lines) + "\n"
+
+
+def render_json(dashboard: dict[str, Any]) -> str:
+    return json.dumps(dashboard, indent=2, sort_keys=True) + "\n"
+
+
+def incomplete_message(dashboard: dict[str, Any]) -> str:
+    return "; ".join(
+        f"{label}: {count} incomplete"
+        for label, count in dashboard["incomplete"].items()
+    )
+
+
+def run(argv: list[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    root = args.root.resolve()
+    manifest_path = resolve_manifest_path(root, args.manifest).resolve()
+    try:
+        dashboard = build_dashboard(root, manifest_path)
+        markdown = render_markdown(dashboard)
+        dashboard_path = root / DASHBOARD_PATH
+        if args.check:
+            if not dashboard_path.exists():
+                raise DashboardError(
+                    "reports/dashboard/status.md is missing; run "
+                    "scripts/summarize_status --update-dashboard"
+                )
+            dashboard_text = dashboard_path.read_text(encoding="utf-8")
+            validate_dashboard_metadata(dashboard_text, dashboard)
+            if dashboard_text != markdown:
+                raise DashboardError(
+                    "reports/dashboard/status.md is stale; run "
+                    "scripts/summarize_status --update-dashboard"
+                )
+            print("dashboard verified: reports/dashboard/status.md")
+        elif args.update_dashboard:
+            dashboard_path.parent.mkdir(parents=True, exist_ok=True)
+            dashboard_path.write_text(markdown, encoding="utf-8")
+            print("updated reports/dashboard/status.md")
+        else:
+            if args.format == "json":
+                sys.stdout.write(render_json(dashboard))
+            else:
+                sys.stdout.write(markdown)
+        if args.require_complete and dashboard["incomplete"]:
+            print(
+                "error: completion dashboard is incomplete: "
+                + incomplete_message(dashboard),
+                file=sys.stderr,
+            )
+            return 1
+        return 0
+    except DashboardError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(run())
