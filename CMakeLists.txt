@@ -221,6 +221,23 @@ if(BUILD_TESTING)
     add_test(NAME pyqtgraph_cpp.oracle.P0_06.mismatch COMMAND pyqtgraph_cpp_oracle_P0_06 --mismatch)
     set_tests_properties(pyqtgraph_cpp.oracle.P0_06.mismatch PROPERTIES LABELS P0.06 WILL_FAIL TRUE)
 
+    if(_pyqtgraph_cpp_has_qtcore AND _pyqtgraph_cpp_has_vector)
+        add_executable(pyqtgraph_cpp_oracle_P2_01 tests/oracle/P2_01_point_vector_oracle_comparison.cpp)
+        target_link_libraries(pyqtgraph_cpp_oracle_P2_01
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        target_compile_definitions(pyqtgraph_cpp_oracle_P2_01
+            PRIVATE
+                PYQTGRAPH_CPP_P2_01_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/oracle/fixtures/P2_01/point_vector_semantics.json"
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_oracle_P2_01)
+        add_test(NAME pyqtgraph_cpp.oracle.P2_01 COMMAND pyqtgraph_cpp_oracle_P2_01)
+        set_tests_properties(pyqtgraph_cpp.oracle.P2_01 PROPERTIES LABELS P2.01)
+    endif()
+
     add_executable(pyqtgraph_cpp_core_arrayview tests/core/test_ArrayView.cpp)
     target_link_libraries(pyqtgraph_cpp_core_arrayview
         PRIVATE
@@ -261,6 +278,7 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_point)
         add_test(NAME pyqtgraph_cpp.core.Point COMMAND pyqtgraph_cpp_core_point)
+        set_tests_properties(pyqtgraph_cpp.core.Point PROPERTIES LABELS P2.01)
     endif()
 
     if(_pyqtgraph_cpp_has_vector)
@@ -273,6 +291,7 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_vector)
         add_test(NAME pyqtgraph_cpp.core.Vector COMMAND pyqtgraph_cpp_core_vector)
+        set_tests_properties(pyqtgraph_cpp.core.Vector PROPERTIES LABELS P2.01)
     endif()
 
     if(_pyqtgraph_cpp_has_mkcolor)

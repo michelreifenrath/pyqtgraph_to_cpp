@@ -1,0 +1,165 @@
+{
+  "cpp_equivalences": [
+    "Point/Vector Python len/index/iteration are represented in C++ by coordinateCount(), at(), set(), and operator[] where available; no range iterators are required for P2.01.",
+    "Upstream Point __pow__/__rpow__ are represented by Point::pow(QPointF), Point::pow(double), and pyqtgraph::pow(double, const Point&); operator^ is intentionally unsupported because it is bitwise and precedence-misleading in C++.",
+    "Python dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation."
+  ],
+  "expected": {
+    "point_add": [
+      8.0,
+      12.0
+    ],
+    "point_angle_degrees": -90.0,
+    "point_angle_radians": -1.5707963267948966,
+    "point_construct_scalar": [
+      3.0,
+      3.0
+    ],
+    "point_construct_sequence": [
+      8.0,
+      9.0
+    ],
+    "point_copy": [
+      6.0,
+      8.0
+    ],
+    "point_cross": -2.0,
+    "point_div": [
+      3.0,
+      2.0
+    ],
+    "point_dot": 39.0,
+    "point_initial_index_values": [
+      10.0,
+      20.0
+    ],
+    "point_invalid_empty_error": "IndexError",
+    "point_iteration_values": [
+      10.0,
+      20.0
+    ],
+    "point_len": 2,
+    "point_length": 10.0,
+    "point_max": 3.0,
+    "point_min": -4.0,
+    "point_mul": [
+      12.0,
+      32.0
+    ],
+    "point_norm": [
+      0.6,
+      0.8
+    ],
+    "point_pow_point": [
+      16.0,
+      9.0
+    ],
+    "point_pow_scalar": [
+      2.0,
+      3.0
+    ],
+    "point_proj": [
+      3.0,
+      0.0
+    ],
+    "point_reflected_add": [
+      8.0,
+      10.0
+    ],
+    "point_reflected_div": [
+      4.0,
+      3.0
+    ],
+    "point_reflected_mul": [
+      12.0,
+      16.0
+    ],
+    "point_reflected_pow": [
+      8.0,
+      16.0
+    ],
+    "point_reflected_sub": [
+      14.0,
+      12.0
+    ],
+    "point_set_values": [
+      -1.0,
+      -2.0
+    ],
+    "point_sub": [
+      4.0,
+      4.0
+    ],
+    "point_to_qpoint": [
+      3.0,
+      4.0
+    ],
+    "point_zero_norm_error": "ZeroDivisionError",
+    "vector_abs": [
+      1.0,
+      2.0,
+      3.0
+    ],
+    "vector_angle_right": 90.0,
+    "vector_angle_zero": null,
+    "vector_construct_2": [
+      1.5,
+      -2.25,
+      0.0
+    ],
+    "vector_construct_3": [
+      1.5,
+      -2.25,
+      3.75
+    ],
+    "vector_construct_sequence_2": [
+      8.0,
+      9.0,
+      0.0
+    ],
+    "vector_construct_sequence_3": [
+      8.0,
+      9.0,
+      10.0
+    ],
+    "vector_initial_index_values": [
+      10.0,
+      20.0,
+      30.0
+    ],
+    "vector_invalid_sequence_1_error": "Exception",
+    "vector_iteration_values": [
+      10.0,
+      20.0,
+      30.0
+    ],
+    "vector_len": 3,
+    "vector_set_values": [
+      -1.0,
+      -2.0,
+      -3.0
+    ]
+  },
+  "issue": "P2.01",
+  "reference": {
+    "checkout_path": "reference/pyqtgraph",
+    "docs_url": "https://pyqtgraph.readthedocs.io/",
+    "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "pyqtgraph_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "pyqtgraph_version": "0.14.0",
+    "ref": "pyqtgraph-0.14.0",
+    "repo": "https://github.com/pyqtgraph/pyqtgraph",
+    "source_paths": [
+      "pyqtgraph/Point.py",
+      "pyqtgraph/Vector.py"
+    ]
+  },
+  "schema_version": 1,
+  "tolerance": {
+    "point_absolute": 1e-12,
+    "point_relative": 0.0,
+    "policy": "finite Point values compare with absolute 1e-12; QVector3D-backed Vector values compare with absolute 1e-5; NaN/None are asserted semantically",
+    "vector_absolute": 1e-05,
+    "vector_relative": 0.0
+  }
+}

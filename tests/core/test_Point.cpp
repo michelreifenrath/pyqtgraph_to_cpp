@@ -94,8 +94,14 @@ int main()
     static_assert(std::is_same_v<decltype(Point{1.0, 2.0} + Point{3.0, 4.0}), Point>);
     static_assert(std::is_same_v<decltype(Point{1.0, 2.0} * QPointF{3.0, 4.0}), Point>);
     static_assert(std::is_same_v<decltype(2.0 / Point{1.0, 2.0}), Point>);
+    static_assert(std::is_same_v<decltype(Point{2.0, 3.0}.pow(QPointF{4.0, 2.0})), Point>);
+    static_assert(std::is_same_v<decltype(Point{4.0, 9.0}.pow(0.5)), Point>);
+    static_assert(std::is_same_v<decltype(pyqtgraph::pow(2.0, Point{3.0, 4.0})), Point>);
 
     CHECK(Point::coordinateCount() == 2);
+    const Point sequenceEquivalent{10.0, 20.0};
+    assertNear(sequenceEquivalent.at(0), 10.0);
+    assertNear(sequenceEquivalent.at(1), 20.0);
 
     assertPoint(Point(), 0.0, 0.0);
     assertPoint(Point{1.5, -2.25}, 1.5, -2.25);
@@ -127,6 +133,9 @@ int main()
     assertPoint(point * other, 12.0, 32.0);
     assertPoint(point / other, 3.0, 2.0);
     assertPoint(point + QPointF{1.0, -1.0}, 7.0, 7.0);
+    assertPoint(Point{2.0, 3.0}.pow(QPointF{4.0, 2.0}), 16.0, 9.0);
+    assertPoint(Point{4.0, 9.0}.pow(0.5), 2.0, 3.0);
+    assertPoint(pyqtgraph::pow(2.0, Point{3.0, 4.0}), 8.0, 16.0);
 
     assertPoint(point + 2.0, 8.0, 10.0);
     assertPoint(point - 2.0, 4.0, 6.0);

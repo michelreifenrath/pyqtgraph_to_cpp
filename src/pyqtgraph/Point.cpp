@@ -135,6 +135,16 @@ Point Point::operator/(double value) const
     return *this / Point(value);
 }
 
+Point Point::pow(const QPointF& other) const
+{
+    return Point{std::pow(x(), other.x()), std::pow(y(), other.y())};
+}
+
+Point Point::pow(double value) const
+{
+    return pow(Point(value));
+}
+
 Point& Point::operator+=(const QPointF& other)
 {
     setX(x() + other.x());
@@ -256,6 +266,11 @@ Point operator*(double value, const Point& point)
 Point operator/(double value, const Point& point)
 {
     return Point(value) / point;
+}
+
+Point pow(double value, const Point& point)
+{
+    return Point(value).pow(point);
 }
 
 } // namespace pyqtgraph

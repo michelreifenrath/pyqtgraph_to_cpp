@@ -116,6 +116,13 @@ int main()
     static_assert(std::is_same_v<decltype(Vector{1.0, 2.0, 3.0}.angle(QVector3D{0.0F, 1.0F, 0.0F})), std::optional<double>>);
 
     CHECK(Vector::coordinateCount() == 3);
+    const Vector sequenceEquivalent{10.0, 20.0, 30.0};
+    assertNear(sequenceEquivalent.at(0), 10.0);
+    assertNear(sequenceEquivalent.at(1), 20.0);
+    assertNear(sequenceEquivalent.at(2), 30.0);
+    assertNear(sequenceEquivalent[0], 10.0);
+    assertNear(sequenceEquivalent[1], 20.0);
+    assertNear(sequenceEquivalent[2], 30.0);
 
     assertVector(Vector(), 0.0, 0.0, 0.0);
     assertVector(Vector{1.5, -2.25}, 1.5, -2.25, 0.0);

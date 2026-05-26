@@ -1,0 +1,14 @@
+P2.01 TDD RED checkpoint
+
+Command:
+  cmake --build --preset dev --target pyqtgraph_cpp_oracle_P2_01 --parallel
+
+Exit code: 2
+
+Expected failure summary:
+  The new P2.01 oracle comparison target fails to compile before production implementation because Point power equivalence helpers do not exist yet.
+
+Representative output:
+  tests/oracle/P2_01_point_vector_oracle_comparison.cpp:271:54: error: ‘class pyqtgraph::Point’ has no member named ‘pow’
+  tests/oracle/P2_01_point_vector_oracle_comparison.cpp:272:55: error: ‘class pyqtgraph::Point’ has no member named ‘pow’
+  tests/oracle/P2_01_point_vector_oracle_comparison.cpp:273:53: error: ‘pow’ is not a member of ‘pyqtgraph’

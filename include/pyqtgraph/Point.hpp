@@ -38,6 +38,8 @@ public:
     [[nodiscard]] Point operator-(double value) const;
     [[nodiscard]] Point operator*(double value) const;
     [[nodiscard]] Point operator/(double value) const;
+    [[nodiscard]] Point pow(const QPointF& other) const;
+    [[nodiscard]] Point pow(double value) const;
 
     Point& operator+=(const QPointF& other);
     Point& operator-=(const QPointF& other);
@@ -65,5 +67,6 @@ public:
 [[nodiscard]] Point operator-(double value, const Point& point);
 [[nodiscard]] Point operator*(double value, const Point& point);
 [[nodiscard]] Point operator/(double value, const Point& point);
+[[nodiscard]] Point pow(double value, const Point& point);
 
 } // namespace pyqtgraph
