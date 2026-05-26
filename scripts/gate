@@ -21,13 +21,11 @@ from automation.pi_symphony.process import CommandResult, _subprocess_env  # noq
 
 DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
 
-EXTRA_COMMANDS = {
-    "merge": [
-        "cmake --preset dev",
-        "cmake --build --preset dev --parallel",
-        "ctest --preset dev --output-on-failure",
-    ],
-}
+CMAKE_VALIDATION_COMMANDS = [
+    "cmake --preset dev",
+    "cmake --build --preset dev --parallel",
+    "ctest --preset dev --output-on-failure",
+]
 
 VISUAL_COMMANDS = {
     "SimplePlot": ["python3 -m pytest tests/examples/test_SimplePlot_visual.py -q"],
@@ -89,9 +87,9 @@ def command_plan(
         return list(validation_commands)
     if mode == "commit":
         commands = diff_check_commands(base) if diff_check else []
-        return [*commands, *validation_commands]
+        return [*commands, *validation_commands, *CMAKE_VALIDATION_COMMANDS]
     if mode == "merge":
-        return [*command_plan("commit", validation_commands, diff_check, base), *EXTRA_COMMANDS["merge"]]
+        return command_plan("commit", validation_commands, diff_check, base)
     if mode == "visual":
         if target is None:
             raise ValueError("visual mode requires an example name")
