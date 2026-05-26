@@ -90,11 +90,19 @@ def write_source_lock(root: Path, *, repo: str, commit: str) -> None:
     )
 
 
+def write_fixture_targets(root: Path) -> None:
+    write_fixture_file(root / "include" / "pyqtgraph" / "PlotData.hpp")
+    write_fixture_file(root / "src" / "pyqtgraph" / "PlotData.cpp")
+    write_fixture_file(root / "include" / "pyqtgraph" / "widgets" / "PlotWidget.hpp")
+    write_fixture_file(root / "examples" / "Example.cpp")
+
+
 def make_inventory_root(tmp_path: Path) -> tuple[Path, str]:
     root = tmp_path / "workspace"
     checkout = root / CHECKOUT_PATH
     commit = populate_fixture_repo(checkout)
     write_source_lock(root, repo="fixture://pyqtgraph", commit=commit)
+    write_fixture_targets(root)
     return root, commit
 
 
@@ -113,12 +121,16 @@ def expected_source_files() -> list[dict[str, str]]:
             "target_header_path": "include/pyqtgraph/PlotData.hpp",
             "target_source_path": "src/pyqtgraph/PlotData.cpp",
             "subsystem": "core",
+            "status": "ported",
+            "completion": "complete",
         },
         {
             "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
             "target_header_path": "include/pyqtgraph/widgets/PlotWidget.hpp",
             "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
             "subsystem": "widgets",
+            "status": "partial",
+            "completion": "partial",
         },
     ]
 
@@ -133,6 +145,8 @@ def expected_classes() -> list[dict[str, object]]:
             "subsystem": "core",
             "bases": ["object"],
             "line": 1,
+            "status": "ported",
+            "completion": "complete",
         },
         {
             "class_name": "HelperMixin",
@@ -142,6 +156,8 @@ def expected_classes() -> list[dict[str, object]]:
             "subsystem": "widgets",
             "bases": [],
             "line": 1,
+            "status": "partial",
+            "completion": "partial",
         },
         {
             "class_name": "PlotWidget",
@@ -151,6 +167,8 @@ def expected_classes() -> list[dict[str, object]]:
             "subsystem": "widgets",
             "bases": ["HelperMixin", "QtWidgets.QWidget"],
             "line": 5,
+            "status": "partial",
+            "completion": "partial",
         },
     ]
 
@@ -163,6 +181,7 @@ def expected_manifest(commit: str) -> dict[str, Any]:
             "pinned_commit": commit,
             "docs_url": DOCS_URL,
         },
+        "manifest_schema": {"status_metadata": "adopted"},
         "source_files": expected_source_files(),
         "examples": [
             {
@@ -170,18 +189,24 @@ def expected_manifest(commit: str) -> dict[str, Any]:
                 "target_source_path": "examples/Example.cpp",
                 "name": "Example",
                 "category": "root",
+                "status": "ported",
+                "completion": "complete",
             },
             {
                 "upstream_path": "pyqtgraph/examples/nested/Advanced.py",
                 "target_source_path": "examples/nested/Advanced.cpp",
                 "name": "nested/Advanced",
                 "category": "nested",
+                "status": "not_started",
+                "completion": "missing",
             },
         ],
         "example_assets": [
             {
                 "upstream_path": "pyqtgraph/examples/designerExample.ui",
                 "target_path": "examples/designerExample.ui",
+                "status": "not_started",
+                "completion": "missing",
             }
         ],
         "example_inventory_summary": {
@@ -209,6 +234,20 @@ def expected_manifest(commit: str) -> dict[str, Any]:
     }
 
 
+def strip_manifest_status_metadata(manifest: dict[str, Any]) -> dict[str, Any]:
+    stripped = dict(manifest)
+    for section in ("source_files", "examples", "example_assets", "classes"):
+        stripped[section] = [
+            {
+                key: value
+                for key, value in row.items()
+                if key not in ("status", "completion")
+            }
+            for row in manifest[section]
+        ]
+    return stripped
+
+
 def test_help_exposes_manifest_cli_options() -> None:
     result = run_cli("--help")
 
@@ -233,6 +272,7 @@ def test_yaml_manifest_is_deterministic_sorted_and_uses_canonical_schema(
     manifest = yaml.safe_load(first.stdout)
     assert list(manifest) == [
         "reference",
+        "manifest_schema",
         "source_files",
         "examples",
         "example_assets",
@@ -242,6 +282,10 @@ def test_yaml_manifest_is_deterministic_sorted_and_uses_canonical_schema(
         "summary",
     ]
     assert manifest == expected_manifest(commit)
+    for section in ("source_files", "examples", "example_assets", "classes"):
+        for row in manifest[section]:
+            assert "status" in row
+            assert "completion" in row
     assert "assets" not in manifest
 
 
@@ -318,6 +362,65 @@ def test_check_mode_rejects_missing_or_stale_manifest_without_writes(
     assert snapshot_tree(root) == before
 
 
+def test_P0_02_check_mode_rejects_deferred_manifest_without_row_metadata(
+    tmp_path: Path,
+) -> None:
+    root, commit = make_inventory_root(tmp_path)
+    manifest_path = root / "port_manifest.yaml"
+    manifest = strip_manifest_status_metadata(expected_manifest(commit))
+    manifest["manifest_schema"] = {"status_metadata": "deferred"}
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False),
+        encoding="utf-8",
+    )
+    before = snapshot_tree(root)
+
+    result = run_cli("--root", str(root), "--check")
+    generated = run_cli("--root", str(root))
+
+    assert result.returncode != 0
+    assert "port_manifest.yaml" in result.stderr
+    assert "status" in result.stderr
+    assert "--update-manifest" in result.stderr
+    assert generated.returncode == 0, generated.stderr
+    generated_manifest = yaml.safe_load(generated.stdout)
+    assert generated_manifest["manifest_schema"] == {"status_metadata": "adopted"}
+    for section in ("source_files", "examples", "example_assets", "classes"):
+        for row in generated_manifest[section]:
+            assert "status" in row
+            assert "completion" in row
+    assert snapshot_tree(root) == before
+
+
+@pytest.mark.parametrize(
+    "metadata_fixture", ["one_missing_status", "all_metadata_stripped"]
+)
+def test_P0_02_check_mode_rejects_missing_or_stale_status_metadata(
+    tmp_path: Path, metadata_fixture: str
+) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    assert run_cli("--root", str(root), "--update-manifest").returncode == 0
+    manifest_path = root / "port_manifest.yaml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    if metadata_fixture == "one_missing_status":
+        if "status" in manifest["source_files"][0]:
+            del manifest["source_files"][0]["status"]
+    else:
+        manifest = strip_manifest_status_metadata(manifest)
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    before = snapshot_tree(root)
+
+    result = run_cli("--root", str(root), "--check")
+
+    assert result.returncode != 0
+    assert "port_manifest.yaml" in result.stderr
+    assert "status" in result.stderr
+    assert "--update-manifest" in result.stderr
+    assert snapshot_tree(root) == before
+
+
 def test_check_mode_uses_read_only_fallback_when_checkout_absent(
     tmp_path: Path,
 ) -> None:
@@ -325,6 +428,7 @@ def test_check_mode_uses_read_only_fallback_when_checkout_absent(
     commit = populate_fixture_repo(upstream)
     root = tmp_path / "workspace"
     write_source_lock(root, repo=str(upstream), commit=commit)
+    write_fixture_targets(root)
     manifest = expected_manifest(commit)
     reference = dict(manifest["reference"])
     reference["repo"] = str(upstream)
