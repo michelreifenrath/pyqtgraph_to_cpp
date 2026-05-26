@@ -85,6 +85,17 @@ void expectInvalidInitializerList(std::initializer_list<double> values)
     CHECK(threw);
 }
 
+void expectDomainErrorNorm(const pyqtgraph::Point& point)
+{
+    bool threw = false;
+    try {
+        static_cast<void>(point.norm());
+    } catch (const std::domain_error&) {
+        threw = true;
+    }
+    CHECK(threw);
+}
+
 } // namespace
 
 int main()
@@ -165,8 +176,7 @@ int main()
     assertNear(point.length(), 10.0);
     assertPoint(point.norm(), 0.6, 0.8);
     assertNear(point.norm().length(), 1.0);
-    CHECK(std::isnan(Point().norm().x()));
-    CHECK(std::isnan(Point().norm().y()));
+    expectDomainErrorNorm(Point());
 
     assertNear(Point{1.0, 0.0}.angle(QPointF{0.0, 1.0}), -90.0);
     assertNear(Point{1.0, 0.0}.angle(QPointF{0.0, 1.0}, QStringView{u"radians"}), -std::acos(-1.0) / 2.0);

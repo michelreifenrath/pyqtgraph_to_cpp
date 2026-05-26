@@ -200,7 +200,11 @@ double Point::length() const
 
 Point Point::norm() const
 {
-    return *this / length();
+    const double vectorLength = length();
+    if (vectorLength == 0.0) {
+        throw std::domain_error("Point norm is undefined for a zero-length vector");
+    }
+    return *this / vectorLength;
 }
 
 double Point::angle(const QPointF& other, QStringView units) const

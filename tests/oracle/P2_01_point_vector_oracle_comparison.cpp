@@ -133,20 +133,6 @@ int reportMismatch(const std::string& path, const std::string& expected, const s
     return EXIT_FAILURE;
 }
 
-std::string formatVector(const std::vector<double>& values)
-{
-    std::ostringstream output;
-    output << '[';
-    for (std::size_t index = 0; index < values.size(); ++index) {
-        if (index != 0) {
-            output << ", ";
-        }
-        output << values[index];
-    }
-    output << ']';
-    return output.str();
-}
-
 bool near(double actual, double expected, double tolerance)
 {
     return std::abs(actual - expected) <= tolerance;
@@ -276,9 +262,14 @@ int main()
     if (!contains(fixture, "\"point_zero_norm_error\": \"ZeroDivisionError\"")) {
         return reportMismatch("$.expected.point_zero_norm_error", "ZeroDivisionError", "missing");
     }
-    const Point zeroNorm = Point().norm();
-    if (!std::isnan(zeroNorm.x()) || !std::isnan(zeroNorm.y())) {
-        return reportMismatch("C++ zero norm equivalence", "NaN components", formatVector(pointValues(zeroNorm)));
+    bool zeroNormThrew = false;
+    try {
+        static_cast<void>(Point().norm());
+    } catch (const std::domain_error&) {
+        zeroNormThrew = true;
+    }
+    if (!zeroNormThrew) {
+        return reportMismatch("$.expected.point_zero_norm_error", "std::domain_error", "no exception");
     }
     COMPARE_NUMBER("point_angle_degrees", Point(1.0, 0.0).angle(QPointF(0.0, 1.0)), kPointTolerance);
     COMPARE_NUMBER("point_angle_radians", Point(1.0, 0.0).angle(QPointF(0.0, 1.0), QStringView{u"radians"}), kPointTolerance);

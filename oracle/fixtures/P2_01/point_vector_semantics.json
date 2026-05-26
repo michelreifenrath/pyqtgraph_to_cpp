@@ -2,7 +2,8 @@
   "cpp_equivalences": [
     "Point/Vector Python len/index/iteration are represented in C++ by coordinateCount(), at(), set(), and operator[] where available; no range iterators are required for P2.01.",
     "Upstream Point __pow__/__rpow__ are represented by Point::pow(QPointF), Point::pow(double), and pyqtgraph::pow(double, const Point&); operator^ is intentionally unsupported because it is bitwise and precedence-misleading in C++.",
-    "Python dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation."
+    "Python dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation.",
+    "Python ZeroDivisionError from zero-length Point.norm() is represented by std::domain_error in C++."
   ],
   "expected": {
     "point_add": [
