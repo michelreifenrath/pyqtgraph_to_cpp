@@ -100,7 +100,7 @@ bool testConstructionAndApiShape()
 
     PlotWidget widget;
     CHECK(widget.parentWidget() == nullptr);
-    CHECK(dynamic_cast<QGraphicsView*>(&widget) == nullptr);
+    CHECK(qobject_cast<QGraphicsView*>(static_cast<QObject*>(&widget)) == nullptr);
     CHECK(widget.getPlotItem() != nullptr);
 
     return true;

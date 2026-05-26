@@ -5,20 +5,28 @@
 
 #include "../../../include/pyqtgraph/widgets/PlotWidget.hpp"
 
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QVBoxLayout>
+
 namespace pyqtgraph::widgets {
 
 PlotWidget::PlotWidget(QWidget* parent)
-    : QGraphicsView(parent)
+    : QWidget(parent)
+    , view_(std::make_unique<QGraphicsView>(this))
     , scene_(std::make_unique<GraphicsScene::GraphicsScene>())
     , plotItem_(new graphicsItems::PlotItem())
 {
-    setScene(scene_.get());
+    auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(view_.get());
+
+    view_->setScene(scene_.get());
     scene_->addItem(plotItem_);
 }
 
 PlotWidget::~PlotWidget()
 {
-    setScene(nullptr);
+    view_->setScene(nullptr);
 }
 
 graphicsItems::PlotItem* PlotWidget::getPlotItem() noexcept

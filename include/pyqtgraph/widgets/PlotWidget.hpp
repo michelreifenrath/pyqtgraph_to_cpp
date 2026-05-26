@@ -8,13 +8,15 @@
 #include "../GraphicsScene/GraphicsScene.hpp"
 #include "../graphicsItems/PlotItem/PlotItem.hpp"
 
-#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QWidget>
 
 #include <memory>
 
+class QGraphicsView;
+
 namespace pyqtgraph::widgets {
 
-class PlotWidget : public QGraphicsView {
+class PlotWidget : public QWidget {
 public:
     explicit PlotWidget(QWidget* parent = nullptr);
     ~PlotWidget() override;
@@ -28,6 +30,7 @@ public:
     const graphicsItems::PlotItem* getPlotItem() const noexcept;
 
 private:
+    std::unique_ptr<QGraphicsView> view_;
     std::unique_ptr<GraphicsScene::GraphicsScene> scene_;
     graphicsItems::PlotItem* plotItem_ = nullptr;
 };

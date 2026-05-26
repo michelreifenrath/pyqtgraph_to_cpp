@@ -250,17 +250,19 @@ bool testPlotWidgetApiShape()
     static_assert(!std::is_copy_assignable_v<PlotWidget>);
     static_assert(!std::is_move_constructible_v<PlotWidget>);
     static_assert(!std::is_move_assignable_v<PlotWidget>);
-    static_assert(std::is_base_of_v<QGraphicsView, PlotWidget>);
+    static_assert(!std::is_base_of_v<QGraphicsView, PlotWidget>);
     static_assert(std::is_base_of_v<QWidget, PlotWidget>);
     static_assert(!std::is_final_v<PlotWidget>);
     static_assert(std::is_same_v<decltype(std::declval<PlotWidget&>().getPlotItem()), PlotItem*>);
     static_assert(std::is_same_v<decltype(std::declval<const PlotWidget&>().getPlotItem()), const PlotItem*>);
 
     PlotWidget widget;
-    CHECK(widget.scene() != nullptr);
+    const QList<QGraphicsView*> views = widget.findChildren<QGraphicsView*>(QString(), Qt::FindDirectChildrenOnly);
+    CHECK(views.size() == 1);
+    CHECK(views.front()->scene() != nullptr);
     CHECK(widget.getPlotItem() != nullptr);
-    CHECK(widget.getPlotItem()->scene() == widget.scene());
-    CHECK(widget.getPlotItem()->getViewWidget() == &widget);
+    CHECK(widget.getPlotItem()->scene() == views.front()->scene());
+    CHECK(widget.getPlotItem()->getViewWidget() == views.front());
 
     const PlotWidget& constWidget = widget;
     CHECK(constWidget.getPlotItem() == widget.getPlotItem());
