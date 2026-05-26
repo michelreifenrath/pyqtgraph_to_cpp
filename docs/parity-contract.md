@@ -47,16 +47,20 @@ The following Python-ecosystem areas are out of C++ port scope by default unless
 
 ### Multiprocessing/proxies
 
-- `pyqtgraph/multiprocess/__init__.py`
-- `pyqtgraph/multiprocess/bootstrap.py`
-- `pyqtgraph/multiprocess/parallelizer.py`
-- `pyqtgraph/multiprocess/processes.py`
-- `pyqtgraph/multiprocess/remoteproxy.py`
+- `pyqtgraph/multiprocess/__init__.py` -> `include/pyqtgraph/multiprocess/__init__.hpp`, `src/pyqtgraph/multiprocess/__init__.cpp`
+- `pyqtgraph/multiprocess/bootstrap.py` -> `include/pyqtgraph/multiprocess/bootstrap.hpp`, `src/pyqtgraph/multiprocess/bootstrap.cpp`
+- `pyqtgraph/multiprocess/parallelizer.py` -> `include/pyqtgraph/multiprocess/parallelizer.hpp`, `src/pyqtgraph/multiprocess/parallelizer.cpp`
+- `pyqtgraph/multiprocess/processes.py` -> `include/pyqtgraph/multiprocess/processes.hpp`, `src/pyqtgraph/multiprocess/processes.cpp`
+- `pyqtgraph/multiprocess/remoteproxy.py` -> `include/pyqtgraph/multiprocess/remoteproxy.hpp`, `src/pyqtgraph/multiprocess/remoteproxy.cpp`
 - `pyqtgraph/examples/multiprocess.py` -> non-port as a Python multiprocessing/proxy example; equivalent C++ coverage is native concurrency/process usage only if a future concrete C++ runtime feature requires it.
 - `pyqtgraph/examples/parallelize.py` -> non-port as a Python `Parallelize`/multiprocessing example; equivalent C++ coverage is native C++ task/concurrency behavior only if a future concrete C++ runtime feature requires it.
-- Key classes: `Parallelize`, `Tasker`, `Process`, `ForkedProcess`, `RemoteQtEventHandler`, `QtProcess`, `RemoteEventHandler`, `Request`, `LocalObjectProxy`, `ObjectProxy`, `DeferredObjectProxy`.
+- Key classes: `CanceledError`, `Parallelize`, `Tasker`, `Process`, `ForkedProcess`, `RemoteQtEventHandler`, `QtProcess`, `FileForwarder`, `ClosedError`, `NoResultError`, `RemoteExceptionWarning`, `RemoteEventHandler`, `Request`, `LocalObjectProxy`, `ObjectProxy`, `DeferredObjectProxy`.
 
-Default decision: non-port for Python multiprocessing/proxy infrastructure and its multiprocessing examples. Native C++ concurrency, worker process, or async behavior may be implemented in later issues only when required by a C++ plotting/runtime feature.
+P8.05 / #195 decision: non-port for Python process proxying, interpreter/process bootstrap, remote object forwarding, request/result marshalling, deferred object proxies, remote exception/warning proxying, and Python stdout/stderr forwarding. No Python object-proxy API compatibility layer is accepted for the native C++ port.
+
+Accepted C++ equivalence: native Qt/C++ plotting and rendering stay in the normal in-process Qt scene/view/item APIs unless a future issue explicitly owns worker-process rendering. Native C++ concurrency, process, or async support is in scope only when required by a concrete C++ plotting/runtime feature.
+
+Remote render parity boundary: `RemoteGraphicsView`/worker-process rendering is not owned by #195 and is deferred to follow-up [#167](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/167) if the native C++ port needs that behavior. Runtime or render proof for worker-process rendering must be supplied by that scoped issue; no executable or visual proof is required for this decision-doc update.
 
 ### Numba
 
@@ -91,7 +95,7 @@ Default decision: non-port for examples/support files that are templates, packag
 
 - Jupyter wrappers are non-port. Equivalent C++ behavior is native Qt widget/view usage and any future explicitly scoped C++ embedding surface.
 - Matplotlib bridge classes are non-port. Equivalent C++ behavior is native C++ rendering/export functionality owned by later exporter issues.
-- Python multiprocessing proxy infrastructure and the `pyqtgraph/examples/multiprocess.py` and `pyqtgraph/examples/parallelize.py` examples are non-port. Equivalent C++ behavior is native C++ concurrency/process/runtime support only where required by concrete C++ features.
+- Python multiprocessing proxy infrastructure, interpreter/process bootstrap, remote object forwarding, request/result marshalling, deferred object proxies, remote exception/warning proxying, Python stdout/stderr forwarding, and the `pyqtgraph/examples/multiprocess.py` and `pyqtgraph/examples/parallelize.py` examples are non-port. Equivalent C++ behavior is normal in-process Qt scene/view/item rendering and native C++ concurrency/process/runtime support only where required by concrete C++ features; no Python object-proxy API compatibility layer is accepted.
 - Numba helpers are non-port. Equivalent C++ behavior is native optimized code and benchmark-backed performance work.
 - Python reload/frozen-app helpers are non-port. Equivalent C++ packaging/deployment behavior requires future owned packaging issues.
 - Not-applicable example/support files are non-port. Equivalent C++ coverage is provided by standalone examples for core plotting/runtime features, not by porting Python package scaffolding or test harness files.
@@ -103,6 +107,7 @@ Existing GitHub issues that can apply or revisit this contract when their owned 
 - Jupyter/native embedding equivalence: [#197](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/197) Resolve jupyter embedded graphics equivalent.
 - Matplotlib exporter/widget equivalence: [#194](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/194) Resolve Matplotlib exporter equivalent and [#166](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/166) Resolve MatplotlibWidget equivalent.
 - Multiprocessing/proxy infrastructure and the `multiprocess.py`/`parallelize.py` examples: [#195](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/195) Resolve multiprocess remote proxy equivalents.
+- `RemoteGraphicsView`/worker-process rendering plan and proof: [#167](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/167) Complete RemoteGraphicsView plan and implementation.
 - Not-applicable examples/support manifest application: [#207](https://github.com/michelreifenrath/pyqtgraph_to_cpp/issues/207) Resolve not-applicable examples.
 
 Waiver: no new follow-up issue creation is required for the Numba helpers or Python reload/frozen-app helpers in this policy-only issue. They are explicit non-port decisions; future native C++ performance or packaging work should open scoped issues only when a concrete C++ plotting/runtime requirement exists.
