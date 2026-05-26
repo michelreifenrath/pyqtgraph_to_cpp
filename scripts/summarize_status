@@ -1,0 +1,579 @@
+#!/usr/bin/env python3
+"""Summarize local port manifest acceptance status."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+REQUIRED_SECTIONS = (
+    "summary",
+    "source_files",
+    "examples",
+    "example_assets",
+    "classes",
+    "example_validation_levels",
+)
+TRACKED_SECTIONS = ("source_files", "examples", "example_assets", "classes")
+SUMMARY_COUNTS = {
+    "source_file_count": "source_files",
+    "example_count": "examples",
+    "example_asset_count": "example_assets",
+    "class_count": "classes",
+}
+REQUIRED_VALIDATION_RECORD_KEYS = {"upstream_path", "name", "category", "validation"}
+REQUIRED_VALIDATION_KEYS = {
+    "numeric",
+    "visual",
+    "interaction",
+    "gpt_visual_review",
+}
+REQUIRED_FINAL_CRITERIA = (
+    "example_validation_runs",
+    "core_hierarchy_checks",
+    "required_platform_tests",
+    "performance_benchmarks",
+    "autoreview_status",
+    "package_install_proof",
+    "downstream_find_package_proof",
+    "human_approval",
+)
+FINAL_ACCEPTANCE_EVIDENCE_PATH = Path(
+    "reports/issues/P0.09/final_acceptance_evidence.yaml"
+)
+STATUS_VALUES = {"ported", "partial", "not_started"}
+COMPLETION_VALUES = {"complete", "partial", "missing"}
+LEVEL_VALUES = {"required", "optional", "not_applicable"}
+GPT_VISUAL_VALUES = {"required_for_pr", "optional", "not_applicable"}
+TARGET_PATH_KEYS = {
+    "source_files": ("target_header_path", "target_source_path"),
+    "examples": ("target_source_path",),
+    "example_assets": ("target_path",),
+    "classes": ("target_header_path", "target_source_path"),
+}
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Summarize final acceptance status from port_manifest.yaml."
+    )
+    parser.add_argument(
+        "--require-complete",
+        action="store_true",
+        help="Fail unless all tracked files/classes/examples/assets are ported and complete.",
+    )
+    return parser
+
+
+def load_manifest(path: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    if not path.is_file():
+        return None, [f"missing manifest: {path}"]
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        return None, [f"failed to parse {path}: {exc}"]
+    if not isinstance(data, dict):
+        return None, [f"{path} must contain a YAML mapping"]
+    return data, []
+
+
+def validate_example_validation_levels(manifest: dict[str, Any]) -> list[str]:
+    records = manifest.get("example_validation_levels")
+    examples = manifest.get("examples")
+    if not isinstance(records, list) or not isinstance(examples, list):
+        return []
+
+    errors: list[str] = []
+    examples_by_path = {
+        example.get("upstream_path"): example
+        for example in examples
+        if isinstance(example, dict)
+    }
+    record_paths: list[str] = []
+    for index, record in enumerate(records):
+        prefix = f"example_validation_levels[{index}]"
+        if not isinstance(record, dict):
+            errors.append(f"{prefix} must be a mapping")
+            continue
+        if set(record) != REQUIRED_VALIDATION_RECORD_KEYS:
+            keys = ", ".join(sorted(str(key) for key in record))
+            errors.append(f"{prefix} has invalid keys: {keys}")
+            continue
+        path = record["upstream_path"]
+        if not isinstance(path, str):
+            errors.append(f"{prefix}.upstream_path must be a string")
+            continue
+        record_paths.append(path)
+
+        example = examples_by_path.get(path)
+        if example is not None:
+            for key in ("name", "category"):
+                if record[key] != example.get(key):
+                    errors.append(
+                        f"{prefix}.{key}={record[key]} "
+                        f"does not match examples entry {example.get(key)}"
+                    )
+
+        validation = record["validation"]
+        if not isinstance(validation, dict):
+            errors.append(f"{prefix}.validation must be a mapping")
+            continue
+        if set(validation) != REQUIRED_VALIDATION_KEYS:
+            keys = ", ".join(sorted(str(key) for key in validation))
+            errors.append(f"{prefix}.validation has invalid keys: {keys}")
+            continue
+        for key in ("numeric", "visual", "interaction"):
+            value = validation[key]
+            if not isinstance(value, str) or value not in LEVEL_VALUES:
+                errors.append(f"{prefix}.validation.{key}={value} is invalid")
+        gpt_visual_review = validation["gpt_visual_review"]
+        if not isinstance(gpt_visual_review, str) or gpt_visual_review not in GPT_VISUAL_VALUES:
+            errors.append(
+                f"{prefix}.validation.gpt_visual_review="
+                f"{gpt_visual_review} is invalid"
+            )
+        if validation["visual"] == "not_applicable" and validation["gpt_visual_review"] != "not_applicable":
+            errors.append(
+                f"{prefix} visual not_applicable requires gpt_visual_review not_applicable"
+            )
+        if validation["visual"] == "required" and validation["gpt_visual_review"] != "required_for_pr":
+            errors.append(
+                f"{prefix} visual required requires gpt_visual_review required_for_pr"
+            )
+        if validation["interaction"] == "required" and validation["visual"] != "required":
+            errors.append(f"{prefix} interaction required requires visual required")
+
+    example_paths = {
+        example["upstream_path"]
+        for example in examples
+        if isinstance(example, dict) and isinstance(example.get("upstream_path"), str)
+    }
+    duplicate_paths = sorted(
+        path for path, count in Counter(record_paths).items() if count > 1
+    )
+    missing = sorted(example_paths - set(record_paths))
+    extra = sorted(set(record_paths) - example_paths)
+    if duplicate_paths:
+        errors.append("duplicate validation records: " + ", ".join(duplicate_paths))
+    if missing:
+        errors.append("missing validation records: " + ", ".join(missing))
+    if extra:
+        errors.append("validation records for unknown examples: " + ", ".join(extra))
+    if len(records) != len(examples):
+        errors.append(
+            f"example_validation_levels length {len(records)} does not match examples length {len(examples)}"
+        )
+    return errors
+
+
+def validate_manifest(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    for section in REQUIRED_SECTIONS:
+        if section not in manifest:
+            errors.append(f"missing required section: {section}")
+
+    summary = manifest.get("summary")
+    if "summary" in manifest and not isinstance(summary, dict):
+        errors.append("summary must be a mapping")
+
+    for section in REQUIRED_SECTIONS:
+        if section == "summary" or section not in manifest:
+            continue
+        if not isinstance(manifest[section], list):
+            errors.append(f"{section} must be a list")
+
+    for key, section in SUMMARY_COUNTS.items():
+        if not isinstance(summary, dict) or section not in manifest:
+            continue
+        expected = len(manifest[section]) if isinstance(manifest[section], list) else None
+        actual = summary.get(key)
+        if expected is not None and actual != expected:
+            errors.append(
+                f"summary.{key}={actual} does not match {section} length {expected}"
+            )
+
+    if isinstance(summary, dict) and all(
+        isinstance(manifest.get(section), list) for section in ("examples", "example_assets")
+    ):
+        expected_total = len(manifest["examples"]) + len(manifest["example_assets"])
+        actual_total = summary.get("total_example_tree_file_count")
+        if actual_total != expected_total:
+            errors.append(
+                "summary.total_example_tree_file_count="
+                f"{actual_total} does not match examples+example_assets length {expected_total}"
+            )
+
+    for section in TRACKED_SECTIONS:
+        records = manifest.get(section)
+        if not isinstance(records, list):
+            continue
+        for index, record in enumerate(records):
+            if not isinstance(record, dict):
+                errors.append(f"{section}[{index}] must be a mapping")
+                continue
+            if "status" not in record:
+                errors.append(f"{section}[{index}] missing status")
+            elif record["status"] not in STATUS_VALUES:
+                errors.append(f"{section}[{index}] invalid status: {record['status']}")
+            if "completion" not in record:
+                errors.append(f"{section}[{index}] missing completion")
+            elif record["completion"] not in COMPLETION_VALUES:
+                errors.append(
+                    f"{section}[{index}] invalid completion: {record['completion']}"
+                )
+
+    errors.extend(validate_example_validation_levels(manifest))
+    return errors
+
+
+def complete_target_path_errors(
+    section: str, index: int, record: dict[str, Any], root: Path
+) -> list[str]:
+    errors: list[str] = []
+    root_path = root.resolve()
+    for key in TARGET_PATH_KEYS[section]:
+        value = record.get(key)
+        if not isinstance(value, str) or not value:
+            errors.append(
+                f"{section}[{index}] complete metadata missing target path field: {key}"
+            )
+            continue
+        relative_path = Path(value)
+        if relative_path.is_absolute():
+            errors.append(
+                f"{section}[{index}] complete metadata target path must be relative: "
+                f"{key}={value}"
+            )
+            continue
+        target_path = (root_path / relative_path).resolve()
+        if not target_path.is_relative_to(root_path):
+            errors.append(
+                f"{section}[{index}] complete metadata target path escapes repository root: "
+                f"{key}={value}"
+            )
+            continue
+        if not target_path.is_file():
+            errors.append(
+                f"{section}[{index}] complete metadata points to missing target file: "
+                f"{key}={value}"
+            )
+    return errors
+
+
+def section_counts(
+    section: str, records: list[dict[str, Any]], root: Path
+) -> dict[str, int]:
+    ported = 0
+    complete = 0
+    for index, record in enumerate(records):
+        target_paths_exist = not complete_target_path_errors(section, index, record, root)
+        if record.get("status") == "ported" and target_paths_exist:
+            ported += 1
+        if (
+            record.get("status") == "ported"
+            and record.get("completion") == "complete"
+            and target_paths_exist
+        ):
+            complete += 1
+    return {
+        "total": len(records),
+        "ported": ported,
+        "complete": complete,
+        "incomplete": len(records) - complete,
+    }
+
+
+def validation_level_counts(records: list[dict[str, Any]]) -> dict[str, int]:
+    return {
+        "total": len(records),
+        "numeric_required": sum(
+            1 for record in records if record["validation"]["numeric"] == "required"
+        ),
+        "visual_required": sum(
+            1 for record in records if record["validation"]["visual"] == "required"
+        ),
+        "interaction_required": sum(
+            1 for record in records if record["validation"]["interaction"] == "required"
+        ),
+        "gpt_visual_required": sum(
+            1
+            for record in records
+            if record["validation"]["gpt_visual_review"] == "required_for_pr"
+        ),
+    }
+
+
+def final_acceptance_evidence_errors(
+    manifest: dict[str, Any], root: Path
+) -> list[str]:
+    evidence_path = root / FINAL_ACCEPTANCE_EVIDENCE_PATH
+    data, errors = load_final_acceptance_evidence(evidence_path)
+    if errors:
+        return errors
+
+    assert data is not None
+    criteria = data.get("criteria")
+    if not isinstance(criteria, dict):
+        return [
+            "final acceptance evidence "
+            f"{FINAL_ACCEPTANCE_EVIDENCE_PATH} missing criteria mapping"
+        ]
+
+    errors = []
+    for criterion in REQUIRED_FINAL_CRITERIA:
+        prefix = f"final acceptance evidence {criterion}"
+        if criterion not in criteria:
+            errors.append(
+                f"final acceptance evidence missing required criterion: {criterion}"
+            )
+            continue
+        record = criteria[criterion]
+        if not isinstance(record, dict):
+            errors.append(f"{prefix} must be a mapping")
+            continue
+        errors.extend(final_criterion_errors(criterion, prefix, record, root))
+
+    errors.extend(validate_example_proofs(criteria.get("example_validation_runs"), manifest, root))
+    return errors
+
+
+def load_final_acceptance_evidence(
+    path: Path,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    if not path.is_file():
+        return None, [f"final acceptance evidence missing: {FINAL_ACCEPTANCE_EVIDENCE_PATH}"]
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        return None, [
+            "failed to parse final acceptance evidence "
+            f"{FINAL_ACCEPTANCE_EVIDENCE_PATH}: {exc}"
+        ]
+    if not isinstance(data, dict):
+        return None, [
+            "final acceptance evidence "
+            f"{FINAL_ACCEPTANCE_EVIDENCE_PATH} must contain a YAML mapping"
+        ]
+    return data, []
+
+
+def final_criterion_errors(
+    criterion: str, prefix: str, record: dict[str, Any], root: Path
+) -> list[str]:
+    errors: list[str] = []
+    if criterion == "human_approval":
+        if record.get("approved") is not True:
+            errors.append(f"{prefix} approved must be true")
+        if not isinstance(record.get("reviewer"), str) or not record["reviewer"]:
+            errors.append(f"{prefix} reviewer must be a non-empty string")
+    else:
+        if record.get("status") != "passed":
+            errors.append(f"{prefix} status must be passed")
+        if not isinstance(record.get("command"), str) or not record["command"]:
+            errors.append(f"{prefix} command must be a non-empty string")
+    errors.extend(final_artifact_path_errors(prefix, record.get("artifact_paths"), root))
+    return errors
+
+
+def final_artifact_path_errors(prefix: str, artifact_paths: Any, root: Path) -> list[str]:
+    if not isinstance(artifact_paths, list) or not artifact_paths:
+        return [f"{prefix} must list at least one artifact path"]
+
+    errors: list[str] = []
+    root_path = root.resolve()
+    for index, value in enumerate(artifact_paths):
+        if not isinstance(value, str) or not value:
+            errors.append(f"{prefix} artifact_paths[{index}] must be a non-empty string")
+            continue
+        relative_path = Path(value)
+        if relative_path.is_absolute():
+            errors.append(f"{prefix} artifact path must be relative: {value}")
+            continue
+        artifact_path = (root_path / relative_path).resolve()
+        if not artifact_path.is_relative_to(root_path):
+            errors.append(f"{prefix} artifact path escapes repository root: {value}")
+            continue
+        if not artifact_path.is_file():
+            errors.append(f"{prefix} artifact path missing: {value}")
+    return errors
+
+
+def complete_example_paths(manifest: dict[str, Any]) -> set[str]:
+    examples = manifest.get("examples")
+    if not isinstance(examples, list):
+        return set()
+    return {
+        example["upstream_path"]
+        for example in examples
+        if isinstance(example, dict)
+        and isinstance(example.get("upstream_path"), str)
+        and example.get("status") == "ported"
+        and example.get("completion") == "complete"
+    }
+
+
+def validate_example_proofs(record: Any, manifest: dict[str, Any], root: Path) -> list[str]:
+    if not isinstance(record, dict):
+        return []
+    complete_examples = complete_example_paths(manifest)
+    proofs = record.get("examples")
+    if not isinstance(proofs, list):
+        return [
+            "final acceptance evidence example_validation_runs must list "
+            "per-example proofs"
+        ]
+
+    errors: list[str] = []
+    passed_paths: set[str] = set()
+    for index, proof in enumerate(proofs):
+        prefix = f"final acceptance evidence example_validation_runs examples[{index}]"
+        if not isinstance(proof, dict):
+            errors.append(f"{prefix} must be a mapping")
+            continue
+        path = proof.get("upstream_path")
+        if not isinstance(path, str) or not path:
+            errors.append(f"{prefix} missing upstream_path")
+            continue
+        if path not in complete_examples:
+            errors.append(f"{prefix} references non-complete manifest example: {path}")
+        if proof.get("status") != "passed":
+            errors.append(f"{prefix} status must be passed")
+        errors.extend(final_artifact_path_errors(prefix, proof.get("artifact_paths"), root))
+        passed_paths.add(path)
+
+    missing = sorted(complete_examples - passed_paths)
+    if missing:
+        errors.append(
+            "final acceptance evidence missing example validation proof: "
+            + ", ".join(missing)
+        )
+    return errors
+
+
+def final_acceptance_counts(manifest: dict[str, Any], root: Path) -> tuple[int, int, int]:
+    evidence_path = root / FINAL_ACCEPTANCE_EVIDENCE_PATH
+    data, errors = load_final_acceptance_evidence(evidence_path)
+    if errors or data is None or not isinstance(data.get("criteria"), dict):
+        return 0, 0, len(complete_example_paths(manifest))
+
+    criteria = data["criteria"]
+    passed_criteria = 0
+    for criterion in REQUIRED_FINAL_CRITERIA:
+        record = criteria.get(criterion)
+        if not isinstance(record, dict):
+            continue
+        prefix = f"final acceptance evidence {criterion}"
+        criterion_errors = final_criterion_errors(criterion, prefix, record, root)
+        if criterion == "example_validation_runs":
+            criterion_errors.extend(validate_example_proofs(record, manifest, root))
+        if not criterion_errors:
+            passed_criteria += 1
+
+    example_validation_runs = criteria.get("example_validation_runs")
+    proofs = (
+        example_validation_runs.get("examples", [])
+        if isinstance(example_validation_runs, dict)
+        else []
+    )
+    passed_proofs = 0
+    if isinstance(proofs, list):
+        passed_proofs = sum(
+            1
+            for proof in proofs
+            if isinstance(proof, dict) and proof.get("status") == "passed"
+        )
+    return passed_criteria, passed_proofs, len(complete_example_paths(manifest))
+
+
+def complete_target_errors(manifest: dict[str, Any], root: Path) -> list[str]:
+    errors: list[str] = []
+    for section in TRACKED_SECTIONS:
+        records = manifest.get(section)
+        if not isinstance(records, list):
+            continue
+        for index, record in enumerate(records):
+            if not isinstance(record, dict):
+                continue
+            if record.get("status") != "ported" or record.get("completion") != "complete":
+                continue
+            errors.extend(complete_target_path_errors(section, index, record, root))
+    return errors
+
+
+def print_dashboard(manifest: dict[str, Any], root: Path) -> dict[str, int]:
+    print("P0.09 final acceptance status")
+    print("manifest: port_manifest.yaml")
+    print("summary: consistent")
+
+    incomplete_by_section: dict[str, int] = {}
+    for section in TRACKED_SECTIONS:
+        records = manifest[section]
+        counts = section_counts(section, records, root)
+        incomplete_by_section[section] = counts["incomplete"]
+        print(
+            f"{section}: total={counts['total']} ported={counts['ported']} "
+            f"complete={counts['complete']} incomplete={counts['incomplete']}"
+        )
+
+    validation_levels = manifest["example_validation_levels"]
+    validation_counts = validation_level_counts(validation_levels)
+    print(
+        "example_validation_levels: "
+        f"total={validation_counts['total']} "
+        f"numeric_required={validation_counts['numeric_required']} "
+        f"visual_required={validation_counts['visual_required']} "
+        f"interaction_required={validation_counts['interaction_required']} "
+        f"gpt_visual_required={validation_counts['gpt_visual_required']}"
+    )
+    passed_criteria, passed_example_proofs, complete_examples = final_acceptance_counts(
+        manifest, root
+    )
+    print(
+        "final_acceptance_evidence: "
+        f"criteria={len(REQUIRED_FINAL_CRITERIA)} "
+        f"passed={passed_criteria} "
+        f"example_proofs={passed_example_proofs}/{complete_examples}"
+    )
+    return incomplete_by_section
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    root = Path.cwd()
+    manifest, errors = load_manifest(root / "port_manifest.yaml")
+    if manifest is not None:
+        errors.extend(validate_manifest(manifest))
+
+    if errors:
+        for error in errors:
+            print(error, file=sys.stderr)
+        return 1
+
+    assert manifest is not None
+    incomplete_by_section = print_dashboard(manifest, root)
+    if args.require_complete:
+        incomplete = {
+            section: count for section, count in incomplete_by_section.items() if count
+        }
+        target_errors = complete_target_errors(manifest, root)
+        checklist_errors = final_acceptance_evidence_errors(manifest, root)
+        if incomplete or target_errors or checklist_errors:
+            print("require_complete: failed", file=sys.stderr)
+            for section, count in incomplete.items():
+                print(f"{section}: {count} incomplete", file=sys.stderr)
+            for error in target_errors:
+                print(error, file=sys.stderr)
+            for error in checklist_errors:
+                print(error, file=sys.stderr)
+            return 1
+        print("require_complete: satisfied")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
