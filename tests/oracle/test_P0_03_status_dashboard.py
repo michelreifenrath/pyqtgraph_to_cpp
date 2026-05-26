@@ -130,6 +130,7 @@ def write_manifest(root: Path) -> dict[str, Any]:
         },
     }
     materialize_complete_targets(root, manifest)
+    touch_target(root, "include/pyqtgraph/widgets/PlotWidget.hpp")
     (root / "port_manifest.yaml").write_text(
         yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
     )
@@ -207,6 +208,8 @@ def test_P0_03_check_rejects_stale_dashboard_metadata_without_writes(
     manifest["source_files"].append(  # type: ignore[attr-defined]
         {
             "upstream_path": "pyqtgraph/New.py",
+            "target_header_path": "include/pyqtgraph/New.hpp",
+            "target_source_path": "src/pyqtgraph/New.cpp",
             "status": "not_started",
             "completion": "missing",
         }
@@ -270,6 +273,27 @@ def test_P0_03_check_rejects_missing_dashboard_metadata_without_writes(
     assert "--update-dashboard" in result.stderr
 
 
+def test_P0_03_check_rejects_stale_incomplete_target_metadata_without_writes(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+    assert run_cli("--update-dashboard", root=tmp_path).returncode == 0
+    dashboard_path = tmp_path / "reports" / "dashboard" / "status.md"
+    before = dashboard_path.read_text(encoding="utf-8")
+    touch_target(tmp_path, "src/pyqtgraph/widgets/PlotWidget.cpp")
+    touch_target(tmp_path, "examples/ImageView.cpp")
+
+    result = run_cli("--check", root=tmp_path)
+
+    assert result.returncode != 0
+    assert "port_manifest.yaml target status metadata is stale" in result.stderr
+    assert "source_files[1]" in result.stderr
+    assert "examples[1]" in result.stderr
+    assert "expected status='ported', completion='complete'" in result.stderr
+    assert "present target path(s): examples/ImageView.cpp" in result.stderr
+    assert dashboard_path.read_text(encoding="utf-8") == before
+
+
 def test_P0_03_require_complete_rejects_complete_rows_with_missing_targets(
     tmp_path: Path,
 ) -> None:
@@ -288,8 +312,9 @@ def test_P0_03_require_complete_rejects_complete_rows_with_missing_targets(
     result = run_cli("--require-complete", root=tmp_path)
 
     assert result.returncode != 0
-    assert "port_manifest.yaml complete target metadata is stale" in result.stderr
-    assert "target path is missing: src/pyqtgraph/PlotData.cpp" in result.stderr
+    assert "port_manifest.yaml target status metadata is stale" in result.stderr
+    assert "source_files[0]" in result.stderr
+    assert "missing target path(s): src/pyqtgraph/PlotData.cpp" in result.stderr
 
 
 def test_P0_03_check_rejects_inconsistent_manifest_summary(tmp_path: Path) -> None:
