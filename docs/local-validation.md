@@ -50,6 +50,10 @@ If a required validation path cannot be expressed with local commands and issue-
 
 The commands below are concrete starting points for local validation. Each issue's completion report must record the exact commands actually run and their exit codes; it may use a focused subset when the issue scope does not require every command.
 
+### Local environment doctor
+
+`scripts/doctor_local` is a local diagnostic preflight for checkout setup problems, not a CI gate. Run it from the repository root when CMake configure/build/test validation fails or before starting native C++ work to report required local compiler, Qt 6, OpenCV 4, OpenGL, CMake, CTest, Git, and `pkg-config` availability. It exits nonzero on the first missing required prerequisite so the failing tool or dependency can be fixed locally.
+
 ### Linux
 
 Run from the repository root in a POSIX shell:
