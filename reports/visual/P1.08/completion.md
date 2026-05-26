@@ -10,7 +10,8 @@ This bounded rework addresses the latest autoreview findings only:
 
 - `PlotItem` x-axis ticks are now generated from the rendered curve data bounds instead of the SimplePlot-specific `0..100` range.
 - y-axis tick generation now uses a pixel-budget-derived, capped tick helper instead of a `0.1` data-unit loop over the whole range.
-- the P1.08 visual gate now passes `--gpt-visual-review required_for_pr` with a structured semantic review report, and asserts accepted semantic review metadata.
+- the P1.08 visual test now requires an existing semantic review report (`PG_VISUAL_REVIEW_REPORT` or the canonical `reports/visual/P1.08/SimplePlot/gpt5_vision_review.md`) instead of generating a passing report inside the gate.
+- `scripts/gate visual SimplePlot` now runs the native visual preset/CTest renderer path instead of the placeholder oracle pytest.
 
 ## Changed files
 
@@ -19,6 +20,8 @@ Manifest-expanded target paths: none.
 Shared wiring paths changed:
 
 - `CMakeLists.txt` — registers `pyqtgraph_cpp_visual_render_example` and `P1.08.visual.SimplePlot` with labels `visual;P1.08`.
+- `scripts/gate` — maps the documented `visual SimplePlot` gate to the native visual preset and P1.08 CTest.
+- `tests/test_gate_scripts.py` — updates the visual gate dry-run expectation for the native renderer path.
 
 Issue-owned/supporting paths changed:
 
@@ -80,19 +83,24 @@ Final local validation after bounded rework:
 | Command | Exit code | Result |
 | --- | ---: | --- |
 | `cmake --preset visual` | 0 | Configure succeeded; build files written to `build/visual`. |
-| `cmake --build --preset visual --parallel` | 0 | Build succeeded, including `pyqtgraph_cpp_visual_render_example`. |
-| `QT_QPA_PLATFORM=offscreen ctest --preset visual -L P1.08 --output-on-failure` | 0 | `1/1 Test #27: P1.08.visual.SimplePlot` passed in `5.40 sec`. |
-| `QT_QPA_PLATFORM=offscreen PG_CPP_VISUAL_RENDERER="$PWD/build/visual/pyqtgraph_cpp_visual_render_example" PG_VISUAL_REPORTS_ROOT="$PWD/reports/visual/P1.08" python3 -m pytest -q tests/visual/test_P1_08_cpp_visual_renderer.py` | 0 | `2 passed in 3.82s`. |
+| `cmake --build --preset visual --target pyqtgraph_cpp_visual_render_example --parallel` | 0 | Build succeeded, including `pyqtgraph_cpp_visual_render_example`. |
+| `scripts/gate visual SimplePlot --dry-run` | 0 | Dry-run now lists `cmake --preset visual`, native renderer target build, and `ctest --preset visual -R '^P1\\.08\\.visual\\.SimplePlot$' --output-on-failure`. |
+| `python3 -m pytest -q tests/test_gate_scripts.py` | 0 | `22 passed in 10.87s`, including `test_gate_visual_dry_run_targets_native_renderer_ctest`. |
+| `QT_QPA_PLATFORM=offscreen ctest --preset visual -R '^P1\\.08\\.visual\\.SimplePlot$' --output-on-failure` | 0 | `1/1 Test #27: P1.08.visual.SimplePlot` passed in `4.61 sec`. |
+| `QT_QPA_PLATFORM=offscreen scripts/gate visual SimplePlot --reports-dir /tmp/p1-08-visual-gate-reports` | 0 | Gate summary status `passed`; configure, native renderer build, and native P1.08 CTest each returned `0`. |
+| `QT_QPA_PLATFORM=offscreen ctest --preset visual -L P1.08 --output-on-failure` | 0 | `1/1 Test #27: P1.08.visual.SimplePlot` passed in `4.35 sec`. |
+| `QT_QPA_PLATFORM=offscreen PG_CPP_VISUAL_RENDERER="$PWD/build/visual/pyqtgraph_cpp_visual_render_example" PG_VISUAL_REPORTS_ROOT="$PWD/reports/visual/P1.08" python3 -m pytest -q tests/visual/test_P1_08_cpp_visual_renderer.py` | 0 | `2 passed in 5.76s`; the test requires the existing canonical semantic review report instead of generating one. |
 | `python3 -m pytest -q tests/visual/test_P0_07_visual_artifact_layout.py` | 0 | `20 passed in 3.57s`. |
 | `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` | 1 | Existing proposed-issue metadata failures: blocked-by entries do not match local issues for multiple GitHub issue files, including `github-issue-112.md: ... P1.06`. |
 | `git diff --check` | 0 | No whitespace errors. |
-| `git diff --name-only origin/main...HEAD` | 0 | Branch diff lists the existing P1.08 wiring, visual harness/test, renderer support paths, and report artifacts. |
+| `git diff --name-only origin/main...HEAD` | 0 | Branch diff lists the committed P1.08 wiring, visual harness/test, renderer support paths, and report artifacts. |
+| `git diff --name-only` | 0 | Current bounded rework diff lists `reports/visual/P1.08/completion.md`, `scripts/gate`, `tests/test_gate_scripts.py`, and `tests/visual/test_P1_08_cpp_visual_renderer.py`. |
 
 LSP diagnostic attempt before the build found no diagnostics, but the C++ LSP client was not ready, so compile/build output is the authoritative C++ validation.
 
 ## Changed-file ownership check
 
-Branch diff relative to `origin/main...HEAD` plus the current new semantic-review artifact:
+Branch diff relative to `origin/main...HEAD` plus the current bounded rework diff:
 
 ```text
 CMakeLists.txt
@@ -105,9 +113,11 @@ reports/visual/P1.08/SimplePlot/manual_semantic_inspection.md
 reports/visual/P1.08/SimplePlot/metrics.json
 reports/visual/P1.08/SimplePlot/reference.png
 reports/visual/P1.08/completion.md
+scripts/gate
 src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
 src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp
 src/pyqtgraph/widgets/PlotWidget.cpp
+tests/test_gate_scripts.py
 tests/visual/P1_08_render_cpp_example.cpp
 tests/visual/test_P1_08_cpp_visual_renderer.py
 ```

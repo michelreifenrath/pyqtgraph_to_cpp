@@ -170,18 +170,18 @@ def _write_placeholder_like(path: Path) -> None:
     write_png(path, width, height, pixels)
 
 
-def _write_gpt_visual_review(path: Path) -> None:
-    path.write_text(
-        "verdict: pass\n"
-        "blocking_differences: []\n"
-        "non_blocking_differences:\n"
-        "  - Minor Qt/font rasterization and axis-label differences remain within deterministic tolerance.\n"
-        "likely_causes:\n"
-        "  - antialiasing\n"
-        "  - layout\n"
-        "recommendation: merge_ok\n",
-        encoding="utf-8",
+def _existing_gpt_visual_review(tmp_path: Path) -> Path:
+    review_path = Path(
+        os.environ.get("PG_VISUAL_REVIEW_REPORT", CASE_DIR / "gpt5_vision_review.md")
     )
+    assert review_path.is_file(), (
+        "P1.08 requires an existing GPT visual review report; set "
+        f"PG_VISUAL_REVIEW_REPORT or provide {review_path}"
+    )
+
+    review_copy = tmp_path / "gpt5_vision_review.md"
+    review_copy.write_text(review_path.read_text(encoding="utf-8"), encoding="utf-8")
+    return review_copy
 
 
 def test_P1_08_blank_and_placeholder_guards_reject_non_semantic_images(
@@ -221,16 +221,14 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
     _assert_semantic_plot_image(actual_source, width=800, height=600)
 
     CASE_DIR.mkdir(parents=True, exist_ok=True)
+    review_source = _existing_gpt_visual_review(tmp_path)
     for artifact_name in (
         "reference.png",
         "actual.png",
         "diff.png",
         "metrics.json",
-        "gpt5_vision_review.md",
     ):
         (CASE_DIR / artifact_name).unlink(missing_ok=True)
-    review_source = tmp_path / "gpt5_vision_review.md"
-    _write_gpt_visual_review(review_source)
     result = subprocess.run(
         [
             sys.executable,
