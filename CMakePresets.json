@@ -181,7 +181,7 @@
         }
       },
       "execution": {
-        "noTestsAction": "ignore"
+        "noTestsAction": "error"
       },
       "output": {
         "outputOnFailure": true

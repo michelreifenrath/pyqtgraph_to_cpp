@@ -9,5 +9,7 @@ pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_smoke_empty)
 add_test(NAME pyqtgraph_cpp.smoke.empty COMMAND pyqtgraph_cpp_smoke_empty)
 
 if(NOT PYQTGRAPH_CPP_HAS_QT)
-    message(STATUS "Qt6 was not found; running only the dependency-free CTest smoke target")
+    message(STATUS "Qt6 was not found; running only dependency-free CTest targets")
 endif()
+
+add_subdirectory(performance)
