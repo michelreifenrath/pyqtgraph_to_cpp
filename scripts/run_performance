@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""P0.08 performance schema proof runner."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import os
+import platform
+import statistics
+import sys
+import tempfile
+import time
+import uuid
+from pathlib import Path
+from typing import Any
+
+SCHEMA_VERSION = "p0.08-performance-v1"
+DEFAULT_WORKLOAD = {
+    "name": "python-deterministic-transform-sort",
+    "description": "Deterministic numeric transform and sort used to prove the performance report schema and threshold logic.",
+    "dataset_size": 4096,
+    "warmup_iterations": 2,
+    "repetitions": 9,
+}
+DEFAULT_THRESHOLD = {
+    "metric": "median_seconds",
+    "max_ratio": 20.0,
+    "rationale": "P0.08 validates schema and regression-gate mechanics; product benchmarks set tighter thresholds per workload.",
+}
+VERSIONED_BASELINE_CWD = "<repo-root>"
+
+
+def percentile(values: list[float], pct: float) -> float:
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    rank = (len(ordered) - 1) * pct
+    low = math.floor(rank)
+    high = math.ceil(rank)
+    if low == high:
+        return ordered[low]
+    return ordered[low] + (ordered[high] - ordered[low]) * (rank - low)
+
+
+def run_workload(dataset_size: int) -> int:
+    data = [((index * 1103515245 + 12345) & 0x7FFFFFFF) for index in range(dataset_size)]
+    transformed = [((value ^ (value >> 7)) % 1000003) for value in data]
+    transformed.sort()
+    return sum(transformed[:: max(1, dataset_size // 64)]) % 1000003
+
+
+def measure(workload: dict[str, Any]) -> tuple[list[float], int]:
+    checksum = 0
+    for _ in range(workload["warmup_iterations"]):
+        checksum ^= run_workload(workload["dataset_size"])
+
+    samples: list[float] = []
+    for _ in range(workload["repetitions"]):
+        started = time.perf_counter()
+        checksum ^= run_workload(workload["dataset_size"])
+        samples.append(time.perf_counter() - started)
+    return samples, checksum
+
+
+def environment() -> dict[str, Any]:
+    return {
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "processor": platform.processor(),
+        "cpu_count": os.cpu_count(),
+        "cwd": str(Path.cwd()),
+    }
+
+
+def stats(samples: list[float]) -> dict[str, float]:
+    return {
+        "min_seconds": min(samples),
+        "median_seconds": statistics.median(samples),
+        "p95_seconds": percentile(samples, 0.95),
+        "max_seconds": max(samples),
+    }
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+
+
+def build_report(invocation_id: str, invocation_started_unix: float, samples: list[float], checksum: int) -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "invocation_id": invocation_id,
+        "invocation_started_unix": invocation_started_unix,
+        "generated_at_unix": time.time(),
+        "mode": "compare",
+        "workload": DEFAULT_WORKLOAD,
+        "environment": environment(),
+        "samples_seconds": samples,
+        "stats": stats(samples),
+        "checksum": checksum,
+    }
+
+
+def baseline_from_report(report: dict[str, Any], mode: str, rationale: str | None) -> dict[str, Any]:
+    baseline_environment = dict(report["environment"])
+    baseline_environment["cwd"] = VERSIONED_BASELINE_CWD
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "baseline_id": str(uuid.uuid4()),
+        "generated_by_invocation": report["invocation_id"],
+        "generated_at_unix": report["generated_at_unix"],
+        "mode": mode,
+        "update_rationale": rationale,
+        "workload": report["workload"],
+        "environment": baseline_environment,
+        "baseline_stats": report["stats"],
+        "threshold": DEFAULT_THRESHOLD,
+        "samples_seconds": report["samples_seconds"],
+        "checksum": report["checksum"],
+    }
+
+
+def validate_baseline(baseline: dict[str, Any]) -> None:
+    required = ["schema_version", "workload", "baseline_stats", "threshold", "samples_seconds", "checksum"]
+    missing = [key for key in required if key not in baseline]
+    if missing:
+        raise ValueError(f"baseline missing required keys: {', '.join(missing)}")
+    if baseline["schema_version"] != SCHEMA_VERSION:
+        raise ValueError(f"unsupported baseline schema_version: {baseline['schema_version']}")
+    if baseline["workload"] != DEFAULT_WORKLOAD:
+        raise ValueError("baseline workload does not match runner workload")
+    threshold = baseline["threshold"]
+    if threshold.get("metric") != "median_seconds" or float(threshold.get("max_ratio", 0)) <= 0:
+        raise ValueError("baseline threshold must define positive median_seconds max_ratio")
+
+
+def compare(report: dict[str, Any], baseline: dict[str, Any], *, synthetic: bool = False) -> dict[str, Any]:
+    metric = baseline["threshold"]["metric"]
+    max_ratio = float(baseline["threshold"]["max_ratio"])
+    current = float(report["stats"][metric])
+    baseline_value = float(baseline["baseline_stats"][metric])
+    if synthetic:
+        current = baseline_value * (max_ratio + 1.0)
+    ratio = current / baseline_value if baseline_value > 0 else math.inf
+    checksum_matches = report["checksum"] == baseline["checksum"]
+    passed = checksum_matches and ratio <= max_ratio
+    return {
+        "metric": metric,
+        "current": current,
+        "baseline": baseline_value,
+        "ratio": ratio,
+        "max_ratio": max_ratio,
+        "checksum": {
+            "current": report["checksum"],
+            "baseline": baseline["checksum"],
+            "matches": checksum_matches,
+        },
+        "passed": passed,
+    }
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mode", choices=["compare", "create-baseline", "update-baseline"], required=True)
+    parser.add_argument("--baseline", required=True, type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--rationale", help="Required for update-baseline mode.")
+    parser.add_argument("--synthetic-regression-check", action="store_true", help="Verify that an injected regression fails threshold logic.")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    if args.output and args.baseline.resolve() == args.output.resolve():
+        print(f"{args.mode} mode refuses to use the same path for --baseline and --output", file=sys.stderr)
+        return 2
+
+    invocation_id = str(uuid.uuid4())
+    invocation_started_unix = time.time()
+    samples, checksum = measure(DEFAULT_WORKLOAD)
+    report = build_report(invocation_id, invocation_started_unix, samples, checksum)
+    report["mode"] = args.mode
+
+    if args.mode == "update-baseline" and not args.rationale:
+        print("update-baseline requires --rationale", file=sys.stderr)
+        return 2
+
+    if args.mode == "compare":
+        baseline = read_json(args.baseline)
+        try:
+            validate_baseline(baseline)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        if baseline.get("generated_by_invocation") == invocation_id or float(baseline.get("generated_at_unix", 0)) >= invocation_started_unix:
+            print("compare mode refuses a baseline generated by the same invocation", file=sys.stderr)
+            return 2
+        decision = compare(report, baseline)
+        report["baseline"] = {
+            "path": str(args.baseline),
+            "baseline_id": baseline.get("baseline_id"),
+            "baseline_stats": baseline["baseline_stats"],
+            "threshold": baseline["threshold"],
+        }
+        report["threshold_decision"] = decision
+        if args.synthetic_regression_check:
+            synthetic_decision = compare(report, baseline, synthetic=True)
+            report["synthetic_failure_check"] = synthetic_decision
+            if synthetic_decision["passed"]:
+                print("synthetic regression unexpectedly passed", file=sys.stderr)
+                return 1
+        if args.output:
+            write_json(args.output, report)
+        if not decision["passed"]:
+            print(f"performance regression: {decision}", file=sys.stderr)
+            return 1
+        print(f"performance compare passed: {decision}")
+        return 0
+
+    baseline = baseline_from_report(report, args.mode, args.rationale)
+    write_json(args.baseline, baseline)
+    if args.output:
+        report["baseline_written"] = str(args.baseline)
+        write_json(args.output, report)
+    print(f"{args.mode} wrote baseline: {args.baseline}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

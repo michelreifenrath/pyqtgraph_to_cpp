@@ -187,6 +187,8 @@ install(FILES
 
 include(CTest)
 if(BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
     add_subdirectory(tests)
 
     add_executable(pyqtgraph_cpp_oracle_P0_06 tests/oracle/P0_06_oracle_comparison.cpp)
@@ -476,4 +478,34 @@ if(BUILD_TESTING)
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_hierarchy_cpp)
         add_test(NAME pyqtgraph_cpp.hierarchy.cpp COMMAND pyqtgraph_cpp_hierarchy_cpp)
     endif()
+
+    add_test(
+        NAME P0.08.performance.schema.create_baseline
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_performance"
+            --mode create-baseline
+            --baseline "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/create-baseline.json"
+            --output "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/create-metrics.json"
+    )
+    add_test(
+        NAME P0.08.performance.schema.update_baseline
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_performance"
+            --mode update-baseline
+            --baseline "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/update-baseline.json"
+            --output "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/update-metrics.json"
+            --rationale "P0.08 focused proof exercises explicit baseline update mode."
+    )
+    add_test(
+        NAME P0.08.performance.schema
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_performance"
+            --mode compare
+            --baseline "${CMAKE_CURRENT_SOURCE_DIR}/reports/performance/P0.08/baseline.json"
+            --output "${CMAKE_CURRENT_BINARY_DIR}/reports/performance/P0.08/metrics.json"
+            --synthetic-regression-check
+    )
+    set_tests_properties(
+        P0.08.performance.schema.create_baseline
+        P0.08.performance.schema.update_baseline
+        P0.08.performance.schema
+        PROPERTIES LABELS "performance;P0.08"
+    )
 endif()

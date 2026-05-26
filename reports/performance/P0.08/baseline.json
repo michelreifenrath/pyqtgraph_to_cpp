@@ -1,0 +1,46 @@
+{
+  "baseline_id": "23757ce2-c607-42f4-8703-ac1d1cdf467e",
+  "baseline_stats": {
+    "max_seconds": 0.0006970560061745346,
+    "median_seconds": 0.0006539319874718785,
+    "min_seconds": 0.0006265389965847135,
+    "p95_seconds": 0.0006945507950149477
+  },
+  "checksum": 590949,
+  "environment": {
+    "cpu_count": 32,
+    "cwd": "<repo-root>",
+    "machine": "x86_64",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.11.15"
+  },
+  "generated_at_unix": 1779732472.0844486,
+  "generated_by_invocation": "f784120c-4df7-4b54-b00a-2148472de151",
+  "mode": "create-baseline",
+  "samples_seconds": [
+    0.0006539319874718785,
+    0.0006694720359519124,
+    0.0006392640061676502,
+    0.0006265389965847135,
+    0.0006651540170423687,
+    0.0006907929782755673,
+    0.0006428399938158691,
+    0.0006970560061745346,
+    0.0006416580290533602
+  ],
+  "schema_version": "p0.08-performance-v1",
+  "threshold": {
+    "max_ratio": 20.0,
+    "metric": "median_seconds",
+    "rationale": "P0.08 validates schema and regression-gate mechanics; product benchmarks set tighter thresholds per workload."
+  },
+  "update_rationale": null,
+  "workload": {
+    "dataset_size": 4096,
+    "description": "Deterministic numeric transform and sort used to prove the performance report schema and threshold logic.",
+    "name": "python-deterministic-transform-sort",
+    "repetitions": 9,
+    "warmup_iterations": 2
+  }
+}
