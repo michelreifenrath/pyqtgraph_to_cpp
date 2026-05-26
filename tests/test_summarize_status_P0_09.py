@@ -74,6 +74,7 @@ def run_summary(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 def test_P0_09_normal_summary_output_passes(tmp_path: Path) -> None:
     write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
 
     result = run_summary(tmp_path)
 
@@ -89,13 +90,43 @@ def test_P0_09_normal_summary_output_passes(tmp_path: Path) -> None:
     )
 
 
+def create_complete_target_files(root: Path) -> None:
+    for relative_path in (
+        "include/pyqtgraph/Foo.hpp",
+        "src/pyqtgraph/Foo.cpp",
+        "examples/Foo.cpp",
+        "examples/Foo.ui",
+    ):
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("// P0.09 fixture\n", encoding="utf-8")
+
+
 def test_P0_09_require_complete_passes_on_all_complete_fixture(tmp_path: Path) -> None:
     write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
 
     result = run_summary(tmp_path, "--require-complete")
 
     assert result.returncode == 0, result.stderr
     assert "require_complete: satisfied" in result.stdout
+
+
+def test_P0_09_require_complete_fails_on_stale_complete_metadata(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode != 0
+    assert "source_files: total=1 ported=0 complete=0 incomplete=1" in result.stdout
+    assert "require_complete: failed" in result.stderr
+    assert "source_files: 1 incomplete" in result.stderr
+    assert (
+        "source_files[0] complete metadata points to missing target file: "
+        "target_header_path=include/pyqtgraph/Foo.hpp" in result.stderr
+    )
 
 
 def test_P0_09_inconsistent_summary_fails(tmp_path: Path) -> None:
