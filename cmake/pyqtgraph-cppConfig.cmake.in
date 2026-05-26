@@ -8,4 +8,8 @@ if(_pyqtgraph_cpp_qt_components)
 endif()
 unset(_pyqtgraph_cpp_qt_components)
 
+if(@PYQTGRAPH_CPP_PACKAGE_REQUIRE_OPENCV@)
+    find_dependency(OpenCV 4)
+endif()
+
 include("${CMAKE_CURRENT_LIST_DIR}/pyqtgraph-cppTargets.cmake")
