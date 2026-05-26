@@ -440,8 +440,13 @@ if(BUILD_TESTING)
                 pyqtgraph_cpp_project_options
                 pyqtgraph_cpp_project_warnings
         )
+        target_compile_definitions(pyqtgraph_cpp_widgets_plotwidget
+            PRIVATE
+                PYQTGRAPH_CPP_P3_01_REPORT_PATH="${CMAKE_CURRENT_BINARY_DIR}/reports/issues/P3.01/plotwidget-interaction.md"
+        )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_widgets_plotwidget)
         add_test(NAME pyqtgraph_cpp.widgets.PlotWidget COMMAND pyqtgraph_cpp_widgets_plotwidget)
+        set_tests_properties(pyqtgraph_cpp.widgets.PlotWidget PROPERTIES LABELS P3.01)
 
         add_executable(pyqtgraph_cpp_graphicsitems_plotcurveitem tests/graphicsItems/test_PlotCurveItem.cpp)
         target_link_libraries(pyqtgraph_cpp_graphicsitems_plotcurveitem
