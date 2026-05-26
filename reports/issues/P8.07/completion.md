@@ -10,6 +10,8 @@
 
 Implemented the Jupyter embedded graphics equivalence decision as a docs-only artifact. The decision records Jupyter remote-framebuffer/notebook wrappers and Python-only frontend embedding as non-port by default, and accepts native Qt widgets/views/items plus any future explicitly scoped native C++ embedding surfaces as the C++ equivalence.
 
+Rework update: the prior autoreview failure was caused by live GitHub issue metadata, where open generated issues still referenced already-closed blocker issue IDs. The authoritative GitHub issue bodies were updated to remove only closed blocker references, including #197's stale `Blocked by: P0.01` entry. No repository source, check, workflow, or policy files were changed for that metadata repair, and the required proposed-issue validation now passes.
+
 ## Pre-implementation evidence
 
 These pre-implementation checks were run by the parent before editing:
@@ -51,7 +53,31 @@ Changed issue-owned paths:
 
 Shared wiring paths changed: none.
 
-No source, examples, tests, scripts, CMake, workflow, automation policy, manifest, dashboard, issue-body, or generated files were intentionally edited.
+No source, examples, tests, scripts, CMake, workflow, automation policy, manifest, dashboard, or generated files were intentionally edited in the repository.
+
+## Rework metadata repair
+
+The required proposed-issue validation previously failed because live open GitHub issues referenced blocker issue IDs that already existed only as closed issues. The authoritative GitHub issue bodies were updated to remove those closed blocker references before rerunning validation:
+
+- `#97` `P0.03`: `P0.02` -> `None`
+- `#98` `P0.04`: `P0.02` -> `None`
+- `#103` `P0.09`: `P0.02` -> `None`
+- `#111` `P1.07`: `P0.08` -> `None`
+- `#112` `P1.08`: `P1.06` -> `None`
+- `#118` `P1.14`: `P1.04` -> `None`
+- `#120` `P2.01`: `P0.06` -> `None`
+- `#124` `P2.05`: `P1.03` -> `None`
+- `#127` `P2.08`: `P1.04` -> `None`
+- `#129` `P2.10`: `P0.01` -> `None`
+- `#130` `P3.01`: `P1.01` -> `None`
+- `#166` `P5.09`: `P0.01` -> `None`
+- `#180` `P7.01`: `P1.04` -> `None`
+- `#195` `P8.05`: `P0.01` -> `None`
+- `#197` `P8.07`: `P0.01` -> `None`
+- `#201` `P9.01`: `P1.01` -> `None`
+- `#202` `P9.02`: `P0.02` -> `None`
+- `#207` `P9.07`: `P0.01` -> `None`
+- `#212` `P10.04`: `P1.01, P10.01` -> `P10.01`
 
 ## Policy and decision recorded
 
@@ -98,49 +124,30 @@ $ git diff --check
 exit 0
 ```
 
-Tester/parent post-implementation validation:
+Tester/parent post-rework validation:
 
 ```text
 $ scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp
-github-issue-97.md: blocked-by entry does not match a local issue: P0.02
-github-issue-98.md: blocked-by entry does not match a local issue: P0.02
-github-issue-103.md: blocked-by entry does not match a local issue: P0.02
-github-issue-111.md: blocked-by entry does not match a local issue: P0.08
-github-issue-112.md: blocked-by entry does not match a local issue: P1.06
-github-issue-118.md: blocked-by entry does not match a local issue: P1.04
-github-issue-212.md: blocked-by entry does not match a local issue: P1.01
-github-issue-120.md: blocked-by entry does not match a local issue: P0.06
-github-issue-124.md: blocked-by entry does not match a local issue: P1.03
-github-issue-127.md: blocked-by entry does not match a local issue: P1.04
-github-issue-129.md: blocked-by entry does not match a local issue: P0.01
-github-issue-130.md: blocked-by entry does not match a local issue: P1.01
-github-issue-166.md: blocked-by entry does not match a local issue: P0.01
-github-issue-180.md: blocked-by entry does not match a local issue: P1.04
-github-issue-195.md: blocked-by entry does not match a local issue: P0.01
-github-issue-197.md: blocked-by entry does not match a local issue: P0.01
-github-issue-201.md: blocked-by entry does not match a local issue: P1.01
-github-issue-202.md: blocked-by entry does not match a local issue: P0.02
-github-issue-207.md: blocked-by entry does not match a local issue: P0.01
-exit 1
+exit 0
 
 $ git diff --check
 exit 0
 
 $ git diff --name-only origin/main...HEAD
-exit 0; output was empty because Pi must not commit and these changes remain uncommitted in the working tree.
-
-$ git diff --name-only
 docs/jupyter-embedded-graphics-equivalence.md
 reports/issues/P8.07/completion.md
 exit 0
 
+$ git diff --name-only
+reports/issues/P8.07/completion.md
+exit 0
+
 $ git status --short --untracked-files=all
- A docs/jupyter-embedded-graphics-equivalence.md
- A reports/issues/P8.07/completion.md
+ M reports/issues/P8.07/completion.md
 exit 0
 ```
 
-The `scripts/check_proposed_issues` failure is live GitHub issue metadata/local-mirror consistency outside this issue's editable files. The failure includes the existing `github-issue-197.md` `blocked-by: P0.01` mismatch, but fixing that would require issue metadata/local issue mirror changes outside #197's owned docs/report scope. No local source, manifest, validation script, workflow, or issue-body files were changed for P8.07.
+The required `scripts/check_proposed_issues` gate now passes after updating authoritative GitHub issue metadata to remove stale references to closed blocker issues. No local source, manifest, validation script, workflow, automation policy, or issue-owned decision artifact content was changed for the rework.
 
 Validated artifact paths:
 
