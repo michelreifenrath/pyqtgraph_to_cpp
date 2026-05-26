@@ -74,6 +74,69 @@ def test_intake_skips_ready_issue_with_unmet_local_id_dependency(tmp_path: Path,
     assert result["actions"][0]["unmet_dependencies"] == ["P10.05"]
 
 
+def test_promote_unblocked_issue_moves_dependency_satisfied_blocker_to_ready(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    all_issues = [
+        {
+            "number": 96,
+            "title": "[P0.02] Build manifest",
+            "body": "**Blocked by:** P0.01\n",
+            "state": "open",
+            "labels": [{"name": "ai:blocked"}],
+            "html_url": "url",
+            "user": {"login": "michel"},
+        },
+        {"number": 95, "title": "[P0.01] Define parity", "body": "", "state": "closed", "labels": []},
+    ]
+    added: list[tuple[int, list[str]]] = []
+    removed: list[tuple[int, list[str]]] = []
+
+    monkeypatch.setattr(runner, "list_issue_items", lambda _config: all_issues)
+    monkeypatch.setattr(runner, "add_labels", lambda _config, number, labels: added.append((number, labels)))
+    monkeypatch.setattr(runner, "remove_labels", lambda _config, number, labels: removed.append((number, labels)))
+
+    result = runner.promote_unblocked_issues(loaded)
+
+    assert result == {"actions": [{"issue": 96, "action": "promoted_ready"}]}
+    assert added == [(96, ["ai:ready"])]
+    assert removed == [(96, ["ai:blocked"])]
+
+
+
+def test_promote_unblocked_issue_leaves_human_review_blocked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "owner/repo"},
+            "workspace": {"root": str(tmp_path / "workspaces")},
+        },
+        body="body",
+    )
+    loaded = LoadedWorkflow(config=config, path=tmp_path / "WORKFLOW.md", repo_root=tmp_path)
+    all_issues = [
+        {
+            "number": 96,
+            "title": "[P0.02] Build manifest",
+            "body": "**Blocked by:** None\n",
+            "state": "open",
+            "labels": [{"name": "ai:blocked"}, {"name": "human-review"}],
+            "html_url": "url",
+            "user": {"login": "michel"},
+        },
+    ]
+
+    monkeypatch.setattr(runner, "list_issue_items", lambda _config: all_issues)
+
+    assert runner.promote_unblocked_issues(loaded) == {"actions": []}
+
+
+
 def test_intake_allows_ready_issue_when_local_dependency_is_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     config = WorkflowConfig.from_mapping(
         {
@@ -592,6 +655,7 @@ def test_intake_claim_does_not_comment_when_compact_claim_comments_disabled(tmp_
     monkeypatch.setattr(runner, "ensure_labels", lambda _config: [])
     monkeypatch.setattr(runner, "ensure_board", lambda _config, _repo_root: "pyqtgraph-to-cpp")
     monkeypatch.setattr(runner, "list_ready_issues", lambda _config, limit=None: [issue])
+    monkeypatch.setattr(runner, "list_issue_items", lambda _config: [{"number": 7, "title": "Small issue", "body": "body", "state": "open", "labels": []}])
     monkeypatch.setattr(runner, "create_issue_task_graph", lambda _config, _repo_root, _issue: {"implement": "t1", "review": "t2", "release": "t3"})
     monkeypatch.setattr(runner, "add_labels", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(runner, "remove_labels", lambda *_args, **_kwargs: None)
