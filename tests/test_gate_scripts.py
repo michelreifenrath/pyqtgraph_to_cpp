@@ -152,6 +152,15 @@ def test_gate_commit_runs_diff_check_before_validation(tmp_path: Path) -> None:
         "):\n"
         "    raise SystemExit(9)\n",
     )
+    for tool in ["cmake", "ctest"]:
+        make_executable(
+            bin_dir / tool,
+            f"#!{sys.executable}\n"
+            "import sys\n"
+            "from pathlib import Path\n"
+            f"order_file = Path({json.dumps(str(order_file))})\n"
+            "order_file.open('a', encoding='utf-8').write(Path(sys.argv[0]).name + ' ' + ' '.join(sys.argv[1:]) + '\\n')\n",
+        )
     code = f"from pathlib import Path; Path({json.dumps(str(order_file))}).open('a').write('validation\\n')"
     write_workflow(workflow, commands=[f"{sys.executable} -c {json.dumps(code)}"])
 
@@ -171,7 +180,171 @@ def test_gate_commit_runs_diff_check_before_validation(tmp_path: Path) -> None:
         "diff --cached --check",
         "diff --check origin/main...HEAD",
         "validation",
+        "cmake --preset dev",
+        "cmake --build --preset dev --parallel",
+        "ctest --preset dev --output-on-failure",
     ]
+
+
+def test_gate_commit_P1_05_dry_run_plans_validation_then_cmake_and_ctest(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    validation = f"{sys.executable} -c 'print(\"validated\")'"
+    write_workflow(workflow, commands=[validation])
+
+    result = run_script(
+        "scripts/gate",
+        "commit",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        "--dry-run",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        "git diff --check",
+        "git diff --cached --check",
+        "git diff --check origin/main...HEAD",
+        validation,
+        "cmake --preset dev",
+        "cmake --build --preset dev --parallel",
+        "ctest --preset dev --output-on-failure",
+    ]
+    assert not reports.exists()
+
+
+def test_gate_commit_P1_05_runs_commands_in_workflow_root_with_env(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    order_file = tmp_path / "order.txt"
+    env_marker = "P1_05_ENV_MARKER"
+
+    tool_code = (
+        "import os, sys\n"
+        "from pathlib import Path\n"
+        f"order_file = Path({json.dumps(str(order_file))})\n"
+        f"root = {json.dumps(str(tmp_path))}\n"
+        f"marker = {json.dumps(env_marker)}\n"
+        "name = Path(sys.argv[0]).name\n"
+        "entry = f\"{name} {' '.join(sys.argv[1:])}|cwd={Path.cwd()}|env={os.environ.get(marker, '')}\"\n"
+        "order_file.open('a', encoding='utf-8').write(entry + '\\n')\n"
+        "if Path.cwd().as_posix() != root:\n"
+        "    raise SystemExit(31)\n"
+        "if os.environ.get(marker) != 'propagated':\n"
+        "    raise SystemExit(32)\n"
+    )
+    for tool in ["git", "cmake", "ctest"]:
+        make_executable(bin_dir / tool, f"#!{sys.executable}\n{tool_code}")
+
+    validation_code = "; ".join(
+        [
+            "import os",
+            "from pathlib import Path",
+            f"order_file = Path({json.dumps(str(order_file))})",
+            f"root = {json.dumps(str(tmp_path))}",
+            f"marker = {json.dumps(env_marker)}",
+            "entry = f\"validation|cwd={Path.cwd()}|env={os.environ.get(marker, '')}\"",
+            "order_file.open('a', encoding='utf-8').write(entry + '\\n')",
+            "raise SystemExit(0 if Path.cwd().as_posix() == root and os.environ.get(marker) == 'propagated' else 33)",
+        ]
+    )
+    write_workflow(
+        workflow, commands=[f"{sys.executable} -c {json.dumps(validation_code)}"]
+    )
+
+    result = run_script(
+        "scripts/gate",
+        "commit",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        env={
+            "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+            env_marker: "propagated",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert order_file.read_text(encoding="utf-8").splitlines() == [
+        f"git diff --check|cwd={tmp_path}|env=propagated",
+        f"git diff --cached --check|cwd={tmp_path}|env=propagated",
+        f"git diff --check origin/main...HEAD|cwd={tmp_path}|env=propagated",
+        f"validation|cwd={tmp_path}|env=propagated",
+        f"cmake --preset dev|cwd={tmp_path}|env=propagated",
+        f"cmake --build --preset dev --parallel|cwd={tmp_path}|env=propagated",
+        f"ctest --preset dev --output-on-failure|cwd={tmp_path}|env=propagated",
+    ]
+
+
+def test_gate_commit_P1_05_propagates_cmake_failure_and_skips_later_commands(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    order_file = tmp_path / "order.txt"
+
+    make_executable(
+        bin_dir / "git",
+        f"#!{sys.executable}\n"
+        "import sys\n"
+        "from pathlib import Path\n"
+        f"Path({json.dumps(str(order_file))}).open('a', encoding='utf-8').write('git ' + ' '.join(sys.argv[1:]) + '\\n')\n",
+    )
+    make_executable(
+        bin_dir / "cmake",
+        f"#!{sys.executable}\n"
+        "import sys\n"
+        "from pathlib import Path\n"
+        f"Path({json.dumps(str(order_file))}).open('a', encoding='utf-8').write('cmake ' + ' '.join(sys.argv[1:]) + '\\n')\n"
+        "if sys.argv[1:] == ['--preset', 'dev']:\n"
+        "    raise SystemExit(23)\n"
+        "raise SystemExit(99)\n",
+    )
+    make_executable(
+        bin_dir / "ctest",
+        f"#!{sys.executable}\n"
+        "from pathlib import Path\n"
+        f"Path({json.dumps(str(order_file))}).open('a', encoding='utf-8').write('ctest should-not-run\\n')\n"
+        "raise SystemExit(99)\n",
+    )
+    validation_code = f"from pathlib import Path; Path({json.dumps(str(order_file))}).open('a', encoding='utf-8').write('validation\\n')"
+    write_workflow(
+        workflow, commands=[f"{sys.executable} -c {json.dumps(validation_code)}"]
+    )
+
+    result = run_script(
+        "scripts/gate",
+        "commit",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+
+    assert result.returncode == 23
+    assert order_file.read_text(encoding="utf-8").splitlines() == [
+        "git diff --check",
+        "git diff --cached --check",
+        "git diff --check origin/main...HEAD",
+        "validation",
+        "cmake --preset dev",
+    ]
+    summary = json.loads((reports / "commit-summary.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "failed"
+    assert summary["failed_command"] == "cmake --preset dev"
+    assert summary["commands"][-1]["returncode"] == 23
 
 
 def test_gate_defaults_reports_to_ignored_hermes_logs(tmp_path: Path) -> None:
@@ -279,23 +452,19 @@ def test_gate_dry_run_command_plans(tmp_path: Path) -> None:
     validation = f"{sys.executable} -c 'print(\"validated\")'"
     write_workflow(workflow, commands=[validation])
 
+    commit_commands = [
+        "git diff --check",
+        "git diff --cached --check",
+        "git diff --check origin/main...HEAD",
+        validation,
+        "cmake --preset dev",
+        "cmake --build --preset dev --parallel",
+        "ctest --preset dev --output-on-failure",
+    ]
     expected = {
         "focus": [validation],
-        "commit": [
-            "git diff --check",
-            "git diff --cached --check",
-            "git diff --check origin/main...HEAD",
-            validation,
-        ],
-        "merge": [
-            "git diff --check",
-            "git diff --cached --check",
-            "git diff --check origin/main...HEAD",
-            validation,
-            "cmake --preset dev",
-            "cmake --build --preset dev --parallel",
-            "ctest --preset dev --output-on-failure",
-        ],
+        "commit": commit_commands,
+        "merge": commit_commands,
     }
 
     for mode, commands in expected.items():
