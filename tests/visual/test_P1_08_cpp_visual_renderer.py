@@ -16,10 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "SimplePlot.reference.png"
 CHECK_VISUAL_ARTIFACTS = ROOT / "scripts" / "check_visual_artifacts"
-REPORTS_ROOT = Path(
-    os.environ.get("PG_VISUAL_REPORTS_ROOT", ROOT / "reports" / "visual" / "P1.08")
-)
-CASE_DIR = REPORTS_ROOT / "SimplePlot"
+COMMITTED_REPORTS_ROOT = ROOT / "reports" / "visual" / "P1.08"
 
 
 def _run_renderer(
@@ -170,9 +167,19 @@ def _write_placeholder_like(path: Path) -> None:
     write_png(path, width, height, pixels)
 
 
+def _reports_root(tmp_path: Path) -> Path:
+    configured_root = os.environ.get("PG_VISUAL_REPORTS_ROOT")
+    if configured_root:
+        return Path(configured_root)
+    return tmp_path / "reports" / "visual" / "P1.08"
+
+
 def _existing_gpt_visual_review(tmp_path: Path) -> Path:
     review_path = Path(
-        os.environ.get("PG_VISUAL_REVIEW_REPORT", CASE_DIR / "gpt5_vision_review.md")
+        os.environ.get(
+            "PG_VISUAL_REVIEW_REPORT",
+            COMMITTED_REPORTS_ROOT / "SimplePlot" / "gpt5_vision_review.md",
+        )
     )
     assert review_path.is_file(), (
         "P1.08 requires an existing GPT visual review report; set "
@@ -220,7 +227,9 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
     assert actual_source.is_file()
     _assert_semantic_plot_image(actual_source, width=800, height=600)
 
-    CASE_DIR.mkdir(parents=True, exist_ok=True)
+    reports_root = _reports_root(tmp_path)
+    case_dir = reports_root / "SimplePlot"
+    case_dir.mkdir(parents=True, exist_ok=True)
     review_source = _existing_gpt_visual_review(tmp_path)
     for artifact_name in (
         "reference.png",
@@ -228,7 +237,7 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
         "diff.png",
         "metrics.json",
     ):
-        (CASE_DIR / artifact_name).unlink(missing_ok=True)
+        (case_dir / artifact_name).unlink(missing_ok=True)
     result = subprocess.run(
         [
             sys.executable,
@@ -240,7 +249,7 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
             "--actual",
             str(actual_source),
             "--reports-root",
-            str(REPORTS_ROOT),
+            str(reports_root),
             "--gpt-visual-review",
             "required_for_pr",
             "--review-report",
@@ -261,11 +270,11 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
     )
     assert result.returncode == 0, result.stderr
 
-    reference = CASE_DIR / "reference.png"
-    actual = CASE_DIR / "actual.png"
-    diff = CASE_DIR / "diff.png"
-    metrics_path = CASE_DIR / "metrics.json"
-    review = CASE_DIR / "gpt5_vision_review.md"
+    reference = case_dir / "reference.png"
+    actual = case_dir / "actual.png"
+    diff = case_dir / "diff.png"
+    metrics_path = case_dir / "metrics.json"
+    review = case_dir / "gpt5_vision_review.md"
     for artifact in (reference, actual, diff, metrics_path, review):
         assert artifact.is_file(), f"missing artifact: {artifact}"
     assert review.read_text(encoding="utf-8") == review_source.read_text(

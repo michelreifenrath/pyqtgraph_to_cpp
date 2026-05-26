@@ -54,6 +54,11 @@ bool rectNearlyEqual(const QRectF& lhs, const QRectF& rhs)
         && nearlyEqual(lhs.height(), rhs.height());
 }
 
+QRectF expandedForCurvePen(double x, double y, double width, double height)
+{
+    return QRectF(x - 0.5, y - 0.5, width + 1.0, height + 1.0);
+}
+
 bool spanEquals(std::span<const double> values, const std::vector<double>& expected)
 {
     if (values.size() != expected.size()) {
@@ -76,7 +81,7 @@ bool testYOnlyGeneratesXData()
 
     CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0, 3.0}));
     CHECK(spanEquals(curve.yData(), y));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, -1.0, 3.0, 5.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, -1.0, 3.0, 5.0)));
 
     return true;
 }
@@ -96,7 +101,7 @@ bool testYOnlyNonFiniteValuesAreIgnoredForBounds()
     CHECK(nearlyEqual(curve.yData()[1], 2.0));
     CHECK(std::isinf(curve.yData()[2]));
     CHECK(nearlyEqual(curve.yData()[3], -1.0));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, -1.0, 3.0, 3.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, -1.0, 3.0, 3.0)));
 
     return true;
 }
@@ -113,7 +118,22 @@ bool testXYDataIsCopied()
 
     CHECK(spanEquals(curve.xData(), {-2.0, 1.0, 5.0}));
     CHECK(spanEquals(curve.yData(), {10.0, -4.0, 6.0}));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(-2.0, -4.0, 7.0, 14.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(-2.0, -4.0, 7.0, 14.0)));
+
+    return true;
+}
+
+bool testFlatDataBoundsAreNonEmptyAndIncludePenMargin()
+{
+    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    const std::vector<double> x{0.0, 1.0, 2.0};
+    const std::vector<double> y{5.0, 5.0, 5.0};
+
+    curve.setData(x, y);
+
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, 5.0, 2.0, 0.0)));
+    CHECK(curve.boundingRect().width() > 0.0);
+    CHECK(curve.boundingRect().height() > 0.0);
 
     return true;
 }
@@ -130,22 +150,22 @@ bool testReturnedSpansCanBePassedBackToSetData()
     curve.setData(curve.xData(), replacementY);
     CHECK(spanEquals(curve.xData(), originalX));
     CHECK(spanEquals(curve.yData(), replacementY));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(-2.0, 4.0, 7.0, 2.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(-2.0, 4.0, 7.0, 2.0)));
 
     curve.setData(curve.yData());
     CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0}));
     CHECK(spanEquals(curve.yData(), replacementY));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, 4.0, 2.0, 2.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, 4.0, 2.0, 2.0)));
 
     curve.setData(curve.xData(), curve.yData());
     CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0}));
     CHECK(spanEquals(curve.yData(), replacementY));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, 4.0, 2.0, 2.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, 4.0, 2.0, 2.0)));
 
     curve.setData(curve.xData());
     CHECK(spanEquals(curve.xData(), {0.0, 1.0, 2.0}));
     CHECK(spanEquals(curve.yData(), {0.0, 1.0, 2.0}));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(0.0, 0.0, 2.0, 2.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, 0.0, 2.0, 2.0)));
 
     return true;
 }
@@ -159,13 +179,13 @@ bool testRepeatedSetDataReplacesDataAndBounds()
     const std::vector<double> secondY{-3.0, 7.0, 1.0};
 
     curve.setData(firstX, firstY);
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(-10.0, 1.0, 10.0, 2.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(-10.0, 1.0, 10.0, 2.0)));
 
     curve.setData(secondX, secondY);
 
     CHECK(spanEquals(curve.xData(), secondX));
     CHECK(spanEquals(curve.yData(), secondY));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(4.0, -3.0, 6.0, 10.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(4.0, -3.0, 6.0, 10.0)));
 
     return true;
 }
@@ -207,7 +227,7 @@ bool testNonFiniteValuesAreIgnoredForBounds()
     CHECK(nearlyEqual(curve.yData()[1], -1.0));
     CHECK(nearlyEqual(curve.yData()[2], 7.0));
     CHECK(std::isinf(curve.yData()[3]));
-    CHECK(rectNearlyEqual(curve.boundingRect(), QRectF(2.0, -1.0, 2.0, 8.0)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(2.0, -1.0, 2.0, 8.0)));
 
     return true;
 }
@@ -272,6 +292,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testXYDataIsCopied()) {
+        return 1;
+    }
+    if (!testFlatDataBoundsAreNonEmptyAndIncludePenMargin()) {
         return 1;
     }
     if (!testReturnedSpansCanBePassedBackToSetData()) {

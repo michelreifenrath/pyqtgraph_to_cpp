@@ -35,6 +35,9 @@ struct BoundsRange {
     double maximum;
 };
 
+constexpr qreal curvePenWidth = 1.0;
+constexpr qreal curvePenMargin = curvePenWidth / 2.0;
+
 std::optional<BoundsRange> finiteBounds(std::span<const double> values)
 {
     std::optional<BoundsRange> bounds;
@@ -64,8 +67,9 @@ QRectF computeBounds(std::span<const double> x, std::span<const double> y)
         return QRectF{};
     }
 
-    return QRectF(xBounds->minimum, yBounds->minimum, xBounds->maximum - xBounds->minimum,
-                  yBounds->maximum - yBounds->minimum);
+    const QRectF dataBounds(xBounds->minimum, yBounds->minimum, xBounds->maximum - xBounds->minimum,
+        yBounds->maximum - yBounds->minimum);
+    return dataBounds.adjusted(-curvePenMargin, -curvePenMargin, curvePenMargin, curvePenMargin);
 }
 
 } // namespace
@@ -139,7 +143,7 @@ void PlotCurveItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
         }
     }
 
-    QPen pen(QColor(200, 200, 200), 1.0);
+    QPen pen(QColor(200, 200, 200), curvePenWidth);
     pen.setCosmetic(true);
     painter->setRenderHint(QPainter::Antialiasing, false);
     painter->setPen(pen);

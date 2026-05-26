@@ -1,9 +1,9 @@
 {
   "artifact_paths": {
-    "actual": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-112/reports/visual/P1.08/SimplePlot/actual.png",
-    "diff": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-112/reports/visual/P1.08/SimplePlot/diff.png",
-    "metrics": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-112/reports/visual/P1.08/SimplePlot/metrics.json",
-    "reference": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-112/reports/visual/P1.08/SimplePlot/reference.png"
+    "actual": "reports/visual/P1.08/SimplePlot/actual.png",
+    "diff": "reports/visual/P1.08/SimplePlot/diff.png",
+    "metrics": "reports/visual/P1.08/SimplePlot/metrics.json",
+    "reference": "reports/visual/P1.08/SimplePlot/reference.png"
   },
   "case": "SimplePlot",
   "changed_pixel_percent": 2.911458333333333,
@@ -17,7 +17,7 @@
   "max_delta": 200,
   "mean_abs_delta": 3.7998421875,
   "passed": true,
-  "review_report_path": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-112/reports/visual/P1.08/SimplePlot/gpt5_vision_review.md",
+  "review_report_path": "reports/visual/P1.08/SimplePlot/gpt5_vision_review.md",
   "semantic_review": {
     "accepted": true,
     "blocks_gate": false,

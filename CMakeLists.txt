@@ -472,6 +472,17 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_examples_simpleplot)
 
+        add_executable(pyqtgraph_cpp_visual_plotcurveitem_bounds tests/visual/P1_08_plotcurveitem_bounds.cpp)
+        target_link_libraries(pyqtgraph_cpp_visual_plotcurveitem_bounds
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_visual_plotcurveitem_bounds)
+        add_test(NAME P1.08.visual.PlotCurveItem.bounds COMMAND pyqtgraph_cpp_visual_plotcurveitem_bounds)
+        set_tests_properties(P1.08.visual.PlotCurveItem.bounds PROPERTIES LABELS "visual;P1.08")
+
         add_executable(pyqtgraph_cpp_visual_render_example tests/visual/P1_08_render_cpp_example.cpp)
         target_link_libraries(pyqtgraph_cpp_visual_render_example
             PRIVATE
