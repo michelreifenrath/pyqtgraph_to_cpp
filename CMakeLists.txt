@@ -149,6 +149,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
 endif()
 list(REMOVE_DUPLICATES _pyqtgraph_cpp_public_qt_components)
 set(PYQTGRAPH_CPP_PACKAGE_QT_COMPONENTS "${_pyqtgraph_cpp_public_qt_components}")
+set(PYQTGRAPH_CPP_PACKAGE_REQUIRE_OPENCV "${PYQTGRAPH_CPP_HAS_OPENCV}")
 
 set(_pyqtgraph_cpp_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/pyqtgraph-cpp")
 configure_package_config_file(
