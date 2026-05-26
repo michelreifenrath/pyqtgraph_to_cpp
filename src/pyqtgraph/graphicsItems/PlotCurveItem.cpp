@@ -6,6 +6,10 @@
 #include "../../../include/pyqtgraph/graphicsItems/PlotCurveItem.hpp"
 
 #include <QtCore/QtGlobal>
+#include <QtGui/QColor>
+#include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
+#include <QtGui/QPen>
 #include <QtWidgets/QStyleOptionGraphicsItem>
 #include <QtWidgets/QWidget>
 
@@ -14,8 +18,6 @@
 #include <optional>
 #include <stdexcept>
 #include <vector>
-
-class QPainter;
 
 namespace pyqtgraph::graphicsItems {
 
@@ -112,9 +114,37 @@ QRectF PlotCurveItem::boundingRect() const
 
 void PlotCurveItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
-    Q_UNUSED(painter);
     Q_UNUSED(option);
     Q_UNUSED(widget);
+
+    if (xData_.empty() || xData_.size() != yData_.size()) {
+        return;
+    }
+
+    QPainterPath path;
+    bool hasPoint = false;
+    for (std::size_t index = 0; index < xData_.size(); ++index) {
+        const double x = xData_[index];
+        const double y = yData_[index];
+        if (!std::isfinite(x) || !std::isfinite(y)) {
+            hasPoint = false;
+            continue;
+        }
+        const QPointF point(x, y);
+        if (!hasPoint) {
+            path.moveTo(point);
+            hasPoint = true;
+        } else {
+            path.lineTo(point);
+        }
+    }
+
+    QPen pen(QColor(200, 200, 200), 1.0);
+    pen.setCosmetic(true);
+    painter->setRenderHint(QPainter::Antialiasing, false);
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawPath(path);
 }
 
 } // namespace pyqtgraph::graphicsItems

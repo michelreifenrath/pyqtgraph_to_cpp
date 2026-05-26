@@ -201,6 +201,7 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
     assert status["example"] == "SimplePlot"
     assert status["dimensions"] == {"width": 800, "height": 600}
     assert status["placeholder"] is False
+    assert status["render_path"] == "QWidget::grab"
     assert Path(str(status["output"])).resolve() == actual_source.resolve()
     assert actual_source.is_file()
     _assert_semantic_plot_image(actual_source, width=800, height=600)

@@ -10,6 +10,11 @@
 #include <QtCore/Qt>
 #include <QtWidgets/QGraphicsItem>
 
+class QGraphicsSceneResizeEvent;
+class QPainter;
+class QStyleOptionGraphicsItem;
+class QWidget;
+
 namespace pyqtgraph::graphicsItems {
 
 class PlotItem : public GraphicsWidget {
@@ -21,6 +26,11 @@ public:
     PlotItem& operator=(const PlotItem&) = delete;
     PlotItem(PlotItem&&) = delete;
     PlotItem& operator=(PlotItem&&) = delete;
+
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+
+protected:
+    void resizeEvent(QGraphicsSceneResizeEvent* event) override;
 };
 
 } // namespace pyqtgraph::graphicsItems

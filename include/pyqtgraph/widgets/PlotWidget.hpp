@@ -12,6 +12,8 @@
 
 #include <memory>
 
+class QResizeEvent;
+
 namespace pyqtgraph::widgets {
 
 class PlotWidget : public QGraphicsView {
@@ -26,6 +28,9 @@ public:
 
     graphicsItems::PlotItem* getPlotItem() noexcept;
     const graphicsItems::PlotItem* getPlotItem() const noexcept;
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     std::unique_ptr<GraphicsScene::GraphicsScene> scene_;
