@@ -13,6 +13,7 @@ This bounded rework addresses the latest autoreview findings only:
 - the P1.08 visual test now requires an existing semantic review report (`PG_VISUAL_REVIEW_REPORT` or the canonical `reports/visual/P1.08/SimplePlot/gpt5_vision_review.md`) instead of generating a passing report inside the gate.
 - `scripts/gate visual SimplePlot` now runs the native visual preset/CTest renderer path instead of the placeholder oracle pytest.
 - the configured P1.08 CTest now writes generated reference/actual/diff/metrics artifacts to the visual build tree (`build/visual/reports/visual/P1.08`) and reads the committed GPT review report from `reports/visual/P1.08/SimplePlot/gpt5_vision_review.md`, so validation no longer rewrites tracked source artifacts.
+- latest autoreview rework moves `PlotCurveItem` transform updates out of `PlotItem::paint` and into the pre-paint data/resize path, with an offscreen raw-coordinate regression that asserts the curve is transformed before painting.
 
 ## Changed files
 
@@ -87,7 +88,9 @@ Final local validation after bounded rework:
 | --- | ---: | --- |
 | `cmake --preset visual` | 0 | Configure succeeded; build files written to `build/visual`. |
 | `cmake --build --preset visual --parallel` | 0 | Build succeeded, including `pyqtgraph_cpp_visual_render_example`, `pyqtgraph_cpp_visual_plotcurveitem_bounds`, and the existing PlotCurveItem setData test. |
+| `cmake --build --preset visual --target pyqtgraph_cpp_visual_plotcurveitem_bounds pyqtgraph_cpp_visual_render_example --parallel` | 0 | Latest autoreview rework focused build succeeded. |
 | `QT_QPA_PLATFORM=offscreen ctest --test-dir build/visual -R '^pyqtgraph_cpp\\.graphicsItems\\.PlotCurveItem\\.setData$' --output-on-failure` | 0 | Existing PlotCurveItem data/bounds regression test passed after updating expected bounds for the pen margin. |
+| `QT_QPA_PLATFORM=offscreen ctest --test-dir build/visual -R 'pyqtgraph_cpp\\.graphicsItems\\.PlotCurveItem\\.setData|pyqtgraph_cpp\\.graphicsItems\\.PlotItem|pyqtgraph_cpp\\.widgets\\.PlotWidget' --output-on-failure` | 0 | Focused adjacent non-visual regression tests passed after the transform-refresh rework. |
 | `QT_QPA_PLATFORM=offscreen ctest --preset visual -L P1.08 --output-on-failure` | 0 | `2/2` P1.08 visual tests passed: `P1.08.visual.PlotCurveItem.bounds` and `P1.08.visual.SimplePlot`; generated SimplePlot artifacts were written to `build/visual/reports/visual/P1.08/SimplePlot/`. |
 | `env -u PG_VISUAL_REPORTS_ROOT QT_QPA_PLATFORM=offscreen PG_CPP_VISUAL_RENDERER="$PWD/build/visual/pyqtgraph_cpp_visual_render_example" python3 -m pytest -q tests/visual/test_P1_08_cpp_visual_renderer.py` | 0 | `2 passed in 3.40s`; with only `PG_CPP_VISUAL_RENDERER` set, the focused pytest defaulted artifacts to pytest temp space rather than tracked `reports/visual/P1.08`. |
 | `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` | 1 | Existing proposed-issue metadata failures: blocked-by entries do not match local issues for multiple GitHub issue files, including `github-issue-112.md: ... P1.06`. |

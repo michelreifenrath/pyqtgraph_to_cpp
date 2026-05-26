@@ -29,6 +29,11 @@ public:
 
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
+private:
+    friend class PlotCurveItem;
+
+    void updateCurveTransforms();
+
 protected:
     void resizeEvent(QGraphicsSceneResizeEvent* event) override;
 };

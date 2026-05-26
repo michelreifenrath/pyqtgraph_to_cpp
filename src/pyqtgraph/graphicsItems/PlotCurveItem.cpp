@@ -5,6 +5,8 @@
 
 #include "../../../include/pyqtgraph/graphicsItems/PlotCurveItem.hpp"
 
+#include "../../../include/pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp"
+
 #include <QtCore/QtGlobal>
 #include <QtGui/QColor>
 #include <QtGui/QPainter>
@@ -98,6 +100,9 @@ void PlotCurveItem::setData(std::span<const double> x, std::span<const double> y
     xData_.swap(newX);
     yData_.swap(newY);
     bounds_ = newBounds;
+    if (auto* plotItem = dynamic_cast<PlotItem*>(parentItem())) {
+        plotItem->updateCurveTransforms();
+    }
     update();
 }
 

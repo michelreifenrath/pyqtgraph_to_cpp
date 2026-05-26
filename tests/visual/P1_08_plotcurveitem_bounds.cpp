@@ -1,4 +1,5 @@
 #include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 
 #include <QtCore/QRectF>
 #include <QtWidgets/QApplication>
@@ -81,6 +82,22 @@ bool testCurveBoundsIncludeEdgePenMargin()
     return true;
 }
 
+bool testOffscreenDataIsTransformedBeforePaint()
+{
+    pyqtgraph::graphicsItems::PlotItem plot;
+    plot.setGeometry(QRectF(0.0, 0.0, 800.0, 600.0));
+    pyqtgraph::graphicsItems::PlotCurveItem curve(&plot);
+    const std::vector<double> x{10000.0, 10010.0};
+    const std::vector<double> y{50000.0, 50010.0};
+
+    curve.setData(std::span<const double>(x), std::span<const double>(y));
+
+    CHECK(!curve.transform().isIdentity());
+    CHECK(curve.sceneBoundingRect().intersects(QRectF(0.0, 0.0, 800.0, 600.0)));
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -92,6 +109,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testCurveBoundsIncludeEdgePenMargin()) {
+        return 1;
+    }
+    if (!testOffscreenDataIsTransformedBeforePaint()) {
         return 1;
     }
 

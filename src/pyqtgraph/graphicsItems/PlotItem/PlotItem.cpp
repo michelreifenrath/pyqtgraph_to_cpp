@@ -244,7 +244,7 @@ void drawTicks(QPainter& painter, const QRectF& itemBounds, const PlotBounds& da
     }
 }
 
-void updateCurveTransforms(const QList<QGraphicsItem*>& items, const QRectF& itemBounds)
+void applyCurveTransforms(const QList<QGraphicsItem*>& items, const QRectF& itemBounds)
 {
     const std::optional<PlotBounds> bounds = dataBounds(items);
     if (!bounds.has_value()) {
@@ -284,7 +284,6 @@ void PlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     painter->fillRect(itemBounds, Qt::black);
 
     const QList<QGraphicsItem*> children = childItems();
-    updateCurveTransforms(children, itemBounds);
     const std::optional<PlotBounds> bounds = dataBounds(children);
     if (!bounds.has_value()) {
         return;
@@ -298,11 +297,16 @@ void PlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     drawTicks(*painter, itemBounds, *bounds);
 }
 
+void PlotItem::updateCurveTransforms()
+{
+    applyCurveTransforms(childItems(), boundingRect());
+    update();
+}
+
 void PlotItem::resizeEvent(QGraphicsSceneResizeEvent* event)
 {
     QGraphicsWidget::resizeEvent(event);
-    updateCurveTransforms(childItems(), boundingRect());
-    update();
+    updateCurveTransforms();
 }
 
 } // namespace pyqtgraph::graphicsItems
