@@ -35,7 +35,7 @@ private slots:
     void timerFinished();
 
 private:
-    QTimer timer_;
+    QTimer* timer_ = nullptr;
 };
 
 } // namespace pyqtgraph

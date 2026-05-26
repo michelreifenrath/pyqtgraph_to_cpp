@@ -3,7 +3,9 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QEvent>
 #include <QtCore/QFile>
+#include <QtCore/QMetaObject>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtCore/QVariant>
@@ -135,6 +137,46 @@ bool testThreadsafeTimerQueuedStartStopFromWorkerThread()
     return true;
 }
 
+bool testThreadsafeTimerParentedWorkerThreadRequestsReachAppTimer()
+{
+    QThread ownerThread;
+    QObject context;
+    context.moveToThread(&ownerThread);
+    ownerThread.start();
+
+    QObject* parent = nullptr;
+    pyqtgraph::ThreadsafeTimer* timer = nullptr;
+    bool constructedOnWorker = false;
+    CHECK(QMetaObject::invokeMethod(&context, [&]() {
+        parent = new QObject();
+        timer = new pyqtgraph::ThreadsafeTimer(parent);
+        constructedOnWorker = timer->thread() == &ownerThread;
+    }, Qt::BlockingQueuedConnection));
+    CHECK(parent != nullptr);
+    CHECK(timer != nullptr);
+    CHECK(constructedOnWorker);
+
+    int timeoutCount = 0;
+    QObject::connect(timer, &pyqtgraph::ThreadsafeTimer::timeout, QCoreApplication::instance(),
+        [&timeoutCount]() { ++timeoutCount; }, Qt::QueuedConnection);
+
+    CHECK(QMetaObject::invokeMethod(&context, [&]() { timer->start(20); },
+        Qt::BlockingQueuedConnection));
+    CHECK(waitUntil([&timeoutCount]() { return timeoutCount >= 1; }, 300));
+
+    CHECK(QMetaObject::invokeMethod(&context, [&]() {
+        delete parent;
+        parent = nullptr;
+        timer = nullptr;
+        context.moveToThread(QCoreApplication::instance()->thread());
+    }, Qt::BlockingQueuedConnection));
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    ownerThread.quit();
+    ownerThread.wait();
+    return true;
+}
+
 bool testSignalProxyTypeShapeAndFlushFalse()
 {
     using pyqtgraph::SignalProxy;
@@ -249,6 +291,7 @@ int main(int argc, char** argv)
         && testThreadsafeTimerTypeShape()
         && testThreadsafeTimerStartStopOnGuiThread()
         && testThreadsafeTimerQueuedStartStopFromWorkerThread()
+        && testThreadsafeTimerParentedWorkerThreadRequestsReachAppTimer()
         && testSignalProxyTypeShapeAndFlushFalse()
         && testSignalProxyDelayedCoalescesLatestArgs()
         && testSignalProxyFlushTrueClearsAndEmits()

@@ -6,32 +6,50 @@
 #include "../../include/pyqtgraph/ThreadsafeTimer.hpp"
 
 #include <QtCore/QCoreApplication>
+#include <QtCore/QMetaObject>
 #include <QtCore/QThread>
 
 namespace pyqtgraph {
 
 ThreadsafeTimer::ThreadsafeTimer(QObject* parent)
     : QObject(parent)
+    , timer_(new QTimer())
 {
-    QObject::connect(&timer_, &QTimer::timeout, this, &ThreadsafeTimer::timerFinished);
+    QObject::connect(timer_, &QTimer::timeout, this, &ThreadsafeTimer::timerFinished,
+        Qt::DirectConnection);
 
     if (QCoreApplication::instance() != nullptr) {
         QThread* appThread = QCoreApplication::instance()->thread();
-        timer_.moveToThread(appThread);
+        timer_->moveToThread(appThread);
         if (parent == nullptr) {
             moveToThread(appThread);
         }
     }
 
-    QObject::connect(this, &ThreadsafeTimer::sigTimerStopRequested, this, &ThreadsafeTimer::stop,
+    QObject::connect(this, &ThreadsafeTimer::sigTimerStopRequested, timer_, &QTimer::stop,
         Qt::QueuedConnection);
-    QObject::connect(this, &ThreadsafeTimer::sigTimerStartRequested, this, &ThreadsafeTimer::start,
-        Qt::QueuedConnection);
+    QObject::connect(this, &ThreadsafeTimer::sigTimerStartRequested, timer_,
+        static_cast<void (QTimer::*)(int)>(&QTimer::start), Qt::QueuedConnection);
 }
 
 ThreadsafeTimer::~ThreadsafeTimer()
 {
-    stop();
+    QTimer* timer = timer_;
+    timer_ = nullptr;
+    if (timer == nullptr) {
+        return;
+    }
+
+    if (timer->thread() == QThread::currentThread()) {
+        timer->stop();
+        delete timer;
+        return;
+    }
+
+    QMetaObject::invokeMethod(timer, [timer]() {
+        timer->stop();
+        timer->deleteLater();
+    }, Qt::QueuedConnection);
 }
 
 void ThreadsafeTimer::start(int timeoutMs)
@@ -39,7 +57,7 @@ void ThreadsafeTimer::start(int timeoutMs)
     const bool isGuiThread = QCoreApplication::instance() == nullptr
         || QThread::currentThread() == QCoreApplication::instance()->thread();
     if (isGuiThread) {
-        timer_.start(timeoutMs);
+        timer_->start(timeoutMs);
         return;
     }
 
@@ -51,7 +69,7 @@ void ThreadsafeTimer::stop()
     const bool isGuiThread = QCoreApplication::instance() == nullptr
         || QThread::currentThread() == QCoreApplication::instance()->thread();
     if (isGuiThread) {
-        timer_.stop();
+        timer_->stop();
         return;
     }
 

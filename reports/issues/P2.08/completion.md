@@ -19,6 +19,9 @@ Focused proof/artifact paths:
 Shared wiring changed:
 - `CMakeLists.txt`
 
+Generated inventory/status changed:
+- `port_manifest.yaml`
+
 ## TDD red evidence
 
 Initial focused configure/build after wiring the P2.08 test failed before implementation:
@@ -53,12 +56,29 @@ Tests:
 - pyqtgraph_cpp.core.SignalProxy_ThreadsafeTimer
 exit: 0
 
+python3 scripts/generate_manifest --check
+port manifest verified (213 source files, 129 examples, 355 classes)
+exit: 0
+
+python3 oracle/scripts/generate_class_inventory.py --check
+class inventory verified (355 classes)
+exit: 0
+
 git diff --check
 exit: 0
 
 git diff --name-only origin/main...HEAD
 exit: 0
-output: no committed branch diff; worktree contains the implementation diff for release manager review
+output:
+CMakeLists.txt
+include/pyqtgraph/SignalProxy.hpp
+include/pyqtgraph/ThreadsafeTimer.hpp
+oracle/fixtures/P2_08/signal_proxy_timer_oracle.json
+oracle/scripts/generate_P2_08_signal_proxy_timer_oracle.py
+reports/issues/P2.08/completion.md
+src/pyqtgraph/SignalProxy.cpp
+src/pyqtgraph/ThreadsafeTimer.cpp
+tests/core/test_SignalProxy_ThreadsafeTimer.cpp
 
 scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp
 exit: 1
@@ -70,4 +90,4 @@ Known repo issue metadata failures reported for blocked-by aliases, including gi
 - Python bound-signal constructor wiring is represented by explicit C++ `signalReceived` slots.
 - Python weakref slot management and `connectSlot` are not ported.
 - Python `SignalBlock`/`block()` context manager is not ported.
-- `port_manifest.yaml` was not edited because it is outside the requested ownership for this run.
+- `port_manifest.yaml` was refreshed for generated `source_files` and `classes` status/completion entries for `SignalProxy` and `ThreadsafeTimer`.
