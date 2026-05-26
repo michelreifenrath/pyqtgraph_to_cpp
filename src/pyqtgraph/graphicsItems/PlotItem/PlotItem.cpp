@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 #include <optional>
+#include <vector>
 
 namespace pyqtgraph::graphicsItems {
 
@@ -121,6 +122,99 @@ QString tickLabel(double value)
     return QString::number(value, 'g', 3);
 }
 
+struct AxisTick {
+    double value;
+    bool major;
+};
+
+double niceTickStep(double rawStep)
+{
+    if (!std::isfinite(rawStep) || rawStep <= 0.0) {
+        return 0.0;
+    }
+
+    const double magnitude = std::pow(10.0, std::floor(std::log10(rawStep)));
+    const double normalized = rawStep / magnitude;
+    double niceNormalized = 10.0;
+    if (normalized <= 1.0) {
+        niceNormalized = 1.0;
+    } else if (normalized <= 2.0) {
+        niceNormalized = 2.0;
+    } else if (normalized <= 5.0) {
+        niceNormalized = 5.0;
+    }
+    return niceNormalized * magnitude;
+}
+
+std::vector<AxisTick> axisTicks(const BoundsRange& range, qreal pixelLength)
+{
+    constexpr double minimumMajorPixelSpacing = 90.0;
+    constexpr double minimumMinorPixelSpacing = 12.0;
+    constexpr int maximumMajorIntervals = 8;
+    constexpr int maximumTickCount = 64;
+
+    if (!std::isfinite(range.minimum) || !std::isfinite(range.maximum)
+        || !std::isfinite(static_cast<double>(pixelLength)) || pixelLength <= 0.0
+        || range.maximum < range.minimum) {
+        return {};
+    }
+
+    const double span = range.maximum - range.minimum;
+    if (!std::isfinite(span) || span <= 0.0) {
+        return {};
+    }
+
+    const double rawIntervalCount = std::floor(static_cast<double>(pixelLength) / minimumMajorPixelSpacing);
+    int majorIntervals = 1;
+    if (std::isfinite(rawIntervalCount)) {
+        majorIntervals = static_cast<int>(
+            std::clamp(rawIntervalCount, 1.0, static_cast<double>(maximumMajorIntervals)));
+    }
+
+    const double majorStep = niceTickStep(span / majorIntervals);
+    if (!std::isfinite(majorStep) || majorStep <= 0.0) {
+        return {};
+    }
+
+    const double majorPixelSpacing = static_cast<double>(pixelLength) * majorStep / span;
+    int minorDivisions = 5;
+    if (!std::isfinite(majorPixelSpacing) || majorPixelSpacing / minorDivisions < minimumMinorPixelSpacing) {
+        minorDivisions = majorPixelSpacing >= minimumMinorPixelSpacing * 2.0 ? 2 : 1;
+    }
+
+    const double minorStep = majorStep / minorDivisions;
+    if (!std::isfinite(minorStep) || minorStep <= 0.0) {
+        return {};
+    }
+
+    const double firstTick = std::ceil(range.minimum / minorStep) * minorStep;
+    if (!std::isfinite(firstTick)) {
+        return {};
+    }
+
+    const double lastTick = range.maximum + (std::abs(minorStep) * 1.0e-6);
+    const double majorEpsilon = std::abs(majorStep) * 1.0e-6;
+    std::vector<AxisTick> ticks;
+    ticks.reserve(maximumTickCount);
+    bool hasMajorTick = false;
+    for (int tickIndex = 0; tickIndex < maximumTickCount; ++tickIndex) {
+        const double value = firstTick + (tickIndex * minorStep);
+        if (!std::isfinite(value) || value > lastTick) {
+            break;
+        }
+        const double nearestMajor = std::round(value / majorStep) * majorStep;
+        const bool major = std::abs(value - nearestMajor) <= majorEpsilon;
+        hasMajorTick = hasMajorTick || major;
+        ticks.push_back(AxisTick{value, major});
+    }
+
+    if (!hasMajorTick && !ticks.empty()) {
+        ticks.front().major = true;
+        ticks.back().major = true;
+    }
+    return ticks;
+}
+
 void drawTicks(QPainter& painter, const QRectF& itemBounds, const PlotBounds& data)
 {
     const QRectF target = plotRect(itemBounds);
@@ -130,28 +224,22 @@ void drawTicks(QPainter& painter, const QRectF& itemBounds, const PlotBounds& da
     painter.setFont(QFont(QStringLiteral("Sans Serif"), 9));
     painter.setPen(QPen(QColor(150, 150, 150), 1));
 
-    for (int tick = 0; tick <= 50; ++tick) {
-        const double value = tick * 2.0;
-        const double x = mapPoint(value, data.y.minimum, data, target).x();
-        const double length = tick % 10 == 0 ? 7.0 : 4.0;
+    for (const AxisTick& tick : axisTicks(data.x, target.width())) {
+        const double x = mapPoint(tick.value, data.y.minimum, data, target).x();
+        const double length = tick.major ? 7.0 : 4.0;
         painter.drawLine(QPointF(x, bottomAxis), QPointF(x, bottomAxis + length));
-        if (tick % 10 == 0) {
-            painter.drawText(QRectF(x - 22.0, bottomAxis + 8.0, 44.0, 18.0), Qt::AlignCenter, tickLabel(value));
+        if (tick.major) {
+            painter.drawText(
+                QRectF(x - 22.0, bottomAxis + 8.0, 44.0, 18.0), Qt::AlignCenter, tickLabel(tick.value));
         }
     }
 
-    const double firstYTick = std::ceil(data.y.minimum * 10.0) / 10.0;
-    const double lastYTick = std::floor(data.y.maximum * 10.0) / 10.0;
-    const int firstStep = static_cast<int>(std::round(firstYTick * 10.0));
-    const int lastStep = static_cast<int>(std::round(lastYTick * 10.0));
-    for (int step = firstStep; step <= lastStep; ++step) {
-        const double value = step / 10.0;
-        const double y = mapPoint(data.x.minimum, value, data, target).y();
-        const bool major = step % 5 == 0;
-        painter.drawLine(QPointF(leftAxis - (major ? 7.0 : 4.0), y), QPointF(leftAxis, y));
-        if (major) {
+    for (const AxisTick& tick : axisTicks(data.y, target.height())) {
+        const double y = mapPoint(data.x.minimum, tick.value, data, target).y();
+        painter.drawLine(QPointF(leftAxis - (tick.major ? 7.0 : 4.0), y), QPointF(leftAxis, y));
+        if (tick.major) {
             painter.drawText(QRectF(itemBounds.left() + 1.0, y - 9.0, leftAxis - 8.0, 18.0),
-                Qt::AlignRight | Qt::AlignVCenter, tickLabel(value));
+                Qt::AlignRight | Qt::AlignVCenter, tickLabel(tick.value));
         }
     }
 }

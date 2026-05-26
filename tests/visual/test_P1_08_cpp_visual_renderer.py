@@ -170,6 +170,20 @@ def _write_placeholder_like(path: Path) -> None:
     write_png(path, width, height, pixels)
 
 
+def _write_gpt_visual_review(path: Path) -> None:
+    path.write_text(
+        "verdict: pass\n"
+        "blocking_differences: []\n"
+        "non_blocking_differences:\n"
+        "  - Minor Qt/font rasterization and axis-label differences remain within deterministic tolerance.\n"
+        "likely_causes:\n"
+        "  - antialiasing\n"
+        "  - layout\n"
+        "recommendation: merge_ok\n",
+        encoding="utf-8",
+    )
+
+
 def test_P1_08_blank_and_placeholder_guards_reject_non_semantic_images(
     tmp_path: Path,
 ) -> None:
@@ -207,8 +221,16 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
     _assert_semantic_plot_image(actual_source, width=800, height=600)
 
     CASE_DIR.mkdir(parents=True, exist_ok=True)
-    for artifact_name in ("reference.png", "actual.png", "diff.png", "metrics.json"):
+    for artifact_name in (
+        "reference.png",
+        "actual.png",
+        "diff.png",
+        "metrics.json",
+        "gpt5_vision_review.md",
+    ):
         (CASE_DIR / artifact_name).unlink(missing_ok=True)
+    review_source = tmp_path / "gpt5_vision_review.md"
+    _write_gpt_visual_review(review_source)
     result = subprocess.run(
         [
             sys.executable,
@@ -222,7 +244,9 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
             "--reports-root",
             str(REPORTS_ROOT),
             "--gpt-visual-review",
-            "not_applicable",
+            "required_for_pr",
+            "--review-report",
+            str(review_source),
             "--max-mean-delta",
             "6",
             "--max-pixel-delta",
@@ -243,8 +267,12 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
     actual = CASE_DIR / "actual.png"
     diff = CASE_DIR / "diff.png"
     metrics_path = CASE_DIR / "metrics.json"
-    for artifact in (reference, actual, diff, metrics_path):
+    review = CASE_DIR / "gpt5_vision_review.md"
+    for artifact in (reference, actual, diff, metrics_path, review):
         assert artifact.is_file(), f"missing artifact: {artifact}"
+    assert review.read_text(encoding="utf-8") == review_source.read_text(
+        encoding="utf-8"
+    )
 
     _assert_semantic_plot_image(actual, width=800, height=600)
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
@@ -252,6 +280,15 @@ def test_P1_08_native_renderer_writes_canonical_simpleplot_artifacts(
     assert metrics["dimensions"] == [800, 600]
     assert metrics["passed"] is True
     assert metrics["deterministic_verdict"] == "pass"
+    assert metrics["review_report_path"] == str(review)
+    assert metrics["semantic_review"] == {
+        "mode": "required_for_pr",
+        "verdict": "pass",
+        "recommendation": "merge_ok",
+        "accepted": True,
+        "blocks_gate": False,
+        "failure_reason": None,
+    }
     assert metrics["failed_checks"] == []
     assert metrics["tolerance"] == {
         "max_mean_delta": 6.0,

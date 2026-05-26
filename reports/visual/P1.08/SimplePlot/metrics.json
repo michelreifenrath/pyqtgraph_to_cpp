@@ -6,7 +6,7 @@
     "reference": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-112/reports/visual/P1.08/SimplePlot/reference.png"
   },
   "case": "SimplePlot",
-  "changed_pixel_percent": 3.0377083333333332,
+  "changed_pixel_percent": 2.911458333333333,
   "deterministic_verdict": "pass",
   "dimensions": [
     800,
@@ -15,11 +15,18 @@
   "failed_checks": [],
   "failed_tolerances": [],
   "max_delta": 200,
-  "mean_abs_delta": 3.8884911458333336,
+  "mean_abs_delta": 3.7998421875,
   "passed": true,
-  "review_report_path": null,
-  "semantic_review": null,
-  "ssim": 0.8433645974038755,
+  "review_report_path": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-112/reports/visual/P1.08/SimplePlot/gpt5_vision_review.md",
+  "semantic_review": {
+    "accepted": true,
+    "blocks_gate": false,
+    "failure_reason": null,
+    "mode": "required_for_pr",
+    "recommendation": "merge_ok",
+    "verdict": "pass"
+  },
+  "ssim": 0.8482026901800664,
   "tolerance": {
     "max_changed_pixel_percent": 5.0,
     "max_mean_delta": 6.0,
