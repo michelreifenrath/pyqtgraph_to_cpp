@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -97,9 +98,9 @@ def examples_from_selections(selections: list[str], argument_parser: argparse.Ar
     return selected
 
 
-def changed_paths(base: str, root: Path) -> list[str]:
+def git_changed_paths(args: list[str], root: Path) -> list[str]:
     result = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        ["git", *args],
         cwd=root,
         env=os.environ.copy(),
         text=True,
@@ -112,6 +113,21 @@ def changed_paths(base: str, root: Path) -> list[str]:
             sys.stderr.write(result.stderr)
         raise SystemExit(result.returncode)
     return [normalize_path(line) for line in result.stdout.splitlines() if line.strip()]
+
+
+def changed_paths(base: str, root: Path) -> list[str]:
+    paths: list[str] = []
+    seen: set[str] = set()
+    for args in (
+        ["diff", "--name-only", f"{base}...HEAD"],
+        ["diff", "--name-only", "HEAD"],
+        ["ls-files", "--others", "--exclude-standard", "--", "examples/"],
+    ):
+        for path in git_changed_paths(args, root):
+            if path not in seen:
+                paths.append(path)
+                seen.add(path)
+    return paths
 
 
 def examples_from_changed_paths(paths: list[str]) -> list[Example]:
@@ -129,7 +145,7 @@ def runner_command(example: Example, runner: str, ctest_preset: str) -> list[str
         "--preset",
         ctest_preset,
         "-R",
-        f"^{example.ctest_name}$",
+        f"^{re.escape(example.ctest_name)}$",
         "--output-on-failure",
     ]
 
