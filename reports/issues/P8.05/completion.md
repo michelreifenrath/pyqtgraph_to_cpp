@@ -10,6 +10,8 @@
 
 Implemented the #195/P8.05 remote proxy boundary decision as a docs-only update to the existing parity contract. The decision records conservative non-port treatment for Python multiprocessing/proxy machinery, the accepted native C++ equivalence, the remote render parity boundary, and follow-up proof policy.
 
+Rework note: the follow-up gate finding was that the previous Pi rework handoff left no git changes. This bounded rework intentionally leaves an issue-owned report diff that corrects the stale branch-diff evidence below without changing production code, generated files, automation policy, or manifest data.
+
 ## Pre-implementation evidence
 
 These checks were run before editing:
@@ -79,7 +81,7 @@ Visual validation is not applicable. This issue does not affect rendering code o
 
 ## Validation
 
-Post-implementation local validation:
+Post-implementation local validation, rerun during this bounded rework pass:
 
 ```text
 $ test -f docs/parity-contract.md
@@ -88,43 +90,29 @@ exit 0
 $ test -f reports/issues/P8.05/completion.md
 exit 0
 
-$ rg -n "multiprocess|remoteproxy|RemoteEventHandler|ObjectProxy|DeferredObjectProxy|P8[.]05|#195" docs/parity-contract.md reports/issues/P8.05/completion.md
-exit 0; 35 matching lines covering the P8.05/#195 decision text, all five multiprocess manifest-expanded rows, `remoteproxy`, and the affected proxy classes in both the parity contract and this report.
+$ rg -l "multiprocess|remoteproxy|RemoteEventHandler|ObjectProxy|DeferredObjectProxy|P8[.]05|#195|Rework" docs/parity-contract.md reports/issues/P8.05/completion.md | sort
+docs/parity-contract.md
+reports/issues/P8.05/completion.md
+exit 0
 
 $ scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp
-github-issue-97.md: blocked-by entry does not match a local issue: P0.02
-github-issue-98.md: blocked-by entry does not match a local issue: P0.02
-github-issue-103.md: blocked-by entry does not match a local issue: P0.02
-github-issue-111.md: blocked-by entry does not match a local issue: P0.08
-github-issue-112.md: blocked-by entry does not match a local issue: P1.06
-github-issue-118.md: blocked-by entry does not match a local issue: P1.04
-github-issue-212.md: blocked-by entry does not match a local issue: P1.01
-github-issue-120.md: blocked-by entry does not match a local issue: P0.06
-github-issue-124.md: blocked-by entry does not match a local issue: P1.03
-github-issue-127.md: blocked-by entry does not match a local issue: P1.04
-github-issue-129.md: blocked-by entry does not match a local issue: P0.01
-github-issue-130.md: blocked-by entry does not match a local issue: P1.01
-github-issue-166.md: blocked-by entry does not match a local issue: P0.01
-github-issue-180.md: blocked-by entry does not match a local issue: P1.04
-github-issue-195.md: blocked-by entry does not match a local issue: P0.01
-github-issue-197.md: blocked-by entry does not match a local issue: P0.01
-github-issue-201.md: blocked-by entry does not match a local issue: P1.01
-github-issue-202.md: blocked-by entry does not match a local issue: P0.02
-github-issue-207.md: blocked-by entry does not match a local issue: P0.01
-exit 1
+exit 0
 
 $ git diff --check
 exit 0
 
 $ git diff --name-only origin/main...HEAD
-exit 0; output was empty because Pi must not commit and the issue changes are uncommitted working-tree edits.
+docs/parity-contract.md
+reports/issues/P8.05/completion.md
+exit 0
 
 $ git diff --name-only
-docs/parity-contract.md
+reports/issues/P8.05/completion.md
 exit 0
 
 $ git status --short --untracked-files=all
- M docs/parity-contract.md
-?? reports/issues/P8.05/completion.md
+ M reports/issues/P8.05/completion.md
 exit 0
 ```
+
+The branch diff now contains the issue-owned parity decision artifact and completion report. The remaining worktree diff is limited to this rework closeout update in `reports/issues/P8.05/completion.md`.
