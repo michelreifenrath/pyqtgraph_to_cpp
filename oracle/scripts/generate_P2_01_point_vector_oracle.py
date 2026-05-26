@@ -236,7 +236,10 @@ expected = {
     "point_pow_point": point2(Point(2.0, 3.0) ** Point(4.0, 2.0)),
     "point_pow_scalar": point2(Point(4.0, 9.0) ** 0.5),
     "point_pow_negative_infinity_fractional": point2(Point(-math.inf, 9.0) ** 0.5),
+    "point_pow_point_overflow_error": error_name(lambda: Point(2.0, 2.0) ** Point(1024.0, 2.0)),
+    "point_pow_scalar_overflow_error": error_name(lambda: Point(2.0, 2.0) ** 1024.0),
     "point_reflected_pow": point2(2.0 ** Point(3.0, 4.0)),
+    "point_reflected_pow_overflow_error": error_name(lambda: 2.0 ** Point(1024.0, 1024.0)),
     "point_pow_zero_negative_error": error_name(lambda: Point(0.0, 2.0) ** Point(-1.0, 2.0)),
     "point_pow_scalar_zero_negative_error": error_name(lambda: Point(0.0, 2.0) ** -1.0),
     "point_reflected_pow_zero_negative_error": error_name(lambda: 0.0 ** Point(-1.0, 2.0)),
@@ -275,6 +278,7 @@ EQUIVALENCES = [
     "Python dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation.",
     "Python ZeroDivisionError from zero-length Point.norm() is represented by std::domain_error in C++.",
     "Python ZeroDivisionError/TypeError from Point power-domain failures is represented by std::domain_error in C++.",
+    "Python OverflowError from finite Point power overflow is represented by std::overflow_error in C++.",
 ]
 
 

@@ -4,7 +4,8 @@
     "Upstream Point __pow__/__rpow__ are represented by Point::pow(QPointF), Point::pow(double), and pyqtgraph::pow(double, const Point&); operator^ is intentionally unsupported because it is bitwise and precedence-misleading in C++.",
     "Python dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation.",
     "Python ZeroDivisionError from zero-length Point.norm() is represented by std::domain_error in C++.",
-    "Python ZeroDivisionError/TypeError from Point power-domain failures is represented by std::domain_error in C++."
+    "Python ZeroDivisionError/TypeError from Point power-domain failures is represented by std::domain_error in C++.",
+    "Python OverflowError from finite Point power overflow is represented by std::overflow_error in C++."
   ],
   "expected": {
     "point_add": [
@@ -61,10 +62,12 @@
       16.0,
       9.0
     ],
+    "point_pow_point_overflow_error": "OverflowError",
     "point_pow_scalar": [
       2.0,
       3.0
     ],
+    "point_pow_scalar_overflow_error": "OverflowError",
     "point_pow_scalar_zero_negative_error": "ZeroDivisionError",
     "point_pow_zero_negative_error": "ZeroDivisionError",
     "point_proj": [
@@ -87,6 +90,7 @@
       8.0,
       16.0
     ],
+    "point_reflected_pow_overflow_error": "OverflowError",
     "point_reflected_pow_zero_negative_error": "ZeroDivisionError",
     "point_reflected_sub": [
       14.0,

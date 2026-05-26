@@ -30,7 +30,11 @@ double pointPow(double base, double exponent)
     if (base < 0.0 && std::isfinite(base) && isFiniteNonIntegral(exponent)) {
         throw std::domain_error("Point pow is undefined for a negative base raised to a non-integral finite exponent");
     }
-    return std::pow(base, exponent);
+    const double result = std::pow(base, exponent);
+    if (std::isfinite(base) && std::isfinite(exponent) && !std::isfinite(result)) {
+        throw std::overflow_error("Point pow overflow");
+    }
+    return result;
 }
 
 } // namespace

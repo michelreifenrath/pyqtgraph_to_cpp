@@ -108,6 +108,18 @@ void expectDomainErrorPow(Callable callable)
     CHECK(threw);
 }
 
+template <typename Callable>
+void expectOverflowErrorPow(Callable callable)
+{
+    bool threw = false;
+    try {
+        static_cast<void>(callable());
+    } catch (const std::overflow_error&) {
+        threw = true;
+    }
+    CHECK(threw);
+}
+
 } // namespace
 
 int main()
@@ -160,6 +172,9 @@ int main()
     assertPoint(Point{4.0, 9.0}.pow(0.5), 2.0, 3.0);
     assertPoint(Point{-std::numeric_limits<double>::infinity(), 9.0}.pow(0.5), std::numeric_limits<double>::infinity(), 3.0);
     assertPoint(pyqtgraph::pow(2.0, Point{3.0, 4.0}), 8.0, 16.0);
+    expectOverflowErrorPow([] { return Point{2.0, 2.0}.pow(1024.0); });
+    expectOverflowErrorPow([] { return Point{2.0, 2.0}.pow(QPointF{1024.0, 2.0}); });
+    expectOverflowErrorPow([] { return pyqtgraph::pow(2.0, Point{1024.0, 1024.0}); });
     expectDomainErrorPow([] { return Point{0.0, 2.0}.pow(QPointF{-1.0, 2.0}); });
     expectDomainErrorPow([] { return Point{0.0, 2.0}.pow(-1.0); });
     expectDomainErrorPow([] { return pyqtgraph::pow(0.0, Point{-1.0, 2.0}); });

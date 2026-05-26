@@ -17,6 +17,7 @@
 - Python-only dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation.
 - Python `ZeroDivisionError` from zero-length `Point.norm()` is represented by `std::domain_error` in C++ and verified against the fixture-recorded upstream error.
 - Python `ZeroDivisionError`/`TypeError` from `Point` power-domain failures is represented by `std::domain_error` in C++ and verified against fixture-recorded upstream errors.
+- Python `OverflowError` from finite `Point` power overflow is represented by `std::overflow_error` in C++ and verified against fixture-recorded upstream errors.
 
 ## TDD RED checkpoint
 Command:
@@ -56,6 +57,16 @@ Expected failure summary: the new P2.01 oracle target failed to compile because 
 - `cmake --preset dev` -> exit 0.
 - `cmake --build --preset dev --parallel` -> exit 0.
 - `QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure` -> exit 0; 3/3 P2.01 tests passed.
+- `git diff --check` -> exit 0.
+- `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` -> exit 1 due pre-existing unrelated blocked-by metadata references including P0.02/P0.08/P1.06/P1.04/P1.01/P1.03/P0.01/P0.06; no code scope broadened.
+- `git diff --name-only origin/main...HEAD` -> exit 0; returned the branch-scope paths listed below.
+
+## Finite-overflow power rework validation
+- Pi reviewer subagent was used for a bounded read-only rework pass and confirmed the minimal fix should map finite-input `Point` pow overflow to `std::overflow_error` while preserving non-finite-base behavior.
+- Rework added pinned oracle cases for scalar, point, and reflected finite pow overflow and mapped finite `std::pow` non-finite results to `std::overflow_error`.
+- Representative RED checkpoint after adding finite-overflow oracle/tests and before the production fix: `cmake --build --preset dev --target pyqtgraph_cpp_core_point pyqtgraph_cpp_oracle_P2_01 --parallel 2 && QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure` -> exit 8; `pyqtgraph_cpp.oracle.P2_01` and `pyqtgraph_cpp.core.Point` failed because no `std::overflow_error` was thrown. Summary appended to `reports/issues/P2.01/red_failure.txt`.
+- `python3 oracle/scripts/generate_P2_01_point_vector_oracle.py --check` -> exit 0; fixture current.
+- `cmake --preset dev && cmake --build --preset dev --parallel && QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure` -> exit 0; 3/3 P2.01 tests passed.
 - `git diff --check` -> exit 0.
 - `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` -> exit 1 due pre-existing unrelated blocked-by metadata references including P0.02/P0.08/P1.06/P1.04/P1.01/P1.03/P0.01/P0.06; no code scope broadened.
 - `git diff --name-only origin/main...HEAD` -> exit 0; returned the branch-scope paths listed below.
