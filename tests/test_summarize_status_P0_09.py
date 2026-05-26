@@ -108,14 +108,176 @@ def replace_manifest_once(root: Path, old: str, new: str) -> None:
     manifest_path.write_text(manifest.replace(old, new, 1), encoding="utf-8")
 
 
+def create_final_acceptance_evidence(
+    root: Path,
+    *,
+    omit_criterion: str | None = None,
+    failing_criterion: str | None = None,
+    human_approved: bool = True,
+) -> None:
+    artifact_paths = (
+        "reports/examples/Foo/validation.json",
+        "reports/issues/P0.09/core-hierarchy.txt",
+        "reports/issues/P0.09/platform-tests.txt",
+        "build/release/reports/performance/P0.08/metrics.json",
+        ".hermes/pi-symphony/logs/gates/autoreview-summary.json",
+        "reports/issues/P0.09/package-install.txt",
+        "reports/issues/P0.09/downstream-find-package.txt",
+        "reports/issues/P0.09/human-approval.md",
+    )
+    for relative_path in artifact_paths:
+        path = root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("P0.09 final proof fixture\n", encoding="utf-8")
+
+    def status(name: str) -> str:
+        return "failed" if name == failing_criterion else "passed"
+
+    criteria = {
+        "example_validation_runs": f"""
+    status: {status("example_validation_runs")}
+    command: scripts/run_all_examples --visual --interaction --performance
+    artifact_paths:
+    - reports/examples/Foo/validation.json
+    examples:
+    - upstream_path: pyqtgraph/examples/Foo.py
+      status: passed
+      artifact_paths:
+      - reports/examples/Foo/validation.json
+""",
+        "core_hierarchy_checks": f"""
+    status: {status("core_hierarchy_checks")}
+    command: python3 -m pytest -q tests/hierarchy
+    artifact_paths:
+    - reports/issues/P0.09/core-hierarchy.txt
+""",
+        "required_platform_tests": f"""
+    status: {status("required_platform_tests")}
+    command: scripts/gate merge
+    artifact_paths:
+    - reports/issues/P0.09/platform-tests.txt
+""",
+        "performance_benchmarks": f"""
+    status: {status("performance_benchmarks")}
+    command: scripts/run_all_examples --performance
+    artifact_paths:
+    - build/release/reports/performance/P0.08/metrics.json
+""",
+        "autoreview_status": f"""
+    status: {status("autoreview_status")}
+    command: scripts/run_autoreview --mode merge --base origin/main
+    artifact_paths:
+    - .hermes/pi-symphony/logs/gates/autoreview-summary.json
+""",
+        "package_install_proof": f"""
+    status: {status("package_install_proof")}
+    command: cmake --build --preset release --target install
+    artifact_paths:
+    - reports/issues/P0.09/package-install.txt
+""",
+        "downstream_find_package_proof": f"""
+    status: {status("downstream_find_package_proof")}
+    command: cmake -S reports/issues/P0.09/consumer -B build/consumer-P0_09
+    artifact_paths:
+    - reports/issues/P0.09/downstream-find-package.txt
+""",
+        "human_approval": f"""
+    approved: {str(human_approved).lower()}
+    reviewer: michel
+    artifact_paths:
+    - reports/issues/P0.09/human-approval.md
+""",
+    }
+    evidence = "criteria:\n"
+    for name, body in criteria.items():
+        if name == omit_criterion:
+            continue
+        evidence += f"  {name}:{body}"
+    path = root / "reports/issues/P0.09/final_acceptance_evidence.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(evidence, encoding="utf-8")
+
+
 def test_P0_09_require_complete_passes_on_all_complete_fixture(tmp_path: Path) -> None:
+    write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
+    create_final_acceptance_evidence(tmp_path)
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode == 0, result.stderr
+    assert (
+        "final_acceptance_evidence: criteria=8 passed=8 example_proofs=1/1"
+        in result.stdout
+    )
+    assert "require_complete: satisfied" in result.stdout
+
+
+def test_P0_09_require_complete_fails_without_final_evidence_proof(
+    tmp_path: Path,
+) -> None:
     write_manifest(tmp_path)
     create_complete_target_files(tmp_path)
 
     result = run_summary(tmp_path, "--require-complete")
 
-    assert result.returncode == 0, result.stderr
-    assert "require_complete: satisfied" in result.stdout
+    assert result.returncode != 0
+    assert "require_complete: failed" in result.stderr
+    assert (
+        "final acceptance evidence missing: "
+        "reports/issues/P0.09/final_acceptance_evidence.yaml" in result.stderr
+    )
+
+
+def test_P0_09_require_complete_fails_without_final_criterion_proof(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
+    create_final_acceptance_evidence(tmp_path, omit_criterion="performance_benchmarks")
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode != 0
+    assert "require_complete: failed" in result.stderr
+    assert (
+        "final acceptance evidence missing required criterion: performance_benchmarks"
+        in result.stderr
+    )
+
+
+def test_P0_09_require_complete_fails_on_blocking_autoreview_evidence(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
+    create_final_acceptance_evidence(tmp_path, failing_criterion="autoreview_status")
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode != 0
+    assert "require_complete: failed" in result.stderr
+    assert (
+        "final acceptance evidence autoreview_status status must be passed"
+        in result.stderr
+    )
+
+
+def test_P0_09_require_complete_fails_without_human_approval(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
+    create_final_acceptance_evidence(tmp_path, human_approved=False)
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode != 0
+    assert "require_complete: failed" in result.stderr
+    assert (
+        "final acceptance evidence human_approval approved must be true"
+        in result.stderr
+    )
 
 
 def test_P0_09_require_complete_fails_on_stale_complete_metadata(
