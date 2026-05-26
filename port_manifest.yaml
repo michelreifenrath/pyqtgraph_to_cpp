@@ -112,14 +112,14 @@ source_files:
   target_header_path: include/pyqtgraph/SignalProxy.hpp
   target_source_path: src/pyqtgraph/SignalProxy.cpp
   subsystem: core
-  status: not_started
-  completion: missing
+  status: ported
+  completion: complete
 - upstream_path: pyqtgraph/ThreadsafeTimer.py
   target_header_path: include/pyqtgraph/ThreadsafeTimer.hpp
   target_source_path: src/pyqtgraph/ThreadsafeTimer.cpp
   subsystem: core
-  status: not_started
-  completion: missing
+  status: ported
+  completion: complete
 - upstream_path: pyqtgraph/Transform3D.py
   target_header_path: include/pyqtgraph/Transform3D.hpp
   target_source_path: src/pyqtgraph/Transform3D.cpp
@@ -2316,8 +2316,8 @@ classes:
   bases:
   - QtCore.QObject
   line: 11
-  status: not_started
-  completion: missing
+  status: ported
+  completion: complete
 - class_name: ThreadsafeTimer
   upstream_path: pyqtgraph/ThreadsafeTimer.py
   target_header_path: include/pyqtgraph/ThreadsafeTimer.hpp
@@ -2326,8 +2326,8 @@ classes:
   bases:
   - QtCore.QObject
   line: 5
-  status: not_started
-  completion: missing
+  status: ported
+  completion: complete
 - class_name: Transform3D
   upstream_path: pyqtgraph/Transform3D.py
   target_header_path: include/pyqtgraph/Transform3D.hpp

@@ -79,8 +79,13 @@ target_compile_options(pyqtgraph_cpp
 if(_pyqtgraph_cpp_has_qtcore)
     target_sources(pyqtgraph_cpp
         PRIVATE
+            include/pyqtgraph/SignalProxy.hpp
+            include/pyqtgraph/ThreadsafeTimer.hpp
             src/pyqtgraph/Point.cpp
+            src/pyqtgraph/SignalProxy.cpp
+            src/pyqtgraph/ThreadsafeTimer.cpp
     )
+    set_target_properties(pyqtgraph_cpp PROPERTIES AUTOMOC ON)
     target_link_libraries(pyqtgraph_cpp
         PUBLIC
             Qt6::Core
@@ -221,6 +226,17 @@ if(BUILD_TESTING)
     add_test(NAME pyqtgraph_cpp.oracle.P0_06.mismatch COMMAND pyqtgraph_cpp_oracle_P0_06 --mismatch)
     set_tests_properties(pyqtgraph_cpp.oracle.P0_06.mismatch PROPERTIES LABELS P0.06 WILL_FAIL TRUE)
 
+    add_test(
+        NAME pyqtgraph_cpp.oracle.P2_08
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/oracle/scripts/generate_P2_08_signal_proxy_timer_oracle.py" --check
+    )
+    set_tests_properties(
+        pyqtgraph_cpp.oracle.P2_08
+        PROPERTIES
+            LABELS P2.08
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
     add_executable(pyqtgraph_cpp_core_arrayview tests/core/test_ArrayView.cpp)
     target_link_libraries(pyqtgraph_cpp_core_arrayview
         PRIVATE
@@ -261,6 +277,21 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_point)
         add_test(NAME pyqtgraph_cpp.core.Point COMMAND pyqtgraph_cpp_core_point)
+
+        add_executable(pyqtgraph_cpp_core_signalproxy_threadsafe_timer tests/core/test_SignalProxy_ThreadsafeTimer.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_signalproxy_threadsafe_timer
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        target_compile_definitions(pyqtgraph_cpp_core_signalproxy_threadsafe_timer
+            PRIVATE
+                PYQTGRAPH_CPP_P2_08_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/oracle/fixtures/P2_08/signal_proxy_timer_oracle.json"
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_signalproxy_threadsafe_timer)
+        add_test(NAME pyqtgraph_cpp.core.SignalProxy_ThreadsafeTimer COMMAND pyqtgraph_cpp_core_signalproxy_threadsafe_timer)
+        set_tests_properties(pyqtgraph_cpp.core.SignalProxy_ThreadsafeTimer PROPERTIES LABELS P2.08)
     endif()
 
     if(_pyqtgraph_cpp_has_vector)

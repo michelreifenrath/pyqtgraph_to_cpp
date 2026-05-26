@@ -1,0 +1,57 @@
+{
+  "cases": [
+    {
+      "behavior": "each received signal replaces args and restarts the delay timer",
+      "delay_seconds": 0.04,
+      "expected_timer_ms": 41,
+      "name": "no_rate_limit_restart_ms",
+      "rate_limit": 0
+    },
+    {
+      "behavior": "first rate-limited signal has no lastFlushTime, so leakTime is zero",
+      "delay_seconds": 0.2,
+      "expected_timer_ms": 1,
+      "name": "rate_limit_first_signal_ms",
+      "rate_limit": 20
+    },
+    {
+      "behavior": "later signals are throttled by max(0, lastFlush + 1/rateLimit - now)",
+      "delay_seconds": 0.2,
+      "expected_minimum_spacing_ms": 50,
+      "name": "rate_limit_after_flush_ms",
+      "rate_limit": 20
+    },
+    {
+      "behavior": "flush returns false when no args are queued and emits nothing",
+      "name": "flush_without_args_returns_false"
+    },
+    {
+      "behavior": "flush stops the timer, clears queued args, updates lastFlushTime, emits latest args, and returns true",
+      "name": "flush_with_args_returns_true_and_clears"
+    },
+    {
+      "behavior": "disconnect sets blockSignal true, preventing later signalReceived/flush emissions",
+      "name": "disconnect_blocks_future_signals"
+    },
+    {
+      "behavior": "start/stop execute directly on the app thread and are requested through queued signals from other threads",
+      "name": "threadsafe_timer_worker_requests_are_queued"
+    }
+  ],
+  "issue": "P2.08",
+  "timing_tolerance_ms": 35,
+  "unsupported_python_only_api": [
+    "bound-signal constructor wiring",
+    "weakref slot management",
+    "SignalBlock context manager returned by block()"
+  ],
+  "upstream": {
+    "commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "files": [
+      "pyqtgraph/SignalProxy.py",
+      "pyqtgraph/ThreadsafeTimer.py"
+    ],
+    "project": "pyqtgraph",
+    "ref": "pyqtgraph-0.14.0"
+  }
+}
