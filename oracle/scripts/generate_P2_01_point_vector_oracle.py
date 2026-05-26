@@ -167,12 +167,20 @@ def reference_class(relative_path, class_name, namespace):
     return namespace[class_name]
 
 
+def json_number(value):
+    if math.isnan(value):
+        return "NaN"
+    if math.isinf(value):
+        return "Infinity" if value > 0 else "-Infinity"
+    return value
+
+
 def point2(point):
-    return [point.x(), point.y()]
+    return [json_number(point.x()), json_number(point.y())]
 
 
 def vector3(vector):
-    return [vector.x(), vector.y(), vector.z()]
+    return [json_number(vector.x()), json_number(vector.y()), json_number(vector.z())]
 
 
 def error_name(callable_):
@@ -227,6 +235,7 @@ expected = {
     "point_reflected_div": point2(24.0 / p),
     "point_pow_point": point2(Point(2.0, 3.0) ** Point(4.0, 2.0)),
     "point_pow_scalar": point2(Point(4.0, 9.0) ** 0.5),
+    "point_pow_negative_infinity_fractional": point2(Point(-math.inf, 9.0) ** 0.5),
     "point_reflected_pow": point2(2.0 ** Point(3.0, 4.0)),
     "point_pow_zero_negative_error": error_name(lambda: Point(0.0, 2.0) ** Point(-1.0, 2.0)),
     "point_pow_scalar_zero_negative_error": error_name(lambda: Point(0.0, 2.0) ** -1.0),

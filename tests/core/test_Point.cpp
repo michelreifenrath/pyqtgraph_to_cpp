@@ -158,6 +158,7 @@ int main()
     assertPoint(point + QPointF{1.0, -1.0}, 7.0, 7.0);
     assertPoint(Point{2.0, 3.0}.pow(QPointF{4.0, 2.0}), 16.0, 9.0);
     assertPoint(Point{4.0, 9.0}.pow(0.5), 2.0, 3.0);
+    assertPoint(Point{-std::numeric_limits<double>::infinity(), 9.0}.pow(0.5), std::numeric_limits<double>::infinity(), 3.0);
     assertPoint(pyqtgraph::pow(2.0, Point{3.0, 4.0}), 8.0, 16.0);
     expectDomainErrorPow([] { return Point{0.0, 2.0}.pow(QPointF{-1.0, 2.0}); });
     expectDomainErrorPow([] { return Point{0.0, 2.0}.pow(-1.0); });

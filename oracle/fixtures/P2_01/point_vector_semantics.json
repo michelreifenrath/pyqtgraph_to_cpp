@@ -53,6 +53,10 @@
       0.8
     ],
     "point_pow_negative_fractional_error": "TypeError",
+    "point_pow_negative_infinity_fractional": [
+      "Infinity",
+      3.0
+    ],
     "point_pow_point": [
       16.0,
       9.0

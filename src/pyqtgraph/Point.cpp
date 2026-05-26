@@ -27,7 +27,7 @@ double pointPow(double base, double exponent)
     if (base == 0.0 && exponent < 0.0 && std::isfinite(exponent)) {
         throw std::domain_error("Point pow is undefined for zero raised to a negative finite exponent");
     }
-    if (base < 0.0 && isFiniteNonIntegral(exponent)) {
+    if (base < 0.0 && std::isfinite(base) && isFiniteNonIntegral(exponent)) {
         throw std::domain_error("Point pow is undefined for a negative base raised to a non-integral finite exponent");
     }
     return std::pow(base, exponent);

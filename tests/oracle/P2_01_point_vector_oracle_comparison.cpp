@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <regex>
 #include <sstream>
@@ -85,6 +86,26 @@ std::string trim(std::string value)
     return value;
 }
 
+double expectedNumericValue(std::string item, const std::string& key)
+{
+    item = trim(item);
+    if (item == "\"Infinity\"") {
+        return std::numeric_limits<double>::infinity();
+    }
+    if (item == "\"-Infinity\"") {
+        return -std::numeric_limits<double>::infinity();
+    }
+    if (item == "\"NaN\"") {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    std::size_t parsed = 0;
+    const double value = std::stod(item, &parsed);
+    if (parsed != item.size()) {
+        throw std::runtime_error("non-numeric array entry for " + key + ": " + item);
+    }
+    return value;
+}
+
 std::vector<double> expectedArray(const std::string& fixture, const std::string& key)
 {
     std::smatch match;
@@ -98,16 +119,10 @@ std::vector<double> expectedArray(const std::string& fixture, const std::string&
     std::vector<double> values;
     std::string item;
     while (std::getline(input, item, ',')) {
-        item = trim(item);
-        if (item.empty()) {
+        if (trim(item).empty()) {
             continue;
         }
-        std::size_t parsed = 0;
-        const double value = std::stod(item, &parsed);
-        if (parsed != item.size()) {
-            throw std::runtime_error("non-numeric array entry for " + key + ": " + item);
-        }
-        values.push_back(value);
+        values.push_back(expectedNumericValue(item, key));
     }
     return values;
 }
@@ -135,6 +150,12 @@ int reportMismatch(const std::string& path, const std::string& expected, const s
 
 bool near(double actual, double expected, double tolerance)
 {
+    if (std::isnan(expected)) {
+        return std::isnan(actual);
+    }
+    if (std::isinf(expected)) {
+        return std::isinf(actual) && std::signbit(actual) == std::signbit(expected);
+    }
     return std::abs(actual - expected) <= tolerance;
 }
 
@@ -278,6 +299,7 @@ int main()
     COMPARE_POINT("point_reflected_div", 24.0 / point);
     COMPARE_POINT("point_pow_point", Point{2.0, 3.0}.pow(QPointF{4.0, 2.0}));
     COMPARE_POINT("point_pow_scalar", Point{4.0, 9.0}.pow(0.5));
+    COMPARE_POINT("point_pow_negative_infinity_fractional", Point{-std::numeric_limits<double>::infinity(), 9.0}.pow(0.5));
     COMPARE_POINT("point_reflected_pow", pyqtgraph::pow(2.0, Point{3.0, 4.0}));
     if (const int result = compareDomainErrorMapping(fixture, "point_pow_zero_negative_error", "ZeroDivisionError", [] {
             return Point{0.0, 2.0}.pow(QPointF{-1.0, 2.0});
