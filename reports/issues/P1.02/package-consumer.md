@@ -143,11 +143,7 @@ git diff --name-only origin/main...HEAD
 
 Exit code: 0
 
-Output: no committed branch diff listed at validation time. Current uncommitted worktree changes are listed below.
-
-## Changed-file ownership check
-
-Current uncommitted changed paths:
+Output:
 
 ```text
 reports/issues/P1.02/consumer/CMakeLists.txt
@@ -156,4 +152,15 @@ reports/issues/P1.02/package-consumer-preimplementation.md
 reports/issues/P1.02/package-consumer.md
 ```
 
-All changed paths are P1.02 focused install/package consumer proof/report artifacts and match the issue-owned install docs/tests scope. No production source, examples, `WORKFLOW.md`, automation policy, or unrelated files were modified.
+## Changed-file ownership check
+
+Committed branch changed paths:
+
+```text
+reports/issues/P1.02/consumer/CMakeLists.txt
+reports/issues/P1.02/consumer/main.cpp
+reports/issues/P1.02/package-consumer-preimplementation.md
+reports/issues/P1.02/package-consumer.md
+```
+
+All committed branch changed paths are P1.02 focused install/package consumer proof/report artifacts and match the issue-owned install docs/tests scope. No production source, examples, `WORKFLOW.md`, automation policy, or unrelated files were modified.
