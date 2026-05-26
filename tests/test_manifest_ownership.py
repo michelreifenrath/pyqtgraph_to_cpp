@@ -22,7 +22,12 @@ def write_yaml(path: Path, data: Any) -> None:
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
 
-def write_fixture(root: Path, *, owners: list[dict[str, Any]]) -> None:
+def write_fixture(
+    root: Path,
+    *,
+    owners: list[dict[str, Any]],
+    local_issue_ids: list[str] | None = None,
+) -> None:
     write_yaml(
         root / "port_manifest.yaml",
         {
@@ -52,7 +57,13 @@ def write_fixture(root: Path, *, owners: list[dict[str, Any]]) -> None:
         },
     )
     write_yaml(
-        root / "ownership.yaml", {"version": 1, "claims": [], "manifest_owners": owners}
+        root / "ownership.yaml",
+        {
+            "version": 1,
+            "local_issue_ids": local_issue_ids or ["P1.01"],
+            "claims": [],
+            "manifest_owners": owners,
+        },
     )
 
 
@@ -121,3 +132,26 @@ def test_P0_04_manifest_ownership_fails_when_selector_matches_no_manifest_row(
     assert "ownership selector matched no manifest rows" in result.stderr
     assert "example_selectors" in result.stderr
     assert "pyqtgraph/examples/Missing.py" in result.stderr
+
+
+def test_P0_04_manifest_ownership_fails_when_owner_issue_is_unknown(
+    tmp_path: Path,
+) -> None:
+    write_fixture(
+        tmp_path,
+        owners=[
+            {
+                "issue": "P999.99",
+                "source_selectors": ["pyqtgraph/**"],
+                "example_selectors": ["pyqtgraph/examples/**"],
+            }
+        ],
+    )
+
+    result = run_gate(tmp_path)
+
+    assert result.returncode == 1
+    assert (
+        "manifest_owners[0] issue does not match a local issue: P999.99"
+        in result.stderr
+    )

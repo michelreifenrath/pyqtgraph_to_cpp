@@ -91,11 +91,29 @@ def selector_list(owner: dict[str, Any], issue: str, field: str, sections: tuple
     return selectors
 
 
+def local_issue_ids(ownership: Any) -> set[str]:
+    raw_issue_ids = ownership.get("local_issue_ids")
+    if not isinstance(raw_issue_ids, list) or not raw_issue_ids:
+        raise OwnershipError("ownership.yaml must define a non-empty local_issue_ids list")
+
+    issue_ids: set[str] = set()
+    for index, issue in enumerate(raw_issue_ids):
+        if not isinstance(issue, str) or not ISSUE_RE.fullmatch(issue):
+            raise OwnershipError(
+                f"local_issue_ids[{index}] must look like P<digits>.<digits>"
+            )
+        if issue in issue_ids:
+            raise OwnershipError(f"duplicate local_issue_ids entry: {issue}")
+        issue_ids.add(issue)
+    return issue_ids
+
+
 def ownership_selectors(ownership: Any) -> list[Selector]:
     if not isinstance(ownership, dict):
         raise OwnershipError("ownership.yaml must contain a mapping")
     if ownership.get("version") != 1:
         raise OwnershipError("ownership.yaml version must be 1")
+    known_issue_ids = local_issue_ids(ownership)
     owners = ownership.get("manifest_owners")
     if not isinstance(owners, list) or not owners:
         raise OwnershipError("ownership.yaml must define a non-empty manifest_owners list")
@@ -108,6 +126,10 @@ def ownership_selectors(ownership: Any) -> list[Selector]:
         if not isinstance(issue, str) or not ISSUE_RE.fullmatch(issue):
             raise OwnershipError(
                 f"manifest_owners[{index}] issue must look like P<digits>.<digits>"
+            )
+        if issue not in known_issue_ids:
+            raise OwnershipError(
+                f"manifest_owners[{index}] issue does not match a local issue: {issue}"
             )
         selectors.extend(selector_list(owner, issue, "source_selectors", SOURCE_SECTIONS))
         selectors.extend(selector_list(owner, issue, "example_selectors", EXAMPLE_SECTIONS))
