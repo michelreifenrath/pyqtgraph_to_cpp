@@ -2,7 +2,7 @@
 
 ## Rework finding
 
-Gate finding: Pi completed but left no git changes. This bounded rework adds the issue-owned dashboard command, focused tests, generated dashboard artifact, and completion report. No commits, pushes, merges, workflow-policy edits, or scope expansion were performed.
+Original gate finding: Pi completed but left no git changes. That bounded rework added the issue-owned dashboard command, focused tests, generated dashboard artifact, and completion report. Current autoreview rework corrected the recorded branch-diff validation evidence to match `git diff --name-only origin/main...HEAD`. No commits, pushes, merges, workflow-policy edits, or scope expansion were performed.
 
 ## Implemented behavior
 
@@ -57,7 +57,14 @@ Green phase after implementation:
 - `python3 -m pytest -q tests -k P0_03` exited 0: `7 passed, 295 deselected in 0.48s`.
 - `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` exited 1 with pre-existing GitHub issue metadata failures: multiple `github-issue-*.md` entries report `blocked-by entry does not match a local issue` (including P0.02, P0.08, P1.06, P1.04, P1.01, P0.06, P1.03, and P0.01 blockers). This issue does not own those GitHub issue metadata files.
 - `git diff --check` exited 0 with no output.
-- `git diff --name-only origin/main...HEAD` exited 0 with no output because this handoff intentionally leaves an uncommitted worktree diff for review.
+- `git diff --name-only origin/main...HEAD` exited 0 with output:
+
+  ```text
+  reports/dashboard/status.md
+  reports/issues/P0.03/completion.md
+  scripts/summarize_status
+  tests/oracle/test_P0_03_status_dashboard.py
+  ```
 
 Additional local checks:
 
@@ -81,12 +88,14 @@ Shared wiring paths changed: none.
 
 ## Changed-file ownership check
 
-Active uncommitted diff paths are issue-owned:
+Branch diff paths from `git diff --name-only origin/main...HEAD` are issue-owned or adjunct-owned:
 
-- `scripts/summarize_status` — explicitly named in repository path globs.
 - `reports/dashboard/status.md` — matches `reports/dashboard/**`.
-- `tests/oracle/test_P0_03_status_dashboard.py` — focused test named for P0.03.
 - `reports/issues/P0.03/completion.md` — focused-doc-report completion artifact.
+- `scripts/summarize_status` — explicitly named in repository path globs.
+- `tests/oracle/test_P0_03_status_dashboard.py` — focused test named for P0.03.
+
+Ownership result: passed; no branch-diff path requires issue scope expansion. The current uncommitted rework path is `reports/issues/P0.03/completion.md`, which is the same focused-doc-report completion artifact.
 
 `reports/status.md`, `WORKFLOW.md`, automation policy files, production source, examples, CMake, `port_manifest.yaml`, and GitHub Actions were not modified.
 
