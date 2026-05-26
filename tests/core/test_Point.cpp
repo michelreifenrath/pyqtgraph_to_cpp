@@ -97,6 +97,18 @@ void expectDomainErrorNorm(const pyqtgraph::Point& point)
 }
 
 template <typename Callable>
+void expectDomainErrorDivision(Callable callable)
+{
+    bool threw = false;
+    try {
+        static_cast<void>(callable());
+    } catch (const std::domain_error&) {
+        threw = true;
+    }
+    CHECK(threw);
+}
+
+template <typename Callable>
 void expectDomainErrorPow(Callable callable)
 {
     bool threw = false;
@@ -220,7 +232,12 @@ int main()
     assertNear(Point{3.0, -4.0}.min(), -4.0);
     assertNear(Point{3.0, -4.0}.max(), 3.0);
 
-    assertPoint(Point{1.0, 0.0} / Point{0.0, 2.0}, std::numeric_limits<double>::infinity(), 0.0);
+    expectDomainErrorDivision([] { return Point{1.0, 0.0} / Point{0.0, 2.0}; });
+    expectDomainErrorDivision([] { return Point{1.0, 0.0} / 0.0; });
+    expectDomainErrorDivision([] { return 2.0 / Point{0.0, 2.0}; });
+    Point unchangedAfterFailedDivision{1.0, 2.0};
+    expectDomainErrorDivision([&]() -> Point& { return unchangedAfterFailedDivision /= QPointF{1.0, 0.0}; });
+    assertPoint(unchangedAfterFailedDivision, 1.0, 2.0);
     const QPoint qpoint = Point{3.0, 4.0}.toQPoint();
     CHECK(qpoint == QPoint(3, 4));
 

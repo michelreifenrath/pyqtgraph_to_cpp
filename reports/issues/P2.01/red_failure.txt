@@ -26,3 +26,17 @@ Expected failure summary:
 Representative output:
   pyqtgraph_cpp.oracle.P2_01 failed for a finite Point pow overflow case: expected std::overflow_error, actual C++ value: no exception
   tests/core/test_Point.cpp:120: check failed: threw
+
+P2.01 coordinate-division rework RED checkpoint
+
+Command:
+  cmake --build --preset dev --target pyqtgraph_cpp_core_point pyqtgraph_cpp_oracle_P2_01 --parallel 2 && QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure
+
+Exit code: 8
+
+Expected failure summary:
+  After adding direct, scalar, reflected, and in-place zero-coordinate division oracle/C++ tests, the existing Point division implementation returned infinity instead of throwing std::domain_error.
+
+Representative output:
+  pyqtgraph_cpp.oracle.P2_01 failed for point_div_zero_coordinate_error: expected std::domain_error, actual C++ value: no exception
+  tests/core/test_Point.cpp:108: check failed: threw

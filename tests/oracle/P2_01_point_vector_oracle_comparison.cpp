@@ -315,10 +315,28 @@ int main()
     COMPARE_POINT("point_sub", point - other);
     COMPARE_POINT("point_mul", point * other);
     COMPARE_POINT("point_div", point / other);
+    if (const int result = compareDomainErrorMapping(fixture, "point_div_zero_coordinate_error", "ZeroDivisionError", [] {
+            return Point{1.0, 0.0} / QPointF{0.0, 2.0};
+        });
+        result != EXIT_SUCCESS) {
+        return result;
+    }
+    if (const int result = compareDomainErrorMapping(fixture, "point_div_scalar_zero_error", "ZeroDivisionError", [] {
+            return Point{1.0, 0.0} / 0.0;
+        });
+        result != EXIT_SUCCESS) {
+        return result;
+    }
     COMPARE_POINT("point_reflected_add", 2.0 + point);
     COMPARE_POINT("point_reflected_sub", 20.0 - point);
     COMPARE_POINT("point_reflected_mul", 2.0 * point);
     COMPARE_POINT("point_reflected_div", 24.0 / point);
+    if (const int result = compareDomainErrorMapping(fixture, "point_reflected_div_zero_coordinate_error", "ZeroDivisionError", [] {
+            return 2.0 / Point{0.0, 2.0};
+        });
+        result != EXIT_SUCCESS) {
+        return result;
+    }
     COMPARE_POINT("point_pow_point", Point{2.0, 3.0}.pow(QPointF{4.0, 2.0}));
     COMPARE_POINT("point_pow_scalar", Point{4.0, 9.0}.pow(0.5));
     COMPARE_POINT("point_pow_negative_infinity_fractional", Point{-std::numeric_limits<double>::infinity(), 9.0}.pow(0.5));

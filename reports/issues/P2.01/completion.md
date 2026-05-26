@@ -71,6 +71,21 @@ Expected failure summary: the new P2.01 oracle target failed to compile because 
 - `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` -> exit 1 due pre-existing unrelated blocked-by metadata references including P0.02/P0.08/P1.06/P1.04/P1.01/P1.03/P0.01/P0.06; no code scope broadened.
 - `git diff --name-only origin/main...HEAD` -> exit 0; returned the branch-scope paths listed below.
 
+## Coordinate-division rework validation
+- Pi scout subagent was launched for a bounded read-only rework pass; it produced no usable output before being interrupted after a needs-attention signal, so the parent completed the narrow review-finding fix.
+- Pi reviewer subagent completed a final read-only validation pass and reported no blockers.
+- Rework added pinned oracle cases for direct, scalar, and reflected `Point` zero-coordinate division and documented the C++ exception mapping.
+- Rework maps upstream Python `ZeroDivisionError` from `Point.__truediv__`/`Point.__rtruediv__` coordinate division by zero to `std::domain_error`, matching the existing norm/pow exception policy.
+- Rework updates `Point::operator/=` to compute the divided point before mutating so failed in-place division leaves the original point unchanged.
+- RED checkpoint after adding coordinate-division oracle/tests and before the production fix: `cmake --build --preset dev --target pyqtgraph_cpp_core_point pyqtgraph_cpp_oracle_P2_01 --parallel 2 && QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure` -> exit 8; `pyqtgraph_cpp.oracle.P2_01` and `pyqtgraph_cpp.core.Point` failed because no `std::domain_error` was thrown. Summary appended to `reports/issues/P2.01/red_failure.txt`.
+- `python3 oracle/scripts/generate_P2_01_point_vector_oracle.py --check` -> exit 0; fixture current.
+- `cmake --preset dev` -> exit 0.
+- `cmake --build --preset dev --parallel` -> exit 0.
+- `QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure` -> exit 0; 3/3 P2.01 tests passed.
+- `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` -> exit 1 due pre-existing unrelated blocked-by metadata references including P0.02/P0.08/P1.06/P1.04/P1.01/P1.03/P0.01/P0.06; no code scope broadened.
+- `git diff --check` -> exit 0.
+- `git diff --name-only origin/main...HEAD` -> exit 0; returned the branch-scope paths listed below.
+
 ## Changed-file scope check
 Modified paths are limited to Point/Vector implementation/tests, P2.01 oracle/fixture/report artifacts, and narrow CMake P2.01 target/label wiring. No `WORKFLOW.md` or automation policy files were changed.
 

@@ -37,6 +37,14 @@ double pointPow(double base, double exponent)
     return result;
 }
 
+double pointDivide(double numerator, double denominator)
+{
+    if (denominator == 0.0) {
+        throw std::domain_error("Point division by zero");
+    }
+    return numerator / denominator;
+}
+
 } // namespace
 
 Point::Point() = default;
@@ -132,7 +140,7 @@ Point Point::operator*(const QPointF& other) const
 
 Point Point::operator/(const QPointF& other) const
 {
-    return Point{x() / other.x(), y() / other.y()};
+    return Point{pointDivide(x(), other.x()), pointDivide(y(), other.y())};
 }
 
 Point Point::operator+(double value) const
@@ -188,8 +196,9 @@ Point& Point::operator*=(const QPointF& other)
 
 Point& Point::operator/=(const QPointF& other)
 {
-    setX(x() / other.x());
-    setY(y() / other.y());
+    const Point divided = *this / other;
+    setX(divided.x());
+    setY(divided.y());
     return *this;
 }
 
