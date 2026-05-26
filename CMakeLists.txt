@@ -192,6 +192,19 @@ if(BUILD_TESTING)
 
     add_subdirectory(tests)
 
+    add_test(
+        NAME P1.06.visual.smoke
+        COMMAND "${Python3_EXECUTABLE}" -m pytest -q
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/visual/test_P1_06_visual_smoke.py"
+    )
+    set_tests_properties(
+        P1.06.visual.smoke
+        PROPERTIES
+            LABELS "visual;P1.06"
+            ENVIRONMENT "PG_VISUAL_ARTIFACT_DIR=${CMAKE_CURRENT_BINARY_DIR}/reports/visual/P1.06"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
     add_executable(pyqtgraph_cpp_oracle_P0_06 tests/oracle/P0_06_oracle_comparison.cpp)
     target_link_libraries(pyqtgraph_cpp_oracle_P0_06
         PRIVATE
