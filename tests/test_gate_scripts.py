@@ -482,7 +482,7 @@ def test_gate_dry_run_command_plans(tmp_path: Path) -> None:
     assert not reports.exists()
 
 
-def test_gate_visual_dry_run_targets_example_pytest(tmp_path: Path) -> None:
+def test_gate_visual_dry_run_targets_native_renderer_ctest(tmp_path: Path) -> None:
     workflow = tmp_path / "WORKFLOW.md"
     reports = tmp_path / "reports"
     write_workflow(workflow)
@@ -500,7 +500,9 @@ def test_gate_visual_dry_run_targets_example_pytest(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [
-        "python3 -m pytest tests/examples/test_SimplePlot_visual.py -q"
+        "cmake --preset visual",
+        "cmake --build --preset visual --target pyqtgraph_cpp_visual_render_example --parallel",
+        "ctest --preset visual -R '^P1\\.08\\.visual\\.SimplePlot$' --output-on-failure",
     ]
     assert not reports.exists()
 

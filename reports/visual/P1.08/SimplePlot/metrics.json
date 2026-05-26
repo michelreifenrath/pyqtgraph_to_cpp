@@ -1,0 +1,36 @@
+{
+  "artifact_paths": {
+    "actual": "reports/visual/P1.08/SimplePlot/actual.png",
+    "diff": "reports/visual/P1.08/SimplePlot/diff.png",
+    "metrics": "reports/visual/P1.08/SimplePlot/metrics.json",
+    "reference": "reports/visual/P1.08/SimplePlot/reference.png"
+  },
+  "case": "SimplePlot",
+  "changed_pixel_percent": 2.911458333333333,
+  "deterministic_verdict": "pass",
+  "dimensions": [
+    800,
+    600
+  ],
+  "failed_checks": [],
+  "failed_tolerances": [],
+  "max_delta": 200,
+  "mean_abs_delta": 3.7998421875,
+  "passed": true,
+  "review_report_path": "reports/visual/P1.08/SimplePlot/gpt5_vision_review.md",
+  "semantic_review": {
+    "accepted": true,
+    "blocks_gate": false,
+    "failure_reason": null,
+    "mode": "required_for_pr",
+    "recommendation": "merge_ok",
+    "verdict": "pass"
+  },
+  "ssim": 0.8482026901800664,
+  "tolerance": {
+    "max_changed_pixel_percent": 5.0,
+    "max_mean_delta": 6.0,
+    "max_pixel_delta": 220.0,
+    "min_ssim": 0.8
+  }
+}

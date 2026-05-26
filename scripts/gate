@@ -28,7 +28,11 @@ CMAKE_VALIDATION_COMMANDS = [
 ]
 
 VISUAL_COMMANDS = {
-    "SimplePlot": ["python3 -m pytest tests/examples/test_SimplePlot_visual.py -q"],
+    "SimplePlot": [
+        "cmake --preset visual",
+        "cmake --build --preset visual --target pyqtgraph_cpp_visual_render_example --parallel",
+        "ctest --preset visual -R '^P1\\.08\\.visual\\.SimplePlot$' --output-on-failure",
+    ],
 }
 
 
