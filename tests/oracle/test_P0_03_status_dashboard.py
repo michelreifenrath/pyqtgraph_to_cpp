@@ -224,6 +224,27 @@ def test_P0_03_check_rejects_stale_dashboard_metadata_without_writes(
     assert dashboard_path.read_text(encoding="utf-8") == before
 
 
+def test_P0_03_check_rejects_stale_dashboard_body_without_writes(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+    assert run_cli("--update-dashboard", root=tmp_path).returncode == 0
+    dashboard_path = tmp_path / "reports" / "dashboard" / "status.md"
+    before = dashboard_path.read_text(encoding="utf-8")
+    stale = before.replace(
+        "| Source files | 3 | 1 | 1 | 1 |",
+        "| Source files | 3 | 0 | 2 | 1 |",
+    )
+    dashboard_path.write_text(stale, encoding="utf-8")
+
+    result = run_cli("--check", root=tmp_path)
+
+    assert result.returncode != 0
+    assert "reports/dashboard/status.md is stale" in result.stderr
+    assert "--update-dashboard" in result.stderr
+    assert dashboard_path.read_text(encoding="utf-8") == stale
+
+
 def test_P0_03_check_rejects_missing_dashboard_metadata_without_writes(
     tmp_path: Path,
 ) -> None:
