@@ -26,7 +26,6 @@ CLASS_SUMMARY_KEYS = (
     "excluded_test_count",
 )
 TARGET_PATH_KEYS = ("target_header_path", "target_source_path")
-STATUS_METADATA_KEYS = ("status", "completion")
 STATUS_BY_PRESENT_COUNT = {
     "all": ("ported", "complete"),
     "some": ("partial", "partial"),
@@ -321,17 +320,6 @@ def load_manifest(manifest_path: Path, inventory: dict[str, Any]) -> dict[str, A
     return data
 
 
-def strip_status_metadata(rows: Any) -> Any:
-    if not isinstance(rows, list):
-        return rows
-    return [
-        {key: value for key, value in row.items() if key not in STATUS_METADATA_KEYS}
-        if isinstance(row, dict)
-        else row
-        for row in rows
-    ]
-
-
 def class_summary_subset(summary: Any) -> Any:
     if not isinstance(summary, dict):
         return summary
@@ -361,14 +349,19 @@ def validate_manifest_current(root: Path, inventory: dict[str, Any]) -> None:
 
     manifest = load_manifest(manifest_path, inventory)
     manifest_sections = {
-        "classes": strip_status_metadata(manifest.get("classes")),
+        "classes": manifest.get("classes"),
         "excluded": manifest.get("excluded"),
         "summary": class_summary_subset(manifest.get("summary")),
+    }
+    expected_sections = {
+        "classes": with_completion_metadata(root, inventory["classes"]),
+        "excluded": inventory["excluded"],
+        "summary": class_summary_subset(inventory["summary"]),
     }
     stale_keys = [
         key
         for key in GENERATED_MANIFEST_KEYS
-        if manifest_sections[key] != inventory[key]
+        if manifest_sections[key] != expected_sections[key]
     ]
     if stale_keys:
         raise InventoryError(

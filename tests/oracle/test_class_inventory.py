@@ -279,6 +279,31 @@ def test_check_mode_accepts_full_manifest_class_metadata_without_writes(
     assert snapshot_tree(root) == before
 
 
+def test_P0_02_check_mode_rejects_stale_class_metadata_without_writes(
+    tmp_path: Path,
+) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    manifest_path = root / "port_manifest.yaml"
+    manifest = {
+        "reference": {"keep": "existing"},
+        **expected_generated_manifest_sections(),
+    }
+    manifest["classes"] = expected_classes_with_status_metadata()
+    manifest["classes"][0]["status"] = "ported"
+    manifest["classes"][0]["completion"] = "complete"
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    before = snapshot_tree(root)
+
+    result = run_cli("--root", str(root), "--check")
+
+    assert result.returncode != 0
+    assert "port_manifest.yaml is stale" in result.stderr
+    assert "classes" in result.stderr
+    assert snapshot_tree(root) == before
+
+
 def test_check_mode_rejects_stale_manifest_without_writes(tmp_path: Path) -> None:
     root, _commit = make_inventory_root(tmp_path)
     manifest_path = root / "port_manifest.yaml"
