@@ -222,6 +222,7 @@ def complete_target_path_errors(
     section: str, index: int, record: dict[str, Any], root: Path
 ) -> list[str]:
     errors: list[str] = []
+    root_path = root.resolve()
     for key in TARGET_PATH_KEYS[section]:
         value = record.get(key)
         if not isinstance(value, str) or not value:
@@ -229,7 +230,21 @@ def complete_target_path_errors(
                 f"{section}[{index}] complete metadata missing target path field: {key}"
             )
             continue
-        if not (root / value).is_file():
+        relative_path = Path(value)
+        if relative_path.is_absolute():
+            errors.append(
+                f"{section}[{index}] complete metadata target path must be relative: "
+                f"{key}={value}"
+            )
+            continue
+        target_path = (root_path / relative_path).resolve()
+        if not target_path.is_relative_to(root_path):
+            errors.append(
+                f"{section}[{index}] complete metadata target path escapes repository root: "
+                f"{key}={value}"
+            )
+            continue
+        if not target_path.is_file():
             errors.append(
                 f"{section}[{index}] complete metadata points to missing target file: "
                 f"{key}={value}"

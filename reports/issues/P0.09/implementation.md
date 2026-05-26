@@ -18,7 +18,7 @@ Concise failure: the initial focused tests failed before implementation because 
 
 - Command: `python3 -m pytest -q tests -k P0_09`
   - Exit code: `0`
-  - Evidence: `8 passed, 295 deselected in 0.38s`
+  - Evidence: `10 passed, 295 deselected`
 - Command: `python3 -m py_compile scripts/summarize_status`
   - Exit code: `0`
 - Command: `python3 scripts/summarize_status`
@@ -52,6 +52,11 @@ Concise failure: the initial focused tests failed before implementation because 
 - Stale metadata failure case: `test_P0_09_require_complete_fails_on_stale_complete_metadata` uses valid-looking `ported`/`complete` metadata without target files, asserts `--require-complete` returns nonzero, records effective `source_files` incompleteness, and reports a missing target path.
 - Incomplete metadata failure case: `test_P0_09_require_complete_fails_with_clear_bucket` asserts `--require-complete` returns nonzero and reports `source_files: 1 incomplete`.
 - Metadata validation failure cases: `test_P0_09_invalid_status_metadata_fails` asserts invalid status fields fail clearly, and `test_P0_09_validation_level_mismatch_fails` asserts missing/unknown example validation rows fail clearly.
+- Rework failure cases: `test_P0_09_require_complete_rejects_absolute_target_path` and `test_P0_09_require_complete_rejects_parent_traversal_target_path` assert existing files outside the repository are rejected instead of counted complete.
+
+## Rework note
+
+The autoreview finding is addressed by resolving each complete target path under the repository root, rejecting absolute manifest paths, rejecting resolved paths that escape the root, and only then checking `is_file()`.
 
 ## Manifest/dashboard update applicability
 

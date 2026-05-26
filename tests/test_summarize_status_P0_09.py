@@ -102,6 +102,12 @@ def create_complete_target_files(root: Path) -> None:
         path.write_text("// P0.09 fixture\n", encoding="utf-8")
 
 
+def replace_manifest_once(root: Path, old: str, new: str) -> None:
+    manifest_path = root / "port_manifest.yaml"
+    manifest = manifest_path.read_text(encoding="utf-8")
+    manifest_path.write_text(manifest.replace(old, new, 1), encoding="utf-8")
+
+
 def test_P0_09_require_complete_passes_on_all_complete_fixture(tmp_path: Path) -> None:
     write_manifest(tmp_path)
     create_complete_target_files(tmp_path)
@@ -126,6 +132,57 @@ def test_P0_09_require_complete_fails_on_stale_complete_metadata(
     assert (
         "source_files[0] complete metadata points to missing target file: "
         "target_header_path=include/pyqtgraph/Foo.hpp" in result.stderr
+    )
+
+
+def test_P0_09_require_complete_rejects_absolute_target_path(tmp_path: Path) -> None:
+    write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
+    outside_target = tmp_path.parent / f"{tmp_path.name}-outside.hpp"
+    outside_target.write_text("// outside repository fixture\n", encoding="utf-8")
+    replace_manifest_once(
+        tmp_path,
+        "target_header_path: include/pyqtgraph/Foo.hpp",
+        f"target_header_path: {outside_target}",
+    )
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode != 0
+    assert "source_files: total=1 ported=0 complete=0 incomplete=1" in result.stdout
+    assert "require_complete: failed" in result.stderr
+    assert "source_files: 1 incomplete" in result.stderr
+    assert (
+        "source_files[0] complete metadata target path must be relative: "
+        f"target_header_path={outside_target}" in result.stderr
+    )
+
+
+def test_P0_09_require_complete_rejects_parent_traversal_target_path(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
+    outside_dir = tmp_path.parent / f"{tmp_path.name}-outside"
+    outside_target = outside_dir / "Foo.hpp"
+    outside_dir.mkdir()
+    outside_target.write_text("// outside repository fixture\n", encoding="utf-8")
+    traversal_path = f"../{outside_dir.name}/Foo.hpp"
+    replace_manifest_once(
+        tmp_path,
+        "target_source_path: src/pyqtgraph/Foo.cpp",
+        f"target_source_path: {traversal_path}",
+    )
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode != 0
+    assert "source_files: total=1 ported=0 complete=0 incomplete=1" in result.stdout
+    assert "require_complete: failed" in result.stderr
+    assert "source_files: 1 incomplete" in result.stderr
+    assert (
+        "source_files[0] complete metadata target path escapes repository root: "
+        f"target_source_path={traversal_path}" in result.stderr
     )
 
 
