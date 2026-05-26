@@ -174,8 +174,13 @@ def _unmet_dependency_labels(issue: Issue, all_issue_items: list[dict[str, Any]]
     return ordered
 
 
-def _dependency_eligible_ready_issues(config: WorkflowConfig, candidates: list[Issue]) -> tuple[list[Issue], dict[int, list[str]]]:
-    all_items = list_issue_items(config)
+def _dependency_eligible_ready_issues(
+    config: WorkflowConfig,
+    candidates: list[Issue],
+    *,
+    all_items: list[dict[str, Any]] | None = None,
+) -> tuple[list[Issue], dict[int, list[str]]]:
+    all_items = list_issue_items(config) if all_items is None else all_items
     eligible: list[Issue] = []
     blocked: dict[int, list[str]] = {}
     for issue in candidates:
@@ -185,6 +190,59 @@ def _dependency_eligible_ready_issues(config: WorkflowConfig, candidates: list[I
         else:
             eligible.append(issue)
     return eligible, blocked
+
+
+def _github_label_names(item: dict[str, Any]) -> list[str]:
+    return [label["name"] if isinstance(label, dict) else str(label) for label in item.get("labels", [])]
+
+
+def _issue_from_github_item(item: dict[str, Any]) -> Issue:
+    author = item.get("user") or item.get("author") or {}
+    return Issue(
+        number=int(item["number"]),
+        title=str(item.get("title") or ""),
+        body=str(item.get("body") or ""),
+        labels=_github_label_names(item),
+        url=str(item.get("html_url") or item.get("url") or ""),
+        author=str(author.get("login") if isinstance(author, dict) else author or ""),
+    )
+
+
+def promote_unblocked_issues(loaded: LoadedWorkflow, *, dry_run: bool = False) -> dict[str, Any]:
+    """Move dependency-satisfied blocked issues back to ai:ready for autonomous intake."""
+    config = loaded.config
+    labels = config.github
+    all_items = list_issue_items(config)
+    actions: list[dict[str, Any]] = []
+    for item in all_items:
+        if item.get("pull_request"):
+            continue
+        label_names = _github_label_names(item)
+        if labels.blocked_label not in label_names:
+            continue
+        if any(
+            label in label_names
+            for label in (
+                labels.claimed_label,
+                labels.rework_label,
+                labels.review_label,
+                labels.failed_label,
+                labels.done_label,
+                labels.ignore_label,
+                labels.human_review_label,
+            )
+        ):
+            continue
+        issue = _issue_from_github_item(item)
+        unmet = _unmet_dependency_labels(issue, all_items)
+        if unmet:
+            continue
+        action = "would_promote_ready" if dry_run else "promoted_ready"
+        actions.append({"issue": issue.number, "action": action})
+        if not dry_run:
+            add_labels(config, issue.number, [labels.ready_label])
+            remove_labels(config, issue.number, [labels.blocked_label])
+    return {"actions": actions}
 
 
 def intake(loaded: LoadedWorkflow, *, limit: int | None = None, dry_run: bool = False) -> dict[str, Any]:
@@ -199,13 +257,16 @@ def intake(loaded: LoadedWorkflow, *, limit: int | None = None, dry_run: bool = 
     created_labels = [] if dry_run else ensure_labels(config)
     if not dry_run:
         ensure_board(config, repo_root)
+    promotion_result = promote_unblocked_issues(loaded, dry_run=dry_run)
+    all_items = list_issue_items(config)
     ready_candidates = list_ready_issues(config, limit=100)
-    issues, dependency_blocked = _dependency_eligible_ready_issues(config, ready_candidates)
+    issues, dependency_blocked = _dependency_eligible_ready_issues(config, ready_candidates, all_items=all_items)
     claim_limit = limit or config.agent.max_concurrent_issues
-    actions: list[dict[str, Any]] = [
+    actions: list[dict[str, Any]] = [*promotion_result.get("actions", [])]
+    actions.extend(
         {"issue": issue_number, "action": "skipped_dependencies", "unmet_dependencies": unmet}
         for issue_number, unmet in dependency_blocked.items()
-    ]
+    )
     for issue in issues[:claim_limit]:
         state = get_issue(repo_root, issue.number)
         if state.get("status") in {"claimed", "implemented", "reviewed", "released", "done"}:
@@ -424,13 +485,13 @@ def _kanban_create(
 
 
 def reconcile(loaded: LoadedWorkflow, *, dispatch: bool = True, dry_run: bool = False) -> dict[str, Any]:
-    intake_result = intake(loaded, dry_run=dry_run)
     pr_result = {} if dry_run else check_prs(loaded.config, loaded.repo_root)
+    intake_result = intake(loaded, dry_run=dry_run)
     dispatch_result = "dry-run"
     if dispatch and not dry_run:
         cmd = ["hermes", "kanban", "--board", loaded.config.kanban.board_slug, "dispatch", "--max", str(loaded.config.agent.max_concurrent_issues)]
         dispatch_result = run(cmd, timeout=180, check=False).combined_output
-    return {"intake": intake_result, "prs": pr_result, "dispatch": dispatch_result}
+    return {"prs": pr_result, "intake": intake_result, "dispatch": dispatch_result}
 
 
 _HARD_HUMAN_BLOCKER_KEYWORDS = (
