@@ -472,6 +472,27 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_examples_simpleplot)
 
+        add_executable(pyqtgraph_cpp_visual_render_example tests/visual/P1_08_render_cpp_example.cpp)
+        target_link_libraries(pyqtgraph_cpp_visual_render_example
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_visual_render_example)
+        add_test(
+            NAME P1.08.visual.SimplePlot
+            COMMAND "${Python3_EXECUTABLE}" -m pytest -q
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/visual/test_P1_08_cpp_visual_renderer.py"
+        )
+        set_tests_properties(
+            P1.08.visual.SimplePlot
+            PROPERTIES
+                LABELS "visual;P1.08"
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_VISUAL_RENDERER=$<TARGET_FILE:pyqtgraph_cpp_visual_render_example>;PG_VISUAL_REPORTS_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/reports/visual/P1.08"
+                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        )
+
         add_executable(pyqtgraph_cpp_examples_simpleplot_test tests/examples/test_SimplePlot.cpp)
         target_link_libraries(pyqtgraph_cpp_examples_simpleplot_test
             PRIVATE
