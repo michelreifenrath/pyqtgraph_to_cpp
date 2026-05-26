@@ -20,6 +20,12 @@ EXPECTED_COMPLETION_BY_STATUS = {
     "partial": "partial",
     "not_started": "missing",
 }
+REQUIRED_TARGET_PATH_KEYS = {
+    "source_files": ("target_header_path", "target_source_path"),
+    "classes": ("target_header_path", "target_source_path"),
+    "examples": ("target_source_path",),
+    "example_assets": ("target_path",),
+}
 DASHBOARD_SECTIONS = (
     ("source_files", "Source files", "source_file_count"),
     ("classes", "Classes", "class_count"),
@@ -172,10 +178,35 @@ def validate_row_metadata(manifest: dict[str, Any]) -> None:
         )
 
 
+def validate_complete_targets(root: Path, manifest: dict[str, Any]) -> None:
+    errors: list[str] = []
+    for section, _label, _summary_key in DASHBOARD_SECTIONS:
+        required_keys = REQUIRED_TARGET_PATH_KEYS[section]
+        for index, row in enumerate(require_list(manifest, section)):
+            if row.get("completion") != "complete":
+                continue
+            for key in required_keys:
+                target_path = row.get(key)
+                if not isinstance(target_path, str) or not target_path:
+                    errors.append(f"{section}[{index}] is complete but missing {key}")
+                    continue
+                if not (root / target_path).exists():
+                    errors.append(
+                        f"{section}[{index}] is complete but target path is missing: "
+                        f"{target_path}"
+                    )
+    if errors:
+        raise DashboardError(
+            "port_manifest.yaml complete target metadata is stale: "
+            + "; ".join(errors)
+        )
+
+
 def build_dashboard(root: Path, manifest_path: Path) -> dict[str, Any]:
     manifest = load_manifest(manifest_path)
     summary = validate_summary(manifest)
     validate_row_metadata(manifest)
+    validate_complete_targets(root, manifest)
 
     counts: dict[str, dict[str, int]] = {}
     incomplete: dict[str, int] = {}

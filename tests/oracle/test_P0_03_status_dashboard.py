@@ -4,10 +4,13 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 
 SCRIPT = Path("scripts/summarize_status")
+TARGET_PATH_KEYS = ("target_header_path", "target_source_path", "target_path")
+MANIFEST_SECTIONS = ("source_files", "examples", "example_assets", "classes")
 
 
 def run_cli(*args: str, root: Path) -> subprocess.CompletedProcess[str]:
@@ -18,7 +21,32 @@ def run_cli(*args: str, root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def write_manifest(root: Path) -> dict[str, object]:
+def touch_target(root: Path, relative_path: str) -> None:
+    path = root / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("fixture\n", encoding="utf-8")
+
+
+def materialize_targets(root: Path, manifest: dict[str, Any]) -> None:
+    for section in MANIFEST_SECTIONS:
+        for row in manifest[section]:
+            for key in TARGET_PATH_KEYS:
+                target = row.get(key)
+                if isinstance(target, str):
+                    touch_target(root, target)
+
+
+def materialize_complete_targets(root: Path, manifest: dict[str, Any]) -> None:
+    for section in MANIFEST_SECTIONS:
+        for row in manifest[section]:
+            if row.get("completion") == "complete":
+                for key in TARGET_PATH_KEYS:
+                    target = row.get(key)
+                    if isinstance(target, str):
+                        touch_target(root, target)
+
+
+def write_manifest(root: Path) -> dict[str, Any]:
     manifest = {
         "reference": {
             "repo": "fixture://pyqtgraph",
@@ -30,16 +58,22 @@ def write_manifest(root: Path) -> dict[str, object]:
         "source_files": [
             {
                 "upstream_path": "pyqtgraph/PlotData.py",
+                "target_header_path": "include/pyqtgraph/PlotData.hpp",
+                "target_source_path": "src/pyqtgraph/PlotData.cpp",
                 "status": "ported",
                 "completion": "complete",
             },
             {
                 "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
+                "target_header_path": "include/pyqtgraph/widgets/PlotWidget.hpp",
+                "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
                 "status": "partial",
                 "completion": "partial",
             },
             {
                 "upstream_path": "pyqtgraph/Point.py",
+                "target_header_path": "include/pyqtgraph/Point.hpp",
+                "target_source_path": "src/pyqtgraph/Point.cpp",
                 "status": "not_started",
                 "completion": "missing",
             },
@@ -47,11 +81,13 @@ def write_manifest(root: Path) -> dict[str, object]:
         "examples": [
             {
                 "upstream_path": "pyqtgraph/examples/Plotting.py",
+                "target_source_path": "examples/Plotting.cpp",
                 "status": "ported",
                 "completion": "complete",
             },
             {
                 "upstream_path": "pyqtgraph/examples/ImageView.py",
+                "target_source_path": "examples/ImageView.cpp",
                 "status": "not_started",
                 "completion": "missing",
             },
@@ -59,6 +95,7 @@ def write_manifest(root: Path) -> dict[str, object]:
         "example_assets": [
             {
                 "upstream_path": "pyqtgraph/examples/designerExample.ui",
+                "target_path": "examples/designerExample.ui",
                 "status": "not_started",
                 "completion": "missing",
             }
@@ -67,12 +104,16 @@ def write_manifest(root: Path) -> dict[str, object]:
             {
                 "class_name": "PlotData",
                 "upstream_path": "pyqtgraph/PlotData.py",
+                "target_header_path": "include/pyqtgraph/PlotData.hpp",
+                "target_source_path": "src/pyqtgraph/PlotData.cpp",
                 "status": "ported",
                 "completion": "complete",
             },
             {
                 "class_name": "PlotWidget",
                 "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
+                "target_header_path": "include/pyqtgraph/widgets/PlotWidget.hpp",
+                "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
                 "status": "partial",
                 "completion": "partial",
             },
@@ -88,6 +129,7 @@ def write_manifest(root: Path) -> dict[str, object]:
             "excluded_test_count": 0,
         },
     }
+    materialize_complete_targets(root, manifest)
     (root / "port_manifest.yaml").write_text(
         yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
     )
@@ -205,6 +247,28 @@ def test_P0_03_check_rejects_missing_dashboard_metadata_without_writes(
     assert "reports/dashboard/status.md is missing dashboard metadata" in result.stderr
     assert "dashboard-source_files-total" in result.stderr
     assert "--update-dashboard" in result.stderr
+
+
+def test_P0_03_require_complete_rejects_complete_rows_with_missing_targets(
+    tmp_path: Path,
+) -> None:
+    manifest = write_manifest(tmp_path)
+    for section in MANIFEST_SECTIONS:
+        for row in manifest[section]:
+            row["status"] = "ported"
+            row["completion"] = "complete"
+    materialize_targets(tmp_path, manifest)
+    missing_target = tmp_path / "src" / "pyqtgraph" / "PlotData.cpp"
+    missing_target.unlink()
+    (tmp_path / "port_manifest.yaml").write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+
+    result = run_cli("--require-complete", root=tmp_path)
+
+    assert result.returncode != 0
+    assert "port_manifest.yaml complete target metadata is stale" in result.stderr
+    assert "target path is missing: src/pyqtgraph/PlotData.cpp" in result.stderr
 
 
 def test_P0_03_check_rejects_inconsistent_manifest_summary(tmp_path: Path) -> None:
