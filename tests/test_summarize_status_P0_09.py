@@ -114,6 +114,7 @@ def create_final_acceptance_evidence(
     omit_criterion: str | None = None,
     failing_criterion: str | None = None,
     human_approved: bool = True,
+    example_validation_runs_body: str | None = None,
 ) -> None:
     artifact_paths = (
         "reports/examples/Foo/validation.json",
@@ -188,6 +189,9 @@ def create_final_acceptance_evidence(
     - reports/issues/P0.09/human-approval.md
 """,
     }
+    if example_validation_runs_body is not None:
+        criteria["example_validation_runs"] = example_validation_runs_body
+
     evidence = "criteria:\n"
     for name, body in criteria.items():
         if name == omit_criterion:
@@ -242,6 +246,27 @@ def test_P0_09_require_complete_fails_without_final_criterion_proof(
     assert "require_complete: failed" in result.stderr
     assert (
         "final acceptance evidence missing required criterion: performance_benchmarks"
+        in result.stderr
+    )
+
+
+def test_P0_09_require_complete_reports_non_mapping_example_validation_runs(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path)
+    create_complete_target_files(tmp_path)
+    create_final_acceptance_evidence(
+        tmp_path,
+        example_validation_runs_body="\n  - not-a-mapping\n",
+    )
+
+    result = run_summary(tmp_path, "--require-complete")
+
+    assert result.returncode != 0
+    assert "Traceback" not in result.stderr
+    assert "require_complete: failed" in result.stderr
+    assert (
+        "final acceptance evidence example_validation_runs must be a mapping"
         in result.stderr
     )
 

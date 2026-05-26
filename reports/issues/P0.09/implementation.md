@@ -18,7 +18,7 @@ Concise failure: the initial focused tests failed before implementation because 
 
 - Command: `python3 -m pytest -q tests -k P0_09`
   - Exit code: `0`
-  - Evidence: `14 passed, 295 deselected`
+  - Evidence: `15 passed, 295 deselected`
 - Command: `python3 -m py_compile scripts/summarize_status`
   - Exit code: `0`
 - Command: `python3 scripts/summarize_status`
@@ -49,7 +49,7 @@ Concise failure: the initial focused tests failed before implementation because 
 ## Required evidence
 
 - Passing check: `test_P0_09_require_complete_passes_on_all_complete_fixture` creates every declared target file, writes complete final-acceptance evidence, and passes under `python3 -m pytest -q tests -k P0_09`.
-- Final-evidence failure cases: `test_P0_09_require_complete_fails_without_final_evidence_proof`, `test_P0_09_require_complete_fails_without_final_criterion_proof`, `test_P0_09_require_complete_fails_on_blocking_autoreview_evidence`, and `test_P0_09_require_complete_fails_without_human_approval` prove `--require-complete` cannot pass without recorded proof for final acceptance criteria.
+- Final-evidence failure cases: `test_P0_09_require_complete_fails_without_final_evidence_proof`, `test_P0_09_require_complete_fails_without_final_criterion_proof`, `test_P0_09_require_complete_reports_non_mapping_example_validation_runs`, `test_P0_09_require_complete_fails_on_blocking_autoreview_evidence`, and `test_P0_09_require_complete_fails_without_human_approval` prove `--require-complete` cannot pass without recorded proof for final acceptance criteria and reports inconsistent non-mapping evidence without a traceback.
 - Stale metadata failure case: `test_P0_09_require_complete_fails_on_stale_complete_metadata` uses valid-looking `ported`/`complete` metadata without target files, asserts `--require-complete` returns nonzero, records effective `source_files` incompleteness, and reports a missing target path.
 - Incomplete metadata failure case: `test_P0_09_require_complete_fails_with_clear_bucket` asserts `--require-complete` returns nonzero and reports `source_files: 1 incomplete`.
 - Metadata validation failure cases: `test_P0_09_invalid_status_metadata_fails` asserts invalid status fields fail clearly, and `test_P0_09_validation_level_mismatch_fails` asserts missing/unknown example validation rows fail clearly.
@@ -57,7 +57,7 @@ Concise failure: the initial focused tests failed before implementation because 
 
 ## Rework note
 
-The autoreview finding is addressed by making `--require-complete` require `reports/issues/P0.09/final_acceptance_evidence.yaml` proof for all documented final criteria: example validation runs, core hierarchy checks, required-platform tests, performance benchmarks, autoreview status, package install, downstream `find_package(pyqtgraph-cpp)`, and human approval. The real repository intentionally has no passing final-acceptance evidence yet, so `scripts/summarize_status --require-complete` fails until those proofs are recorded.
+The review finding is addressed by guarding non-mapping `criteria.example_validation_runs` data before reading per-example proofs. `--require-complete` now reports `final acceptance evidence example_validation_runs must be a mapping` instead of raising a traceback, and `test_P0_09_require_complete_reports_non_mapping_example_validation_runs` covers the P0.09 fixture case.
 
 ## Manifest/dashboard update applicability
 

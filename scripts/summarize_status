@@ -326,12 +326,15 @@ def final_acceptance_evidence_errors(
 
     errors = []
     for criterion in REQUIRED_FINAL_CRITERIA:
-        record = criteria.get(criterion)
         prefix = f"final acceptance evidence {criterion}"
-        if not isinstance(record, dict):
+        if criterion not in criteria:
             errors.append(
                 f"final acceptance evidence missing required criterion: {criterion}"
             )
+            continue
+        record = criteria[criterion]
+        if not isinstance(record, dict):
+            errors.append(f"{prefix} must be a mapping")
             continue
         errors.extend(final_criterion_errors(criterion, prefix, record, root))
 
@@ -471,7 +474,12 @@ def final_acceptance_counts(manifest: dict[str, Any], root: Path) -> tuple[int, 
         if not criterion_errors:
             passed_criteria += 1
 
-    proofs = criteria.get("example_validation_runs", {}).get("examples", [])
+    example_validation_runs = criteria.get("example_validation_runs")
+    proofs = (
+        example_validation_runs.get("examples", [])
+        if isinstance(example_validation_runs, dict)
+        else []
+    )
     passed_proofs = 0
     if isinstance(proofs, list):
         passed_proofs = sum(
