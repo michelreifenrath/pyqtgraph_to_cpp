@@ -16,6 +16,7 @@
 - Upstream Point power is represented by `Point::pow(QPointF)`, `Point::pow(double)`, and `pyqtgraph::pow(double, const Point&)`; `operator^` remains intentionally unsupported because it is bitwise/precedence-misleading in C++.
 - Python-only dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation.
 - Python `ZeroDivisionError` from zero-length `Point.norm()` is represented by `std::domain_error` in C++ and verified against the fixture-recorded upstream error.
+- Python `ZeroDivisionError`/`TypeError` from `Point` power-domain failures is represented by `std::domain_error` in C++ and verified against fixture-recorded upstream errors.
 
 ## TDD RED checkpoint
 Command:
@@ -43,6 +44,17 @@ Expected failure summary: the new P2.01 oracle target failed to compile because 
 - `QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure` -> exit 0; 3/3 P2.01 tests passed.
 - `QT_QPA_PLATFORM=offscreen ctest --preset dev --output-on-failure` -> exit 0; 33/33 tests passed.
 - `python3 -m pytest -q` -> exit 0; 301 passed.
+- `git diff --check` -> exit 0.
+- `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` -> exit 1 due pre-existing unrelated blocked-by metadata references including P0.02/P0.08/P1.06/P1.04/P1.01/P1.03/P0.01/P0.06; no code scope broadened.
+- `git diff --name-only origin/main...HEAD` -> exit 0; returned the branch-scope paths listed below.
+
+## Power-domain rework validation
+- Pi scout subagent was used for a bounded read-only rework pass and identified the minimal `Point::pow` oracle/test/source gap.
+- RED checkpoint after adding oracle fixture/tests and before the production fix: `cmake --build --preset dev --target pyqtgraph_cpp_core_point pyqtgraph_cpp_oracle_P2_01 --parallel && QT_QPA_PLATFORM=offscreen ctest --preset dev -R 'pyqtgraph_cpp.core.Point|pyqtgraph_cpp.oracle.P2_01' --output-on-failure` -> exit 8; `point_pow_zero_negative_error` reported no C++ exception and `tests/core/test_Point.cpp` failed `expectDomainErrorPow`.
+- `python3 oracle/scripts/generate_P2_01_point_vector_oracle.py --check` -> exit 0; fixture current.
+- `cmake --preset dev` -> exit 0.
+- `cmake --build --preset dev --parallel` -> exit 0.
+- `QT_QPA_PLATFORM=offscreen ctest --preset dev -L P2.01 --output-on-failure` -> exit 0; 3/3 P2.01 tests passed.
 - `git diff --check` -> exit 0.
 - `scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp` -> exit 1 due pre-existing unrelated blocked-by metadata references including P0.02/P0.08/P1.06/P1.04/P1.01/P1.03/P0.01/P0.06; no code scope broadened.
 - `git diff --name-only origin/main...HEAD` -> exit 0; returned the branch-scope paths listed below.

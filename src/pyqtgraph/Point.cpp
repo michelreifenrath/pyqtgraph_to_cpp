@@ -17,6 +17,22 @@ constexpr double radiansToDegrees(double radians)
     return radians * 180.0 / std::acos(-1.0);
 }
 
+bool isFiniteNonIntegral(double value)
+{
+    return std::isfinite(value) && std::trunc(value) != value;
+}
+
+double pointPow(double base, double exponent)
+{
+    if (base == 0.0 && exponent < 0.0 && std::isfinite(exponent)) {
+        throw std::domain_error("Point pow is undefined for zero raised to a negative finite exponent");
+    }
+    if (base < 0.0 && isFiniteNonIntegral(exponent)) {
+        throw std::domain_error("Point pow is undefined for a negative base raised to a non-integral finite exponent");
+    }
+    return std::pow(base, exponent);
+}
+
 } // namespace
 
 Point::Point() = default;
@@ -137,7 +153,7 @@ Point Point::operator/(double value) const
 
 Point Point::pow(const QPointF& other) const
 {
-    return Point{std::pow(x(), other.x()), std::pow(y(), other.y())};
+    return Point{pointPow(x(), other.x()), pointPow(y(), other.y())};
 }
 
 Point Point::pow(double value) const

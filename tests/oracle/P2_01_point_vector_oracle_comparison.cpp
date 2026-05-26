@@ -170,6 +170,28 @@ int compareNumber(const std::string& fixture, const std::string& key, double act
     return EXIT_SUCCESS;
 }
 
+template <typename Callable>
+int compareDomainErrorMapping(
+    const std::string& fixture,
+    const std::string& key,
+    std::string_view upstreamError,
+    Callable callable
+)
+{
+    const std::string expectedEntry = "\"" + key + "\": \"" + std::string(upstreamError) + "\"";
+    if (!contains(fixture, expectedEntry)) {
+        return reportMismatch("$.expected." + key, std::string(upstreamError), "missing");
+    }
+    try {
+        static_cast<void>(callable());
+    } catch (const std::domain_error&) {
+        return EXIT_SUCCESS;
+    } catch (...) {
+        return reportMismatch("$.expected." + key, "std::domain_error", "different exception");
+    }
+    return reportMismatch("$.expected." + key, "std::domain_error", "no exception");
+}
+
 std::vector<double> pointValues(const pyqtgraph::Point& point)
 {
     return {point.x(), point.y()};
@@ -257,6 +279,30 @@ int main()
     COMPARE_POINT("point_pow_point", Point{2.0, 3.0}.pow(QPointF{4.0, 2.0}));
     COMPARE_POINT("point_pow_scalar", Point{4.0, 9.0}.pow(0.5));
     COMPARE_POINT("point_reflected_pow", pyqtgraph::pow(2.0, Point{3.0, 4.0}));
+    if (const int result = compareDomainErrorMapping(fixture, "point_pow_zero_negative_error", "ZeroDivisionError", [] {
+            return Point{0.0, 2.0}.pow(QPointF{-1.0, 2.0});
+        });
+        result != EXIT_SUCCESS) {
+        return result;
+    }
+    if (const int result = compareDomainErrorMapping(fixture, "point_pow_scalar_zero_negative_error", "ZeroDivisionError", [] {
+            return Point{0.0, 2.0}.pow(-1.0);
+        });
+        result != EXIT_SUCCESS) {
+        return result;
+    }
+    if (const int result = compareDomainErrorMapping(fixture, "point_reflected_pow_zero_negative_error", "ZeroDivisionError", [] {
+            return pyqtgraph::pow(0.0, Point{-1.0, 2.0});
+        });
+        result != EXIT_SUCCESS) {
+        return result;
+    }
+    if (const int result = compareDomainErrorMapping(fixture, "point_pow_negative_fractional_error", "TypeError", [] {
+            return Point{-1.0, 2.0}.pow(0.5);
+        });
+        result != EXIT_SUCCESS) {
+        return result;
+    }
     COMPARE_NUMBER("point_length", point.length(), kPointTolerance);
     COMPARE_POINT("point_norm", point.norm());
     if (!contains(fixture, "\"point_zero_norm_error\": \"ZeroDivisionError\"")) {

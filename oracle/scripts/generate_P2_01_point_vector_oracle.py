@@ -228,6 +228,10 @@ expected = {
     "point_pow_point": point2(Point(2.0, 3.0) ** Point(4.0, 2.0)),
     "point_pow_scalar": point2(Point(4.0, 9.0) ** 0.5),
     "point_reflected_pow": point2(2.0 ** Point(3.0, 4.0)),
+    "point_pow_zero_negative_error": error_name(lambda: Point(0.0, 2.0) ** Point(-1.0, 2.0)),
+    "point_pow_scalar_zero_negative_error": error_name(lambda: Point(0.0, 2.0) ** -1.0),
+    "point_reflected_pow_zero_negative_error": error_name(lambda: 0.0 ** Point(-1.0, 2.0)),
+    "point_pow_negative_fractional_error": error_name(lambda: Point(-1.0, 2.0) ** 0.5),
     "point_length": p.length(),
     "point_norm": point2(p.norm()),
     "point_zero_norm_error": zero_norm_error,
@@ -261,6 +265,7 @@ EQUIVALENCES = [
     "Upstream Point __pow__/__rpow__ are represented by Point::pow(QPointF), Point::pow(double), and pyqtgraph::pow(double, const Point&); operator^ is intentionally unsupported because it is bitwise and precedence-misleading in C++.",
     "Python dynamic coercions and invalid positional arities that are impossible in statically typed C++ are covered by typed Qt constructors and initializer-list length validation.",
     "Python ZeroDivisionError from zero-length Point.norm() is represented by std::domain_error in C++.",
+    "Python ZeroDivisionError/TypeError from Point power-domain failures is represented by std::domain_error in C++.",
 ]
 
 
