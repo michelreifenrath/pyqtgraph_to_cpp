@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Report local dependency availability for native C++ validation."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import shlex
+import subprocess
+from dataclasses import dataclass
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+@dataclass(frozen=True)
+class Check:
+    section: str
+    name: str
+    command: list[str]
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    check: Check
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+def compiler_command() -> list[str]:
+    configured = os.environ.get("CXX")
+    if configured:
+        return [*shlex.split(configured), "--version"]
+    return ["c++", "--version"]
+
+
+def required_checks() -> list[Check]:
+    return [
+        Check("Tools", "Git", ["git", "--version"]),
+        Check("Tools", "CMake", ["cmake", "--version"]),
+        Check("Tools", "CTest", ["ctest", "--version"]),
+        Check("Tools", "pkg-config", ["pkg-config", "--version"]),
+        Check("Compiler", "C++ compiler", compiler_command()),
+        Check("Qt", "Qt 6 Core/Gui/Widgets/Test", ["pkg-config", "--modversion", "Qt6Core", "Qt6Gui", "Qt6Widgets", "Qt6Test"]),
+        Check("OpenCV", "OpenCV 4", ["pkg-config", "--modversion", "opencv4"]),
+        Check("OpenGL", "OpenGL GL pkg-config module", ["pkg-config", "--modversion", "gl"]),
+    ]
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run a local environment doctor for compiler, Qt, OpenCV, OpenGL, "
+            "and tool availability."
+        ),
+    )
+    parser.add_argument(
+        "--list-checks",
+        action="store_true",
+        help="print the deterministic check plan without running commands",
+    )
+    return parser
+
+
+def first_line(text: str) -> str:
+    for line in text.splitlines():
+        line = line.strip()
+        if line:
+            return line
+    return ""
+
+
+def run_check(check: Check) -> CheckResult:
+    try:
+        process = subprocess.run(
+            check.command,
+            cwd=REPO_ROOT,
+            env=os.environ.copy(),
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+    except FileNotFoundError as error:
+        return CheckResult(check, 127, "", str(error))
+    except subprocess.TimeoutExpired as error:
+        stdout = error.stdout if isinstance(error.stdout, str) else ""
+        stderr = error.stderr if isinstance(error.stderr, str) else ""
+        return CheckResult(check, 124, stdout, stderr or f"timed out after {error.timeout} seconds")
+    return CheckResult(check, process.returncode, process.stdout, process.stderr)
+
+
+def print_result(result: CheckResult) -> None:
+    command = " ".join(shlex.quote(part) for part in result.check.command)
+    if result.returncode == 0:
+        detail = first_line(result.stdout) or first_line(result.stderr) or "ok"
+        print(f"  PASS {result.check.name}: {detail} ({command})")
+        return
+
+    detail = first_line(result.stderr) or first_line(result.stdout) or "command failed"
+    print(f"  FAIL {result.check.name}: exit {result.returncode}: {detail} ({command})")
+
+
+def run_doctor() -> int:
+    current_section = ""
+    for check in required_checks():
+        if check.section != current_section:
+            current_section = check.section
+            print(f"\n{current_section}")
+        result = run_check(check)
+        print_result(result)
+        if result.returncode != 0:
+            print("\ndoctor_local: FAIL")
+            return result.returncode
+    print("\ndoctor_local: PASS")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.list_checks:
+        for check in required_checks():
+            print(" ".join(shlex.quote(part) for part in check.command))
+        return 0
+    return run_doctor()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
