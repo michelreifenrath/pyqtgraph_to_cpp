@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,6 +19,8 @@ def run_doctor(
     *args: str, env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
     merged_env = os.environ.copy()
+    if env is None or "CXX" not in env:
+        merged_env.pop("CXX", None)
     merged_env.update(env or {})
     return subprocess.run(
         [sys.executable, str(REPO_ROOT / "scripts/doctor_local"), *args],
@@ -49,7 +53,7 @@ def write_fake_tool(bin_dir: Path, name: str, order_file: Path, marker: str) -> 
         "    raise SystemExit(31)\n"
         "if os.environ.get(marker) != 'propagated':\n"
         "    raise SystemExit(32)\n"
-        "if name == 'pkg-config' and sys.argv[1:] == ['--modversion', 'Qt6Core', 'Qt6Gui', 'Qt6Widgets']:\n"
+        "if name == 'pkg-config' and sys.argv[1:] == ['--modversion', 'Qt6Core', 'Qt6Gui', 'Qt6Widgets', 'Qt6Test']:\n"
         "    print('6.6.0')\n"
         "elif name == 'pkg-config' and sys.argv[1:] == ['--modversion', 'opencv4']:\n"
         "    print('4.8.0')\n"
@@ -70,11 +74,13 @@ def test_doctor_local_P1_14_help_smoke() -> None:
 
 def test_doctor_local_P1_14_reports_required_checks_in_order_with_cwd_and_env(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     order_file = tmp_path / "order.txt"
     marker = "P1_14_ENV_MARKER"
+    monkeypatch.setenv("CXX", str(tmp_path / "external-cxx"))
     for tool in ["git", "cmake", "ctest", "pkg-config", "c++"]:
         write_fake_tool(bin_dir, tool, order_file, marker)
 
@@ -92,7 +98,7 @@ def test_doctor_local_P1_14_reports_required_checks_in_order_with_cwd_and_env(
         f"ctest --version|cwd={REPO_ROOT}|env=propagated",
         f"pkg-config --version|cwd={REPO_ROOT}|env=propagated",
         f"c++ --version|cwd={REPO_ROOT}|env=propagated",
-        f"pkg-config --modversion Qt6Core Qt6Gui Qt6Widgets|cwd={REPO_ROOT}|env=propagated",
+        f"pkg-config --modversion Qt6Core Qt6Gui Qt6Widgets Qt6Test|cwd={REPO_ROOT}|env=propagated",
         f"pkg-config --modversion opencv4|cwd={REPO_ROOT}|env=propagated",
         f"pkg-config --modversion gl|cwd={REPO_ROOT}|env=propagated",
     ]
@@ -103,11 +109,13 @@ def test_doctor_local_P1_14_reports_required_checks_in_order_with_cwd_and_env(
 
 def test_doctor_local_P1_14_propagates_failure_and_skips_later_checks(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     order_file = tmp_path / "order.txt"
     marker = "P1_14_ENV_MARKER"
+    monkeypatch.setenv("CXX", str(tmp_path / "external-cxx"))
     for tool in ["git", "cmake", "ctest", "c++"]:
         write_fake_tool(bin_dir, tool, order_file, marker)
     make_executable(
@@ -117,7 +125,7 @@ def test_doctor_local_P1_14_propagates_failure_and_skips_later_checks(
         "from pathlib import Path\n"
         f"order_file = Path({json.dumps(str(order_file))})\n"
         "order_file.open('a', encoding='utf-8').write('pkg-config ' + ' '.join(sys.argv[1:]) + '\\n')\n"
-        "if sys.argv[1:] == ['--modversion', 'Qt6Core', 'Qt6Gui', 'Qt6Widgets']:\n"
+        "if sys.argv[1:] == ['--modversion', 'Qt6Core', 'Qt6Gui', 'Qt6Widgets', 'Qt6Test']:\n"
         "    print('Qt6 missing', file=sys.stderr)\n"
         "    raise SystemExit(17)\n"
         "print('pkg-config ok')\n",
@@ -137,7 +145,7 @@ def test_doctor_local_P1_14_propagates_failure_and_skips_later_checks(
         f"ctest --version|cwd={REPO_ROOT}|env=propagated",
         "pkg-config --version",
         f"c++ --version|cwd={REPO_ROOT}|env=propagated",
-        "pkg-config --modversion Qt6Core Qt6Gui Qt6Widgets",
+        "pkg-config --modversion Qt6Core Qt6Gui Qt6Widgets Qt6Test",
     ]
     assert "Qt" in result.stdout
     assert "FAIL" in result.stdout

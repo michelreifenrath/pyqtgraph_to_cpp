@@ -52,7 +52,7 @@ The commands below are concrete starting points for local validation. Each issue
 
 ### Local environment doctor
 
-`scripts/doctor_local` is a local diagnostic preflight for checkout setup problems, not a CI gate. Run it from the repository root when CMake configure/build/test validation fails or before starting native C++ work to report required local compiler, Qt 6, OpenCV 4, OpenGL, CMake, CTest, Git, and `pkg-config` availability. It exits nonzero on the first missing required prerequisite so the failing tool or dependency can be fixed locally.
+`scripts/doctor_local` is a local diagnostic preflight for checkout setup problems, not a CI gate. Run it from the repository root when CMake configure/build/test validation fails or before starting native C++ work to report required local compiler, Qt 6 Core, Gui, Widgets, and Test components, OpenCV 4, OpenGL, CMake, CTest, Git, and `pkg-config` availability. It exits nonzero on the first missing required prerequisite so the failing tool or dependency can be fixed locally.
 
 ### Linux
 

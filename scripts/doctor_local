@@ -42,7 +42,7 @@ def required_checks() -> list[Check]:
         Check("Tools", "CTest", ["ctest", "--version"]),
         Check("Tools", "pkg-config", ["pkg-config", "--version"]),
         Check("Compiler", "C++ compiler", compiler_command()),
-        Check("Qt", "Qt 6 Core/Gui/Widgets", ["pkg-config", "--modversion", "Qt6Core", "Qt6Gui", "Qt6Widgets"]),
+        Check("Qt", "Qt 6 Core/Gui/Widgets/Test", ["pkg-config", "--modversion", "Qt6Core", "Qt6Gui", "Qt6Widgets", "Qt6Test"]),
         Check("OpenCV", "OpenCV 4", ["pkg-config", "--modversion", "opencv4"]),
         Check("OpenGL", "OpenGL GL pkg-config module", ["pkg-config", "--modversion", "gl"]),
     ]
