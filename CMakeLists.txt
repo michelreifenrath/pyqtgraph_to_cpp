@@ -489,7 +489,7 @@ if(BUILD_TESTING)
             P1.08.visual.SimplePlot
             PROPERTIES
                 LABELS "visual;P1.08"
-                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_VISUAL_RENDERER=$<TARGET_FILE:pyqtgraph_cpp_visual_render_example>;PG_VISUAL_REPORTS_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/reports/visual/P1.08"
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_VISUAL_RENDERER=$<TARGET_FILE:pyqtgraph_cpp_visual_render_example>;PG_VISUAL_REPORTS_ROOT=${CMAKE_CURRENT_BINARY_DIR}/reports/visual/P1.08;PG_VISUAL_REVIEW_REPORT=${CMAKE_CURRENT_SOURCE_DIR}/reports/visual/P1.08/SimplePlot/gpt5_vision_review.md"
                 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         )
 
