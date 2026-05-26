@@ -153,6 +153,13 @@ def expected_classes() -> list[dict[str, object]]:
     ]
 
 
+def expected_classes_with_status_metadata() -> list[dict[str, object]]:
+    return [
+        {**record, "status": "not_started", "completion": "missing"}
+        for record in expected_classes()
+    ]
+
+
 def expected_generated_manifest_sections() -> dict[str, object]:
     return {
         "classes": expected_classes(),
@@ -244,6 +251,34 @@ def test_check_mode_validates_without_writes(tmp_path: Path) -> None:
     assert snapshot_tree(root) == before
 
 
+def test_check_mode_accepts_full_manifest_class_metadata_without_writes(
+    tmp_path: Path,
+) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    manifest_path = root / "port_manifest.yaml"
+    manifest = {
+        "reference": {"keep": "existing"},
+        **expected_generated_manifest_sections(),
+    }
+    manifest["classes"] = expected_classes_with_status_metadata()
+    manifest["summary"] = {
+        **manifest["summary"],
+        "example_count": 129,
+        "example_asset_count": 16,
+        "total_example_tree_file_count": 145,
+    }
+    manifest_path.write_text(
+        yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+    )
+    before = snapshot_tree(root)
+
+    result = run_cli("--root", str(root), "--check")
+
+    assert result.returncode == 0, result.stderr
+    assert "class inventory verified" in result.stdout
+    assert snapshot_tree(root) == before
+
+
 def test_check_mode_rejects_stale_manifest_without_writes(tmp_path: Path) -> None:
     root, _commit = make_inventory_root(tmp_path)
     manifest_path = root / "port_manifest.yaml"
@@ -321,7 +356,9 @@ def test_rejects_checkout_at_wrong_commit(tmp_path: Path) -> None:
     assert "pinned_commit" in result.stderr
 
 
-def test_ignored_local_python_files_do_not_contaminate_inventory(tmp_path: Path) -> None:
+def test_ignored_local_python_files_do_not_contaminate_inventory(
+    tmp_path: Path,
+) -> None:
     root, _commit = make_inventory_root(tmp_path)
     checkout = root / CHECKOUT_PATH
     write_fixture_file(checkout / ".gitignore", "pyqtgraph/Ignored.py\n")
@@ -329,13 +366,19 @@ def test_ignored_local_python_files_do_not_contaminate_inventory(tmp_path: Path)
     git(checkout, "commit", "-m", "ignore local artifacts")
     commit = git(checkout, "rev-parse", "HEAD")
     write_source_lock(root, repo="fixture://pyqtgraph", commit=commit)
-    write_fixture_file(checkout / "pyqtgraph" / "Ignored.py", "class IgnoredArtifact:\n    pass\n")
+    write_fixture_file(
+        checkout / "pyqtgraph" / "Ignored.py", "class IgnoredArtifact:\n    pass\n"
+    )
 
     result = run_cli("--root", str(root))
 
     assert result.returncode == 0, result.stderr
     inventory = yaml.safe_load(result.stdout)
-    assert {record["class_name"] for record in inventory["classes"]} == {"PlotData", "HelperMixin", "PlotWidget"}
+    assert {record["class_name"] for record in inventory["classes"]} == {
+        "PlotData",
+        "HelperMixin",
+        "PlotWidget",
+    }
 
 
 @pytest.mark.parametrize("dirty_state", ["untracked", "modified", "deleted"])
@@ -372,7 +415,7 @@ def test_update_manifest_replaces_generated_sections_and_is_idempotent(
                 "reference": {"keep": "existing"},
                 "notes": ["preserve unrelated sections"],
                 "classes": [{"class_name": "Stale"}],
-                "summary": {"class_count": 999},
+                "summary": {"class_count": 999, "example_count": 10},
                 "excluded": {"examples": ["stale.py"], "tests": []},
             },
             sort_keys=False,
@@ -391,7 +434,7 @@ def test_update_manifest_replaces_generated_sections_and_is_idempotent(
     manifest = yaml.safe_load(after_first)
     assert manifest["reference"] == {"keep": "existing"}
     assert manifest["notes"] == ["preserve unrelated sections"]
-    assert manifest["classes"] == expected_classes()
+    assert manifest["classes"] == expected_classes_with_status_metadata()
     assert manifest["excluded"] == {
         "examples": ["pyqtgraph/examples/Example.py"],
         "tests": ["tests/test_x.py"],
@@ -401,6 +444,7 @@ def test_update_manifest_replaces_generated_sections_and_is_idempotent(
         "source_file_count": 2,
         "excluded_example_count": 1,
         "excluded_test_count": 1,
+        "example_count": 10,
     }
     assert {
         p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()

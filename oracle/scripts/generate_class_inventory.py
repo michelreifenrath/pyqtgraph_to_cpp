@@ -19,6 +19,19 @@ import yaml
 LOCK_PATH = Path("reference/source.lock")
 REQUIRED_LOCK_KEYS = ("repo", "ref", "pinned_commit", "docs_url", "checkout_path")
 GENERATED_MANIFEST_KEYS = ("classes", "excluded", "summary")
+CLASS_SUMMARY_KEYS = (
+    "class_count",
+    "source_file_count",
+    "excluded_example_count",
+    "excluded_test_count",
+)
+TARGET_PATH_KEYS = ("target_header_path", "target_source_path")
+STATUS_METADATA_KEYS = ("status", "completion")
+STATUS_BY_PRESENT_COUNT = {
+    "all": ("ported", "complete"),
+    "some": ("partial", "partial"),
+    "none": ("not_started", "missing"),
+}
 
 
 class InventoryError(RuntimeError):
@@ -182,6 +195,24 @@ def target_record(upstream_path: str) -> dict[str, str]:
     }
 
 
+def row_status(root: Path, row: dict[str, Any]) -> dict[str, str]:
+    target_paths = [row[key] for key in TARGET_PATH_KEYS if key in row]
+    present_count = sum(1 for path in target_paths if (root / path).exists())
+    if present_count == len(target_paths):
+        status, completion = STATUS_BY_PRESENT_COUNT["all"]
+    elif present_count == 0:
+        status, completion = STATUS_BY_PRESENT_COUNT["none"]
+    else:
+        status, completion = STATUS_BY_PRESENT_COUNT["some"]
+    return {"status": status, "completion": completion}
+
+
+def with_completion_metadata(
+    root: Path, rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    return [{**row, **row_status(root, row)} for row in rows]
+
+
 def base_expression(base: ast.expr) -> str:
     try:
         return ast.unparse(base)
@@ -216,7 +247,9 @@ def class_records(path: Path, checkout: Path) -> list[dict[str, Any]]:
 
 
 def tracked_files(checkout: Path) -> list[str]:
-    return sorted(path for path in run_git(["ls-files", "-z"], cwd=checkout).split("\0") if path)
+    return sorted(
+        path for path in run_git(["ls-files", "-z"], cwd=checkout).split("\0") if path
+    )
 
 
 def enumerate_inventory(checkout: Path, lock: dict[str, str]) -> dict[str, Any]:
@@ -229,7 +262,9 @@ def enumerate_inventory(checkout: Path, lock: dict[str, str]) -> dict[str, Any]:
     source_files: list[Path] = []
     classes: list[dict[str, Any]] = []
     for upstream_path in tracked:
-        if not upstream_path.startswith("pyqtgraph/") or not upstream_path.endswith(".py"):
+        if not upstream_path.startswith("pyqtgraph/") or not upstream_path.endswith(
+            ".py"
+        ):
             continue
         if upstream_path.startswith("pyqtgraph/examples/"):
             example_paths.append(upstream_path)
@@ -238,7 +273,9 @@ def enumerate_inventory(checkout: Path, lock: dict[str, str]) -> dict[str, Any]:
         source_files.append(path)
         classes.extend(class_records(path, checkout))
 
-    test_paths = [path for path in tracked if path.startswith("tests/") and path.endswith(".py")]
+    test_paths = [
+        path for path in tracked if path.startswith("tests/") and path.endswith(".py")
+    ]
 
     classes.sort(
         key=lambda record: (
@@ -284,11 +321,34 @@ def load_manifest(manifest_path: Path, inventory: dict[str, Any]) -> dict[str, A
     return data
 
 
+def strip_status_metadata(rows: Any) -> Any:
+    if not isinstance(rows, list):
+        return rows
+    return [
+        {key: value for key, value in row.items() if key not in STATUS_METADATA_KEYS}
+        if isinstance(row, dict)
+        else row
+        for row in rows
+    ]
+
+
+def class_summary_subset(summary: Any) -> Any:
+    if not isinstance(summary, dict):
+        return summary
+    return {key: summary.get(key) for key in CLASS_SUMMARY_KEYS}
+
+
 def update_manifest(root: Path, inventory: dict[str, Any]) -> None:
     manifest_path = root / "port_manifest.yaml"
     manifest = load_manifest(manifest_path, inventory)
-    for key in GENERATED_MANIFEST_KEYS:
-        manifest[key] = inventory[key]
+    manifest["classes"] = with_completion_metadata(root, inventory["classes"])
+    manifest["excluded"] = inventory["excluded"]
+    summary = manifest.get("summary")
+    if not isinstance(summary, dict):
+        summary = {}
+    for key in CLASS_SUMMARY_KEYS:
+        summary[key] = inventory["summary"][key]
+    manifest["summary"] = summary
     manifest_path.write_text(
         yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
     )
@@ -300,8 +360,15 @@ def validate_manifest_current(root: Path, inventory: dict[str, Any]) -> None:
         return
 
     manifest = load_manifest(manifest_path, inventory)
+    manifest_sections = {
+        "classes": strip_status_metadata(manifest.get("classes")),
+        "excluded": manifest.get("excluded"),
+        "summary": class_summary_subset(manifest.get("summary")),
+    }
     stale_keys = [
-        key for key in GENERATED_MANIFEST_KEYS if manifest.get(key) != inventory[key]
+        key
+        for key in GENERATED_MANIFEST_KEYS
+        if manifest_sections[key] != inventory[key]
     ]
     if stale_keys:
         raise InventoryError(
