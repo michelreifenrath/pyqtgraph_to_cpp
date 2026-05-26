@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""Run validation for local examples changed on this branch."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import shlex
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+
+@dataclass(frozen=True)
+class Example:
+    name: str
+    target_path: str
+    ctest_name: str
+    aliases: tuple[str, ...]
+
+
+EXAMPLES = (
+    Example(
+        name="SimplePlot",
+        target_path="examples/SimplePlot.cpp",
+        ctest_name="pyqtgraph_cpp.examples.SimplePlot",
+        aliases=(
+            "SimplePlot",
+            "SimplePlot.cpp",
+            "examples/SimplePlot.cpp",
+            "pyqtgraph/examples/SimplePlot.py",
+        ),
+    ),
+)
+
+
+def repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def parser() -> argparse.ArgumentParser:
+    argument_parser = argparse.ArgumentParser(
+        description="Run CTest for local examples changed relative to a base ref."
+    )
+    argument_parser.add_argument(
+        "selections",
+        nargs="*",
+        help="Optional example names or paths to run instead of git changed-path detection.",
+    )
+    argument_parser.add_argument(
+        "--base",
+        default="origin/main",
+        help="Base ref for changed-path detection when no selections are provided.",
+    )
+    argument_parser.add_argument(
+        "--runner",
+        default="ctest",
+        help="Runner executable to invoke for selected examples.",
+    )
+    argument_parser.add_argument(
+        "--ctest-preset",
+        default="dev",
+        help="CTest preset passed to the runner.",
+    )
+    argument_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print selected runner commands instead of executing them.",
+    )
+    return argument_parser
+
+
+def normalize_path(path: str) -> str:
+    return path.strip().replace("\\", "/")
+
+
+def known_aliases() -> dict[str, Example]:
+    aliases: dict[str, Example] = {}
+    for example in EXAMPLES:
+        for alias in example.aliases:
+            aliases[normalize_path(alias)] = example
+    return aliases
+
+
+def examples_from_selections(selections: list[str], argument_parser: argparse.ArgumentParser) -> list[Example]:
+    aliases = known_aliases()
+    selected: list[Example] = []
+    seen: set[str] = set()
+    for selection in selections:
+        example = aliases.get(normalize_path(selection))
+        if example is None:
+            argument_parser.exit(2, f"unknown example selection: {selection}\n")
+        if example.name not in seen:
+            selected.append(example)
+            seen.add(example.name)
+    return selected
+
+
+def git_changed_paths(args: list[str], root: Path) -> list[str]:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=root,
+        env=os.environ.copy(),
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        if result.stdout:
+            sys.stdout.write(result.stdout)
+        if result.stderr:
+            sys.stderr.write(result.stderr)
+        raise SystemExit(result.returncode)
+    return [normalize_path(line) for line in result.stdout.splitlines() if line.strip()]
+
+
+def changed_paths(base: str, root: Path) -> list[str]:
+    paths: list[str] = []
+    seen: set[str] = set()
+    for args in (
+        ["diff", "--name-only", f"{base}...HEAD"],
+        ["diff", "--name-only", "HEAD"],
+        ["ls-files", "--others", "--exclude-standard", "--", "examples/"],
+    ):
+        for path in git_changed_paths(args, root):
+            if path not in seen:
+                paths.append(path)
+                seen.add(path)
+    return paths
+
+
+def examples_from_changed_paths(paths: list[str]) -> list[Example]:
+    changed = set(paths)
+    selected: list[Example] = []
+    for example in EXAMPLES:
+        if example.target_path in changed:
+            selected.append(example)
+    return selected
+
+
+def runner_command(example: Example, runner: str, ctest_preset: str) -> list[str]:
+    return [
+        runner,
+        "--preset",
+        ctest_preset,
+        "-R",
+        f"^{re.escape(example.ctest_name)}$",
+        "--output-on-failure",
+    ]
+
+
+def run_examples(examples: list[Example], runner: str, ctest_preset: str, root: Path, dry_run: bool) -> int:
+    if not examples:
+        print("No changed local examples.")
+        return 0
+
+    for example in examples:
+        command = runner_command(example, runner, ctest_preset)
+        if dry_run:
+            print(shlex.join(command))
+            continue
+        env = os.environ.copy()
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        result = subprocess.run(command, cwd=root, env=env)
+        if result.returncode != 0:
+            return result.returncode
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    argument_parser = parser()
+    args = argument_parser.parse_args(argv)
+    root = repo_root()
+
+    if args.selections:
+        selected = examples_from_selections(args.selections, argument_parser)
+    else:
+        selected = examples_from_changed_paths(changed_paths(args.base, root))
+
+    return run_examples(selected, args.runner, args.ctest_preset, root, args.dry_run)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
