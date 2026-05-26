@@ -16,8 +16,11 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 ORACLE_SCRIPT_DIR = REPO_ROOT / "oracle" / "scripts"
 MANIFEST_PATH = Path("port_manifest.yaml")
+MANIFEST_SCHEMA_KEY = "manifest_schema"
+CURRENT_MANIFEST_SCHEMA = {"status_metadata": "adopted"}
 GENERATED_MANIFEST_KEYS = (
     "reference",
+    MANIFEST_SCHEMA_KEY,
     "source_files",
     "examples",
     "example_assets",
@@ -27,6 +30,14 @@ GENERATED_MANIFEST_KEYS = (
     "summary",
 )
 MANIFEST_REFERENCE_KEYS = ("repo", "ref", "pinned_commit", "docs_url")
+TARGET_PATH_KEYS = ("target_header_path", "target_source_path", "target_path")
+STATUS_METADATA_SECTIONS = ("source_files", "examples", "example_assets", "classes")
+STATUS_METADATA_KEYS = ("status", "completion")
+STATUS_BY_PRESENT_COUNT = {
+    "all": ("ported", "complete"),
+    "some": ("partial", "partial"),
+    "none": ("not_started", "missing"),
+}
 
 
 class ManifestError(RuntimeError):
@@ -83,6 +94,37 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def row_status(root: Path, row: dict[str, Any]) -> dict[str, str]:
+    target_paths = [row[key] for key in TARGET_PATH_KEYS if key in row]
+    present_count = sum(1 for path in target_paths if (root / path).exists())
+    if present_count == len(target_paths):
+        status, completion = STATUS_BY_PRESENT_COUNT["all"]
+    elif present_count == 0:
+        status, completion = STATUS_BY_PRESENT_COUNT["none"]
+    else:
+        status, completion = STATUS_BY_PRESENT_COUNT["some"]
+    return {"status": status, "completion": completion}
+
+
+def with_completion_metadata(
+    root: Path, rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    return [{**row, **row_status(root, row)} for row in rows]
+
+
+def validate_generated_status_metadata(generated: dict[str, Any]) -> None:
+    missing = []
+    for section in STATUS_METADATA_SECTIONS:
+        for index, row in enumerate(generated[section]):
+            if any(key not in row for key in STATUS_METADATA_KEYS):
+                missing.append(f"{section}[{index}]")
+    if missing:
+        raise ManifestError(
+            "generated status/completion metadata missing from row(s): "
+            + ", ".join(missing)
+        )
+
+
 def build_manifest(root: Path) -> dict[str, Any]:
     lock = source_inventory.load_lock(root)
     with source_inventory.source_checkout(root, lock) as checkout:
@@ -100,11 +142,12 @@ def build_manifest(root: Path) -> dict[str, Any]:
         "reference": {
             key: source["reference"][key] for key in MANIFEST_REFERENCE_KEYS
         },
-        "source_files": source["source_files"],
-        "examples": examples["examples"],
-        "example_assets": examples["assets"],
+        MANIFEST_SCHEMA_KEY: dict(CURRENT_MANIFEST_SCHEMA),
+        "source_files": with_completion_metadata(root, source["source_files"]),
+        "examples": with_completion_metadata(root, examples["examples"]),
+        "example_assets": with_completion_metadata(root, examples["assets"]),
         "example_inventory_summary": example_summary,
-        "classes": classes["classes"],
+        "classes": with_completion_metadata(root, classes["classes"]),
         "excluded": source["excluded"],
         "summary": {
             "source_file_count": len(source["source_files"]),
@@ -160,14 +203,25 @@ def validate_manifest_current(root: Path, generated: dict[str, Any]) -> None:
         raise ManifestError(
             "port_manifest.yaml is missing; run --update-manifest to create it"
         )
+    validate_generated_status_metadata(generated)
     existing = load_existing_manifest(manifest_path)
     stale_keys = [
         key for key in GENERATED_MANIFEST_KEYS if existing.get(key) != generated[key]
     ]
     if stale_keys:
+        metadata_stale = any(
+            key in (MANIFEST_SCHEMA_KEY, *STATUS_METADATA_SECTIONS)
+            for key in stale_keys
+        )
+        metadata_note = ""
+        if metadata_stale:
+            metadata_note = " (status/completion metadata missing or stale)"
         raise ManifestError(
             "port_manifest.yaml is stale; run --update-manifest "
-            "to refresh generated section(s): " + ", ".join(stale_keys)
+            "to refresh generated section(s)"
+            + metadata_note
+            + ": "
+            + ", ".join(stale_keys)
         )
 
 
