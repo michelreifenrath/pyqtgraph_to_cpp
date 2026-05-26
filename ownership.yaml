@@ -1,2 +1,110 @@
 version: 1
 claims: []
+manifest_owners:
+  - issue: P2.01
+    source_selectors:
+      - pyqtgraph/Point.py
+      - pyqtgraph/Vector.py
+  - issue: P2.02
+    source_selectors:
+      - pyqtgraph/Transform3D.py
+      - pyqtgraph/SRTTransform.py
+      - pyqtgraph/SRTTransform3D.py
+  - issue: P2.03
+    source_selectors:
+      - pyqtgraph/PlotData.py
+  - issue: P2.04
+    source_selectors:
+      - pyqtgraph/functions.py
+  - issue: P2.05
+    source_selectors:
+      - pyqtgraph/functions_qimage.py
+  - issue: P2.06
+    source_selectors:
+      - pyqtgraph/colormap.py
+      - pyqtgraph/colors/**
+  - issue: P2.07
+    source_selectors:
+      - pyqtgraph/__init__.py
+      - pyqtgraph/configfile.py
+      - pyqtgraph/debug.py
+      - pyqtgraph/exceptionHandling.py
+      - pyqtgraph/units.py
+  - issue: P2.08
+    source_selectors:
+      - pyqtgraph/SignalProxy.py
+      - pyqtgraph/ThreadsafeTimer.py
+  - issue: P2.09
+    source_selectors:
+      - pyqtgraph/WidgetGroup.py
+  - issue: P2.10
+    source_selectors:
+      - pyqtgraph/frozenSupport.py
+      - pyqtgraph/reload.py
+      - pyqtgraph/functions_numba.py
+  - issue: P3.03
+    source_selectors:
+      - pyqtgraph/GraphicsScene/GraphicsScene.py
+      - pyqtgraph/GraphicsScene/__init__.py
+  - issue: P3.04
+    source_selectors:
+      - pyqtgraph/GraphicsScene/mouseEvents.py
+  - issue: P4.15
+    source_selectors:
+      - pyqtgraph/graphicsItems/**
+  - issue: P5.07
+    source_selectors:
+      - pyqtgraph/imageview/**
+  - issue: P5.11
+    source_selectors:
+      - pyqtgraph/widgets/**
+  - issue: P6.11
+    source_selectors:
+      - pyqtgraph/dockarea/**
+      - pyqtgraph/flowchart/**
+      - pyqtgraph/parametertree/**
+  - issue: P7.02
+    source_selectors:
+      - pyqtgraph/Qt/OpenGLConstants.py
+      - pyqtgraph/Qt/OpenGLHelpers.py
+  - issue: P7.11
+    source_selectors:
+      - pyqtgraph/opengl/**
+  - issue: P8.01
+    source_selectors:
+      - pyqtgraph/exporters/Exporter.py
+      - pyqtgraph/exporters/__init__.py
+  - issue: P8.02
+    source_selectors:
+      - pyqtgraph/exporters/ImageExporter.py
+      - pyqtgraph/exporters/SVGExporter.py
+      - pyqtgraph/exporters/PrintExporter.py
+      - pyqtgraph/GraphicsScene/exportDialog*.py
+  - issue: P8.03
+    source_selectors:
+      - pyqtgraph/exporters/CSVExporter.py
+      - pyqtgraph/exporters/HDF5Exporter.py
+  - issue: P8.04
+    source_selectors:
+      - pyqtgraph/exporters/Matplotlib.py
+  - issue: P8.05
+    source_selectors:
+      - pyqtgraph/multiprocess/**
+  - issue: P8.06
+    source_selectors:
+      - pyqtgraph/console/**
+  - issue: P8.07
+    source_selectors:
+      - pyqtgraph/jupyter/**
+  - issue: P8.08
+    source_selectors:
+      - pyqtgraph/util/**
+  - issue: P8.09
+    source_selectors:
+      - pyqtgraph/icons/**
+  - issue: P8.10
+    source_selectors:
+      - pyqtgraph/Qt/**
+  - issue: P9.08
+    example_selectors:
+      - pyqtgraph/examples/**

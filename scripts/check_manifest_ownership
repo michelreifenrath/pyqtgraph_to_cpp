@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import fnmatch
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+CHECKED_SECTIONS = (
+    "source_files",
+    "classes",
+    "examples",
+    "example_assets",
+    "example_validation_levels",
+)
+SOURCE_SECTIONS = ("source_files", "classes")
+EXAMPLE_SECTIONS = ("examples", "example_assets", "example_validation_levels")
+ISSUE_RE = re.compile(r"^P\d+\.\d+$")
+
+
+class OwnershipError(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class ManifestRow:
+    section: str
+    upstream_path: str
+
+
+@dataclass(frozen=True)
+class Selector:
+    issue: str
+    field: str
+    pattern: str
+    sections: tuple[str, ...]
+
+
+def load_yaml(path: Path) -> Any:
+    try:
+        with path.open(encoding="utf-8") as fh:
+            return yaml.safe_load(fh)
+    except FileNotFoundError as exc:
+        raise OwnershipError(f"missing required file: {path}") from exc
+    except yaml.YAMLError as exc:
+        raise OwnershipError(f"invalid YAML in {path}: {exc}") from exc
+
+
+def manifest_rows(manifest: Any) -> list[ManifestRow]:
+    if not isinstance(manifest, dict):
+        raise OwnershipError("port_manifest.yaml must contain a mapping")
+
+    rows: list[ManifestRow] = []
+    for section in CHECKED_SECTIONS:
+        section_rows = manifest.get(section, [])
+        if not isinstance(section_rows, list):
+            raise OwnershipError(f"manifest section {section} must be a list")
+        for index, row in enumerate(section_rows):
+            if not isinstance(row, dict):
+                raise OwnershipError(f"manifest section {section}[{index}] must be a mapping")
+            upstream_path = row.get("upstream_path")
+            if not isinstance(upstream_path, str) or not upstream_path.strip():
+                raise OwnershipError(
+                    f"manifest section {section}[{index}] is missing upstream_path"
+                )
+            rows.append(ManifestRow(section=section, upstream_path=upstream_path))
+    return rows
+
+
+def selector_list(owner: dict[str, Any], issue: str, field: str, sections: tuple[str, ...]) -> list[Selector]:
+    raw_selectors = owner.get(field, [])
+    if raw_selectors is None:
+        raw_selectors = []
+    if not isinstance(raw_selectors, list):
+        raise OwnershipError(f"manifest_owners entry for {issue} field {field} must be a list")
+
+    selectors: list[Selector] = []
+    for index, pattern in enumerate(raw_selectors):
+        if not isinstance(pattern, str) or not pattern.strip():
+            raise OwnershipError(
+                f"manifest_owners entry for {issue} field {field}[{index}] must be a non-empty string"
+            )
+        selectors.append(
+            Selector(issue=issue, field=field, pattern=pattern.strip(), sections=sections)
+        )
+    return selectors
+
+
+def ownership_selectors(ownership: Any) -> list[Selector]:
+    if not isinstance(ownership, dict):
+        raise OwnershipError("ownership.yaml must contain a mapping")
+    if ownership.get("version") != 1:
+        raise OwnershipError("ownership.yaml version must be 1")
+    owners = ownership.get("manifest_owners")
+    if not isinstance(owners, list) or not owners:
+        raise OwnershipError("ownership.yaml must define a non-empty manifest_owners list")
+
+    selectors: list[Selector] = []
+    for index, owner in enumerate(owners):
+        if not isinstance(owner, dict):
+            raise OwnershipError(f"manifest_owners[{index}] must be a mapping")
+        issue = owner.get("issue")
+        if not isinstance(issue, str) or not ISSUE_RE.fullmatch(issue):
+            raise OwnershipError(
+                f"manifest_owners[{index}] issue must look like P<digits>.<digits>"
+            )
+        selectors.extend(selector_list(owner, issue, "source_selectors", SOURCE_SECTIONS))
+        selectors.extend(selector_list(owner, issue, "example_selectors", EXAMPLE_SECTIONS))
+
+    if not selectors:
+        raise OwnershipError("manifest_owners must include at least one selector")
+    return selectors
+
+
+def selector_matches(selector: Selector, row: ManifestRow) -> bool:
+    return row.section in selector.sections and fnmatch.fnmatchcase(
+        row.upstream_path, selector.pattern
+    )
+
+
+def validate_manifest_ownership(root: Path) -> None:
+    manifest = load_yaml(root / "port_manifest.yaml")
+    ownership = load_yaml(root / "ownership.yaml")
+    rows = manifest_rows(manifest)
+    selectors = ownership_selectors(ownership)
+
+    matched_rows: set[ManifestRow] = set()
+    selector_matches_by_selector: dict[Selector, list[ManifestRow]] = {
+        selector: [] for selector in selectors
+    }
+
+    for selector in selectors:
+        for row in rows:
+            if selector_matches(selector, row):
+                matched_rows.add(row)
+                selector_matches_by_selector[selector].append(row)
+
+    errors: list[str] = []
+    for selector, matches in selector_matches_by_selector.items():
+        if not matches:
+            errors.append(
+                "ownership selector matched no manifest rows: "
+                f"issue={selector.issue} field={selector.field} selector={selector.pattern}"
+            )
+
+    for row in rows:
+        if row not in matched_rows:
+            errors.append(
+                "unowned manifest row: "
+                f"section={row.section} upstream_path={row.upstream_path}"
+            )
+
+    if errors:
+        raise OwnershipError("\n".join(errors))
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Check that every port manifest row has a local issue owner."
+    )
+    parser.add_argument(
+        "--root",
+        default=".",
+        help="repository root containing port_manifest.yaml and ownership.yaml",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str]) -> int:
+    args = parse_args(argv)
+    try:
+        validate_manifest_ownership(Path(args.root))
+    except OwnershipError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print("manifest ownership check passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
