@@ -9,6 +9,7 @@
 
 #include <QtCore/QRectF>
 #include <QtCore/Qt>
+#include <QtCore/QVariant>
 #include <QtGui/QColor>
 #include <QtGui/QFont>
 #include <QtGui/QPainter>
@@ -274,6 +275,27 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags)
 }
 
 PlotItem::~PlotItem() = default;
+
+QVariant PlotItem::itemChange(GraphicsItemChange change, const QVariant& value)
+{
+    const QVariant result = GraphicsWidget::itemChange(change, value);
+
+    switch (change) {
+    case QGraphicsItem::ItemChildAddedChange:
+        updateCurveTransforms();
+        break;
+    case QGraphicsItem::ItemChildRemovedChange:
+        if (auto* curve = dynamic_cast<PlotCurveItem*>(value.value<QGraphicsItem*>())) {
+            curve->setTransform(QTransform{}, false);
+        }
+        updateCurveTransforms();
+        break;
+    default:
+        break;
+    }
+
+    return result;
+}
 
 void PlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {

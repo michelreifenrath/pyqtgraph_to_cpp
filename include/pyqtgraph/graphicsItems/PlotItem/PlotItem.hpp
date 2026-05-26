@@ -13,6 +13,7 @@
 class QGraphicsSceneResizeEvent;
 class QPainter;
 class QStyleOptionGraphicsItem;
+class QVariant;
 class QWidget;
 
 namespace pyqtgraph::graphicsItems {
@@ -35,6 +36,7 @@ private:
     void updateCurveTransforms();
 
 protected:
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
     void resizeEvent(QGraphicsSceneResizeEvent* event) override;
 };
 
