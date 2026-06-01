@@ -113,14 +113,17 @@ nodes:
     bash: |
       set -euo pipefail
       PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
-      gh pr checkout "$PR_NUM"
       expected=$(cat "$ARTIFACTS_DIR/.head-sha")
+      # Validate in this isolated Archon worktree without taking ownership of the PR branch.
+      # `gh pr checkout` fails if the PR branch is already used by the implementation worktree.
+      git fetch origin "pull/$PR_NUM/head" --quiet
+      git checkout --detach "$expected"
       current=$(git rev-parse HEAD)
       if [ "$current" != "$expected" ]; then
         echo "ERROR: checked-out PR head $current does not match captured $expected" >&2
         exit 1
       fi
-      echo "Checked out PR #$PR_NUM on branch $(git branch --show-current) at $current"
+      echo "Checked out PR #$PR_NUM detached at $current"
     depends_on: [verify-holdout-clean]
     timeout: 120000
 
