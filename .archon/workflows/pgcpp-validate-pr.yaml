@@ -119,8 +119,8 @@ nodes:
       git fetch origin "pull/$PR_NUM/head" --quiet
       git checkout --detach "$expected"
       # Cursor fix attempts may leave repo-root scratch files even when no PR changes are made.
-      git ls-files --others --exclude-standard .tmp_run_cmds.sh fix-attempt.json .archon-artifacts-staging reports/agents artifacts/runs .run_validation.sh 2>/dev/null | xargs -r rm -f
-      find .archon-artifacts-staging reports/agents artifacts/runs artifacts -type d -empty -delete 2>/dev/null || true
+      git ls-files --others --exclude-standard .tmp_run_cmds.sh fix-attempt.json .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs .run_validation.sh 2>/dev/null | xargs -r rm -f
+      find .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs artifacts -type d -empty -delete 2>/dev/null || true
       current=$(git rev-parse HEAD)
       if [ "$current" != "$expected" ]; then
         echo "ERROR: checked-out PR head $current does not match captured $expected" >&2
@@ -372,8 +372,8 @@ nodes:
       git fetch origin "pull/$PR_NUM/head" --quiet
       git checkout --detach "$expected"
       # Cursor fix attempts may leave repo-root scratch files even when no PR changes are made.
-      git ls-files --others --exclude-standard .tmp_run_cmds.sh fix-attempt.json .archon-artifacts-staging reports/agents artifacts/runs .run_validation.sh 2>/dev/null | xargs -r rm -f
-      find .archon-artifacts-staging reports/agents artifacts/runs artifacts -type d -empty -delete 2>/dev/null || true
+      git ls-files --others --exclude-standard .tmp_run_cmds.sh fix-attempt.json .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs .run_validation.sh 2>/dev/null | xargs -r rm -f
+      find .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs artifacts -type d -empty -delete 2>/dev/null || true
       current=$(git rev-parse HEAD)
       if [ "$current" != "$expected" ]; then
         echo "ERROR: pass-2 checkout $current does not match accepted head $expected" >&2

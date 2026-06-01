@@ -72,3 +72,6 @@ Schema:
 ```
 
 If you cannot safely fix every requested finding, do not pretend. Leave unresolved items in the artifact with a concrete reason and avoid broad cleanup.
+
+
+Do not leave repo-root scratch directories/files such as `.archon-fix-staging/`, `.archon-artifacts-staging/`, `artifacts/`, `reports/agents/`, `.tmp_run_cmds.sh`, `fix-attempt.json`, or `.run_validation.sh`; remove them before returning unless they are tracked intentional repository files.
