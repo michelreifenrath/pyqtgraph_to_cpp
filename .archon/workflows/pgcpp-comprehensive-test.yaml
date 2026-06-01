@@ -246,7 +246,7 @@ nodes:
       from pathlib import Path
 
       artifacts = Path(os.environ["ARTIFACTS_DIR"])
-      workflow_id = os.environ.get("WORKFLOW_ID", "")
+      workflow_id = os.environ.get("WORKFLOW_ID") or artifacts.name
       required = [x for x in os.environ.get("AUDIT_REQUIRED", "").split(",") if x]
       status_jsons = [x for x in os.environ.get("AUDIT_STATUS_JSONS", "").split(",") if x]
       checks = []
