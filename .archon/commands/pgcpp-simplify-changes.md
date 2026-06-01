@@ -15,4 +15,6 @@ Read issue artifacts, review findings, validation evidence, and current diff. Re
 
 Do not rewrite unrelated code. Do not adapt `MISSION.md` or `FACTORY_RULES.md`. Do not merge.
 
+Do not create repo-root `artifacts/`, `.archon-artifacts-staging/`, `reports/agents/`, or `.run_validation.sh` files. Durable workflow notes must go to the absolute `$ARTIFACTS_DIR` path only; if that env var is unavailable, report that limitation instead of writing relative scratch files.
+
 Run `git diff --check` and any focused validation needed for edited files. If you edit after a PR already exists, first confirm the current branch is not `main`, then commit and push only the PR branch. Write `$ARTIFACTS_DIR/simplify.md` with changes made, validation, and commit SHA if applicable.
