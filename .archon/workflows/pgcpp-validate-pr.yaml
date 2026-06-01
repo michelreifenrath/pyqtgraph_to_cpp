@@ -365,8 +365,9 @@ nodes:
     bash: |
       set -euo pipefail
       PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
-      gh pr checkout "$PR_NUM"
       expected=$(cat "$ARTIFACTS_DIR/.head-sha")
+      git fetch origin "pull/$PR_NUM/head" --quiet
+      git checkout --detach "$expected"
       current=$(git rev-parse HEAD)
       if [ "$current" != "$expected" ]; then
         echo "ERROR: pass-2 checkout $current does not match accepted head $expected" >&2
