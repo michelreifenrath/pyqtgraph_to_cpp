@@ -301,7 +301,7 @@ nodes:
     depends_on: [reviewer-pass1-cpp-qt, reviewer-pass1-oracle-visual, reviewer-pass1-scope-governance]
     trigger_rule: one_success
     context: fresh
-    effort: max
+    effort: xhigh
     output_format:
       type: object
       properties:
@@ -489,7 +489,7 @@ nodes:
     command: pgcpp-validate-pr
     depends_on: [autoreview-merge-gate-pass2]
     context: fresh
-    effort: max
+    effort: xhigh
     idle_timeout: 900000
 
   - id: deterministic-verdict-guard

@@ -15,8 +15,7 @@ EXPECTED_COMMANDS = {
 
 PI_MODEL = "openai-codex/gpt-5.5"
 CURSOR_MODEL = "composer-2.5"
-# Current Archon workflow YAML uses effort=max as the schema-level alias that the Pi provider translates to xhigh.
-PI_XHIGH_ALIAS = "max"
+PI_XHIGH = "xhigh"
 
 
 def load_workflow(name: str) -> dict[str, object]:
@@ -67,9 +66,9 @@ def test_pgcpp_workflows_route_ai_nodes_to_pi_and_cursor_cli() -> None:
             assert "effort" not in nodes[node_id]
 
     for node_id in {"plan", "synthesize-review"}:
-        assert fix_issue[node_id]["effort"] == PI_XHIGH_ALIAS
+        assert fix_issue[node_id]["effort"] == PI_XHIGH
     for node_id in {"synthesize-pass1", "holdout-review"}:
-        assert validate_pr[node_id]["effort"] == PI_XHIGH_ALIAS
+        assert validate_pr[node_id]["effort"] == PI_XHIGH
 
 
 def test_archon_command_prompts_use_supported_artifact_variables() -> None:

@@ -94,7 +94,7 @@ nodes:
     depends_on: [classify-issue, repo-research]
     when: "$classify-issue.output.issue_type != 'bug'"
     context: fresh
-    effort: max
+    effort: xhigh
     idle_timeout: 600000
 
   - id: bridge-artifacts
@@ -254,7 +254,7 @@ nodes:
     depends_on: [cpp-qt-code-review, oracle-visual-review, test-coverage-review, scope-policy-review, docs-examples-review]
     trigger_rule: one_success
     context: fresh
-    effort: max
+    effort: xhigh
     idle_timeout: 600000
 
   - id: self-fix
