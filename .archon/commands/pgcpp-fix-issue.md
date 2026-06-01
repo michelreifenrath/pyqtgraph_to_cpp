@@ -26,6 +26,8 @@ Required implementation discipline:
 6. Keep every changed path inside issue-owned files/selectors or approved common adjuncts. If scope is wrong, stop and report; do not silently expand it.
 7. Produce `$ARTIFACTS_DIR/implementation.md` with changed files, rationale, commands run, exit codes, and artifact paths.
 
+Do not write agent scratch files inside the repository. Put durable evidence in `$ARTIFACTS_DIR`; remove any untracked `.archon-artifacts-staging/` or `reports/agents/` scratch files before returning.
+
 Local checks to run when practical after editing:
 ```bash
 git diff --check
