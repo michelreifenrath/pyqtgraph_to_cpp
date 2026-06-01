@@ -142,7 +142,7 @@ nodes:
       set -euo pipefail
       git fetch origin main --quiet 2>/dev/null || true
       # Remove untracked agent-side scratch artifacts before scope checks. Durable evidence belongs in $ARTIFACTS_DIR, not the PR worktree.
-      git ls-files --others --exclude-standard .archon-artifacts-staging reports/agents 2>/dev/null | xargs -r rm -f
+      git ls-files --others --exclude-standard .archon-artifacts-staging reports/agents .run_validation.sh 2>/dev/null | xargs -r rm -f
       find .archon-artifacts-staging reports/agents -type d -empty -delete 2>/dev/null || true
       git diff --check
       {
@@ -301,7 +301,7 @@ nodes:
       set -euo pipefail
       git fetch origin main --quiet 2>/dev/null || true
       # Remove untracked agent-side scratch artifacts before scope checks. Durable evidence belongs in $ARTIFACTS_DIR, not the PR worktree.
-      git ls-files --others --exclude-standard .archon-artifacts-staging reports/agents 2>/dev/null | xargs -r rm -f
+      git ls-files --others --exclude-standard .archon-artifacts-staging reports/agents .run_validation.sh 2>/dev/null | xargs -r rm -f
       find .archon-artifacts-staging reports/agents -type d -empty -delete 2>/dev/null || true
       git diff --check
       {
