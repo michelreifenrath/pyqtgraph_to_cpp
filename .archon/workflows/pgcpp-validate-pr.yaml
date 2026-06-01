@@ -674,6 +674,9 @@ nodes:
   - id: governed-auto-merge
     bash: |
       set -euo pipefail
-      python3 scripts/factory/apply_pr_verdict.py --input "$ARTIFACTS_DIR/verdict.json" --allow-merge | tee "$ARTIFACTS_DIR/merge-result.json"
+      python3 scripts/factory/apply_pr_verdict.py --input "$ARTIFACTS_DIR/verdict.json" --allow-merge | tee "$ARTIFACTS_DIR/merge-result.json" || rc=$?
+      rc=${rc:-0}
+      echo "governed-auto-merge decision exit code: $rc" | tee "$ARTIFACTS_DIR/merge-result-status.txt"
+      # Human-review/no-merge is a governed terminal outcome, not a workflow infrastructure failure.
     depends_on: [workflow-integrity-audit]
     timeout: 120000
