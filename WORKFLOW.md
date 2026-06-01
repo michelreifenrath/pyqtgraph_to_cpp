@@ -75,7 +75,7 @@ policy:
   require_independent_review: true
   require_autoreview_before_merge: true
   require_autoreview_before_pr: true
-  auto_merge: false
+  auto_merge: true
   max_changed_files_without_human_review: 20
   max_diff_lines_without_human_review: 1500
   generated_diff_exceptions:
@@ -99,16 +99,16 @@ kanban:
   tenant_label_prefix: 'tenant:'
   tag_label_prefix: 'tag:'
 ---
-# Pi Symphony Workflow
+# Factory Workflow
 
-This repository runs a Symphony-style GitHub issue-to-PR loop using Hermes as the durable orchestrator and Pi CLI/pi-subagents as the implementation engine.
+This repository runs an issue-to-PR factory loop using GitHub Issues, Archon/factory scripts, and Pi CLI/pi-subagents as the implementation engine.
 
 ## Source of truth
 
 - GitHub Issues are the external source of truth.
 - Issues labeled `ai:ready` are eligible for automation.
 - Issues labeled `ai:ignore`, `ai:blocked`, `ai:claimed`, or `ai:done` are not claimed by intake.
-- Hermes Kanban board `pyqtgraph-to-cpp` is the durable internal task graph and audit trail.
+- The `pyqtgraph-to-cpp` board is the durable internal task graph and audit trail when board automation is enabled.
 - One board is used for the whole repository; tenants and tags are derived from `tenant:` and `tag:` labels.
 
 ## Issue execution prompt
@@ -120,10 +120,10 @@ For every issue:
 3. Create an isolated git worktree under `/home/michel/code/ai-workspaces/pyqtgraph_to_cpp/issue-<number>`.
 4. Run Pi CLI non-interactively with subagents: scout, planner, implementer, tester.
 5. Do not commit, push, or merge from Pi.
-6. Hermes reruns deterministic validation after Pi exits.
-7. Hermes reviewer reruns validation and the mandatory autoreview/Codex review gate.
-8. Hermes release manager commits, pushes an `ai/issue-<number>-<slug>` branch, and opens/updates a PR.
-9. Auto-merge is disabled; humans decide when to merge.
+6. The factory reruns deterministic validation after Pi exits.
+7. Independent review reruns validation and the mandatory autoreview/Codex review gate.
+8. Release automation opens or updates an `ai/issue-<number>-<slug>` PR branch when configured.
+9. Implementation, rework, review, and release workers never merge; only the validation/merge controller may squash-merge after governed gates pass.
 
 ## Safety gates
 

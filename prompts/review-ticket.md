@@ -2,7 +2,7 @@
 
 You are independently reviewing an assigned issue or PR for `michelreifenrath/pyqtgraph_to_cpp`.
 
-Review against the issue body, its Owned files, `AGENTS.md`, `WORKFLOW.md`, and `docs/pyqtgraph-cpp-port-workflow.md`. Do not fix code directly unless explicitly assigned to implement fixes.
+Review against the issue body, its Owned files, `MISSION.md`, `FACTORY_RULES.md`, `AGENTS.md`, and `WORKFLOW.md`. Do not fix code directly unless explicitly assigned to implement fixes.
 
 ## Review scope
 

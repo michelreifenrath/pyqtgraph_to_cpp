@@ -1,24 +1,26 @@
 # pgcpp issue readiness
 
-Purpose: summarize the actual output from the local readiness checker for one issue.
+Purpose: summarize the deterministic generated-local GitHub issue readiness triage.
 
-Issue path:
+Workflow argument:
 
 ```text
 $ARGUMENTS
 ```
 
-Readiness checker JSON from `check-readiness`:
+The workflow writes these artifacts:
 
-```json
-$check-readiness.output
+```text
+$ARTIFACTS_DIR/readiness.txt
+$ARTIFACTS_DIR/label-plan.json
+$ARTIFACTS_DIR/applied-label-plan.json
 ```
 
 Instructions:
 
-- Do not rerun shell commands.
-- Do not inspect or summarize other issues.
-- Report whether this issue is ready based only on the JSON above.
-- If `ready` is false, list the blocking errors exactly.
-- If `ready` is true, summarize the parsed owned files, dependencies, validation levels, and any protected files.
-- Do not mutate GitHub labels or comments.
+- Read the artifact files above; do not rerun shell commands.
+- Treat `scripts/check_proposed_issues --source github` as the source of truth.
+- Summarize whether the generated-local issue contract passed.
+- Summarize applied label actions exactly: `ai:ready` for dependency-free ready issues, `ai:blocked` for blocked issues.
+- Call out blockers using this repo's required sections: `Goal`, `Current evidence`, `Scope`, `Owned files`, `Required local proof`, `TDD plan`, `Validation commands`, `Acceptance criteria`, `Done definition`, and `Scope boundaries`.
+- State clearly that this Dark-Factory-style readiness workflow mutates only readiness labels through the deterministic label plan; it does not close issues, invent triage decisions, adapt `MISSION.md`/`FACTORY_RULES.md`, or use `factory:accepted`.

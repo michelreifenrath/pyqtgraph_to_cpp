@@ -1,61 +1,47 @@
 # pyqtgraph_to_cpp
 
-Repository-owned Pi Symphony automation for translating PyQtGraph into a native C++ library.
+Repository-owned factory automation and source tree for translating PyQtGraph into a native C++ library.
 
-The canonical project/port specification is:
+## Current source of truth
 
-- [`docs/pyqtgraph-cpp-port-workflow.md`](docs/pyqtgraph-cpp-port-workflow.md)
+Use these active documents for current work:
 
-`WORKFLOW.md` is the machine-readable Pi Symphony automation runtime config; it is not the product specification.
+- [`MISSION.md`](MISSION.md) — product goal, scope, non-goals, and hard invariants.
+- [`FACTORY_RULES.md`](FACTORY_RULES.md) — issue readiness, scope, evidence, validation, auto-merge, attribution, and protected-file rules.
+- [`AGENTS.md`](AGENTS.md) — repository-wide instructions for AI agents.
+- [`WORKFLOW.md`](WORKFLOW.md) — machine-readable factory runtime configuration.
 
-Agent and prompt guidance:
+Older planning, long-form workflow docs, and the retired Pi Symphony runtime are archived under `archive/2026-06-01-stale-docs/` for history only.
 
-- [`AGENTS.md`](AGENTS.md) gives repository-wide instructions for AI agents.
-- [`prompts/port-ticket.md`](prompts/port-ticket.md), [`prompts/review-ticket.md`](prompts/review-ticket.md), and [`prompts/fix-review-findings.md`](prompts/fix-review-findings.md) are reusable prompt templates, not automation wiring.
-- `docs/pyqtgraph-cpp-port-workflow.md` remains the canonical port spec; `WORKFLOW.md` remains the runtime configuration.
+## Automation model
 
-This repo contains an operational GitHub issue-to-PR automation loop:
+This repo contains an issue-to-PR factory loop:
 
 - GitHub Issues are the source of truth.
-- Label an issue `ai:ready` to let automation claim it.
-- Hermes Kanban board `pyqtgraph-to-cpp` stores the durable task graph.
-- Hermes profiles split responsibilities:
-  - `pi-orchestrator`: intake/reconciliation only.
-  - `pi-worker`: runs Pi CLI/pi-subagents in isolated worktrees.
-  - `pi-reviewer`: deterministic review plus mandatory autoreview/Codex gate.
-  - `pi-release-manager`: commits, pushes, opens PRs, never merges.
-- Work happens in git worktrees under `/home/michel/code/ai-workspaces/pyqtgraph_to_cpp`.
-- Auto-merge is disabled by policy.
+- Label an issue `ai:ready` only after readiness gates pass.
+- Archon workflows and factory scripts own the active automation path.
+- Pi workers may run inside isolated git worktrees, but implementation, rework, review, and release workers never merge.
+- The validation/merge controller may auto-merge only when `WORKFLOW.md` enables `policy.auto_merge` and all governed gates in `FACTORY_RULES.md` pass.
+- Worktrees live under `/home/michel/code/ai-workspaces/pyqtgraph_to_cpp`.
 
 ## Common commands
 
 ```bash
-python3 -m automation.pi_symphony.cli validate-workflow --workflow WORKFLOW.md
-python3 -m automation.pi_symphony.cli doctor --workflow WORKFLOW.md
-python3 -m automation.pi_symphony.cli setup --workflow WORKFLOW.md
-python3 -m automation.pi_symphony.cli intake --workflow WORKFLOW.md --dry-run
-python3 -m automation.pi_symphony.cli reconcile --workflow WORKFLOW.md
-python3 -m automation.pi_symphony.cli run-issue --workflow WORKFLOW.md --issue <N> --phase all
+scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp
+scripts/factory/check_issue_ready.py --issue-file <issue.json>
+scripts/factory/check_pr_scope.py --issue-file <issue.json> --changed-files-file <paths.txt>
+scripts/gate focus
+scripts/gate commit
+scripts/run_autoreview --mode branch
 python3 -m pytest -q
 ```
 
+Use `.venv/bin/python -m pytest -q` when the system Python does not have pytest installed.
+
 ## Operational flow
 
-1. Create a GitHub issue with clear acceptance criteria.
-2. Add labels such as `ai:ready`, optionally `tenant:cpp`, `tag:parser`, `tag:build`, or `tag:docs`.
-3. The cron reconciler claims the issue, removes `ai:ready`, creates the Kanban graph, and dispatches workers.
-4. Pi implements in a dedicated worktree.
-5. Hermes review gates run.
-6. Hermes opens a PR and labels the issue `ai:review`.
-7. A human reviews and merges when satisfied.
-
-See `WORKFLOW.md`, `docs/ai-orchestration.md`, and `docs/pyqtgraph-cpp-port-workflow.md` for the full policy.
-
-## Starting the C++ port
-
-The port is intentionally issue-driven and dependency-gated:
-
-1. Create fine-grained GitHub issues using the format in `docs/pyqtgraph-cpp-port-workflow.md`.
-2. Label only dependency-free work as `ai:ready`.
-3. Let automation create worktrees, run Pi, review, and open PRs.
-4. Promote the next issue only after its dependencies are merged or explicitly satisfied.
+1. Create or update one fine-grained GitHub issue with clear scope, owned files/selectors, TDD plan, validation commands, and acceptance criteria.
+2. Add `ai:ready` only when dependencies are resolved and readiness gates pass.
+3. Automation claims the issue, creates an isolated worktree, and runs the configured workers.
+4. Review and release gates produce an evidence-backed PR.
+5. The validation/merge controller performs holdout validation and either merges, schedules focused rework, or marks `human-review`.

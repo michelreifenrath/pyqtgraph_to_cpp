@@ -1,23 +1,328 @@
 name: pgcpp-fix-issue
 description: |
-  Implement exactly one Archon-ready PyQtGraph C++ issue in an isolated
-  worktree. The issue argument must be a local issue markdown or JSON file.
-  Normal implementation should use Composer 2.5 when the local Archon runner
-  exposes it; this workflow does not push, merge, or mutate GitHub.
+  Implement exactly one ready PyQtGraph-to-C++ GitHub issue in an isolated
+  Archon worktree using the Dark Factory issue-to-PR topology: classify,
+  research, investigate-or-plan, implement, validate, create a draft PR,
+  review, self-fix, simplify, and report. The issue must already carry ai:ready
+  and pass scripts/factory/check_issue_ready.py. This workflow may push the PR
+  branch, but it never pushes to main, merges, or adapts MISSION.md/FACTORY_RULES.md.
+provider: pi
+model: openai-codex/gpt-5.5
 worktree:
   enabled: true
 nodes:
-  - id: verify-readiness
-    bash: python3 scripts/factory/check_issue_ready.py --issue-file "$ARGUMENTS"
+  - id: extract-issue-number
+    command: pgcpp-extract-issue-number
+    effort: low
+    allowed_tools: []
+    timeout: 10000
+
+  - id: fetch-issue
+    bash: |
+      set -euo pipefail
+      ISSUE_NUM=$(printf '%s\n' "$ARGUMENTS" | grep -oE '#?[0-9]+' | tr -d '#' | head -1)
+      if [ -z "$ISSUE_NUM" ]; then
+        echo "ERROR: expected an issue number in workflow argument" >&2
+        exit 1
+      fi
+      echo "$ISSUE_NUM" | tee "$ARTIFACTS_DIR/.issue-number" >/dev/null
+      gh issue view "$ISSUE_NUM" --json number,title,body,labels,comments,state,url,author | tee "$ARTIFACTS_DIR/issue.json"
+    depends_on: [extract-issue-number]
     timeout: 30000
+
+  - id: verify-readiness
+    bash: |
+      set -euo pipefail
+      python3 scripts/factory/check_issue_ready.py --issue-file "$ARTIFACTS_DIR/issue.json" | tee "$ARTIFACTS_DIR/readiness.json"
+    depends_on: [fetch-issue]
+    timeout: 30000
+
+  - id: fetch-governance
+    bash: |
+      set -euo pipefail
+      {
+        for path in MISSION.md FACTORY_RULES.md AGENTS.md WORKFLOW.md; do
+          echo "=== $path ==="
+          cat "$path"
+          echo
+        done
+      } | tee "$ARTIFACTS_DIR/governance.txt"
+    depends_on: [verify-readiness]
+    timeout: 30000
+
+  - id: classify-issue
+    command: pgcpp-classify-issue
+    depends_on: [fetch-governance]
+    effort: medium
+    allowed_tools: []
+    context: fresh
+    output_format:
+      type: object
+      properties:
+        issue_type:
+          type: string
+          enum: [bug, feature, enhancement, refactor, chore, documentation]
+        visual_required:
+          type: string
+          enum: ["true", "false"]
+        oracle_required:
+          type: string
+          enum: ["true", "false"]
+        title:
+          type: string
+        reasoning:
+          type: string
+      required: [issue_type, visual_required, oracle_required, title, reasoning]
+
+  - id: repo-research
+    command: pgcpp-research-issue
+    depends_on: [classify-issue]
+    context: fresh
+    effort: high
+    idle_timeout: 600000
+
+  - id: investigate
+    command: pgcpp-investigate-issue
+    depends_on: [classify-issue, repo-research]
+    when: "$classify-issue.output.issue_type == 'bug'"
+    context: fresh
+    effort: high
+    idle_timeout: 600000
+
+  - id: plan
+    command: pgcpp-create-plan
+    depends_on: [classify-issue, repo-research]
+    when: "$classify-issue.output.issue_type != 'bug'"
+    context: fresh
+    effort: max
+    idle_timeout: 600000
+
+  - id: bridge-artifacts
+    bash: |
+      set -euo pipefail
+      if [ -f "$ARTIFACTS_DIR/plan.md" ] && [ ! -f "$ARTIFACTS_DIR/investigation.md" ]; then
+        cp "$ARTIFACTS_DIR/plan.md" "$ARTIFACTS_DIR/investigation.md"
+        echo "Bridged plan.md to investigation.md for implement step"
+      elif [ -f "$ARTIFACTS_DIR/investigation.md" ]; then
+        echo "investigation.md exists from investigate step"
+      else
+        echo "ERROR: expected investigation.md or plan.md" >&2
+        exit 1
+      fi
+    depends_on: [investigate, plan]
+    trigger_rule: one_success
+    timeout: 10000
 
   - id: implement
     command: pgcpp-fix-issue
-    depends_on: [verify-readiness]
+    depends_on: [bridge-artifacts]
+    provider: cursor
+    model: composer-2.5
+    context: fresh
+    idle_timeout: 900000
+
+  - id: validate
+    command: pgcpp-validate-implementation
+    depends_on: [implement]
+    context: fresh
+    effort: high
+    idle_timeout: 900000
+
+  - id: pre-pr-gates
+    bash: |
+      set -euo pipefail
+      git fetch origin main --quiet 2>/dev/null || true
+      git diff --check
+      git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files.txt"
+      python3 scripts/factory/check_pr_scope.py \
+        --issue-file "$ARTIFACTS_DIR/issue.json" \
+        --changed-files-file "$ARTIFACTS_DIR/changed-files.txt" | tee "$ARTIFACTS_DIR/scope.json"
+      scripts/gate commit --dry-run | tee "$ARTIFACTS_DIR/local-gate.txt"
+      scripts/run_autoreview --mode branch --base origin/main --reports-dir "$ARTIFACTS_DIR/autoreview-pre-pr" | tee "$ARTIFACTS_DIR/autoreview-pre-pr.txt"
+    depends_on: [validate]
+    timeout: 1800000
+
+  - id: create-pr
+    command: pgcpp-create-pr
+    depends_on: [pre-pr-gates]
+    context: fresh
+    effort: medium
+    idle_timeout: 600000
+
+  - id: capture-pr-number
+    bash: |
+      set -euo pipefail
+      if [ -f "$ARTIFACTS_DIR/.pr-number" ]; then
+        PR=$(cat "$ARTIFACTS_DIR/.pr-number" | tr -d ' \n\r')
+        if echo "$PR" | grep -qE '^[0-9]+$'; then
+          echo "$PR"
+          exit 0
+        fi
+      fi
+      PR=$(gh pr view --json number -q '.number' 2>/dev/null || true)
+      if [ -z "$PR" ]; then
+        echo "ERROR: could not determine PR number" >&2
+        exit 1
+      fi
+      echo "$PR" | tee "$ARTIFACTS_DIR/.pr-number"
+    depends_on: [create-pr]
+    timeout: 30000
+
+  - id: review-scope
+    command: pgcpp-pr-review-scope
+    depends_on: [capture-pr-number]
+    context: fresh
+    effort: high
+    idle_timeout: 600000
+
+  - id: review-classify
+    command: pgcpp-review-classify
+    depends_on: [review-scope]
+    effort: medium
+    allowed_tools: []
+    context: fresh
+    output_format:
+      type: object
+      properties:
+        run_cpp_qt_review:
+          type: string
+          enum: ["true", "false"]
+        run_oracle_visual_review:
+          type: string
+          enum: ["true", "false"]
+        run_test_coverage_review:
+          type: string
+          enum: ["true", "false"]
+        run_scope_policy_review:
+          type: string
+          enum: ["true", "false"]
+        run_docs_examples_review:
+          type: string
+          enum: ["true", "false"]
+        reasoning:
+          type: string
+      required:
+        - run_cpp_qt_review
+        - run_oracle_visual_review
+        - run_test_coverage_review
+        - run_scope_policy_review
+        - run_docs_examples_review
+        - reasoning
+
+  - id: cpp-qt-code-review
+    command: pgcpp-cpp-qt-code-review
+    depends_on: [review-classify]
+    when: "$review-classify.output.run_cpp_qt_review == 'true'"
+    context: fresh
+    effort: high
+    idle_timeout: 600000
+
+  - id: oracle-visual-review
+    command: pgcpp-oracle-visual-review
+    depends_on: [review-classify]
+    when: "$review-classify.output.run_oracle_visual_review == 'true'"
+    context: fresh
+    effort: high
+    idle_timeout: 600000
+
+  - id: test-coverage-review
+    command: pgcpp-test-coverage-review
+    depends_on: [review-classify]
+    when: "$review-classify.output.run_test_coverage_review == 'true'"
+    context: fresh
+    effort: high
+    idle_timeout: 600000
+
+  - id: scope-policy-review
+    command: pgcpp-scope-policy-review
+    depends_on: [review-classify]
+    when: "$review-classify.output.run_scope_policy_review == 'true'"
+    context: fresh
+    effort: high
+    idle_timeout: 600000
+
+  - id: docs-examples-review
+    command: pgcpp-docs-examples-review
+    depends_on: [review-classify]
+    when: "$review-classify.output.run_docs_examples_review == 'true'"
+    context: fresh
+    effort: medium
+    idle_timeout: 600000
+
+  - id: synthesize-review
+    command: pgcpp-synthesize-review
+    depends_on: [cpp-qt-code-review, oracle-visual-review, test-coverage-review, scope-policy-review, docs-examples-review]
+    trigger_rule: one_success
+    context: fresh
+    effort: max
+    idle_timeout: 600000
+
+  - id: self-fix
+    command: pgcpp-self-fix-review-findings
+    depends_on: [synthesize-review]
+    provider: cursor
+    model: composer-2.5
+    context: fresh
+    idle_timeout: 900000
+
+  - id: revalidate-after-self-fix
+    command: pgcpp-validate-implementation
+    depends_on: [self-fix]
+    context: fresh
+    effort: high
+    idle_timeout: 900000
+
+  - id: simplify
+    command: pgcpp-simplify-changes
+    depends_on: [revalidate-after-self-fix]
+    provider: cursor
+    model: composer-2.5
     context: fresh
     idle_timeout: 600000
 
-  - id: local-gate-plan
-    bash: scripts/gate commit --dry-run
-    depends_on: [implement]
+  - id: final-evidence
+    bash: |
+      set -euo pipefail
+      git fetch origin main --quiet 2>/dev/null || true
+      git diff --check
+      git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files-final.txt"
+      python3 scripts/factory/check_pr_scope.py \
+        --issue-file "$ARTIFACTS_DIR/issue.json" \
+        --changed-files-file "$ARTIFACTS_DIR/changed-files-final.txt" | tee "$ARTIFACTS_DIR/scope-final.json"
+      scripts/gate commit --dry-run | tee "$ARTIFACTS_DIR/local-gate-final.txt"
+      scripts/run_autoreview --mode branch --base origin/main --reports-dir "$ARTIFACTS_DIR/autoreview-final" | tee "$ARTIFACTS_DIR/autoreview-final.txt"
+      {
+        echo "# pgcpp implementation evidence"
+        echo
+        echo "Issue: #$(cat "$ARTIFACTS_DIR/.issue-number")"
+        echo "PR: #$(cat "$ARTIFACTS_DIR/.pr-number" 2>/dev/null || echo unknown)"
+        echo
+        echo "## Changed files"
+        cat "$ARTIFACTS_DIR/changed-files-final.txt"
+        echo
+        echo "## Local gate"
+        cat "$ARTIFACTS_DIR/local-gate-final.txt"
+      } | tee "$ARTIFACTS_DIR/factory-evidence.md"
+    depends_on: [simplify]
+    timeout: 1800000
+
+  - id: report
+    command: pgcpp-issue-completion-report
+    depends_on: [final-evidence]
+    context: fresh
+    effort: medium
+    idle_timeout: 300000
+
+  - id: cleanup-issue-label
+    bash: |
+      set -euo pipefail
+      ISSUE_NUM=$(cat "$ARTIFACTS_DIR/.issue-number" 2>/dev/null || true)
+      if [ -z "$ISSUE_NUM" ]; then
+        echo "No issue number parsed; nothing to clean up"
+        exit 0
+      fi
+      gh issue edit "$ISSUE_NUM" --remove-label "ai:claimed" --add-label "ai:review" 2>&1 || true
+      echo "Moved issue #$ISSUE_NUM from ai:claimed toward ai:review when labels exist"
+    depends_on: [report]
+    trigger_rule: all_done
     timeout: 30000

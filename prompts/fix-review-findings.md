@@ -2,7 +2,7 @@
 
 You are addressing review findings for an assigned issue or PR in `michelreifenrath/pyqtgraph_to_cpp`.
 
-Read the issue body, PR diff, review comments, prior validation output, `AGENTS.md`, `WORKFLOW.md`, and `docs/pyqtgraph-cpp-port-workflow.md` before editing.
+Read the issue body, PR diff, review comments, prior validation output, `MISSION.md`, `FACTORY_RULES.md`, `AGENTS.md`, and `WORKFLOW.md` before editing.
 
 ## Fix rules
 

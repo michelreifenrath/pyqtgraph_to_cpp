@@ -354,7 +354,7 @@ def test_gate_defaults_reports_to_ignored_hermes_logs(tmp_path: Path) -> None:
     result = run_script("scripts/gate", "focus", "--workflow", str(workflow))
 
     assert result.returncode == 0, result.stderr
-    reports = tmp_path / ".hermes" / "pi-symphony" / "logs" / "gates"
+    reports = tmp_path / ".factory" / "logs" / "gates"
     assert (reports / "focus-summary.json").exists()
     assert not (tmp_path / "reports" / "gates" / "focus-summary.json").exists()
 
@@ -565,7 +565,7 @@ def test_run_autoreview_defaults_reports_to_ignored_hermes_logs(tmp_path: Path) 
     )
 
     assert result.returncode == 127
-    reports = tmp_path / ".hermes" / "pi-symphony" / "logs" / "gates"
+    reports = tmp_path / ".factory" / "logs" / "gates"
     assert (reports / "autoreview-summary.json").exists()
     assert not (tmp_path / "reports" / "gates" / "autoreview-summary.json").exists()
 

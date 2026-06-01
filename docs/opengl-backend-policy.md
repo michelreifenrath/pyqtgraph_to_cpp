@@ -8,10 +8,10 @@ This document defines the local OpenGL backend policy for native C++ PyQtGraph O
 
 ## Source-of-truth policy
 
-- Decision-only issues use `docs/proposed-issues/VALIDATION-GUIDE.md#decision-doc`: proof is a decision/equivalence document and completion report, not runtime tests, unless executable behavior changes.
-- Later OpenGL rendering issues use `docs/proposed-issues/VALIDATION-GUIDE.md#opengl-render` and the visual-render rules in that guide.
-- Validation remains local-only under `docs/local-validation.md` and `docs/parity-contract.md`; GitHub Actions or hosted GPU CI is not required proof.
-- Repository workflow gates and handoff rules remain local under `WORKFLOW.md`; do not commit, push, merge, or create PRs from Pi implementation work.
+- Decision-only issues are proven by a decision/equivalence document and completion report, not runtime tests, unless executable behavior changes.
+- Later OpenGL rendering issues must follow the issue-owned validation commands and the visual/oracle rules in `FACTORY_RULES.md`.
+- Validation follows the assigned issue, `FACTORY_RULES.md`, and `docs/parity-contract.md`; GitHub Actions or hosted GPU CI is not required proof unless a future issue explicitly owns that policy change.
+- Repository workflow gates and handoff rules remain under `WORKFLOW.md`; do not commit, push, merge, or create PRs from Pi implementation work.
 
 ## Local OpenGL backend decision
 

@@ -5,7 +5,7 @@ This document records the P9.07 decision for the 14 PyQtGraph example/support en
 ## Authority and policy basis
 
 - `docs/parity-contract.md` defines the native C++ parity contract. Its default policy says not-applicable examples, templates, package initializers, demo support files, Python test harnesses, and support modules that do not define standalone C++ plotting examples are non-port.
-- `docs/proposed-issues/VALIDATION-GUIDE.md#decision-doc` defines this proof class: proof is a decision/equivalence document, not runtime tests, unless executable behavior changes.
+- `FACTORY_RULES.md` defines the current evidence/validation gate; for this decision-only issue, proof is this decision/equivalence document, not runtime tests, unless executable behavior changes.
 - `docs/examples/validation-levels.md` records that 14 examples have all validation channels `not_applicable`.
 
 No named human approval was used for this decision. The policy citations above are the authority.

@@ -109,10 +109,8 @@ def test_third_party_notices_preserve_upstream_pyqtgraph_mit_notice() -> None:
         assert needle in text
 
 
-def test_workflow_documents_license_and_attribution_policy() -> None:
-    text = (ROOT / "docs" / "pyqtgraph-cpp-port-workflow.md").read_text(
-        encoding="utf-8"
-    )
+def test_factory_rules_document_license_and_attribution_policy() -> None:
+    text = (ROOT / "FACTORY_RULES.md").read_text(encoding="utf-8")
     for needle in (
         "License and attribution policy",
         "Source note: translated/adapted from PyQtGraph <upstream-path>",
