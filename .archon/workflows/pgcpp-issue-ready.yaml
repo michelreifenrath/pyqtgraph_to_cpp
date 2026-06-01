@@ -1,18 +1,42 @@
 name: pgcpp-issue-ready
 description: |
-  Check whether a local issue file is small, testable, dependency-clear, and
-  ready for autonomous PyQtGraph C++ implementation. Use with a path to an
-  issue markdown or issue JSON file. Dry-run only; performs no GitHub mutation.
+  Dark-Factory-style readiness triage for the PyQtGraph-to-C++ generated-local
+  GitHub issue backlog. Runs the deterministic proposed-issue linter, produces
+  the readiness label plan, applies ai:ready/ai:blocked labels through gh, and
+  summarizes the applied decisions. It does not adapt MISSION.md or FACTORY_RULES.md.
+provider: pi
+model: openai-codex/gpt-5.5
+effort: medium
 worktree:
   enabled: false
 nodes:
   - id: check-readiness
-    bash: python3 scripts/factory/check_issue_ready.py --issue-file "$ARGUMENTS"
-    timeout: 30000
+    bash: |
+      set -euo pipefail
+      scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp | tee "$ARTIFACTS_DIR/readiness.txt"
+    timeout: 120000
+
+  - id: label-plan
+    bash: |
+      set -euo pipefail
+      scripts/check_proposed_issues --source github --repo michelreifenrath/pyqtgraph_to_cpp --github-label-plan | tee "$ARTIFACTS_DIR/label-plan.json"
+    depends_on: [check-readiness]
+    timeout: 120000
+
+  - id: apply-label-plan
+    bash: |
+      set -euo pipefail
+      scripts/check_proposed_issues \
+        --source github \
+        --repo michelreifenrath/pyqtgraph_to_cpp \
+        --github-label-plan \
+        --apply-github-labels | tee "$ARTIFACTS_DIR/applied-label-plan.json"
+    depends_on: [label-plan]
+    timeout: 180000
 
   - id: summarize-readiness
     command: pgcpp-issue-ready
-    depends_on: [check-readiness]
+    depends_on: [apply-label-plan]
     trigger_rule: all_done
     context: fresh
     idle_timeout: 300000

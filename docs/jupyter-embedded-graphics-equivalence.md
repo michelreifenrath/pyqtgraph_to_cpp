@@ -2,11 +2,11 @@
 
 - Validation class: decision-doc
 - Scope: docs-only parity decision for Jupyter embedded graphics entries
-- Policy sources: `docs/parity-contract.md` and `docs/proposed-issues/VALIDATION-GUIDE.md#decision-doc`
+- Policy sources: `MISSION.md`, `FACTORY_RULES.md`, and `docs/parity-contract.md`
 
 ## Policy basis
 
-`docs/proposed-issues/VALIDATION-GUIDE.md#decision-doc` defines decision-doc proof as a decision/equivalence artifact rather than a code test. When human approval is absent or not separately required, the artifact must record the conservative default, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decision, and follow-up issues or waivers.
+For this decision-only issue, proof is a decision/equivalence artifact rather than a code test. When human approval is absent or not separately required, the artifact must record the conservative default, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decision, and follow-up issues or waivers.
 
 `docs/parity-contract.md` defines the native C++ port scope. The port targets native C++ plotting/runtime behavior, not Python ecosystem integration. Python notebook/Jupyter integration and Python-only frontend embedding/export are out of C++ port scope by default. The parity contract already lists the Jupyter entries and records the explicit decision: Jupyter wrappers are non-port; equivalent C++ behavior is native Qt widget/view usage and any future explicitly scoped C++ embedding surface.
 

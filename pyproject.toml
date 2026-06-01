@@ -3,17 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyqtgraph-to-cpp-pi-symphony"
+name = "pyqtgraph-to-cpp-factory"
 version = "0.1.0"
-description = "Dry-run orchestration policy helpers for pyqtgraph_to_cpp."
+description = "Factory policy helpers for pyqtgraph_to_cpp."
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]
 
 [project.optional-dependencies]
 test = ["pytest>=8.0"]
-
-[project.scripts]
-pi-symphony = "automation.pi_symphony.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

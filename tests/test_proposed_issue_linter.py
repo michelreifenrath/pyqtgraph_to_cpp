@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from automation.pi_symphony.proposed_issue_linter import (
+from scripts.factory.check_proposed_issues import (
     github_label_updates,
     lint_issue_map,
     lint_issues,
@@ -71,6 +71,16 @@ def test_linter_accepts_normalized_explicit_issue(tmp_path: Path):
     write_issue(tmp_path, "P0.02", blocked_by="P0.01")
 
     assert lint_issues(load_issues(tmp_path)) == []
+
+
+def test_linter_can_parse_github_title_issue_id_without_body_h1():
+    body = ISSUE_TEMPLATE.format(issue_id="P0.01", blocked_by="None", validation_class="api-runtime")
+    body = body.replace("# P0.01: Example issue\n\n", "")
+
+    issue = parse_issue_text(Path("github-issue-95.md"), body, number=95, title="[P0.01] Example issue")
+
+    assert issue.issue_id == "P0.01"
+    assert lint_issues([issue]) == []
 
 
 def test_linter_rejects_non_explicit_dependency_and_selector_prose(tmp_path: Path):
@@ -144,4 +154,52 @@ def test_github_label_updates_block_only_dependency_free_issues(tmp_path: Path):
     assert updates == [
         {"id": "P0.01", "number": 95, "blocked": False, "remove": ["ai:blocked"], "add": ["ai:ready"]},
         {"id": "P0.02", "number": 96, "blocked": True, "remove": ["ai:ready"], "add": ["ai:blocked"]},
+    ]
+
+
+def test_github_label_updates_skip_in_flight_human_review_issues():
+    claimed = parse_issue_text(
+        Path("github-issue-95.md"),
+        ISSUE_TEMPLATE.format(issue_id="P0.01", blocked_by="None", validation_class="api-runtime"),
+        number=95,
+        state="open",
+        labels=("ai:claimed",),
+    )
+    review = parse_issue_text(
+        Path("github-issue-96.md"),
+        ISSUE_TEMPLATE.format(issue_id="P0.02", blocked_by="None", validation_class="api-runtime"),
+        number=96,
+        state="open",
+        labels=("ai:review",),
+    )
+    human = parse_issue_text(
+        Path("github-issue-97.md"),
+        ISSUE_TEMPLATE.format(issue_id="P0.03", blocked_by="None", validation_class="api-runtime"),
+        number=97,
+        state="open",
+        labels=("human-review",),
+    )
+
+    assert github_label_updates(Path("missing-map.json"), [claimed, review, human]) == []
+
+
+def test_github_label_updates_treat_closed_ai_done_blockers_as_resolved():
+    done = parse_issue_text(
+        Path("github-issue-95.md"),
+        ISSUE_TEMPLATE.format(issue_id="P0.01", blocked_by="None", validation_class="api-runtime"),
+        number=95,
+        state="closed",
+        labels=("ai:done",),
+    )
+    unblocked = parse_issue_text(
+        Path("github-issue-96.md"),
+        ISSUE_TEMPLATE.format(issue_id="P0.02", blocked_by="P0.01", validation_class="api-runtime"),
+        number=96,
+        state="open",
+    )
+
+    updates = github_label_updates(Path("missing-map.json"), [done, unblocked])
+
+    assert updates == [
+        {"id": "P0.02", "number": 96, "blocked": False, "remove": ["ai:blocked"], "add": ["ai:ready"]},
     ]

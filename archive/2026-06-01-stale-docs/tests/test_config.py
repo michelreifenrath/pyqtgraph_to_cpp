@@ -184,6 +184,87 @@ def test_workflow_contract_requires_prompt_authority_boundaries(tmp_path: Path):
     assert any("must prohibit commit/push/merge/PR creation" in error for error in errors)
 
 
+def test_config_allows_governed_auto_merge_when_safety_gates_remain_enabled():
+    config = WorkflowConfig.from_mapping(
+        {
+            "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+            "workspace": {"root": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp"},
+            "policy": {"auto_merge": True},
+            "autoreview": {"enabled": True, "advisory": True, "mandatory_gate": True},
+        },
+        body="body",
+    )
+
+    assert config.policy.auto_merge is True
+    assert config.policy.never_push_to_main is True
+    assert config.policy.require_independent_review is True
+    assert config.policy.require_autoreview_before_merge is True
+    assert config.policy.require_autoreview_before_pr is True
+
+
+@pytest.mark.parametrize(
+    "policy, message",
+    [
+        ({"auto_merge": True, "require_independent_review": False}, "require_independent_review"),
+        ({"auto_merge": True, "require_autoreview_before_merge": False}, "require_autoreview_before_merge"),
+        ({"auto_merge": True, "require_autoreview_before_pr": False}, "require_autoreview_before_pr"),
+        ({"auto_merge": True, "never_push_to_main": False}, "never_push_to_main"),
+    ],
+)
+def test_config_rejects_unsafe_governed_auto_merge(policy, message):
+    with pytest.raises(ConfigError, match=message):
+        WorkflowConfig.from_mapping(
+            {
+                "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+                "workspace": {"root": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp"},
+                "policy": policy,
+            },
+            body="body",
+        )
+
+
+@pytest.mark.parametrize(
+    "autoreview, message",
+    [
+        ({"enabled": False, "advisory": True, "mandatory_gate": True}, "autoreview.enabled"),
+        ({"enabled": True, "advisory": False, "mandatory_gate": True}, "advisory mandatory gate"),
+        ({"enabled": True, "advisory": True, "mandatory_gate": False}, "advisory mandatory gate"),
+    ],
+)
+def test_config_rejects_auto_merge_when_autoreview_gate_is_unsafe(autoreview, message):
+    with pytest.raises(ConfigError, match=message):
+        WorkflowConfig.from_mapping(
+            {
+                "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+                "workspace": {"root": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp"},
+                "policy": {"auto_merge": True},
+                "autoreview": autoreview,
+            },
+            body="body",
+        )
+
+
+@pytest.mark.parametrize(
+    "validation, message",
+    [
+        ({"diff_check": False, "commands": ["python3 -m pytest -q"]}, "validation.diff_check"),
+        ({"diff_check": True, "commands": []}, "at least one validation command"),
+        ({"diff_check": True, "commands": [""]}, "at least one validation command"),
+    ],
+)
+def test_config_rejects_auto_merge_without_deterministic_validation(validation, message):
+    with pytest.raises(ConfigError, match=message):
+        WorkflowConfig.from_mapping(
+            {
+                "tracker": {"repo": "michelreifenrath/pyqtgraph_to_cpp"},
+                "workspace": {"root": "/home/michel/code/ai-workspaces/pyqtgraph_to_cpp"},
+                "policy": {"auto_merge": True},
+                "validation": validation,
+            },
+            body="body",
+        )
+
+
 def test_workflow_defaults_are_production_safe():
     config = WorkflowConfig.from_mapping(
         {
@@ -218,7 +299,6 @@ def test_workflow_defaults_are_production_safe():
         ({"tracker": {"repo": "owner/repo"}}, "workspace.root"),
         ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "pi": {"use_subagents": False}}, "pi.use_subagents"),
         ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "pi": {"implementation_thinking": "maximum"}}, "pi.implementation_thinking"),
-        ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "policy": {"auto_merge": True}}, "policy.auto_merge"),
         ({"tracker": {"repo": "owner/repo"}, "workspace": {"root": "/tmp/ws"}, "policy": {"never_push_to_main": False}}, "policy.never_push_to_main"),
     ],
 )

@@ -8,7 +8,7 @@ Validation class: `decision-doc`
 
 This document applies the full-port parity policy in `docs/parity-contract.md` to `pyqtgraph/widgets/MatplotlibWidget.py`. The parity contract explicitly lists Matplotlib embedding/export integration as Python-ecosystem bridge scope and records `pyqtgraph/widgets/MatplotlibWidget.py` and class `MatplotlibWidget` as default non-port entries. It also states that decision-only parity questions are proven by a decision/equivalence document rather than runtime tests unless executable behavior changes.
 
-`docs/proposed-issues/VALIDATION-GUIDE.md#decision-doc` requires a decision artifact to record the conservative default, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decision, and follow-up issue links for disputed or out-of-scope behavior.
+For this decision-only issue, the decision artifact records the conservative default, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decision, and follow-up issue links for disputed or out-of-scope behavior, consistent with `FACTORY_RULES.md`.
 
 ## Affected manifest entries
 

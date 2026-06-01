@@ -1,27 +1,594 @@
 name: pgcpp-validate-pr
 description: |
-  Locally validate a proposed PR/diff against one issue. Use with a local issue
-  markdown or JSON file; changed files are read from git diff against
-  origin/main. Dry-run by default and never executes gh merge.
+  Dark-Factory-style validation/merge-controller workflow for one native C++/Qt
+  PyQtGraph port PR. The workflow fetches holdout-safe PR context, verifies a
+  single linked issue, checks out the PR in an Archon worktree, runs pass-1
+  deterministic gates plus independent holdout reviewers, optionally performs
+  one scoped self-fix, reruns pass-2 validation, rechecks the PR head SHA, and
+  may squash-merge via the governed controller using --match-head-commit. It
+  never pushes to main and implementation agents are not granted merge authority.
+provider: pi
+model: openai-codex/gpt-5.5
 worktree:
-  enabled: false
+  enabled: true
 nodes:
-  - id: changed-files
-    bash: git diff --name-only origin/main...HEAD > "$ARTIFACTS_DIR/changed-files.txt" && cat "$ARTIFACTS_DIR/changed-files.txt"
+  - id: extract-pr-number
+    bash: |
+      set -euo pipefail
+      PR_NUM=$(printf '%s\n' "$ARGUMENTS" | grep -oE '#?[0-9]+' | tr -d '#' | head -1)
+      if [ -z "$PR_NUM" ]; then
+        echo "ERROR: expected a PR number in workflow argument" >&2
+        exit 1
+      fi
+      echo "$PR_NUM" | tee "$ARTIFACTS_DIR/.pr-number"
+    timeout: 10000
+
+  - id: fetch-pr-metadata
+    bash: |
+      set -euo pipefail
+      PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
+      # HOLDOUT: fetch only metadata the validator needs. Do not fetch PR discussion, review text, or commit messages.
+      gh pr view "$PR_NUM" --json number,title,body,state,isDraft,baseRefName,headRefName,headRefOid,headRepositoryOwner,author,files,url,labels | tee "$ARTIFACTS_DIR/pr.json"
+      gh pr diff "$PR_NUM" --name-only | tee "$ARTIFACTS_DIR/changed-files.txt"
+      gh pr diff "$PR_NUM" > "$ARTIFACTS_DIR/pr.diff"
+    depends_on: [extract-pr-number]
+    timeout: 120000
+
+  - id: pr-metadata-check
+    bash: |
+      set -euo pipefail
+      python3 - <<'PY'
+      import json, os, re, sys
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      pr = json.loads((artifacts / "pr.json").read_text())
+      errors = []
+      if pr.get("state") != "OPEN":
+          errors.append("PR must be open")
+      if pr.get("isDraft") is not False:
+          errors.append("PR must not be draft")
+      if pr.get("baseRefName") != "main":
+          errors.append("PR base branch must be main")
+      if pr.get("headRefName") == "main":
+          errors.append("PR head branch must not be main")
+      if not pr.get("headRefName"):
+          errors.append("PR head branch is required")
+      if not pr.get("headRefOid"):
+          errors.append("PR headRefOid is required")
+      body = pr.get("body") or ""
+      issues = sorted(set(re.findall(r"(?i)\b(?:fixes|closes|resolves)\s+#(\d+)", body)))
+      if len(issues) != 1:
+          errors.append(f"expected exactly one linked issue in PR body, found {len(issues)}")
+      result = {"ok": not errors, "errors": errors, "linked_issues": [int(i) for i in issues], "head_sha": pr.get("headRefOid")}
+      (artifacts / "pr-metadata-check.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      if errors:
+          print(json.dumps(result, indent=2, sort_keys=True), file=sys.stderr)
+          sys.exit(1)
+      (artifacts / ".issue-number").write_text(issues[0])
+      (artifacts / ".head-sha").write_text(pr["headRefOid"])
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+    depends_on: [fetch-pr-metadata]
     timeout: 30000
 
-  - id: scope-check
-    bash: python3 scripts/factory/check_pr_scope.py --issue-file "$ARGUMENTS" --changed-files-file "$ARTIFACTS_DIR/changed-files.txt"
-    depends_on: [changed-files]
+  - id: fetch-linked-issue
+    bash: |
+      set -euo pipefail
+      number=$(cat "$ARTIFACTS_DIR/.issue-number")
+      # HOLDOUT: title/body/labels/state only; do not fetch issue discussion.
+      gh issue view "$number" --json number,title,body,labels,state,url | tee "$ARTIFACTS_DIR/issue.json"
+    depends_on: [pr-metadata-check]
+    timeout: 120000
+
+  - id: fetch-base-governance
+    bash: |
+      set -euo pipefail
+      # POISON IMMUNITY: read governance from origin/main before checking out the PR.
+      git fetch origin main --quiet
+      for path in MISSION.md FACTORY_RULES.md AGENTS.md WORKFLOW.md; do
+        echo "=== origin/main:$path ==="
+        git show "origin/main:$path" || true
+        echo
+      done | tee "$ARTIFACTS_DIR/base-governance.txt"
+    depends_on: [fetch-linked-issue]
+    timeout: 120000
+
+  - id: verify-holdout-clean
+    bash: |
+      set -euo pipefail
+      FORBIDDEN_ARTIFACTS=(plan.md investigation.md implementation.md validation.md fix-notes.md)
+      LEAKED=()
+      for f in "${FORBIDDEN_ARTIFACTS[@]}"; do
+        if [ -e "$ARTIFACTS_DIR/$f" ]; then LEAKED+=("$f"); fi
+      done
+      if [ ${#LEAKED[@]} -gt 0 ]; then
+        echo "HOLDOUT VIOLATION: artifacts leaked from implementation workflow: ${LEAKED[*]}" >&2
+        exit 1
+      fi
+      echo "HOLDOUT_CLEAN: no implementation artifacts in validator artifact directory"
+    depends_on: [fetch-base-governance]
+    timeout: 10000
+
+  - id: checkout-pr
+    bash: |
+      set -euo pipefail
+      PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
+      gh pr checkout "$PR_NUM"
+      expected=$(cat "$ARTIFACTS_DIR/.head-sha")
+      current=$(git rev-parse HEAD)
+      if [ "$current" != "$expected" ]; then
+        echo "ERROR: checked-out PR head $current does not match captured $expected" >&2
+        exit 1
+      fi
+      echo "Checked out PR #$PR_NUM on branch $(git branch --show-current) at $current"
+    depends_on: [verify-holdout-clean]
+    timeout: 120000
+
+  - id: refresh-changed-files
+    bash: |
+      set -euo pipefail
+      git fetch origin main --quiet
+      git status --short | tee "$ARTIFACTS_DIR/holdout-worktree-status.txt"
+      if [ -s "$ARTIFACTS_DIR/holdout-worktree-status.txt" ]; then
+        echo "ERROR: validator worktree is dirty immediately after checkout" >&2
+        exit 1
+      fi
+      git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files.txt"
+      git diff --stat origin/main...HEAD | tee "$ARTIFACTS_DIR/diff-stat.txt"
+      git diff origin/main...HEAD > "$ARTIFACTS_DIR/pr-local.diff"
+    depends_on: [checkout-pr]
     timeout: 30000
+
+  - id: readiness-check-pass1
+    bash: |
+      set +e
+      python3 scripts/factory/check_issue_ready.py --issue-file "$ARTIFACTS_DIR/issue.json" | tee "$ARTIFACTS_DIR/readiness.json"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "readiness-status-pass1.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [refresh-changed-files]
+    timeout: 30000
+
+  - id: scope-check-pass1
+    bash: |
+      set +e
+      python3 scripts/factory/check_pr_scope.py --issue-file "$ARTIFACTS_DIR/issue.json" --changed-files-file "$ARTIFACTS_DIR/changed-files.txt" | tee "$ARTIFACTS_DIR/scope.json"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "scope-status-pass1.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [readiness-check-pass1]
+    timeout: 30000
+
+  - id: evidence-packet-check-pass1
+    bash: |
+      set -euo pipefail
+      python3 - <<'PY'
+      import json, os, re
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      pr = json.loads((artifacts / "pr.json").read_text())
+      body = pr.get("body") or ""
+      required_markers = ["Fixes #", "Validation", "Changed", "Evidence"]
+      missing = [marker for marker in required_markers if marker.lower() not in body.lower()]
+      issue_links = re.findall(r"(?i)\b(?:fixes|closes|resolves)\s+#\d+", body)
+      result = {"ok": not missing and len(issue_links) == 1, "missing": missing, "issue_links": issue_links}
+      (artifacts / "evidence-packet-check-pass1.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+    depends_on: [scope-check-pass1]
+    timeout: 30000
+
+  - id: diff-check-pass1
+    bash: |
+      set +e
+      git diff --check origin/main...HEAD | tee "$ARTIFACTS_DIR/diff-check.txt" "$ARTIFACTS_DIR/diff-check-pass1.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "diff-check-status-pass1.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [evidence-packet-check-pass1]
+    timeout: 30000
+
+  - id: local-merge-gate-pass1
+    bash: |
+      set +e
+      scripts/gate merge --base origin/main --reports-dir "$ARTIFACTS_DIR/gate-pass1" | tee "$ARTIFACTS_DIR/local-gate.txt" "$ARTIFACTS_DIR/local-gate-pass1.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "local-gate-status-pass1.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [diff-check-pass1]
+    timeout: 1800000
+
+  - id: visual-oracle-gate-pass1
+    bash: |
+      set +e
+      python3 - <<'PY'
+      import json, os, re
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      issue = json.loads((artifacts / "issue.json").read_text())
+      body = issue.get("body") or ""
+      visual_required = bool(re.search(r"visual\s*:\s*required", body, re.I)) or "gpt_visual_review" in body.lower()
+      oracle_required = bool(re.search(r"oracle|numeric", body, re.I))
+      target = "SimplePlot" if "SimplePlot" in body else ""
+      plan = {"visual_required": visual_required, "oracle_required": oracle_required, "target": target, "ran_visual_gate": False, "visual_returncode": None}
+      (artifacts / "visual-oracle-plan-pass1.json").write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(plan, indent=2, sort_keys=True))
+      PY
+      visual_code=0
+      if python3 - <<'PY'
+      import json, os, sys
+      from pathlib import Path
+      plan = json.loads((Path(os.environ["ARTIFACTS_DIR"]) / "visual-oracle-plan-pass1.json").read_text())
+      sys.exit(0 if plan.get("visual_required") and plan.get("target") == "SimplePlot" else 1)
+      PY
+      then
+        scripts/gate visual SimplePlot --reports-dir "$ARTIFACTS_DIR/visual-pass1/SimplePlot" | tee "$ARTIFACTS_DIR/visual-gate-pass1.txt"
+        visual_code=${PIPESTATUS[0]}
+      fi
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      plan = json.loads((artifacts / "visual-oracle-plan-pass1.json").read_text())
+      plan["ran_visual_gate"] = bool(plan.get("visual_required") and plan.get("target") == "SimplePlot")
+      plan["visual_returncode"] = $visual_code if plan["ran_visual_gate"] else None
+      plan["visual_ok"] = (not plan.get("visual_required")) or (plan["ran_visual_gate"] and $visual_code == 0)
+      (artifacts / "visual-oracle-pass1.json").write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(plan, indent=2, sort_keys=True))
+      PY
+      exit 0
+    depends_on: [local-merge-gate-pass1]
+    timeout: 1800000
+
+  - id: autoreview-merge-gate-pass1
+    bash: |
+      set +e
+      scripts/run_autoreview --mode merge --base origin/main --reports-dir "$ARTIFACTS_DIR/autoreview-pass1" | tee "$ARTIFACTS_DIR/autoreview.txt" "$ARTIFACTS_DIR/autoreview-pass1.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "autoreview-status-pass1.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [visual-oracle-gate-pass1]
+    timeout: 1800000
+
+  - id: reviewer-pass1-cpp-qt
+    command: pgcpp-pr-review-cpp-qt
+    depends_on: [autoreview-merge-gate-pass1]
+    context: fresh
+    effort: high
+    idle_timeout: 900000
+
+  - id: reviewer-pass1-oracle-visual
+    command: pgcpp-pr-review-oracle-visual
+    depends_on: [autoreview-merge-gate-pass1]
+    context: fresh
+    effort: high
+    idle_timeout: 900000
+
+  - id: reviewer-pass1-scope-governance
+    command: pgcpp-pr-review-scope-governance
+    depends_on: [autoreview-merge-gate-pass1]
+    context: fresh
+    effort: high
+    idle_timeout: 900000
+
+  - id: synthesize-pass1
+    command: pgcpp-synthesize-pr-validation
+    depends_on: [reviewer-pass1-cpp-qt, reviewer-pass1-oracle-visual, reviewer-pass1-scope-governance]
+    trigger_rule: one_success
+    context: fresh
+    effort: xhigh
+    output_format:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [pass, fix, human-review]
+        reasoning:
+          type: string
+      required: [action, reasoning]
+
+  - id: fix-pr-issues
+    command: pgcpp-fix-pr-issues
+    depends_on: [synthesize-pass1]
+    when: "$synthesize-pass1.output.action == 'fix'"
+    provider: cursor
+    model: composer-2.5
+    context: fresh
+    idle_timeout: 1200000
+
+  - id: refresh-after-fix
+    bash: |
+      set -euo pipefail
+      PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
+      if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo "ERROR: fix-pr-issues left uncommitted changes" >&2
+        git status --short >&2
+        exit 1
+      fi
+      current=$(gh pr view "$PR_NUM" --json headRefOid --jq .headRefOid)
+      local_head=$(git rev-parse HEAD)
+      if [ "$current" != "$local_head" ]; then
+        echo "ERROR: PR head $current does not match local fix head $local_head; fix pass must push the PR branch" >&2
+        exit 1
+      fi
+      echo "$current" > "$ARTIFACTS_DIR/.head-sha"
+      gh pr view "$PR_NUM" --json number,title,body,state,isDraft,baseRefName,headRefName,headRefOid,headRepositoryOwner,author,files,url,labels | tee "$ARTIFACTS_DIR/pr.json"
+      git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files.txt"
+      git diff origin/main...HEAD > "$ARTIFACTS_DIR/pr.diff"
+    depends_on: [fix-pr-issues]
+    timeout: 120000
+
+  - id: mark-no-fix
+    bash: |
+      set -euo pipefail
+      python3 - <<'PY'
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      result = {"attempted": False, "reason": "pass-1 did not request a scoped self-fix", "fix_attempts": 0}
+      (artifacts / "fix-attempt.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+    depends_on: [synthesize-pass1]
+    when: "$synthesize-pass1.output.action != 'fix'"
+    timeout: 30000
+
+  - id: checkout-pass2-head
+    bash: |
+      set -euo pipefail
+      PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
+      gh pr checkout "$PR_NUM"
+      expected=$(cat "$ARTIFACTS_DIR/.head-sha")
+      current=$(git rev-parse HEAD)
+      if [ "$current" != "$expected" ]; then
+        echo "ERROR: pass-2 checkout $current does not match accepted head $expected" >&2
+        exit 1
+      fi
+      git status --short | tee "$ARTIFACTS_DIR/pass2-worktree-status.txt"
+      if [ -s "$ARTIFACTS_DIR/pass2-worktree-status.txt" ]; then
+        echo "ERROR: pass-2 worktree is dirty" >&2
+        exit 1
+      fi
+      git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files.txt"
+      git diff origin/main...HEAD > "$ARTIFACTS_DIR/pr-local-pass2.diff"
+    depends_on: [refresh-after-fix, mark-no-fix]
+    trigger_rule: one_success
+    timeout: 120000
+
+  - id: readiness-check-pass2
+    bash: |
+      set +e
+      python3 scripts/factory/check_issue_ready.py --issue-file "$ARTIFACTS_DIR/issue.json" | tee "$ARTIFACTS_DIR/readiness-pass2.json"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "readiness-status-pass2.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [checkout-pass2-head]
+    timeout: 30000
+
+  - id: scope-check-pass2
+    bash: |
+      set +e
+      python3 scripts/factory/check_pr_scope.py --issue-file "$ARTIFACTS_DIR/issue.json" --changed-files-file "$ARTIFACTS_DIR/changed-files.txt" | tee "$ARTIFACTS_DIR/scope-pass2.json"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "scope-status-pass2.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [readiness-check-pass2]
+    timeout: 30000
+
+  - id: diff-check-pass2
+    bash: |
+      set +e
+      git diff --check origin/main...HEAD | tee "$ARTIFACTS_DIR/diff-check-pass2.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "diff-check-status-pass2.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [scope-check-pass2]
+    timeout: 30000
+
+  - id: local-merge-gate-pass2
+    bash: |
+      set +e
+      scripts/gate merge --base origin/main --reports-dir "$ARTIFACTS_DIR/gate-pass2" | tee "$ARTIFACTS_DIR/local-gate-pass2.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "local-gate-status-pass2.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [diff-check-pass2]
+    timeout: 1800000
+
+  - id: visual-oracle-gate-pass2
+    bash: |
+      set +e
+      cp "$ARTIFACTS_DIR/visual-oracle-plan-pass1.json" "$ARTIFACTS_DIR/visual-oracle-plan-pass2.json" 2>/dev/null || echo '{"visual_required": false, "oracle_required": false, "target": ""}' > "$ARTIFACTS_DIR/visual-oracle-plan-pass2.json"
+      visual_code=0
+      if python3 - <<'PY'
+      import json, os, sys
+      from pathlib import Path
+      plan = json.loads((Path(os.environ["ARTIFACTS_DIR"]) / "visual-oracle-plan-pass2.json").read_text())
+      sys.exit(0 if plan.get("visual_required") and plan.get("target") == "SimplePlot" else 1)
+      PY
+      then
+        scripts/gate visual SimplePlot --reports-dir "$ARTIFACTS_DIR/visual-pass2/SimplePlot" | tee "$ARTIFACTS_DIR/visual-gate-pass2.txt"
+        visual_code=${PIPESTATUS[0]}
+      fi
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      plan = json.loads((artifacts / "visual-oracle-plan-pass2.json").read_text())
+      plan["ran_visual_gate"] = bool(plan.get("visual_required") and plan.get("target") == "SimplePlot")
+      plan["visual_returncode"] = $visual_code if plan["ran_visual_gate"] else None
+      plan["visual_ok"] = (not plan.get("visual_required")) or (plan["ran_visual_gate"] and $visual_code == 0)
+      (artifacts / "visual-oracle-pass2.json").write_text(json.dumps(plan, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(plan, indent=2, sort_keys=True))
+      PY
+      exit 0
+    depends_on: [local-merge-gate-pass2]
+    timeout: 1800000
+
+  - id: autoreview-merge-gate-pass2
+    bash: |
+      set +e
+      scripts/run_autoreview --mode merge --base origin/main --reports-dir "$ARTIFACTS_DIR/autoreview-pass2" | tee "$ARTIFACTS_DIR/autoreview-pass2.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "autoreview-status-pass2.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [visual-oracle-gate-pass2]
+    timeout: 1800000
 
   - id: holdout-review
     command: pgcpp-validate-pr
-    depends_on: [scope-check]
+    depends_on: [autoreview-merge-gate-pass2]
     context: fresh
-    idle_timeout: 600000
+    effort: xhigh
+    idle_timeout: 900000
 
-  - id: local-gate-plan
-    bash: scripts/gate commit --dry-run
+  - id: deterministic-verdict-guard
+    bash: |
+      set -euo pipefail
+      python3 - <<'PY'
+      import json, os, sys
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      verdict_path = artifacts / "verdict.json"
+      if not verdict_path.exists():
+          print("ERROR: holdout reviewer must write $ARTIFACTS_DIR/verdict.json", file=sys.stderr)
+          sys.exit(1)
+
+      def load_json(name, default=None):
+          path = artifacts / name
+          if not path.exists():
+              return default if default is not None else {"ok": False, "missing": name}
+          return json.loads(path.read_text())
+
+      statuses = {
+          "metadata": load_json("pr-metadata-check.json"),
+          "readiness": load_json("readiness-status-pass2.json"),
+          "scope": load_json("scope-status-pass2.json"),
+          "evidence": load_json("evidence-packet-check-pass1.json"),
+          "diff_check": load_json("diff-check-status-pass2.json"),
+          "tests": load_json("local-gate-status-pass2.json"),
+          "autoreview": load_json("autoreview-status-pass2.json"),
+          "visual_oracle": load_json("visual-oracle-pass2.json", {"visual_ok": True}),
+          "pass1": load_json("pass1-summary.json", {"action": "human-review", "requires_human_review": True}),
+      }
+      errors = []
+      for key in ("metadata", "readiness", "scope", "evidence", "diff_check", "tests", "autoreview"):
+          if statuses[key].get("ok") is not True:
+              errors.append(f"{key} gate did not pass")
+      visual = statuses["visual_oracle"]
+      if visual.get("visual_ok") is not True:
+          errors.append("visual/oracle gate did not pass")
+      pass1 = statuses["pass1"]
+      if pass1.get("action") == "human-review" or pass1.get("requires_human_review") is True:
+          errors.append("pass-1 synthesis requires human review")
+      if pass1.get("risky") is True:
+          errors.append("pass-1 synthesis marked PR risky")
+      if pass1.get("protected_files_changed") is True:
+          errors.append("pass-1 synthesis found protected file changes")
+
+      payload = json.loads(verdict_path.read_text())
+      payload["readiness"] = payload.get("readiness") is True and statuses["readiness"].get("ok") is True
+      payload["evidence"] = payload.get("evidence") is True and statuses["evidence"].get("ok") is True
+      payload["scope"] = payload.get("scope") is True and statuses["scope"].get("ok") is True
+      payload["tests"] = payload.get("tests") is True and statuses["tests"].get("ok") is True
+      payload["autoreview"] = payload.get("autoreview") is True and statuses["autoreview"].get("ok") is True
+      payload["diff_check"] = payload.get("diff_check") is True and statuses["diff_check"].get("ok") is True
+      if errors:
+          payload["auto_merge_enabled"] = False
+          payload["holdout"] = False
+          payload["risky"] = True
+          existing = payload.get("deterministic_guard_errors", [])
+          payload["deterministic_guard_errors"] = [*existing, *errors]
+      verdict_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+      result = {"ok": not errors, "errors": errors}
+      (artifacts / "deterministic-verdict-guard.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
     depends_on: [holdout-review]
-    timeout: 30000
+    timeout: 120000
+
+  - id: final-head-check
+    bash: |
+      set -euo pipefail
+      PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
+      expected=$(cat "$ARTIFACTS_DIR/.head-sha")
+      current=$(gh pr view "$PR_NUM" --json headRefOid --jq .headRefOid)
+      if [ "$current" != "$expected" ]; then
+        echo "ERROR: PR head changed from $expected to $current" >&2
+        exit 1
+      fi
+      python3 - <<'PY'
+      import json, os, sys
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      verdict = artifacts / "verdict.json"
+      if not verdict.exists():
+          print("ERROR: holdout reviewer must write $ARTIFACTS_DIR/verdict.json", file=sys.stderr)
+          sys.exit(1)
+      from scripts.factory.workflow_config import load_workflow
+      payload = json.loads(verdict.read_text())
+      payload["head_sha"] = (artifacts / ".head-sha").read_text().strip()
+      policy_auto_merge = load_workflow("WORKFLOW.md").policy.auto_merge
+      payload["auto_merge_enabled"] = bool(policy_auto_merge and payload.get("auto_merge_enabled") is True)
+      verdict.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+      print(json.dumps({"ok": True, "auto_merge_enabled": payload["auto_merge_enabled"], "head_sha": payload["head_sha"]}, indent=2, sort_keys=True))
+      PY
+    depends_on: [deterministic-verdict-guard]
+    timeout: 120000
+
+  - id: governed-auto-merge
+    bash: |
+      set -euo pipefail
+      python3 scripts/factory/apply_pr_verdict.py --input "$ARTIFACTS_DIR/verdict.json" --allow-merge | tee "$ARTIFACTS_DIR/merge-result.json"
+    depends_on: [final-head-check]
+    timeout: 120000

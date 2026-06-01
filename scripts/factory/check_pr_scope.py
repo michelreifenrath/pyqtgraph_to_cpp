@@ -20,12 +20,10 @@ from scripts.factory.factory_common import (
     is_automation_issue,
     is_protected_file,
     issue_body_from_text,
-    markdown_sections,
-    parse_owned_files,
-    print_json,
     normalize_path,
+    parse_issue_ownership,
+    print_json,
     read_text_arg,
-    section_lookup,
 )
 
 
@@ -45,23 +43,37 @@ def read_changed_files(args: argparse.Namespace) -> list[str]:
     return [normalize_path(path) for path in files if path.strip()]
 
 
+def _count_file_kinds(changed_files: list[str]) -> tuple[list[str], list[str], list[str]]:
+    production_files = [
+        path
+        for path in changed_files
+        if not path.startswith(("tests/", "test/", "oracle/", "reports/"))
+        and path not in {"CMakeLists.txt", "port_manifest.yaml", "ownership.yaml"}
+    ]
+    test_oracle_files = [path for path in changed_files if path.startswith(("tests/", "test/", "oracle/", "reports/"))]
+    example_files = [path for path in changed_files if path.startswith("examples/")]
+    return production_files, test_oracle_files, example_files
+
+
 def validate_scope(issue_text: str, changed_files: list[str]) -> dict[str, object]:
     errors: list[str] = []
     warnings: list[str] = []
     body, metadata = issue_body_from_text(issue_text)
-    sections = markdown_sections(body)
-    owned_files = set(parse_owned_files(section_lookup(sections, "Owned files")))
+    ownership = parse_issue_ownership(body, metadata)
+    owned_files = set(ownership["owned_files"])
+    repository_globs = list(ownership["repository_globs"])
+    common_adjuncts = list(ownership["common_adjuncts"])
+    issue_id = str(ownership["issue_id"])
+    owned_components = list(ownership["owned_components"])
     automation_issue = is_automation_issue(body, metadata)
 
-    if not owned_files:
-        errors.append("issue has no owned files")
+    if not owned_files and not repository_globs and not common_adjuncts:
+        errors.append("issue has no owned files or owned-file selectors")
     if not changed_files:
         errors.append("no changed files supplied")
     if len(changed_files) > TOTAL_FILE_CAP:
         errors.append(f"changed files exceed total cap of {TOTAL_FILE_CAP}")
-    production_files = [path for path in changed_files if not path.startswith(("tests/", "test/", "oracle/", "reports/")) and path not in {"CMakeLists.txt", "port_manifest.yaml", "ownership.yaml"}]
-    test_oracle_files = [path for path in changed_files if path.startswith(("tests/", "test/", "oracle/", "reports/"))]
-    example_files = [path for path in changed_files if path.startswith("examples/")]
+    production_files, test_oracle_files, example_files = _count_file_kinds(changed_files)
     if len(production_files) > PRODUCTION_FILE_CAP:
         errors.append(f"production files exceed cap of {PRODUCTION_FILE_CAP}")
     if len(test_oracle_files) > TEST_ORACLE_FILE_CAP:
@@ -69,7 +81,17 @@ def validate_scope(issue_text: str, changed_files: list[str]) -> dict[str, objec
     if len(example_files) > EXAMPLE_FILE_CAP:
         errors.append(f"example files exceed cap of {EXAMPLE_FILE_CAP}")
 
-    classifications = {path: classify_changed_file(path, owned_files) for path in changed_files}
+    classifications = {
+        path: classify_changed_file(
+            path,
+            owned_files,
+            repository_globs=repository_globs,
+            common_adjuncts=common_adjuncts,
+            issue_id=issue_id,
+            owned_components=owned_components,
+        )
+        for path in changed_files
+    }
     outside = [path for path, kind in classifications.items() if kind == "outside_scope"]
     shared = [path for path, kind in classifications.items() if kind == "shared_integration"]
     protected = [path for path in changed_files if is_protected_file(path)]
@@ -87,7 +109,12 @@ def validate_scope(issue_text: str, changed_files: list[str]) -> dict[str, objec
         "errors": errors,
         "warnings": warnings,
         "parsed": {
+            "mode": ownership["mode"],
             "owned_files": sorted(owned_files),
+            "repository_globs": repository_globs,
+            "common_adjuncts": common_adjuncts,
+            "issue_id": issue_id,
+            "owned_components": owned_components,
             "changed_files": changed_files,
             "classifications": classifications,
             "protected_files": protected,

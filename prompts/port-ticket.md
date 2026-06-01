@@ -2,7 +2,7 @@
 
 You are porting PyQtGraph to C++ in `michelreifenrath/pyqtgraph_to_cpp`.
 
-Follow `AGENTS.md`, `WORKFLOW.md`, and `docs/pyqtgraph-cpp-port-workflow.md` strictly. Work only on the assigned GitHub issue and edit only files listed in its Owned files section.
+Follow `MISSION.md`, `FACTORY_RULES.md`, `AGENTS.md`, and `WORKFLOW.md` strictly. Work only on the assigned GitHub issue and edit only files listed in its Owned files section.
 
 ## Implementation rules
 
@@ -20,7 +20,7 @@ Follow `AGENTS.md`, `WORKFLOW.md`, and `docs/pyqtgraph-cpp-port-workflow.md` str
 
 1. Read the full issue body, especially Goal, Owned files, Scope, TDD plan, Visual validation, Validation commands, and Done definition.
 2. Confirm every intended edit is inside Owned files.
-3. Read `AGENTS.md`, `WORKFLOW.md`, and `docs/pyqtgraph-cpp-port-workflow.md`.
+3. Read `MISSION.md`, `FACTORY_RULES.md`, `AGENTS.md`, and `WORKFLOW.md`.
 4. Read upstream PyQtGraph source and affected examples/tests when relevant.
 5. Add or update tests first for behavior changes.
 6. Confirm the focused test fails for the expected reason.

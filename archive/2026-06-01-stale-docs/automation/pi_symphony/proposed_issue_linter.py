@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 
+READINESS_SKIP_LABELS = {"ai:claimed", "ai:review", "ai:rework", "ai:done", "ai:ignore", "human-review"}
+
 VALIDATION_CLASSES = {
     "api-runtime",
     "core-oracle",
@@ -55,6 +57,7 @@ ID_RE = re.compile(r"^P\d+\.\d+$")
 HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 META_RE = re.compile(r"^\*\*(?P<key>[^*]+):\*\*\s*(?P<value>.+?)\s*$", re.MULTILINE)
 ISSUE_ID_RE = re.compile(r"^#\s+(P\d+\.\d+):", re.MULTILINE)
+ISSUE_ID_FALLBACK_RE = re.compile(r"(?:^|\[)(P\d+\.\d+)(?:\]|:)")
 
 
 @dataclass(frozen=True)
@@ -67,6 +70,8 @@ class ProposedIssue:
     sections: tuple[str, ...]
     selector_lines: tuple[str, ...]
     number: int | None = None
+    state: str = "open"
+    labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -107,7 +112,7 @@ def load_github_issues(repo: str) -> list[ProposedIssue]:
                 "GET",
                 f"repos/{repo}/issues",
                 "-f",
-                "state=open",
+                "state=all",
                 "-f",
                 "per_page=100",
                 "-f",
@@ -125,7 +130,16 @@ def load_github_issues(repo: str) -> list[ProposedIssue]:
             title = item.get("title") or ""
             if "<!-- generated-local-issue -->" not in body and not re.search(r"\[P\d+\.\d+\]", title):
                 continue
-            issues.append(parse_issue_text(Path(f"github-issue-{item['number']}.md"), body, number=int(item["number"])))
+            issues.append(
+                parse_issue_text(
+                    Path(f"github-issue-{item['number']}.md"),
+                    body,
+                    number=int(item["number"]),
+                    title=title,
+                    state=str(item.get("state", "open")),
+                    labels=tuple(str(label.get("name", "")) for label in item.get("labels", []) if label.get("name")),
+                )
+            )
         if len(page_items) < 100:
             break
     return sorted(issues, key=lambda issue: issue.issue_id)
@@ -135,12 +149,21 @@ def parse_issue(path: Path) -> ProposedIssue:
     return parse_issue_text(path, path.read_text())
 
 
-def parse_issue_text(path: Path, text: str, *, number: int | None = None) -> ProposedIssue:
+def parse_issue_text(
+    path: Path,
+    text: str,
+    *,
+    number: int | None = None,
+    title: str = "",
+    state: str = "open",
+    labels: tuple[str, ...] = (),
+) -> ProposedIssue:
     title_match = ISSUE_ID_RE.search(text)
+    fallback_match = ISSUE_ID_FALLBACK_RE.search(title) or ISSUE_ID_FALLBACK_RE.search(path.name)
     metadata = {match.group("key").strip(): match.group("value").strip() for match in META_RE.finditer(text)}
     return ProposedIssue(
         path=path,
-        issue_id=title_match.group(1) if title_match else "",
+        issue_id=title_match.group(1) if title_match else (fallback_match.group(1) if fallback_match else ""),
         status=metadata.get("Status", ""),
         validation_class=metadata.get("Validation class", ""),
         blocked_by=parse_blockers(metadata.get("Blocked by", "")),
@@ -151,6 +174,8 @@ def parse_issue_text(path: Path, text: str, *, number: int | None = None) -> Pro
             if line.strip().startswith(SELECTOR_PREFIXES)
         ),
         number=number,
+        state=state,
+        labels=labels,
     )
 
 
@@ -166,6 +191,8 @@ def lint_issues(issues: Sequence[ProposedIssue]) -> list[LintMessage]:
     known_ids = {issue.issue_id for issue in issues if issue.issue_id}
 
     for issue in issues:
+        if issue.state.lower() != "open":
+            continue
         if not issue.issue_id:
             messages.append(LintMessage(issue.path, "missing issue id in title"))
         elif issue.number is None and issue.issue_id not in issue.path.name:
@@ -228,12 +255,21 @@ def lint_issue_map(issue_map_path: Path, issues: Sequence[ProposedIssue]) -> lis
     return messages
 
 
+def issue_is_resolved(issue: ProposedIssue | None) -> bool:
+    return bool(issue and issue.state.lower() == "closed" and "ai:done" in issue.labels)
+
+
+def unresolved_blockers(issue: ProposedIssue, by_id: dict[str, ProposedIssue]) -> tuple[str, ...]:
+    return tuple(blocker for blocker in issue.blocked_by if not issue_is_resolved(by_id.get(blocker)))
+
+
 def github_label_updates(issue_map_path: Path, issues: Sequence[ProposedIssue]) -> list[dict[str, object]]:
-    """Return minimal label updates that keep only unblocked issues ready."""
+    """Return minimal label updates that keep only unblocked open issues ready."""
     if all(issue.number is not None for issue in issues):
         issue_entries = [
             {"id": issue.issue_id, "number": issue.number}
             for issue in issues
+            if issue.state.lower() == "open"
         ]
     else:
         issue_map = json.loads(issue_map_path.read_text())
@@ -243,9 +279,9 @@ def github_label_updates(issue_map_path: Path, issues: Sequence[ProposedIssue]) 
     updates: list[dict[str, object]] = []
     for entry in issue_entries:
         issue = by_id.get(str(entry.get("id", "")))
-        if not issue:
+        if not issue or issue.state.lower() != "open" or READINESS_SKIP_LABELS.intersection(issue.labels):
             continue
-        blocked = bool(issue.blocked_by)
+        blocked = bool(unresolved_blockers(issue, by_id))
         updates.append(
             {
                 "id": issue.issue_id,
@@ -291,9 +327,9 @@ def _selector_contains_unparseable_prose(line: str) -> bool:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Lint and gate proposed GitHub issues.")
-    parser.add_argument("--root", type=Path, default=Path("docs/proposed-issues"))
+    parser.add_argument("--root", type=Path, default=Path("archive/2026-06-01-stale-docs/docs/proposed-issues"))
     parser.add_argument("--source", choices=("auto", "local", "github"), default="auto")
-    parser.add_argument("--issue-map", type=Path, default=Path("docs/proposed-issues/github-issue-map.json"))
+    parser.add_argument("--issue-map", type=Path, default=Path("archive/2026-06-01-stale-docs/docs/proposed-issues/github-issue-map.json"))
     parser.add_argument("--github-label-plan", action="store_true", help="Print JSON label changes for GitHub readiness.")
     parser.add_argument("--apply-github-labels", action="store_true", help="Apply GitHub readiness labels with gh.")
     parser.add_argument("--repo", default="michelreifenrath/pyqtgraph_to_cpp")

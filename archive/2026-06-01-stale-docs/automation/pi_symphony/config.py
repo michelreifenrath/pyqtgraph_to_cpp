@@ -244,10 +244,17 @@ class WorkflowConfig:
         for name in ("issue_body_max_chars", "pr_body_max_chars", "comment_max_chars"):
             if int(getattr(self.github_output, name)) < 1:
                 raise ConfigError(f"github_output.{name} must be >= 1")
-        if self.policy.auto_merge is not False:
-            raise ConfigError("policy.auto_merge must be false")
+        if not isinstance(self.policy.auto_merge, bool):
+            raise ConfigError("policy.auto_merge must be boolean")
         if self.policy.never_push_to_main is not True:
             raise ConfigError("policy.never_push_to_main must be true")
+        if self.policy.auto_merge:
+            if self.policy.require_independent_review is not True:
+                raise ConfigError("policy.auto_merge requires policy.require_independent_review=true")
+            if self.policy.require_autoreview_before_merge is not True:
+                raise ConfigError("policy.auto_merge requires policy.require_autoreview_before_merge=true")
+            if self.policy.require_autoreview_before_pr is not True:
+                raise ConfigError("policy.auto_merge requires policy.require_autoreview_before_pr=true")
         if not isinstance(self.policy.generated_diff_exceptions, list):
             raise ConfigError("policy.generated_diff_exceptions must be a list")
         for index, item in enumerate(self.policy.generated_diff_exceptions):
@@ -270,6 +277,11 @@ class WorkflowConfig:
         _require_text(self.kanban.tag_label_prefix, "kanban.tag_label_prefix")
         if not isinstance(self.validation.commands, list) or not all(isinstance(cmd, str) for cmd in self.validation.commands):
             raise ConfigError("validation.commands must be a list of shell command strings")
+        if self.policy.auto_merge:
+            if self.validation.diff_check is not True:
+                raise ConfigError("policy.auto_merge requires validation.diff_check=true")
+            if not any(command.strip() for command in self.validation.commands):
+                raise ConfigError("policy.auto_merge requires at least one validation command")
 
 
 @dataclass(frozen=True)
@@ -319,8 +331,18 @@ def validate_workflow_contract(path: str | Path = "WORKFLOW.md") -> list[str]:
     if resources_path.exists():
         errors.extend(_validate_pi_resources(resources_path))
 
-    if config.policy.auto_merge is not False:
-        errors.append("policy.auto_merge must be false")
+    if config.policy.auto_merge and config.policy.never_push_to_main is not True:
+        errors.append("policy.auto_merge requires policy.never_push_to_main=true")
+    if config.policy.auto_merge and config.policy.require_independent_review is not True:
+        errors.append("policy.auto_merge requires policy.require_independent_review=true")
+    if config.policy.auto_merge and config.policy.require_autoreview_before_merge is not True:
+        errors.append("policy.auto_merge requires policy.require_autoreview_before_merge=true")
+    if config.policy.auto_merge and config.policy.require_autoreview_before_pr is not True:
+        errors.append("policy.auto_merge requires policy.require_autoreview_before_pr=true")
+    if config.policy.auto_merge and config.validation.diff_check is not True:
+        errors.append("policy.auto_merge requires validation.diff_check=true")
+    if config.policy.auto_merge and not any(command.strip() for command in config.validation.commands):
+        errors.append("policy.auto_merge requires at least one validation command")
     if config.autoreview.enabled is not True or config.autoreview.mandatory_gate is not True:
         errors.append("autoreview must be enabled with mandatory_gate=true")
     if config.autoreview.advisory is not True:

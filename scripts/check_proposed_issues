@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec python3 -m automation.pi_symphony.proposed_issue_linter "$@"
+exec python3 scripts/factory/check_proposed_issues.py "$@"

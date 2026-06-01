@@ -1,27 +1,245 @@
 name: pgcpp-comprehensive-test
 description: |
-  Run the local post-merge smoke plan and, when given regression metadata JSON,
-  render a dry-run regression issue body. This starts with local smoke only;
-  nightly/weekly broad self-healing is intentionally deferred.
+  Dark-Factory-style comprehensive regression workflow for the native C++/Qt
+  PyQtGraph port. It resets this Archon worktree to origin/main, runs merge,
+  visual, oracle, and autoreview checks, synthesizes an evidence-backed
+  regression report, renders generated-local regression issue payloads, and
+  optionally files deduplicated GitHub issues when explicitly requested. It does
+  not repair code, push branches, merge, or use DynaChat/FastAPI/Bun assumptions.
+provider: pi
+model: openai-codex/gpt-5.5
+effort: high
 worktree:
-  enabled: false
+  enabled: true
 nodes:
-  - id: smoke-plan
-    bash: scripts/gate commit --dry-run
-    timeout: 30000
-
-  - id: render-regression-issue
+  - id: reset-to-origin-main
     bash: |
-      if [ -n "$ARGUMENTS" ]; then
-        python3 scripts/factory/file_regression_issue.py --input "$ARGUMENTS"
-      else
-        echo "No regression metadata supplied; skipping issue rendering."
-      fi
-    depends_on: [smoke-plan]
-    timeout: 30000
+      set -euo pipefail
+      git fetch origin main --quiet
+      git reset --hard origin/main
+      git clean -ndx | tee "$ARTIFACTS_DIR/untracked-preview.txt"
+      git rev-parse HEAD | tee "$ARTIFACTS_DIR/origin-main-sha.txt"
+      git status --short | tee "$ARTIFACTS_DIR/reset-status.txt"
+      test ! -s "$ARTIFACTS_DIR/reset-status.txt"
+    timeout: 120000
 
-  - id: regression-guidance
+  - id: merge-gate
+    bash: |
+      set +e
+      scripts/gate merge --base origin/main --reports-dir "$ARTIFACTS_DIR/merge-gate" | tee "$ARTIFACTS_DIR/merge-gate.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      (artifacts / "merge-gate-status.json").write_text(json.dumps({"command": "scripts/gate merge --base origin/main", "returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [reset-to-origin-main]
+    timeout: 1800000
+
+  - id: visual-gates
+    bash: |
+      set +e
+      mkdir -p "$ARTIFACTS_DIR/visual"
+      scripts/gate visual SimplePlot --reports-dir "$ARTIFACTS_DIR/visual/SimplePlot" | tee "$ARTIFACTS_DIR/visual-SimplePlot.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      result = {
+          "targets": [{"name": "SimplePlot", "command": "scripts/gate visual SimplePlot", "returncode": $code, "ok": $code == 0, "reports_dir": str(artifacts / "visual" / "SimplePlot")}],
+          "ok": $code == 0,
+      }
+      (artifacts / "visual-gates.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+      exit 0
+    depends_on: [merge-gate]
+    timeout: 1800000
+
+  - id: oracle-gates
+    bash: |
+      set +e
+      python3 -m pytest -q tests/oracle tests/hierarchy | tee "$ARTIFACTS_DIR/oracle-gates.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      result = {"command": "python3 -m pytest -q tests/oracle tests/hierarchy", "returncode": $code, "ok": $code == 0}
+      (artifacts / "oracle-gates.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+      exit 0
+    depends_on: [visual-gates]
+    timeout: 1800000
+
+  - id: autoreview-comprehensive
+    bash: |
+      set +e
+      scripts/run_autoreview --mode merge --base origin/main --reports-dir "$ARTIFACTS_DIR/autoreview" | tee "$ARTIFACTS_DIR/autoreview.txt"
+      code=${PIPESTATUS[0]}
+      python3 - <<PY
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      result = {"command": "scripts/run_autoreview --mode merge --base origin/main", "returncode": $code, "ok": $code == 0}
+      (artifacts / "autoreview-status.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      PY
+      exit 0
+    depends_on: [oracle-gates]
+    timeout: 1800000
+
+  - id: synthesize-regression-report
+    bash: |
+      set -euo pipefail
+      python3 - <<'PY'
+      import json, os
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      inputs = {
+          "merge": json.loads((artifacts / "merge-gate-status.json").read_text()),
+          "visual": json.loads((artifacts / "visual-gates.json").read_text()),
+          "oracle": json.loads((artifacts / "oracle-gates.json").read_text()),
+          "autoreview": json.loads((artifacts / "autoreview-status.json").read_text()),
+      }
+      failures = []
+      if not inputs["merge"].get("ok"):
+          failures.append({"fingerprint": "merge-gate", "command": inputs["merge"]["command"], "summary": "Comprehensive merge gate failed on origin/main", "expected": "merge gate passes", "actual": f"exit {inputs['merge']['returncode']}", "artifacts": [str(artifacts / "merge-gate.txt"), str(artifacts / "merge-gate")], "suspected_subsystem": "build-test", "validation_class": "script-infra", "issue_id": "P0.00", "owned_files": ["WORKFLOW.md"], "common_adjuncts": ["focused-tests"], "ready_for_issue_rendering": False})
+      for target in inputs["visual"].get("targets", []):
+          if not target.get("ok"):
+              failures.append({"fingerprint": f"visual-{target['name']}", "command": target["command"], "summary": f"Visual regression gate failed for {target['name']}", "expected": "visual gate passes and artifacts match the accepted semantic review", "actual": f"exit {target['returncode']}", "artifacts": [str(artifacts / "visual-SimplePlot.txt"), target.get("reports_dir", "")], "suspected_subsystem": "visual-rendering", "validation_class": "visual-render", "issue_id": "P0.00", "owned_files": ["examples/**", "tests/visual/**", "oracle/**"], "common_adjuncts": ["focused-tests"], "ready_for_issue_rendering": False})
+      if not inputs["oracle"].get("ok"):
+          failures.append({"fingerprint": "oracle-gates", "command": inputs["oracle"]["command"], "summary": "Oracle regression checks failed on origin/main", "expected": "oracle and hierarchy parity checks pass", "actual": f"exit {inputs['oracle']['returncode']}", "artifacts": [str(artifacts / "oracle-gates.txt")], "suspected_subsystem": "oracle-parity", "validation_class": "core-oracle", "issue_id": "P0.00", "owned_files": ["oracle/**", "tests/oracle/**", "tests/hierarchy/**"], "common_adjuncts": ["focused-tests"], "ready_for_issue_rendering": False})
+      if not inputs["autoreview"].get("ok"):
+          failures.append({"fingerprint": "autoreview", "command": inputs["autoreview"]["command"], "summary": "Comprehensive autoreview reported failures", "expected": "autoreview merge mode passes", "actual": f"exit {inputs['autoreview']['returncode']}", "artifacts": [str(artifacts / "autoreview.txt"), str(artifacts / "autoreview")], "suspected_subsystem": "review-gate", "validation_class": "script-infra", "issue_id": "P0.00", "owned_files": ["scripts/**", "automation/**"], "common_adjuncts": ["focused-tests"], "ready_for_issue_rendering": False})
+      report = {"tested_sha": (artifacts / "origin-main-sha.txt").read_text().strip(), "ok": not failures, "failures": failures, "inputs": inputs}
+      (artifacts / "comprehensive-report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+      md = ["# pgcpp comprehensive regression report", "", f"Tested SHA: `{report['tested_sha']}`", "", f"Status: {'pass' if report['ok'] else 'fail'}", ""]
+      for failure in failures:
+          md.extend([f"## {failure['summary']}", "", f"- Command: `{failure['command']}`", f"- Expected: {failure['expected']}", f"- Actual: {failure['actual']}", f"- Artifacts: {', '.join(failure['artifacts'])}", ""])
+      (artifacts / "comprehensive-report.md").write_text("\n".join(md), encoding="utf-8")
+      print(json.dumps(report, indent=2, sort_keys=True))
+      PY
+    depends_on: [autoreview-comprehensive]
+    timeout: 60000
+
+  - id: dedupe-regression-candidates
+    bash: |
+      set -euo pipefail
+      python3 - <<'PY'
+      import json, os, subprocess
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      report = json.loads((artifacts / "comprehensive-report.json").read_text())
+      existing_text = subprocess.run(["gh", "issue", "list", "--state", "open", "--label", "factory:from-regression", "--json", "number,title,body"], check=False, text=True, capture_output=True).stdout or "[]"
+      try:
+          existing = json.loads(existing_text)
+      except json.JSONDecodeError:
+          existing = []
+      decisions = []
+      for failure in report.get("failures", []):
+          fp = failure["fingerprint"]
+          duplicate = next((item for item in existing if fp in ((item.get("body") or "") + "\n" + (item.get("title") or ""))), None)
+          decisions.append({"fingerprint": fp, "decision": "skip" if duplicate else "render", "duplicate_issue": duplicate.get("number") if duplicate else None, "failure": failure})
+      result = {"existing_count": len(existing), "decisions": decisions}
+      (artifacts / "regression-dedupe.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+    depends_on: [synthesize-regression-report]
+    timeout: 120000
+
+  - id: render-regression-issues
+    bash: |
+      set -euo pipefail
+      mkdir -p "$ARTIFACTS_DIR/regression-issues" "$ARTIFACTS_DIR/regression-metadata"
+      # Legacy quoting contract: python3 scripts/factory/file_regression_issue.py --input "$ARGUMENTS"
+      MANUAL_INPUT=""
+      for arg in $ARGUMENTS; do
+        case "$arg" in
+          --file-github-issues) ;;
+          *) if [ -z "$MANUAL_INPUT" ]; then MANUAL_INPUT="$arg"; fi ;;
+        esac
+      done
+      if [ -n "$MANUAL_INPUT" ]; then
+        python3 scripts/factory/file_regression_issue.py --input "$MANUAL_INPUT" | tee "$ARTIFACTS_DIR/regression-issue.json"
+      fi
+      python3 - <<'PY'
+      import json, os, subprocess
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      dedupe = json.loads((artifacts / "regression-dedupe.json").read_text())
+      rendered = []
+      for index, decision in enumerate(dedupe.get("decisions", []), start=1):
+          if decision.get("decision") != "render":
+              continue
+          failure = decision["failure"]
+          metadata = {
+              "command": failure["command"],
+              "summary": failure["summary"],
+              "expected": failure["expected"],
+              "actual": failure["actual"],
+              "artifacts": failure["artifacts"],
+              "suspected_subsystem": failure["suspected_subsystem"],
+              "issue_id": failure.get("issue_id", ""),
+              "validation_class": failure.get("validation_class", "script-infra"),
+              "owned_files": failure.get("owned_files", []),
+              "common_adjuncts": failure.get("common_adjuncts", ["focused-tests"]),
+              "risk": "medium",
+          }
+          metadata_path = artifacts / "regression-metadata" / f"{index:02d}-{failure['fingerprint']}.json"
+          output_path = artifacts / "regression-issues" / f"{index:02d}-{failure['fingerprint']}.json"
+          metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
+          completed = subprocess.run(["python3", "scripts/factory/file_regression_issue.py", "--input", str(metadata_path)], check=False, text=True, capture_output=True)
+          output_path.write_text(completed.stdout, encoding="utf-8")
+          rendered.append({"fingerprint": failure["fingerprint"], "metadata": str(metadata_path), "payload": str(output_path), "returncode": completed.returncode})
+      result = {"rendered": rendered}
+      (artifacts / "rendered-regression-issues.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+    depends_on: [dedupe-regression-candidates]
+    timeout: 120000
+
+  - id: optionally-file-deduped-regression-issues
+    bash: |
+      set -euo pipefail
+      SHOULD_FILE=false
+      case " $ARGUMENTS " in
+        *" --file-github-issues "*) SHOULD_FILE=true ;;
+      esac
+      SHOULD_FILE="$SHOULD_FILE" python3 - <<'PY'
+      import json, os, subprocess
+      from pathlib import Path
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      rendered = json.loads((artifacts / "rendered-regression-issues.json").read_text()).get("rendered", [])
+      should_file = os.environ.get("SHOULD_FILE") == "true"
+      filed = []
+      for item in rendered:
+          payload = json.loads(Path(item["payload"]).read_text())
+          if not should_file:
+              filed.append({"fingerprint": item["fingerprint"], "action": "skipped", "reason": "GitHub filing disabled; pass --file-github-issues to enable"})
+              continue
+          if not payload.get("ready"):
+              filed.append({"fingerprint": item["fingerprint"], "action": "skipped", "reason": "rendered issue payload is not ai:ready"})
+              continue
+          body_path = artifacts / "regression-issues" / f"{item['fingerprint']}.md"
+          body_path.write_text(payload["body"], encoding="utf-8")
+          labels = []
+          for label in payload.get("labels", []):
+              labels.extend(["--label", label])
+          completed = subprocess.run(["gh", "issue", "create", "--title", payload["title"], "--body-file", str(body_path), *labels], check=False, text=True, capture_output=True)
+          filed.append({"fingerprint": item["fingerprint"], "action": "filed" if completed.returncode == 0 else "failed", "returncode": completed.returncode, "stdout": completed.stdout, "stderr": completed.stderr})
+      result = {"enabled": should_file, "results": filed}
+      (artifacts / "regression-filing.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+      print(json.dumps(result, indent=2, sort_keys=True))
+      PY
+    depends_on: [render-regression-issues]
+    timeout: 120000
+
+  - id: comprehensive-guidance
     command: pgcpp-comprehensive-test
-    depends_on: [render-regression-issue]
+    depends_on: [optionally-file-deduped-regression-issues]
     context: fresh
     idle_timeout: 300000

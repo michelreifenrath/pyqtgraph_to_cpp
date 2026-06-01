@@ -16,10 +16,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from automation.pi_symphony.config import ConfigError, load_workflow_with_context  # noqa: E402
-from automation.pi_symphony.process import CommandResult, _subprocess_env  # noqa: E402
+from scripts.factory.workflow_config import (  # noqa: E402
+    CommandResult,
+    ConfigError,
+    _subprocess_env,
+    load_workflow_with_context,
+)
 
-DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
+DEFAULT_REPORTS_DIR = ".factory/logs/gates"
 
 CMAKE_VALIDATION_COMMANDS = [
     "cmake --preset dev",

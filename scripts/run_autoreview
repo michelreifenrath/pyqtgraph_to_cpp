@@ -17,11 +17,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from automation.pi_symphony.config import ConfigError, load_workflow_with_context
-from automation.pi_symphony.process import CommandResult, _subprocess_env, run
+from scripts.factory.workflow_config import CommandResult, ConfigError, _subprocess_env, load_workflow_with_context, run
 
 
-DEFAULT_REPORTS_DIR = ".hermes/pi-symphony/logs/gates"
+DEFAULT_REPORTS_DIR = ".factory/logs/gates"
 SUPPORTED_WRAPPER_MODES = {"auto", "local", "branch", "commit", "merge"}
 
 

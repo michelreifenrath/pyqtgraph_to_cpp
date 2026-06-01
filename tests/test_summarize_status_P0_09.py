@@ -121,7 +121,7 @@ def create_final_acceptance_evidence(
         "reports/issues/P0.09/core-hierarchy.txt",
         "reports/issues/P0.09/platform-tests.txt",
         "build/release/reports/performance/P0.08/metrics.json",
-        ".hermes/pi-symphony/logs/gates/autoreview-summary.json",
+        ".factory/logs/gates/autoreview-summary.json",
         "reports/issues/P0.09/package-install.txt",
         "reports/issues/P0.09/downstream-find-package.txt",
         "reports/issues/P0.09/human-approval.md",
@@ -168,7 +168,7 @@ def create_final_acceptance_evidence(
     status: {status("autoreview_status")}
     command: scripts/run_autoreview --mode merge --base origin/main
     artifact_paths:
-    - .hermes/pi-symphony/logs/gates/autoreview-summary.json
+    - .factory/logs/gates/autoreview-summary.json
 """,
         "package_install_proof": f"""
     status: {status("package_install_proof")}
