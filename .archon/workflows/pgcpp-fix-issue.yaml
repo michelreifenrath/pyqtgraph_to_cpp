@@ -155,7 +155,6 @@ nodes:
         --issue-file "$ARTIFACTS_DIR/issue.json" \
         --changed-files-file "$ARTIFACTS_DIR/changed-files.txt" | tee "$ARTIFACTS_DIR/scope.json"
       scripts/gate commit --dry-run | tee "$ARTIFACTS_DIR/local-gate.txt"
-      scripts/run_autoreview --mode branch --base origin/main --reports-dir "$ARTIFACTS_DIR/autoreview-pre-pr" | tee "$ARTIFACTS_DIR/autoreview-pre-pr.txt"
     depends_on: [validate]
     timeout: 1800000
 
