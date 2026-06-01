@@ -1,11 +1,24 @@
 # pgcpp issue readiness
 
-Purpose: check whether one issue is small, testable, dependency-clear, and safe for autonomous implementation.
+Purpose: summarize the actual output from the local readiness checker for one issue.
 
-Local command:
+Issue path:
 
-```bash
-python3 scripts/factory/check_issue_ready.py --issue-file "$ISSUE_FILE"
+```text
+$ARGUMENTS
 ```
 
-Default behavior is local JSON output only. GitHub label/comment mutations must be performed by a separate explicitly authorized runner, not by this command file.
+Readiness checker JSON from `check-readiness`:
+
+```json
+$check-readiness.output
+```
+
+Instructions:
+
+- Do not rerun shell commands.
+- Do not inspect or summarize other issues.
+- Report whether this issue is ready based only on the JSON above.
+- If `ready` is false, list the blocking errors exactly.
+- If `ready` is true, summarize the parsed owned files, dependencies, validation levels, and any protected files.
+- Do not mutate GitHub labels or comments.
