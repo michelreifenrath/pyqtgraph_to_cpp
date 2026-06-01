@@ -94,6 +94,7 @@ int main()
     static_assert(std::is_same_v<decltype(Point{1.0, 2.0} + Point{3.0, 4.0}), Point>);
     static_assert(std::is_same_v<decltype(Point{1.0, 2.0} * QPointF{3.0, 4.0}), Point>);
     static_assert(std::is_same_v<decltype(2.0 / Point{1.0, 2.0}), Point>);
+    static_assert(std::is_same_v<decltype(-Point{1.0, -2.0}), Point>);
 
     CHECK(Point::coordinateCount() == 2);
 
@@ -122,6 +123,11 @@ int main()
 
     const Point point{6.0, 8.0};
     const Point other{2.0, 4.0};
+    const Point unaryOriginal{1.5, -2.25};
+    const Point unaryNegated = -unaryOriginal;
+    assertPoint(unaryNegated, -1.5, 2.25);
+    assertPoint(unaryOriginal, 1.5, -2.25);
+
     assertPoint(point + other, 8.0, 12.0);
     assertPoint(point - other, 4.0, 4.0);
     assertPoint(point * other, 12.0, 32.0);

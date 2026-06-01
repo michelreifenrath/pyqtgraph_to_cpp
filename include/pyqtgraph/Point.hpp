@@ -29,6 +29,7 @@ public:
     [[nodiscard]] double at(qsizetype index) const;
     void set(qsizetype index, double value);
 
+    [[nodiscard]] Point operator-() const;
     [[nodiscard]] Point operator+(const QPointF& other) const;
     [[nodiscard]] Point operator-(const QPointF& other) const;
     [[nodiscard]] Point operator*(const QPointF& other) const;
