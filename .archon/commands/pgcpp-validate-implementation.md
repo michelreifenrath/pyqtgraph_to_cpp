@@ -17,7 +17,12 @@ Read:
 Required checks when practical:
 ```bash
 git diff --check
-git diff --name-only origin/main...HEAD > "$ARTIFACTS_DIR/changed-files.txt"
+{
+  git diff --name-only origin/main...HEAD
+  git diff --name-only --cached
+  git diff --name-only
+  git ls-files --others --exclude-standard
+} | sort -u | tee "$ARTIFACTS_DIR/changed-files.txt"
 python3 scripts/factory/check_pr_scope.py --issue-file "$ARTIFACTS_DIR/issue.json" --changed-files-file "$ARTIFACTS_DIR/changed-files.txt"
 scripts/gate commit --dry-run
 ```

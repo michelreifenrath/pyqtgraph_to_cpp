@@ -109,6 +109,34 @@ def test_archon_workflows_reference_existing_factory_scripts() -> None:
         assert (ROOT / script).exists()
 
 
+def assert_pre_commit_changed_file_collection(snippet: str, artifact: str) -> None:
+    assert "git diff --name-only origin/main...HEAD" in snippet
+    assert "git diff --name-only --cached" in snippet
+    assert "git diff --name-only\n" in snippet
+    assert "git ls-files --others --exclude-standard" in snippet
+    assert "sort -u" in snippet
+    assert f'tee "{artifact}"' in snippet or f'> "{artifact}"' in snippet
+    assert f'git diff --name-only origin/main...HEAD | tee "{artifact}"' not in snippet
+    assert f'git diff --name-only origin/main...HEAD > "{artifact}"' not in snippet
+
+
+def test_fix_issue_workflow_collects_uncommitted_changed_files_for_scope_gates() -> None:
+    nodes = {node["id"]: node for node in load_workflow("pgcpp-fix-issue.yaml")["nodes"]}
+    assert_pre_commit_changed_file_collection(nodes["pre-pr-gates"]["bash"], "$ARTIFACTS_DIR/changed-files.txt")
+    assert_pre_commit_changed_file_collection(nodes["final-evidence"]["bash"], "$ARTIFACTS_DIR/changed-files-final.txt")
+
+
+def test_pre_commit_command_prompts_collect_uncommitted_changed_files() -> None:
+    command_artifacts = {
+        "pgcpp-fix-issue.md": "$ARTIFACTS_DIR/changed-files.txt",
+        "pgcpp-validate-implementation.md": "$ARTIFACTS_DIR/changed-files.txt",
+        "pgcpp-fix-pr-issues.md": "$ARTIFACTS_DIR/changed-files-after-fix.txt",
+    }
+    for command, artifact in command_artifacts.items():
+        content = (ROOT / ".archon" / "commands" / command).read_text(encoding="utf-8")
+        assert_pre_commit_changed_file_collection(content, artifact)
+
+
 def test_validate_pr_command_documents_governed_auto_merge_verdict() -> None:
     command = (ROOT / ".archon" / "commands" / "pgcpp-validate-pr.md").read_text(encoding="utf-8")
     assert "scripts/factory/apply_pr_verdict.py" in command
@@ -149,6 +177,7 @@ def test_fix_issue_workflow_uses_dark_factory_issue_to_pr_topology() -> None:
         "revalidate-after-self-fix",
         "simplify",
         "final-evidence",
+        "workflow-integrity-audit",
         "report",
     }
     assert expected_nodes <= nodes.keys()
@@ -184,6 +213,9 @@ def test_fix_issue_workflow_uses_dark_factory_issue_to_pr_topology() -> None:
     assert nodes["synthesize-review"]["trigger_rule"] == "one_success"
     assert nodes["self-fix"]["depends_on"] == ["synthesize-review"]
     assert nodes["final-evidence"]["depends_on"] == ["simplify"]
+    assert nodes["workflow-integrity-audit"]["depends_on"] == ["final-evidence"]
+    assert nodes["report"]["depends_on"] == ["workflow-integrity-audit"]
+    assert "workflow-integrity-audit.json" in nodes["workflow-integrity-audit"]["bash"]
 
 
 def test_validate_pr_workflow_is_governed_merge_controller() -> None:
@@ -215,7 +247,9 @@ def test_validate_pr_workflow_is_governed_merge_controller() -> None:
     assert 'payload.get("auto_merge_enabled") is True' in workflow
     assert nodes["deterministic-verdict-guard"]["depends_on"] == ["holdout-review"]
     assert nodes["final-head-check"]["depends_on"] == ["deterministic-verdict-guard"]
-    assert nodes["governed-auto-merge"]["depends_on"] == ["final-head-check"]
+    assert nodes["workflow-integrity-audit"]["depends_on"] == ["final-head-check"]
+    assert nodes["governed-auto-merge"]["depends_on"] == ["workflow-integrity-audit"]
+    assert "workflow-integrity-audit.json" in nodes["workflow-integrity-audit"]["bash"]
 
 
 def test_validate_pr_workflow_has_dark_factory_pass1_fix_pass2_topology() -> None:
@@ -247,6 +281,7 @@ def test_validate_pr_workflow_has_dark_factory_pass1_fix_pass2_topology() -> Non
         "autoreview-merge-gate-pass2",
         "holdout-review",
         "deterministic-verdict-guard",
+        "workflow-integrity-audit",
     }
     assert expected_nodes <= nodes.keys()
 
@@ -274,3 +309,21 @@ def test_validate_pr_workflow_has_dark_factory_pass1_fix_pass2_topology() -> Non
     assert nodes["checkout-pass2-head"]["trigger_rule"] == "one_success"
     assert nodes["holdout-review"]["depends_on"] == ["autoreview-merge-gate-pass2"]
     assert nodes["deterministic-verdict-guard"]["depends_on"] == ["holdout-review"]
+
+
+
+def test_all_pgcpp_workflows_have_integrity_audit_before_final_side_effects() -> None:
+    expected_edges = {
+        "pgcpp-fix-issue.yaml": ("final-evidence", "report"),
+        "pgcpp-validate-pr.yaml": ("final-head-check", "governed-auto-merge"),
+        "pgcpp-issue-ready.yaml": ("apply-label-plan", "summarize-readiness"),
+        "pgcpp-comprehensive-test.yaml": ("optionally-file-deduped-regression-issues", "comprehensive-guidance"),
+    }
+    for workflow_name, (upstream, downstream) in expected_edges.items():
+        nodes = {node["id"]: node for node in load_workflow(workflow_name)["nodes"]}
+        audit = nodes["workflow-integrity-audit"]
+        assert audit["depends_on"] == [upstream]
+        assert nodes[downstream]["depends_on"] == ["workflow-integrity-audit"]
+        assert "workflow-integrity-audit.json" in audit["bash"]
+        assert "workflow-integrity-audit.md" in audit["bash"]
+        assert "workflow-log:error-events" in audit["bash"]

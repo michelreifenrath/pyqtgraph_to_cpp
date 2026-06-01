@@ -133,7 +133,12 @@ nodes:
       set -euo pipefail
       git fetch origin main --quiet 2>/dev/null || true
       git diff --check
-      git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files.txt"
+      {
+        git diff --name-only origin/main...HEAD
+        git diff --name-only --cached
+        git diff --name-only
+        git ls-files --others --exclude-standard
+      } | sort -u | tee "$ARTIFACTS_DIR/changed-files.txt"
       python3 scripts/factory/check_pr_scope.py \
         --issue-file "$ARTIFACTS_DIR/issue.json" \
         --changed-files-file "$ARTIFACTS_DIR/changed-files.txt" | tee "$ARTIFACTS_DIR/scope.json"
@@ -285,7 +290,12 @@ nodes:
       set -euo pipefail
       git fetch origin main --quiet 2>/dev/null || true
       git diff --check
-      git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files-final.txt"
+      {
+        git diff --name-only origin/main...HEAD
+        git diff --name-only --cached
+        git diff --name-only
+        git ls-files --others --exclude-standard
+      } | sort -u | tee "$ARTIFACTS_DIR/changed-files-final.txt"
       python3 scripts/factory/check_pr_scope.py \
         --issue-file "$ARTIFACTS_DIR/issue.json" \
         --changed-files-file "$ARTIFACTS_DIR/changed-files-final.txt" | tee "$ARTIFACTS_DIR/scope-final.json"
@@ -306,9 +316,90 @@ nodes:
     depends_on: [simplify]
     timeout: 1800000
 
+  - id: workflow-integrity-audit
+    bash: |
+      set -euo pipefail
+      cat > "$ARTIFACTS_DIR/.workflow_integrity_audit.py" <<'PY_AUDIT'
+      import json, os, sys
+      from pathlib import Path
+
+      artifacts = Path(os.environ["ARTIFACTS_DIR"])
+      workflow_id = os.environ.get("WORKFLOW_ID", "")
+      required = [x for x in os.environ.get("AUDIT_REQUIRED", "").split(",") if x]
+      status_jsons = [x for x in os.environ.get("AUDIT_STATUS_JSONS", "").split(",") if x]
+      checks = []
+
+      def add(name, ok, details=""):
+          checks.append({"name": name, "ok": bool(ok), "details": str(details)[:1000]})
+
+      def load_json(name):
+          path = artifacts / name
+          try:
+              return json.loads(path.read_text())
+          except Exception as exc:
+              add(f"json:{name}", False, f"invalid json: {exc}")
+              return None
+
+      for name in required:
+          path = artifacts / name
+          add(f"artifact:{name}", path.exists(), "present" if path.exists() else "missing")
+
+      for name in status_jsons:
+          path = artifacts / name
+          add(f"artifact:{name}", path.exists(), "present" if path.exists() else "missing")
+          if not path.exists():
+              continue
+          data = load_json(name)
+          if isinstance(data, dict):
+              if "ok" in data:
+                  add(f"status:{name}:ok", data.get("ok") is True, json.dumps(data, sort_keys=True)[:500])
+              if "visual_ok" in data:
+                  add(f"status:{name}:visual_ok", data.get("visual_ok") is True, json.dumps(data, sort_keys=True)[:500])
+
+      log_candidates = []
+      if workflow_id:
+          roots = [Path("/.archon/workspaces"), Path.cwd() / ".archon" / "logs"]
+          for root in roots:
+              if root.exists():
+                  log_candidates.extend(root.rglob(f"{workflow_id}.jsonl"))
+      if log_candidates:
+          log_path = sorted(log_candidates, key=lambda p: p.stat().st_mtime, reverse=True)[0]
+          events = []
+          for line in log_path.read_text(errors="replace").splitlines():
+              try:
+                  events.append(json.loads(line))
+              except Exception:
+                  pass
+          error_events = [e for e in events if e.get("type") in {"node_error", "workflow_error"}]
+          add("workflow-log:error-events", not error_events, f"{len(error_events)} error events in {log_path}")
+          started = {e.get("node_id") or e.get("nodeId") for e in events if e.get("type") == "node_start"}
+          completed = {e.get("node_id") or e.get("nodeId") for e in events if e.get("type") == "node_complete"}
+          missing = sorted(x for x in started - completed if x and x != "workflow-integrity-audit")
+          add("workflow-log:started-nodes-completed", not missing, ", ".join(missing) or "all started prior nodes completed")
+      else:
+          add("workflow-log:found", False, f"no log found for WORKFLOW_ID={workflow_id!r}")
+
+      ok = all(c["ok"] for c in checks)
+      payload = {"ok": ok, "workflow_id": workflow_id, "required": required, "status_jsons": status_jsons, "checks": checks}
+      (artifacts / "workflow-integrity-audit.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+      lines = ["# Workflow integrity audit", "", f"Overall: {'PASS' if ok else 'FAIL'}", ""]
+      for c in checks:
+          lines.append(f"- [{'x' if c['ok'] else ' '}] {c['name']}: {c['details']}")
+      (artifacts / "workflow-integrity-audit.md").write_text("\n".join(lines) + "\n")
+      print(json.dumps(payload, indent=2, sort_keys=True))
+      if not ok:
+          sys.exit(1)
+      PY_AUDIT
+      python3 "$ARTIFACTS_DIR/.workflow_integrity_audit.py"
+    depends_on: [final-evidence]
+    env:
+      AUDIT_REQUIRED: "issue.json,readiness.json,implementation.md,validation.md,scope-final.json,local-gate-final.txt,factory-evidence.md"
+      AUDIT_STATUS_JSONS: "readiness.json,scope-final.json"
+    timeout: 120000
+
   - id: report
     command: pgcpp-issue-completion-report
-    depends_on: [final-evidence]
+    depends_on: [workflow-integrity-audit]
     context: fresh
     effort: medium
     idle_timeout: 300000

@@ -31,7 +31,12 @@ Do not read implementation plans, coder rationale, PR comments, review threads, 
 
 ```bash
 git diff --check
-git diff --name-only origin/main...HEAD > "$ARTIFACTS_DIR/changed-files-after-fix.txt"
+{
+  git diff --name-only origin/main...HEAD
+  git diff --name-only --cached
+  git diff --name-only
+  git ls-files --others --exclude-standard
+} | sort -u | tee "$ARTIFACTS_DIR/changed-files-after-fix.txt"
 python3 scripts/factory/check_pr_scope.py --issue-file "$ARTIFACTS_DIR/issue.json" --changed-files-file "$ARTIFACTS_DIR/changed-files-after-fix.txt"
 scripts/gate merge --base origin/main --reports-dir "$ARTIFACTS_DIR/gate-fix"
 ```
