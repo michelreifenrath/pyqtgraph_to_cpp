@@ -69,6 +69,18 @@ def test_check_issue_ready_accepts_complete_issue(tmp_path: Path) -> None:
     ]
 
 
+def test_check_issue_ready_rejects_unresolved_dependency(tmp_path: Path) -> None:
+    issue = tmp_path / "unresolved.md"
+    issue.write_text(READY_ISSUE.replace("none", "#123 unresolved", 1), encoding="utf-8")
+
+    result = run_script("scripts/factory/check_issue_ready.py", "--issue-file", str(issue))
+
+    assert result.returncode != 0
+    payload = json.loads(result.stdout)
+    assert payload["ready"] is False
+    assert any("dependencies" in error for error in payload["errors"])
+
+
 def test_check_issue_ready_rejects_missing_tdd_and_optional_validation(tmp_path: Path) -> None:
     issue_text = READY_ISSUE.replace("## TDD plan\n- Add a failing widget regression test for title text.\n\n", "")
     issue_text = issue_text.replace("visual: not_applicable", "visual: optional")

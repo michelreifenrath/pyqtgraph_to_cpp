@@ -39,7 +39,10 @@ def dependencies_ready(text: str) -> tuple[bool, list[str]]:
         return True, deps
     for dep in deps:
         lowered = dep.lower()
-        if not re.search(r"#\d+", dep) or "resolved" not in lowered:
+        has_issue_reference = re.search(r"#\d+", dep)
+        explicitly_resolved = re.search(r"\bresolved\b", lowered)
+        explicitly_unresolved = re.search(r"\bunresolved\b|\bnot\s+resolved\b", lowered)
+        if not has_issue_reference or not explicitly_resolved or explicitly_unresolved:
             return False, deps
     return True, deps
 
