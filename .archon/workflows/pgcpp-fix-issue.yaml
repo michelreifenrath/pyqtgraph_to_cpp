@@ -37,6 +37,15 @@ nodes:
     depends_on: [fetch-issue]
     timeout: 30000
 
+  - id: claim-issue
+    bash: |
+      set -euo pipefail
+      ISSUE_NUM=$(cat "$ARTIFACTS_DIR/.issue-number")
+      gh issue edit "$ISSUE_NUM" --add-label "ai:claimed" 2>&1 || true
+      echo "Claimed issue #$ISSUE_NUM for autonomous implementation"
+    depends_on: [verify-readiness]
+    timeout: 30000
+
   - id: fetch-governance
     bash: |
       set -euo pipefail
@@ -47,7 +56,7 @@ nodes:
           echo
         done
       } | tee "$ARTIFACTS_DIR/governance.txt"
-    depends_on: [verify-readiness]
+    depends_on: [claim-issue]
     timeout: 30000
 
   - id: classify-issue

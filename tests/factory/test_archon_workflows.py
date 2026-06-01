@@ -154,6 +154,7 @@ def test_fix_issue_workflow_uses_dark_factory_issue_to_pr_topology() -> None:
         "extract-issue-number",
         "fetch-issue",
         "verify-readiness",
+        "claim-issue",
         "fetch-governance",
         "classify-issue",
         "repo-research",
@@ -207,6 +208,9 @@ def test_fix_issue_workflow_uses_dark_factory_issue_to_pr_topology() -> None:
     for node_id, command in expected_commands.items():
         assert nodes[node_id]["command"] == command
 
+    assert nodes["claim-issue"]["depends_on"] == ["verify-readiness"]
+    assert nodes["fetch-governance"]["depends_on"] == ["claim-issue"]
+    assert "ai:claimed" in nodes["claim-issue"]["bash"]
     assert nodes["bridge-artifacts"]["trigger_rule"] == "one_success"
     assert nodes["implement"]["depends_on"] == ["bridge-artifacts"]
     assert nodes["create-pr"]["depends_on"] == ["pre-pr-gates"]
