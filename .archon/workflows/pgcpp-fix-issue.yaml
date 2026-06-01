@@ -1,0 +1,23 @@
+name: pgcpp-fix-issue
+description: |
+  Implement exactly one Archon-ready PyQtGraph C++ issue in an isolated
+  worktree. The issue argument must be a local issue markdown or JSON file.
+  Normal implementation should use Composer 2.5 when the local Archon runner
+  exposes it; this workflow does not push, merge, or mutate GitHub.
+worktree:
+  enabled: true
+nodes:
+  - id: verify-readiness
+    bash: python3 scripts/factory/check_issue_ready.py --issue-file "$ARGUMENTS"
+    timeout: 30000
+
+  - id: implement
+    command: pgcpp-fix-issue
+    depends_on: [verify-readiness]
+    context: fresh
+    idle_timeout: 600000
+
+  - id: local-gate-plan
+    bash: scripts/gate commit --dry-run
+    depends_on: [implement]
+    timeout: 30000

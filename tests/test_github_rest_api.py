@@ -116,3 +116,41 @@ def test_list_ready_issues_uses_rest_api_and_filters_active_labels(monkeypatch):
     issues = github.list_ready_issues(_config(), limit=10)
 
     assert [issue.number for issue in issues] == [1]
+
+
+def test_list_ready_issues_prioritizes_product_validation_classes_before_deferable(monkeypatch):
+    def fake_run_json(args: list[str], **kwargs):
+        assert "per_page=100" in args
+        return [
+            {
+                "number": 1,
+                "title": "[P0.03] Dashboard infra",
+                "body": "**Validation class:** manifest-infra\n",
+                "html_url": "https://github.com/owner/repo/issues/1",
+                "labels": [{"name": "ai:ready"}],
+                "user": {"login": "michel"},
+            },
+            {
+                "number": 2,
+                "title": "[P2.05] Image bridge",
+                "body": "**Validation class:** pixel-image\n",
+                "html_url": "https://github.com/owner/repo/issues/2",
+                "labels": [{"name": "ai:ready"}],
+                "user": {"login": "michel"},
+            },
+            {
+                "number": 3,
+                "title": "[P2.10] Unknown class",
+                "body": "body",
+                "html_url": "https://github.com/owner/repo/issues/3",
+                "labels": [{"name": "ai:ready"}],
+                "user": {"login": "michel"},
+            },
+        ]
+
+    monkeypatch.setattr(github, "ensure_gh_authenticated", lambda: None)
+    monkeypatch.setattr(github, "run_json", fake_run_json)
+
+    issues = github.list_ready_issues(_config(), limit=2)
+
+    assert [issue.number for issue in issues] == [2, 3]

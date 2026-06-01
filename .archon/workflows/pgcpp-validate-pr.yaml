@@ -1,0 +1,27 @@
+name: pgcpp-validate-pr
+description: |
+  Locally validate a proposed PR/diff against one issue. Use with a local issue
+  markdown or JSON file; changed files are read from git diff against
+  origin/main. Dry-run by default and never executes gh merge.
+worktree:
+  enabled: false
+nodes:
+  - id: changed-files
+    bash: git diff --name-only origin/main...HEAD > "$ARTIFACTS_DIR/changed-files.txt" && cat "$ARTIFACTS_DIR/changed-files.txt"
+    timeout: 30000
+
+  - id: scope-check
+    bash: python3 scripts/factory/check_pr_scope.py --issue-file "$ARGUMENTS" --changed-files-file "$ARTIFACTS_DIR/changed-files.txt"
+    depends_on: [changed-files]
+    timeout: 30000
+
+  - id: holdout-review
+    command: pgcpp-validate-pr
+    depends_on: [scope-check]
+    context: fresh
+    idle_timeout: 600000
+
+  - id: local-gate-plan
+    bash: scripts/gate commit --dry-run
+    depends_on: [holdout-review]
+    timeout: 30000

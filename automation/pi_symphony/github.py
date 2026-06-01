@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any
 from urllib.parse import quote
 
@@ -37,6 +38,50 @@ LABELS: dict[str, tuple[str, str]] = {
     "tag:plot": ("bfdadc", "Plotting widget/item work."),
     "tag:examples": ("bfdadc", "Examples and smoke validation work."),
 }
+
+PRODUCT_VALIDATION_CLASSES = {
+    "core-oracle",
+    "api-runtime",
+    "interaction-ui",
+    "visual-render",
+    "opengl-render",
+    "exporter-io",
+    "pixel-image",
+    "resource-assets",
+    "package-consumer",
+}
+
+DEFERABLE_VALIDATION_CLASSES = {
+    "rollup-final",
+    "manifest-infra",
+    "script-infra",
+    "decision-doc",
+    "example-port",
+    "performance",
+    "review-approval",
+}
+
+_VALIDATION_CLASS_RE = re.compile(r"^\*\*Validation class:\*\*\s*(?P<class>[^\n]+)", re.MULTILINE)
+
+
+def validation_class(issue: Issue) -> str:
+    match = _VALIDATION_CLASS_RE.search(issue.body or "")
+    return match.group("class").strip() if match else ""
+
+
+def automation_priority(issue: Issue) -> int:
+    """Return the Kanban/GitHub intake priority for an issue.
+
+    Product-surface porting work should be claimed before bookkeeping,
+    decision, final-rollup, and script-infra issues. Unknown classes remain in
+    the middle so a missing class does not starve an issue indefinitely.
+    """
+    issue_class = validation_class(issue)
+    if issue_class in PRODUCT_VALIDATION_CLASSES:
+        return 100
+    if issue_class in DEFERABLE_VALIDATION_CLASSES:
+        return 0
+    return 50
 
 
 def ensure_gh_authenticated() -> None:
@@ -90,7 +135,7 @@ def list_ready_issues(config: WorkflowConfig, *, limit: int | None = None) -> li
             "-f",
             f"labels={labels.ready_label}",
             "-f",
-            f"per_page={min(limit or config.agent.max_concurrent_issues, 100)}",
+            "per_page=100",
             "-f",
             "sort=created",
             "-f",
@@ -106,6 +151,7 @@ def list_ready_issues(config: WorkflowConfig, *, limit: int | None = None) -> li
         if any(label in label_names for label in (labels.claimed_label, labels.blocked_label, labels.rework_label, labels.ignore_label, labels.done_label)):
             continue
         candidates.append(issue)
+    candidates.sort(key=automation_priority, reverse=True)
     if limit is not None:
         candidates = candidates[:limit]
     return candidates

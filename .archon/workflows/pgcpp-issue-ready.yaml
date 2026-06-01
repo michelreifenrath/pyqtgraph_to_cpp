@@ -1,0 +1,18 @@
+name: pgcpp-issue-ready
+description: |
+  Check whether a local issue file is small, testable, dependency-clear, and
+  ready for autonomous PyQtGraph C++ implementation. Use with a path to an
+  issue markdown or issue JSON file. Dry-run only; performs no GitHub mutation.
+worktree:
+  enabled: false
+nodes:
+  - id: check-readiness
+    bash: python3 scripts/factory/check_issue_ready.py --issue-file "$ARGUMENTS"
+    timeout: 30000
+
+  - id: summarize-readiness
+    command: pgcpp-issue-ready
+    depends_on: [check-readiness]
+    trigger_rule: all_done
+    context: fresh
+    idle_timeout: 300000

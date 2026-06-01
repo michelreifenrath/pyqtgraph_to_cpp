@@ -4,6 +4,7 @@ import json
 import os
 import shlex
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -52,6 +53,31 @@ def _subprocess_env(overrides: dict[str, str] | None = None) -> dict[str, str]:
     return merged_env
 
 
+def _render_args(args: list[str] | str) -> str:
+    return args if isinstance(args, str) else " ".join(shlex.quote(str(a)) for a in args)
+
+
+def _is_gh_command(args: list[str] | str) -> bool:
+    return not isinstance(args, str) and bool(args) and str(args[0]) == "gh"
+
+
+def _is_requires_auth_401(output: str) -> bool:
+    normalized = output.lower()
+    return "requires authentication" in normalized or "http 401" in normalized or '"status":"401"' in normalized
+
+
+def _gh_auth_probe(env: dict[str, str]) -> bool:
+    probe = subprocess.run(
+        ["gh", "api", "user", "--jq", ".login"],
+        timeout=30,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+    )
+    return probe.returncode == 0 and bool((probe.stdout or "").strip())
+
+
 def run(
     args: list[str] | str,
     *,
@@ -61,21 +87,34 @@ def run(
     env: dict[str, str] | None = None,
     shell: bool = False,
 ) -> CommandResult:
-    completed = subprocess.run(
-        args,
-        cwd=str(cwd) if cwd is not None else None,
-        timeout=timeout,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=_subprocess_env(env),
-        shell=shell,
-    )
-    result = CommandResult(args=args, returncode=completed.returncode, stdout=completed.stdout, stderr=completed.stderr)
-    if check and completed.returncode != 0:
-        rendered = args if isinstance(args, str) else " ".join(shlex.quote(str(a)) for a in args)
-        raise RuntimeError(f"command failed ({completed.returncode}): {rendered}\n{result.combined_output}")
-    return result
+    merged_env = _subprocess_env(env)
+    attempts = 0
+    while True:
+        completed = subprocess.run(
+            args,
+            cwd=str(cwd) if cwd is not None else None,
+            timeout=timeout,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=merged_env,
+            shell=shell,
+        )
+        result = CommandResult(args=args, returncode=completed.returncode, stdout=completed.stdout, stderr=completed.stderr)
+        if (
+            check
+            and completed.returncode != 0
+            and _is_gh_command(args)
+            and _is_requires_auth_401(result.combined_output)
+            and attempts < 3
+            and _gh_auth_probe(merged_env)
+        ):
+            attempts += 1
+            time.sleep(min(30, 2**attempts))
+            continue
+        if check and completed.returncode != 0:
+            raise RuntimeError(f"command failed ({completed.returncode}): {_render_args(args)}\n{result.combined_output}")
+        return result
 
 
 def run_json(args: list[str], *, cwd: str | Path | None = None, timeout: int = 300) -> Any:

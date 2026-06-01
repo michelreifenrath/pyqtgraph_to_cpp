@@ -10,3 +10,6 @@ __pycache__/
 htmlcov/
 .coverage
 build/
+
+.archon/state/
+.archon/.env

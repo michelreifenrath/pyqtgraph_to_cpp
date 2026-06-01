@@ -1,0 +1,27 @@
+name: pgcpp-comprehensive-test
+description: |
+  Run the local post-merge smoke plan and, when given regression metadata JSON,
+  render a dry-run regression issue body. This starts with local smoke only;
+  nightly/weekly broad self-healing is intentionally deferred.
+worktree:
+  enabled: false
+nodes:
+  - id: smoke-plan
+    bash: scripts/gate commit --dry-run
+    timeout: 30000
+
+  - id: render-regression-issue
+    bash: |
+      if [ -n "$ARGUMENTS" ]; then
+        python3 scripts/factory/file_regression_issue.py --input "$ARGUMENTS"
+      else
+        echo "No regression metadata supplied; skipping issue rendering."
+      fi
+    depends_on: [smoke-plan]
+    timeout: 30000
+
+  - id: regression-guidance
+    command: pgcpp-comprehensive-test
+    depends_on: [render-regression-issue]
+    context: fresh
+    idle_timeout: 300000

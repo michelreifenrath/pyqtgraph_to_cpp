@@ -13,6 +13,7 @@ from automation.pi_symphony.config import LoadedWorkflow, WorkflowConfig
 from automation.pi_symphony.github import (
     Issue,
     add_labels,
+    automation_priority,
     comment_issue,
     create_pr,
     ensure_labels,
@@ -310,6 +311,7 @@ def create_issue_task_graph(config: WorkflowConfig, repo_root: Path, issue: Issu
         "branch": branch_name(issue.number, issue.title),
         "workflow": "pi-symphony-v1",
     }
+    priority = automation_priority(issue)
     implement = _kanban_create(
         config,
         repo_root,
@@ -319,6 +321,7 @@ def create_issue_task_graph(config: WorkflowConfig, repo_root: Path, issue: Issu
         body=_task_body(config, issue, "implement", common),
         idempotency_key=f"{config.tracker.repo}#{issue.number}:implement",
         metadata=common | {"phase": "implement"},
+        priority=priority,
     )
     review = _kanban_create(
         config,
@@ -330,6 +333,7 @@ def create_issue_task_graph(config: WorkflowConfig, repo_root: Path, issue: Issu
         idempotency_key=f"{config.tracker.repo}#{issue.number}:review",
         parents=[implement],
         metadata=common | {"phase": "review"},
+        priority=priority,
     )
     release = _kanban_create(
         config,
@@ -341,6 +345,7 @@ def create_issue_task_graph(config: WorkflowConfig, repo_root: Path, issue: Issu
         idempotency_key=f"{config.tracker.repo}#{issue.number}:release",
         parents=[review],
         metadata=common | {"phase": "release"},
+        priority=priority,
     )
     return {"implement": implement, "review": review, "release": release}
 
@@ -357,6 +362,7 @@ def create_rework_task_graph(config: WorkflowConfig, repo_root: Path, issue: Iss
         "workflow": "pi-symphony-v1",
         "rework_attempt": attempt,
     }
+    priority = automation_priority(issue)
     rework = _kanban_create(
         config,
         repo_root,
@@ -366,6 +372,7 @@ def create_rework_task_graph(config: WorkflowConfig, repo_root: Path, issue: Iss
         body=_task_body(config, issue, "rework", common, failure_reason=reason),
         idempotency_key=f"{config.tracker.repo}#{issue.number}:rework:{attempt}",
         metadata=common | {"phase": "rework"},
+        priority=priority,
     )
     review = _kanban_create(
         config,
@@ -377,6 +384,7 @@ def create_rework_task_graph(config: WorkflowConfig, repo_root: Path, issue: Iss
         idempotency_key=f"{config.tracker.repo}#{issue.number}:review:{attempt}",
         parents=[rework],
         metadata=common | {"phase": "review"},
+        priority=priority,
     )
     release = _kanban_create(
         config,
@@ -388,6 +396,7 @@ def create_rework_task_graph(config: WorkflowConfig, repo_root: Path, issue: Iss
         idempotency_key=f"{config.tracker.repo}#{issue.number}:release:{attempt}",
         parents=[review],
         metadata=common | {"phase": "release"},
+        priority=priority,
     )
     return {"rework": rework, "review": review, "release": release}
 
@@ -449,6 +458,7 @@ def _kanban_create(
     idempotency_key: str,
     metadata: dict[str, Any],
     parents: list[str] | None = None,
+    priority: int = 0,
 ) -> str:
     cmd = [
         "hermes",
@@ -471,6 +481,8 @@ def _kanban_create(
         "pi-symphony",
         "--max-retries",
         "1",
+        "--priority",
+        str(priority),
         "--json",
     ]
     for parent in parents or []:
