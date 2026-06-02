@@ -22,6 +22,8 @@ Unsupported combinations return `std::nullopt` (e.g. null data, zero extents, 1/
 
 All accepted inputs are copied into a contiguous QImage-owned buffer (upstream `numpy.ascontiguousarray` semantics). Legacy `makeQImage` (BGR/BGRA, transpose/copy options) is unchanged.
 
+The optional-return `tryMakeQImage` declarations are visible only when `<QImage>` is available, preserving no-Qt header inclusion without instantiating `std::optional<QImage>` on a forward declaration.
+
 ## Focused fixtures (embedded in `tests/core/test_functions_qimage.cpp`)
 
 - Grayscale `uint8` `2×3`: pixels `(0,0)=10`, `(2,0)=30`, `(0,1)=40`, `(2,1)=60`

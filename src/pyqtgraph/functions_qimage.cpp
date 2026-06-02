@@ -9,7 +9,6 @@
 #include <QColor>
 #include <QImage>
 
-#include <array>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
@@ -131,19 +130,19 @@ void setPixelFromBgra(QImage& image,
     return wrapQImageData(imageData.data(), width, height, rowStride, format);
 }
 
-[[nodiscard]] bool hasTryMakeExtents(const std::array<std::size_t, 2>& shape)
-{
-    if (shape[0] == 0 || shape[1] == 0) {
-        return false;
-    }
-    return shape[0] <= static_cast<std::size_t>(std::numeric_limits<int>::max())
-        && shape[1] <= static_cast<std::size_t>(std::numeric_limits<int>::max());
-}
-
 template <typename T, std::size_t Rank>
 [[nodiscard]] bool hasTryMakeData(const core::ArrayView<const T, Rank>& imageData)
 {
-    return imageData.data() != nullptr && hasTryMakeExtents({imageData.shape()[0], imageData.shape()[1]});
+    if (imageData.data() == nullptr) {
+        return false;
+    }
+    const std::size_t height = imageData.shape()[0];
+    const std::size_t width = imageData.shape()[1];
+    if (height == 0 || width == 0) {
+        return false;
+    }
+    return height <= static_cast<std::size_t>(std::numeric_limits<int>::max())
+        && width <= static_cast<std::size_t>(std::numeric_limits<int>::max());
 }
 
 [[nodiscard]] QImage allocateQImage(int width, int height, QImage::Format format)
