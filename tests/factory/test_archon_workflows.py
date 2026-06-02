@@ -144,6 +144,8 @@ def test_validate_pr_command_documents_governed_auto_merge_verdict() -> None:
     assert "--allow-merge" in command
     assert "--match-head-commit" in command
     assert "GPT-5.5 semantic visual-review" in command
+    assert '"findings"' in command
+    assert "up to three short blocking or notable findings" in command
 
 
 def test_fix_issue_workflow_uses_dark_factory_issue_to_pr_topology() -> None:
@@ -253,6 +255,10 @@ def test_validate_pr_workflow_is_governed_merge_controller() -> None:
     assert nodes["final-head-check"]["depends_on"] == ["deterministic-verdict-guard"]
     assert nodes["workflow-integrity-audit"]["depends_on"] == ["final-head-check"]
     assert nodes["governed-auto-merge"]["depends_on"] == ["workflow-integrity-audit"]
+    assert nodes["post-pr-audit-comment"]["depends_on"] == ["governed-auto-merge"]
+    assert "scripts/factory/post_pr_audit_comment.py" in nodes["post-pr-audit-comment"]["bash"]
+    assert "--post" in nodes["post-pr-audit-comment"]["bash"]
+    assert "pr-audit-comment-status.json" in nodes["post-pr-audit-comment"]["bash"]
     assert "workflow-integrity-audit.json" in nodes["workflow-integrity-audit"]["bash"]
 
 
@@ -286,6 +292,7 @@ def test_validate_pr_workflow_has_dark_factory_pass1_fix_pass2_topology() -> Non
         "holdout-review",
         "deterministic-verdict-guard",
         "workflow-integrity-audit",
+        "post-pr-audit-comment",
     }
     assert expected_nodes <= nodes.keys()
 
@@ -313,6 +320,7 @@ def test_validate_pr_workflow_has_dark_factory_pass1_fix_pass2_topology() -> Non
     assert nodes["checkout-pass2-head"]["trigger_rule"] == "one_success"
     assert nodes["holdout-review"]["depends_on"] == ["autoreview-merge-gate-pass2"]
     assert nodes["deterministic-verdict-guard"]["depends_on"] == ["holdout-review"]
+    assert nodes["post-pr-audit-comment"]["depends_on"] == ["governed-auto-merge"]
 
 
 
