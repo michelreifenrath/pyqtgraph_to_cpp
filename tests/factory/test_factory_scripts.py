@@ -562,3 +562,71 @@ def test_scope_normalizes_owned_paths(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+
+def _write_pass2_fast_path_artifacts(path: Path) -> None:
+    sha = "a" * 40
+    base = "b" * 40
+    (path / ".head-sha").write_text(sha, encoding="utf-8")
+    (path / ".head-sha-pass1").write_text(sha, encoding="utf-8")
+    (path / ".base-sha-pass1").write_text(base, encoding="utf-8")
+    (path / ".base-sha-pass2").write_text(base, encoding="utf-8")
+    (path / "pass1-summary.json").write_text(
+        json.dumps({"action": "pass", "pass": True, "requires_human_review": False, "risky": False, "protected_files_changed": False, "findings": []}),
+        encoding="utf-8",
+    )
+    for name in [
+        "readiness-status-pass1.json",
+        "scope-status-pass1.json",
+        "diff-check-status-pass1.json",
+        "local-gate-status-pass1.json",
+        "autoreview-status-pass1.json",
+    ]:
+        (path / name).write_text(json.dumps({"ok": True, "returncode": 0}), encoding="utf-8")
+    for name in ["review-pass1-cpp-qt.json", "review-pass1-oracle-visual.json", "review-pass1-scope-governance.json"]:
+        (path / name).write_text(
+            json.dumps({"pass": True, "requires_human_review": False, "risky": False, "protected_files_changed": False, "findings": []}),
+            encoding="utf-8",
+        )
+    (path / "visual-oracle-pass1.json").write_text(json.dumps({"visual_ok": True}), encoding="utf-8")
+    (path / "fix-attempt.json").write_text(json.dumps({"attempted": False}), encoding="utf-8")
+
+
+def test_pass2_agentic_fast_path_skips_when_pass1_clean_and_refs_unchanged(tmp_path: Path) -> None:
+    _write_pass2_fast_path_artifacts(tmp_path)
+
+    result = run_script("scripts/factory/pass2_agentic_fast_path.py", "--artifacts-dir", str(tmp_path))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["skip"] is True
+    assert "unchanged" in payload["reason"]
+    assert json.loads((tmp_path / "pass2-agentic-fast-path.json").read_text())["skip"] is True
+
+
+def test_pass2_agentic_fast_path_runs_when_pass1_has_findings(tmp_path: Path) -> None:
+    _write_pass2_fast_path_artifacts(tmp_path)
+    summary = json.loads((tmp_path / "pass1-summary.json").read_text())
+    summary["findings"] = ["public API exposes unwanted type"]
+    (tmp_path / "pass1-summary.json").write_text(json.dumps(summary), encoding="utf-8")
+
+    result = run_script("scripts/factory/pass2_agentic_fast_path.py", "--artifacts-dir", str(tmp_path))
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["skip"] is False
+    assert "findings" in payload["reason"]
+
+
+def test_pass2_agentic_fast_path_runs_when_base_changes(tmp_path: Path) -> None:
+    _write_pass2_fast_path_artifacts(tmp_path)
+    (tmp_path / ".base-sha-pass2").write_text("c" * 40, encoding="utf-8")
+
+    result = run_script("scripts/factory/pass2_agentic_fast_path.py", "--artifacts-dir", str(tmp_path))
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["skip"] is False
+    assert "origin/main changed" in payload["reason"]
