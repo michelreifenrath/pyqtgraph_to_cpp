@@ -48,6 +48,14 @@ FINAL_ACCEPTANCE_EVIDENCE_PATH = Path(
 )
 STATUS_VALUES = {"ported", "partial", "not_started"}
 COMPLETION_VALUES = {"complete", "partial", "missing"}
+COMPLETION_EVIDENCE_TYPES = {
+    "focused_test",
+    "numeric_oracle",
+    "visual_proof",
+    "interaction_proof",
+    "completion_report",
+    "approved_equivalence",
+}
 LEVEL_VALUES = {"required", "optional", "not_applicable"}
 GPT_VISUAL_VALUES = {"required_for_pr", "optional", "not_applicable"}
 TARGET_PATH_KEYS = {
@@ -265,6 +273,42 @@ def complete_target_path_errors(
     return errors
 
 
+def completion_evidence_errors(
+    section: str, index: int, record: dict[str, Any], root: Path
+) -> list[str]:
+    evidence = record.get("completion_evidence")
+    prefix = f"{section}[{index}] complete metadata"
+    if not isinstance(evidence, dict):
+        return [f"{prefix} missing completion_evidence"]
+    if set(evidence) != {"type", "artifact_path"}:
+        keys = ", ".join(sorted(str(key) for key in evidence))
+        return [f"{prefix} completion_evidence has invalid keys: {keys}"]
+    evidence_type = evidence["type"]
+    if not isinstance(evidence_type, str) or evidence_type not in COMPLETION_EVIDENCE_TYPES:
+        return [f"{prefix} completion_evidence type is invalid: {evidence_type}"]
+    artifact = evidence["artifact_path"]
+    if not isinstance(artifact, str) or not artifact:
+        return [f"{prefix} completion_evidence artifact_path must be a non-empty string"]
+    relative_path = Path(artifact)
+    if relative_path.is_absolute():
+        return [f"{prefix} completion_evidence artifact_path must be relative: {artifact}"]
+    root_path = root.resolve()
+    artifact_path = (root_path / relative_path).resolve()
+    if not artifact_path.is_relative_to(root_path):
+        return [f"{prefix} completion_evidence artifact_path escapes repository root: {artifact}"]
+    if not artifact_path.is_file():
+        return [f"{prefix} completion_evidence artifact_path missing: {artifact}"]
+    return []
+
+
+def complete_metadata_errors(
+    section: str, index: int, record: dict[str, Any], root: Path
+) -> list[str]:
+    return complete_target_path_errors(section, index, record, root) + completion_evidence_errors(
+        section, index, record, root
+    )
+
+
 def section_counts(
     section: str, records: list[dict[str, Any]], root: Path
 ) -> dict[str, int]:
@@ -277,7 +321,7 @@ def section_counts(
         if (
             record.get("status") == "ported"
             and record.get("completion") == "complete"
-            and target_paths_exist
+            and not complete_metadata_errors(section, index, record, root)
         ):
             complete += 1
     return {
@@ -403,24 +447,25 @@ def final_artifact_path_errors(prefix: str, artifact_paths: Any, root: Path) -> 
     return errors
 
 
-def complete_example_paths(manifest: dict[str, Any]) -> set[str]:
+def complete_example_paths(manifest: dict[str, Any], root: Path) -> set[str]:
     examples = manifest.get("examples")
     if not isinstance(examples, list):
         return set()
     return {
         example["upstream_path"]
-        for example in examples
+        for index, example in enumerate(examples)
         if isinstance(example, dict)
         and isinstance(example.get("upstream_path"), str)
         and example.get("status") == "ported"
         and example.get("completion") == "complete"
+        and not complete_metadata_errors("examples", index, example, root)
     }
 
 
 def validate_example_proofs(record: Any, manifest: dict[str, Any], root: Path) -> list[str]:
     if not isinstance(record, dict):
         return []
-    complete_examples = complete_example_paths(manifest)
+    complete_examples = complete_example_paths(manifest, root)
     proofs = record.get("examples")
     if not isinstance(proofs, list):
         return [
@@ -459,7 +504,7 @@ def final_acceptance_counts(manifest: dict[str, Any], root: Path) -> tuple[int, 
     evidence_path = root / FINAL_ACCEPTANCE_EVIDENCE_PATH
     data, errors = load_final_acceptance_evidence(evidence_path)
     if errors or data is None or not isinstance(data.get("criteria"), dict):
-        return 0, 0, len(complete_example_paths(manifest))
+        return 0, 0, len(complete_example_paths(manifest, root))
 
     criteria = data["criteria"]
     passed_criteria = 0
@@ -480,14 +525,17 @@ def final_acceptance_counts(manifest: dict[str, Any], root: Path) -> tuple[int, 
         if isinstance(example_validation_runs, dict)
         else []
     )
+    complete_examples = complete_example_paths(manifest, root)
     passed_proofs = 0
     if isinstance(proofs, list):
         passed_proofs = sum(
             1
             for proof in proofs
-            if isinstance(proof, dict) and proof.get("status") == "passed"
+            if isinstance(proof, dict)
+            and proof.get("status") == "passed"
+            and proof.get("upstream_path") in complete_examples
         )
-    return passed_criteria, passed_proofs, len(complete_example_paths(manifest))
+    return passed_criteria, passed_proofs, len(complete_examples)
 
 
 def complete_target_errors(manifest: dict[str, Any], root: Path) -> list[str]:
@@ -501,7 +549,7 @@ def complete_target_errors(manifest: dict[str, Any], root: Path) -> list[str]:
                 continue
             if record.get("status") != "ported" or record.get("completion") != "complete":
                 continue
-            errors.extend(complete_target_path_errors(section, index, record, root))
+            errors.extend(complete_metadata_errors(section, index, record, root))
     return errors
 
 

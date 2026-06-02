@@ -13,10 +13,25 @@ def write_manifest(
     source_completion="complete",
     summary_source_count=1,
     include_status=True,
+    include_completion_evidence=True,
 ) -> None:
+    def evidence_lines(path: str) -> str:
+        if not include_completion_evidence:
+            return ""
+        return f"""
+  completion_evidence:
+    type: focused_test
+    artifact_path: {path}"""
+
+    source_evidence = ""
+    if include_status and source_completion == "complete":
+        source_evidence = evidence_lines("tests/evidence/source.txt")
     status_lines = ""
     if include_status:
-        status_lines = f"\n  status: {source_status}\n  completion: {source_completion}"
+        status_lines = (
+            f"\n  status: {source_status}\n  completion: {source_completion}"
+            f"{source_evidence}"
+        )
     (root / "port_manifest.yaml").write_text(
         f"""
 summary:
@@ -35,19 +50,19 @@ examples:
   name: Foo
   category: root
   status: ported
-  completion: complete
+  completion: complete{evidence_lines("tests/evidence/example.txt")}
 example_assets:
 - upstream_path: pyqtgraph/examples/Foo.ui
   target_path: examples/Foo.ui
   status: ported
-  completion: complete
+  completion: complete{evidence_lines("tests/evidence/asset.txt")}
 classes:
 - class_name: Foo
   upstream_path: pyqtgraph/Foo.py
   target_header_path: include/pyqtgraph/Foo.hpp
   target_source_path: src/pyqtgraph/Foo.cpp
   status: ported
-  completion: complete
+  completion: complete{evidence_lines("tests/evidence/class.txt")}
 example_validation_levels:
 - upstream_path: pyqtgraph/examples/Foo.py
   name: Foo
@@ -90,12 +105,44 @@ def test_P0_09_normal_summary_output_passes(tmp_path: Path) -> None:
     )
 
 
+def test_P11_02_existing_targets_without_evidence_are_not_complete(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path, include_completion_evidence=False)
+    create_complete_target_files(tmp_path)
+
+    result = run_summary(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert "source_files: total=1 ported=1 complete=0 incomplete=1" in result.stdout
+    assert "examples: total=1 ported=1 complete=0 incomplete=1" in result.stdout
+    assert "classes: total=1 ported=1 complete=0 incomplete=1" in result.stdout
+
+
+def test_P11_02_final_example_proofs_ignore_incomplete_examples(
+    tmp_path: Path,
+) -> None:
+    write_manifest(tmp_path, include_completion_evidence=False)
+    create_complete_target_files(tmp_path)
+    create_final_acceptance_evidence(tmp_path)
+
+    result = run_summary(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert "examples: total=1 ported=1 complete=0 incomplete=1" in result.stdout
+    assert "final_acceptance_evidence: criteria=8 passed=7 example_proofs=0/0" in result.stdout
+
+
 def create_complete_target_files(root: Path) -> None:
     for relative_path in (
         "include/pyqtgraph/Foo.hpp",
         "src/pyqtgraph/Foo.cpp",
         "examples/Foo.cpp",
         "examples/Foo.ui",
+        "tests/evidence/source.txt",
+        "tests/evidence/example.txt",
+        "tests/evidence/asset.txt",
+        "tests/evidence/class.txt",
     ):
         path = root / relative_path
         path.parent.mkdir(parents=True, exist_ok=True)

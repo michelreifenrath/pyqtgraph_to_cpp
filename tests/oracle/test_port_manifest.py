@@ -122,7 +122,8 @@ def expected_source_files() -> list[dict[str, str]]:
             "target_source_path": "src/pyqtgraph/PlotData.cpp",
             "subsystem": "core",
             "status": "ported",
-            "completion": "complete",
+            "completion": "missing",
+            "target_presence": "all",
         },
         {
             "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
@@ -130,7 +131,8 @@ def expected_source_files() -> list[dict[str, str]]:
             "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
             "subsystem": "widgets",
             "status": "partial",
-            "completion": "partial",
+            "completion": "missing",
+            "target_presence": "some",
         },
     ]
 
@@ -146,7 +148,8 @@ def expected_classes() -> list[dict[str, object]]:
             "bases": ["object"],
             "line": 1,
             "status": "ported",
-            "completion": "complete",
+            "completion": "missing",
+            "target_presence": "all",
         },
         {
             "class_name": "HelperMixin",
@@ -157,7 +160,8 @@ def expected_classes() -> list[dict[str, object]]:
             "bases": [],
             "line": 1,
             "status": "partial",
-            "completion": "partial",
+            "completion": "missing",
+            "target_presence": "some",
         },
         {
             "class_name": "PlotWidget",
@@ -168,7 +172,8 @@ def expected_classes() -> list[dict[str, object]]:
             "bases": ["HelperMixin", "QtWidgets.QWidget"],
             "line": 5,
             "status": "partial",
-            "completion": "partial",
+            "completion": "missing",
+            "target_presence": "some",
         },
     ]
 
@@ -181,7 +186,7 @@ def expected_manifest(commit: str) -> dict[str, Any]:
             "pinned_commit": commit,
             "docs_url": DOCS_URL,
         },
-        "manifest_schema": {"status_metadata": "adopted"},
+        "manifest_schema": {"status_metadata": "evidence_backed"},
         "source_files": expected_source_files(),
         "examples": [
             {
@@ -190,7 +195,8 @@ def expected_manifest(commit: str) -> dict[str, Any]:
                 "name": "Example",
                 "category": "root",
                 "status": "ported",
-                "completion": "complete",
+                "completion": "missing",
+                "target_presence": "all",
             },
             {
                 "upstream_path": "pyqtgraph/examples/nested/Advanced.py",
@@ -199,6 +205,7 @@ def expected_manifest(commit: str) -> dict[str, Any]:
                 "category": "nested",
                 "status": "not_started",
                 "completion": "missing",
+                "target_presence": "none",
             },
         ],
         "example_assets": [
@@ -207,6 +214,7 @@ def expected_manifest(commit: str) -> dict[str, Any]:
                 "target_path": "examples/designerExample.ui",
                 "status": "not_started",
                 "completion": "missing",
+                "target_presence": "none",
             }
         ],
         "example_inventory_summary": {
@@ -241,7 +249,7 @@ def strip_manifest_status_metadata(manifest: dict[str, Any]) -> dict[str, Any]:
             {
                 key: value
                 for key, value in row.items()
-                if key not in ("status", "completion")
+                if key not in ("status", "completion", "target_presence", "completion_evidence")
             }
             for row in manifest[section]
         ]
@@ -287,6 +295,82 @@ def test_yaml_manifest_is_deterministic_sorted_and_uses_canonical_schema(
             assert "status" in row
             assert "completion" in row
     assert "assets" not in manifest
+
+
+def test_existing_targets_remain_incomplete_without_completion_evidence(
+    tmp_path: Path,
+) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+
+    result = run_cli("--root", str(root), "--format", "json")
+
+    assert result.returncode == 0, result.stderr
+    manifest = json.loads(result.stdout)
+    assert manifest["source_files"][0]["target_presence"] == "all"
+    assert manifest["source_files"][0]["status"] == "ported"
+    assert manifest["source_files"][0]["completion"] == "missing"
+    assert manifest["classes"][0]["target_presence"] == "all"
+    assert manifest["classes"][0]["status"] == "ported"
+    assert manifest["classes"][0]["completion"] == "missing"
+
+
+def test_completion_evidence_marks_only_matching_row_complete(tmp_path: Path) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    write_fixture_file(root / "tests" / "oracle" / "plotdata-evidence.txt", "passed\n")
+    (root / "port_manifest.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "completion_evidence": [
+                    {
+                        "section": "source_files",
+                        "upstream_path": "pyqtgraph/PlotData.py",
+                        "evidence_type": "focused_test",
+                        "artifact_path": "tests/oracle/plotdata-evidence.txt",
+                    }
+                ]
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_cli("--root", str(root), "--format", "json")
+
+    assert result.returncode == 0, result.stderr
+    manifest = json.loads(result.stdout)
+    assert manifest["source_files"][0]["completion"] == "complete"
+    assert manifest["source_files"][0]["completion_evidence"] == {
+        "type": "focused_test",
+        "artifact_path": "tests/oracle/plotdata-evidence.txt",
+    }
+    assert manifest["classes"][0]["completion"] == "missing"
+
+
+def test_completion_evidence_rejects_unknown_manifest_row(tmp_path: Path) -> None:
+    root, _commit = make_inventory_root(tmp_path)
+    write_fixture_file(root / "tests" / "oracle" / "plotdata-evidence.txt", "passed\n")
+    (root / "port_manifest.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "completion_evidence": [
+                    {
+                        "section": "source_files",
+                        "upstream_path": "pyqtgraph/Typo.py",
+                        "evidence_type": "focused_test",
+                        "artifact_path": "tests/oracle/plotdata-evidence.txt",
+                    }
+                ]
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_cli("--root", str(root), "--format", "json")
+
+    assert result.returncode == 1
+    assert "completion_evidence references unknown manifest row" in result.stderr
+    assert "pyqtgraph/Typo.py" in result.stderr
 
 
 def test_json_manifest_matches_yaml_shape(tmp_path: Path) -> None:
@@ -384,7 +468,7 @@ def test_P0_02_check_mode_rejects_deferred_manifest_without_row_metadata(
     assert "--update-manifest" in result.stderr
     assert generated.returncode == 0, generated.stderr
     generated_manifest = yaml.safe_load(generated.stdout)
-    assert generated_manifest["manifest_schema"] == {"status_metadata": "adopted"}
+    assert generated_manifest["manifest_schema"] == {"status_metadata": "evidence_backed"}
     for section in ("source_files", "examples", "example_assets", "classes"):
         for row in generated_manifest[section]:
             assert "status" in row
