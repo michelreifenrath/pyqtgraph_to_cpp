@@ -142,19 +142,19 @@ nodes:
       set -euo pipefail
       git fetch origin main --quiet 2>/dev/null || true
       if ! python3 - "$ARTIFACTS_DIR/issue.json" <<PY_AUTOMATION
-import json, sys
-issue = json.load(open(sys.argv[1], encoding="utf-8"))
-labels = {label.get("name", "") for label in issue.get("labels", [])}
-body = issue.get("body") or ""
-automation = (
-    "factory:automation" in labels
-    or "automation" in labels
-    or "governance" in labels
-    or "Automation issue: true" in body
-    or "automation_issue: true" in body
-)
-sys.exit(0 if automation else 1)
-PY_AUTOMATION
+      import json, sys
+      issue = json.load(open(sys.argv[1], encoding="utf-8"))
+      labels = {label.get("name", "") for label in issue.get("labels", [])}
+      body = issue.get("body") or ""
+      automation = (
+          "factory:automation" in labels
+          or "automation" in labels
+          or "governance" in labels
+          or "Automation issue: true" in body
+          or "automation_issue: true" in body
+      )
+      sys.exit(0 if automation else 1)
+      PY_AUTOMATION
       then
         # Normal product-code issues must not carry Factory command/workflow edits into PR scope.
         git checkout -- .archon/commands .archon/workflows 2>/dev/null || true
