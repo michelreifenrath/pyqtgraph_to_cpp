@@ -20,6 +20,10 @@ PINNED_REF = "pyqtgraph-0.14.0"
 PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
 
 
+def source_paths_available() -> bool:
+    return all(path.exists() for path in (SOURCE_LOCK, SIGNAL_PROXY, THREADSAFE_TIMER))
+
+
 def require_pinned_sources() -> None:
     missing = [
         path
@@ -119,10 +123,17 @@ def main() -> int:
         action="store_true",
         help="verify the fixture is current instead of writing it",
     )
+    parser.add_argument(
+        "--require-source",
+        action="store_true",
+        help="fail if the optional pinned PyQtGraph checkout is absent",
+    )
     args = parser.parse_args()
 
-    require_pinned_sources()
     expected = json.dumps(build_fixture(), indent=2, sort_keys=True) + "\n"
+
+    if args.require_source or not args.check or source_paths_available():
+        require_pinned_sources()
 
     if args.check:
         if not FIXTURE.exists():
