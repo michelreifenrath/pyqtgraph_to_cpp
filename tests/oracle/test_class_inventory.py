@@ -155,7 +155,7 @@ def expected_classes() -> list[dict[str, object]]:
 
 def expected_classes_with_status_metadata() -> list[dict[str, object]]:
     return [
-        {**record, "status": "not_started", "completion": "missing"}
+        {**record, "status": "not_started", "completion": "missing", "target_presence": "none"}
         for record in expected_classes()
     ]
 
