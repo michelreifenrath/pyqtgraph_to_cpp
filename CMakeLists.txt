@@ -227,6 +227,17 @@ if(BUILD_TESTING)
     set_tests_properties(pyqtgraph_cpp.oracle.P0_06.mismatch PROPERTIES LABELS P0.06 WILL_FAIL TRUE)
 
     add_test(
+        NAME pyqtgraph_cpp.oracle.P2_01
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/oracle/probes/P2_01_point_vector_oracle.py" --check
+    )
+    set_tests_properties(
+        pyqtgraph_cpp.oracle.P2_01
+        PROPERTIES
+            LABELS P2.01
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
+    add_test(
         NAME pyqtgraph_cpp.oracle.P2_08
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/oracle/scripts/generate_P2_08_signal_proxy_timer_oracle.py" --check
     )
@@ -275,8 +286,13 @@ if(BUILD_TESTING)
                 pyqtgraph_cpp_project_options
                 pyqtgraph_cpp_project_warnings
         )
+        target_compile_definitions(pyqtgraph_cpp_core_point
+            PRIVATE
+                PYQTGRAPH_CPP_P2_01_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/oracle/fixtures/P2_01/point_vector_oracle.json"
+        )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_point)
         add_test(NAME pyqtgraph_cpp.core.Point COMMAND pyqtgraph_cpp_core_point)
+        set_tests_properties(pyqtgraph_cpp.core.Point PROPERTIES LABELS P2.01)
 
         add_executable(pyqtgraph_cpp_core_signalproxy_threadsafe_timer tests/core/test_SignalProxy_ThreadsafeTimer.cpp)
         target_link_libraries(pyqtgraph_cpp_core_signalproxy_threadsafe_timer
@@ -302,8 +318,13 @@ if(BUILD_TESTING)
                 pyqtgraph_cpp_project_options
                 pyqtgraph_cpp_project_warnings
         )
+        target_compile_definitions(pyqtgraph_cpp_core_vector
+            PRIVATE
+                PYQTGRAPH_CPP_P2_01_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/oracle/fixtures/P2_01/point_vector_oracle.json"
+        )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_vector)
         add_test(NAME pyqtgraph_cpp.core.Vector COMMAND pyqtgraph_cpp_core_vector)
+        set_tests_properties(pyqtgraph_cpp.core.Vector PROPERTIES LABELS P2.01)
     endif()
 
     if(_pyqtgraph_cpp_has_mkcolor)

@@ -1,0 +1,258 @@
+{
+  "cpp_deviations": [
+    "C++ exposes at()/set() and checked Vector operator[] instead of Python __getitem__/__setitem__ syntax for Point and Vector.",
+    "C++ Point(std::initializer_list) treats one value as scalar and rejects lists with zero or more than two values; PyQtGraph Point([1, 2, 3]) uses the first two values.",
+    "C++ Point::norm() on a zero vector returns NaN coordinates through IEEE floating-point division; PyQtGraph Point.norm() raises ZeroDivisionError.",
+    "C++ Point unary negation is retained as an issue-required native coordinate-wise operator; pinned Point.py does not define a Python __neg__ method.",
+    "C++ Vector::angle() returns std::nullopt for PyQtGraph's None zero-vector result.",
+    "C++ Vector stores QVector3D float coordinates, so vector comparisons use the fixture's vector tolerance.",
+    "C++ Point does not currently expose PyQtGraph's Python-only power operators (__pow__/__rpow__)."
+  ],
+  "issue": "P2.01",
+  "point": {
+    "construction": {
+      "default": [
+        0.0,
+        0.0
+      ],
+      "long_sequence_uses_first_two_python_behavior": [
+        1.0,
+        2.0
+      ],
+      "qpoint": [
+        4.0,
+        -5.0
+      ],
+      "qpointf": [
+        4.5,
+        -5.5
+      ],
+      "qsize": [
+        6.0,
+        7.0
+      ],
+      "qsizef": [
+        6.5,
+        7.5
+      ],
+      "scalar": [
+        3.0,
+        3.0
+      ],
+      "sequence_pair": [
+        8.0,
+        9.0
+      ],
+      "two_numeric": [
+        1.5,
+        -2.25
+      ]
+    },
+    "coordinate_access": {
+      "after_mutation": [
+        -1.0,
+        -2.0
+      ],
+      "at_0_1": [
+        10.0,
+        20.0
+      ],
+      "invalid_read_exception": "IndexError",
+      "invalid_write_exception": "IndexError",
+      "iteration": [
+        10.0,
+        20.0
+      ],
+      "len": 2
+    },
+    "copy_to_qpoint": {
+      "copy_after_mutating_copy": [
+        30.0,
+        4.0
+      ],
+      "copy_is_independent_original": [
+        3.0,
+        4.0
+      ],
+      "to_qpoint": [
+        3.0,
+        4.0
+      ]
+    },
+    "geometry": {
+      "angle_degrees": -90.0,
+      "angle_radians": -1.5707963267948966,
+      "cross": -2.0,
+      "dot": 39.0,
+      "length_6_8": 10.0,
+      "max": 3.0,
+      "min": -4.0,
+      "norm_6_8": [
+        0.6,
+        0.8
+      ],
+      "projection_x_axis": [
+        3.0,
+        0.0
+      ],
+      "projection_zero_exception": "ZeroDivisionError",
+      "zero_norm_exception": "ZeroDivisionError"
+    },
+    "invalid_sequence_exceptions": {
+      "empty_sequence": "IndexError",
+      "single_item_sequence": "IndexError"
+    },
+    "operators": {
+      "add_point": [
+        8.0,
+        12.0
+      ],
+      "add_scalar": [
+        8.0,
+        10.0
+      ],
+      "div_point": [
+        3.0,
+        2.0
+      ],
+      "div_scalar": [
+        3.0,
+        4.0
+      ],
+      "mul_point": [
+        12.0,
+        32.0
+      ],
+      "mul_scalar": [
+        12.0,
+        16.0
+      ],
+      "radd_scalar": [
+        8.0,
+        10.0
+      ],
+      "rdiv_scalar": [
+        4.0,
+        3.0
+      ],
+      "rmul_scalar": [
+        12.0,
+        16.0
+      ],
+      "rsub_scalar": [
+        14.0,
+        12.0
+      ],
+      "sub_point": [
+        4.0,
+        4.0
+      ],
+      "sub_scalar": [
+        4.0,
+        6.0
+      ]
+    }
+  },
+  "schema_version": 1,
+  "tolerances": {
+    "point_absolute": 1e-12,
+    "vector_absolute": 1e-05,
+    "vector_reason": "PyQtGraph Vector is backed by Qt QVector3D float coordinates in both Python and C++."
+  },
+  "upstream": {
+    "commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "files": [
+      "pyqtgraph/Point.py",
+      "pyqtgraph/Vector.py",
+      "tests/test_Point.py",
+      "tests/test_Vector.py"
+    ],
+    "project": "pyqtgraph",
+    "ref": "pyqtgraph-0.14.0"
+  },
+  "vector": {
+    "construction": {
+      "default": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "qpoint": [
+        4.0,
+        -5.0,
+        0.0
+      ],
+      "qpointf": [
+        4.5,
+        -5.5,
+        0.0
+      ],
+      "qsizef": [
+        6.5,
+        7.5,
+        0.0
+      ],
+      "qvector3d": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "sequence_pair": [
+        8.0,
+        9.0,
+        0.0
+      ],
+      "sequence_three": [
+        8.0,
+        9.0,
+        10.0
+      ],
+      "three_numeric": [
+        1.5,
+        -2.25,
+        3.75
+      ],
+      "two_numeric": [
+        1.5,
+        -2.25,
+        0.0
+      ]
+    },
+    "coordinate_access": {
+      "after_mutation": [
+        -1.0,
+        -2.0,
+        -3.0
+      ],
+      "at_0_1_2": [
+        10.0,
+        20.0,
+        30.0
+      ],
+      "invalid_read_exception": "IndexError",
+      "invalid_write_exception": "IndexError",
+      "iteration": [
+        10.0,
+        20.0,
+        30.0
+      ],
+      "len": 3
+    },
+    "geometry": {
+      "abs": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "angle_45": 45.00000000000001,
+      "angle_90": 90.0,
+      "angle_parallel": 0.0,
+      "angle_zero_vector": null
+    },
+    "invalid_sequence_exceptions": {
+      "four_constructor_args": "TypeError",
+      "four_item_sequence": "Exception",
+      "single_item_sequence": "Exception"
+    }
+  }
+}

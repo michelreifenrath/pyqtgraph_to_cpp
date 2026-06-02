@@ -7,12 +7,20 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <initializer_list>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <type_traits>
+
+#ifndef PYQTGRAPH_CPP_P2_01_FIXTURE
+#define PYQTGRAPH_CPP_P2_01_FIXTURE "oracle/fixtures/P2_01/point_vector_oracle.json"
+#endif
 
 namespace {
 
@@ -34,6 +42,33 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
             std::exit(EXIT_FAILURE); \
         } \
     } while (false)
+
+std::string readOracleFixture()
+{
+    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_01_FIXTURE});
+    CHECK(input.good());
+    std::ostringstream buffer;
+    buffer << input.rdbuf();
+    return buffer.str();
+}
+
+bool contains(std::string_view text, std::string_view needle)
+{
+    return text.find(needle) != std::string_view::npos;
+}
+
+void requirePointOracleFixture()
+{
+    const std::string fixture = readOracleFixture();
+    CHECK(contains(fixture, "\"issue\": \"P2.01\""));
+    CHECK(contains(fixture, "\"commit\": \"a20028b98294b9cc8770f2015a92eb342224b788\""));
+    CHECK(contains(fixture, "\"pyqtgraph/Point.py\""));
+    CHECK(contains(fixture, "\"tests/test_Point.py\""));
+    CHECK(contains(fixture, "\"point_absolute\": 1e-12"));
+    CHECK(contains(fixture, "\"zero_norm_exception\": \"ZeroDivisionError\""));
+    CHECK(contains(fixture, "PyQtGraph Point([1, 2, 3]) uses the first two values"));
+    CHECK(contains(fixture, "Python-only power operators"));
+}
 
 void assertNear(double actual, double expected, double tolerance = kTolerance)
 {
@@ -97,6 +132,7 @@ int main()
     static_assert(std::is_same_v<decltype(-Point{1.0, -2.0}), Point>);
 
     CHECK(Point::coordinateCount() == 2);
+    requirePointOracleFixture();
 
     assertPoint(Point(), 0.0, 0.0);
     assertPoint(Point{1.5, -2.25}, 1.5, -2.25);

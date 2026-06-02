@@ -8,12 +8,20 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <initializer_list>
 #include <iostream>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <type_traits>
+
+#ifndef PYQTGRAPH_CPP_P2_01_FIXTURE
+#define PYQTGRAPH_CPP_P2_01_FIXTURE "oracle/fixtures/P2_01/point_vector_oracle.json"
+#endif
 
 namespace {
 
@@ -35,6 +43,33 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
             std::exit(EXIT_FAILURE); \
         } \
     } while (false)
+
+std::string readOracleFixture()
+{
+    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_01_FIXTURE});
+    CHECK(input.good());
+    std::ostringstream buffer;
+    buffer << input.rdbuf();
+    return buffer.str();
+}
+
+bool contains(std::string_view text, std::string_view needle)
+{
+    return text.find(needle) != std::string_view::npos;
+}
+
+void requireVectorOracleFixture()
+{
+    const std::string fixture = readOracleFixture();
+    CHECK(contains(fixture, "\"issue\": \"P2.01\""));
+    CHECK(contains(fixture, "\"commit\": \"a20028b98294b9cc8770f2015a92eb342224b788\""));
+    CHECK(contains(fixture, "\"pyqtgraph/Vector.py\""));
+    CHECK(contains(fixture, "\"tests/test_Vector.py\""));
+    CHECK(contains(fixture, "\"vector_absolute\": 1e-05"));
+    CHECK(contains(fixture, "\"angle_zero_vector\": null"));
+    CHECK(contains(fixture, "std::nullopt"));
+    CHECK(contains(fixture, "QVector3D float coordinates"));
+}
 
 void assertNear(double actual, double expected, double tolerance = kTolerance)
 {
@@ -116,6 +151,7 @@ int main()
     static_assert(std::is_same_v<decltype(Vector{1.0, 2.0, 3.0}.angle(QVector3D{0.0F, 1.0F, 0.0F})), std::optional<double>>);
 
     CHECK(Vector::coordinateCount() == 3);
+    requireVectorOracleFixture();
 
     assertVector(Vector(), 0.0, 0.0, 0.0);
     assertVector(Vector{1.5, -2.25}, 1.5, -2.25, 0.0);
