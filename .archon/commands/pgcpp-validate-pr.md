@@ -39,7 +39,8 @@ Read and synthesize, when present:
 - For numeric/oracle work, require clear command output or artifact evidence.
 - For visual/rendering/pixel work, require deterministic visual artifacts plus GPT-5.5 semantic visual-review evidence when the project workflow requires it.
 - If deterministic metrics and GPT visual review disagree, route to `human-review`.
-- Treat protected-file changes, broad refactors, missing oracle evidence, missing visual evidence, scope expansion, risky findings, or ambiguity as human-review unless explicitly owned and safe for this controller.
+- Reserve `human-review` for hard non-automatable blockers: protected-file changes, broad/unsafe refactors, policy/safety constraints, permissions/credentials, risky findings, ambiguous product/architecture decisions, exhausted retry budget, or explicit disagreement between deterministic evidence and semantic visual review.
+- Do not route ordinary validation failures, missing oracle/numeric/visual evidence, missing GPT visual-review evidence, diff-check failures, autoreview failures, or actionable holdout findings directly to `human-review`. Mark them `fixable: true` and let the controller use the bounded fix/rework path while retry budget remains.
 
 ## Verdict JSON fields required by the merge helper
 

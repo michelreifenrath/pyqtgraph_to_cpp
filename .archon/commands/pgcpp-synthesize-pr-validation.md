@@ -30,18 +30,19 @@ Read these artifacts when present:
 Return one structured workflow output field `action`:
 
 - `pass`: all deterministic statuses are passing and all reviewer artifacts pass.
-- `fix`: at least one finding/gate failed, every failure is marked fixable, no reviewer reports risky/protected/human-review, and the fix is narrow/issue-owned/deterministic.
-- `human-review`: any readiness, metadata, scope, protected-file, visual/GPT, risky, ambiguous, non-fixable, missing-artifact, or repeated/unclear failure exists.
+- `fix`: at least one finding/gate failed and the failure is automatable within the PR branch: ordinary validation failure, missing/regenerable oracle/numeric/visual/GPT evidence, diff-check failure, autoreview finding with an actionable scoped fix, or narrow issue-owned implementation defect. Prefer this while retry budget remains.
+- `human-review`: only hard non-automatable blockers: PR metadata/policy/safety violation, protected/governance files, broad or unsafe refactor, changed files outside issue-owned selectors that cannot be narrowed safely, explicit visual/GPT disagreement, risky finding, ambiguous product/architecture decision, permissions/credentials, exhausted retry budget, or repeated/unclear failure.
+
+Never route to `human-review` merely because an artifact/evidence item is missing or a normal gate failed if it can be regenerated or fixed by a bounded issue-owned rework. Route that to `fix` and explain the exact regeneration/rework needed.
 
 Never route to `fix` for:
 
-- missing or failed issue readiness;
-- PR metadata problems;
+- PR metadata or merge-controller safety problems;
 - protected/governance files;
-- changed files outside issue-owned selectors;
-- missing required visual/oracle/GPT evidence;
+- changed files outside issue-owned selectors that cannot be narrowed safely;
+- explicit disagreement between deterministic visual evidence and GPT semantic visual review;
 - broad C++/Qt architecture or API decisions;
-- failed head SHA or merge-controller safety assumptions.
+- risky, ambiguous, non-automatable, or repeated failures after retry budget is exhausted.
 
 ## Required artifact
 

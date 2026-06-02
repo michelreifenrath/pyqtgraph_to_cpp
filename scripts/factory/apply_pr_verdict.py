@@ -31,6 +31,13 @@ def _accepted_gpt_visual_review(payload: dict[str, Any]) -> bool:
     return payload.get("gpt_visual_review_accepted") is True
 
 
+def _has_gpt_visual_review(payload: dict[str, Any]) -> bool:
+    return any(
+        key in payload and payload.get(key) not in {None, False, ""}
+        for key in ("gpt_visual_review", "semantic_visual_review", "gpt_visual_review_accepted")
+    )
+
+
 def _any_true(payload: dict[str, Any], *keys: str) -> bool:
     return any(payload.get(key) is True for key in keys)
 
@@ -47,69 +54,87 @@ def merge_command(payload: dict[str, Any]) -> list[str]:
 
 def decide(payload: dict[str, Any], allow_merge: bool = False) -> dict[str, Any]:
     errors: list[str] = []
+    automatable_errors: list[str] = []
+    human_review_errors: list[str] = []
+
+    def add_automatable(message: str) -> None:
+        errors.append(message)
+        automatable_errors.append(message)
+
+    def add_human_review(message: str) -> None:
+        errors.append(message)
+        human_review_errors.append(message)
+
     linked_issues = payload.get("linked_issues", [])
     if not isinstance(linked_issues, list) or len(linked_issues) != 1:
-        errors.append("exactly one linked issue is required")
+        add_human_review("exactly one linked issue is required")
 
     required_true = ["readiness", "evidence", "scope", "tests", "holdout", "autoreview", "diff_check"]
     for key in required_true:
         if payload.get(key) is not True:
-            errors.append(f"{key} must be true")
+            add_automatable(f"{key} must be true")
 
     if payload.get("auto_merge_enabled") is not True:
-        errors.append("auto_merge_enabled must be true")
+        add_human_review("auto_merge_enabled must be true")
 
     state = str(payload.get("pr_state", payload.get("state", ""))).upper()
     if state != "OPEN":
-        errors.append("PR must be open")
+        add_human_review("PR must be open")
     if payload.get("is_draft", payload.get("isDraft")) is not False:
-        errors.append("PR must not be draft")
+        add_human_review("PR must not be draft")
     if payload.get("base_ref", payload.get("baseRefName")) != "main":
-        errors.append("PR base branch must be main")
+        add_human_review("PR base branch must be main")
     head_ref = payload.get("head_ref", payload.get("headRefName"))
     if not isinstance(head_ref, str) or not head_ref.strip():
-        errors.append("PR head branch is required")
+        add_human_review("PR head branch is required")
     elif head_ref == "main":
-        errors.append("PR head branch must not be main")
+        add_human_review("PR head branch must not be main")
     if not isinstance(payload.get("head_sha"), str) or not payload.get("head_sha", "").strip():
-        errors.append("head_sha is required")
+        add_human_review("head_sha is required")
 
     if payload.get("oracle_required") is True and not _any_true(payload, "oracle", "oracle_evidence", "oracle_passed"):
-        errors.append("oracle evidence is required but not passing")
+        add_automatable("oracle evidence is required but not passing")
     if payload.get("numeric_required") is True and not _any_true(payload, "numeric", "numeric_evidence", "numeric_passed"):
-        errors.append("numeric evidence is required but not passing")
+        add_automatable("numeric evidence is required but not passing")
 
     if payload.get("visual_required") is True:
         if payload.get("visual") is not True:
-            errors.append("visual evidence is required but not passing")
+            add_automatable("visual evidence is required but not passing")
         if not _accepted_gpt_visual_review(payload):
-            errors.append("GPT semantic visual review is required but not accepted")
+            if _has_gpt_visual_review(payload):
+                add_human_review("GPT semantic visual review rejected or disagrees")
+            else:
+                add_automatable("GPT semantic visual review is required but missing")
 
     protected_files_changed = bool(payload.get("protected_files_changed"))
     risky = bool(payload.get("risky"))
     if protected_files_changed:
-        errors.append("protected files changed")
+        add_human_review("protected files changed")
     if risky:
-        errors.append("risky PR requires human review")
+        add_human_review("risky PR requires human review")
 
     fix_attempts = int(payload.get("fix_attempts", 0) or 0)
     max_fix_attempts = int(payload.get("max_fix_attempts", 1) or 1)
-    fixable = bool(payload.get("fixable", False))
+    retry_budget_available = fix_attempts < max_fix_attempts
+    # Ordinary gate/evidence failures are actionable by the factory unless the
+    # holdout explicitly marks them non-fixable. Human review is reserved for
+    # policy/safety/metadata blockers or exhausted retry budget.
+    fixable = payload.get("fixable") is not False
 
     command: list[str] | None = None
     if not errors:
         decision = "merge"
         reason = "all governed auto-merge gates passed"
         command = merge_command(payload)
-    elif protected_files_changed or risky or any("PR " in error or "head_sha" in error or "auto_merge_enabled" in error or "GPT" in error for error in errors):
+    elif human_review_errors:
         decision = "human-review"
-        reason = "; ".join(errors)
-    elif fixable and fix_attempts < max_fix_attempts:
+        reason = "; ".join(human_review_errors)
+    elif fixable and retry_budget_available:
         decision = "fix"
-        reason = "failed gates are marked fixable and retry budget remains"
+        reason = "automatable gate/evidence failures remain and retry budget is available"
     else:
         decision = "human-review"
-        reason = "; ".join(errors)
+        reason = "retry budget exhausted or holdout marked failures non-fixable: " + "; ".join(errors)
 
     would_merge = decision == "merge" and allow_merge
     return {
@@ -117,6 +142,8 @@ def decide(payload: dict[str, Any], allow_merge: bool = False) -> dict[str, Any]
         "dry_run": not allow_merge,
         "reason": reason,
         "errors": errors,
+        "automatable_errors": automatable_errors,
+        "human_review_errors": human_review_errors,
         "merge_command": " ".join(command) if command else None,
         "merge_argv": command,
         "ai_label": "ai:merge-ready" if decision == "merge" and not allow_merge else None,
@@ -144,12 +171,16 @@ def main(argv: list[str] | None = None) -> int:
                 result["decision"] = "human-review"
                 result["reason"] = "guarded gh pr merge failed"
                 result["errors"] = ["guarded gh pr merge failed"]
+                result["automatable_errors"] = []
+                result["human_review_errors"] = ["guarded gh pr merge failed"]
     except Exception as exc:
         result = {
             "decision": "human-review",
             "dry_run": True,
             "reason": str(exc),
             "errors": [str(exc)],
+            "automatable_errors": [],
+            "human_review_errors": [str(exc)],
             "merge_command": None,
             "merge_argv": None,
             "ai_label": None,

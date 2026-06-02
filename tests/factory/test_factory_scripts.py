@@ -351,12 +351,12 @@ def test_apply_pr_verdict_allow_merge_produces_guarded_command_without_running_u
 
 def test_apply_pr_verdict_requires_gpt_visual_review_for_visual_required_merge() -> None:
     missing = decide(mergeable_verdict_payload(visual_required=True, visual=True), allow_merge=True)
-    assert missing["decision"] == "human-review"
-    assert any("GPT semantic visual review" in error for error in missing["errors"])
+    assert missing["decision"] == "fix"
+    assert any("GPT semantic visual review" in error for error in missing["automatable_errors"])
 
     string_false = decide(mergeable_verdict_payload(visual_required=True, visual=True, gpt_visual_review_accepted="false"), allow_merge=True)
     assert string_false["decision"] == "human-review"
-    assert any("GPT semantic visual review" in error for error in string_false["errors"])
+    assert any("GPT semantic visual review" in error for error in string_false["human_review_errors"])
 
     accepted = decide(mergeable_verdict_payload(visual_required=True, visual=True, gpt_visual_review={"verdict": "pass", "recommendation": "merge_ok"}), allow_merge=True)
     assert accepted["decision"] == "merge"
@@ -365,12 +365,12 @@ def test_apply_pr_verdict_requires_gpt_visual_review_for_visual_required_merge()
 
 def test_apply_pr_verdict_requires_oracle_and_numeric_evidence_when_declared() -> None:
     missing_oracle = decide(mergeable_verdict_payload(oracle_required=True, oracle=False), allow_merge=True)
-    assert missing_oracle["decision"] == "human-review"
-    assert any("oracle evidence" in error for error in missing_oracle["errors"])
+    assert missing_oracle["decision"] == "fix"
+    assert any("oracle evidence" in error for error in missing_oracle["automatable_errors"])
 
     missing_numeric = decide(mergeable_verdict_payload(numeric_required=True, numeric=False), allow_merge=True)
-    assert missing_numeric["decision"] == "human-review"
-    assert any("numeric evidence" in error for error in missing_numeric["errors"])
+    assert missing_numeric["decision"] == "fix"
+    assert any("numeric evidence" in error for error in missing_numeric["automatable_errors"])
 
     accepted = decide(mergeable_verdict_payload(oracle_required=True, oracle=True, numeric_required=True, numeric=True), allow_merge=True)
     assert accepted["decision"] == "merge"
@@ -427,7 +427,17 @@ def test_apply_pr_verdict_fix_then_human_review() -> None:
     fixable["fix_attempts"] = 1
     result = run_script("scripts/factory/apply_pr_verdict.py", input_text=json.dumps(fixable))
     assert result.returncode != 0
-    assert json.loads(result.stdout)["decision"] == "human-review"
+    payload = json.loads(result.stdout)
+    assert payload["decision"] == "human-review"
+    assert "retry budget exhausted" in payload["reason"]
+
+
+def test_apply_pr_verdict_routes_ordinary_gate_failures_to_fix_without_explicit_fixable_flag() -> None:
+    payload = decide(mergeable_verdict_payload(scope=False, tests=False, autoreview=False, fix_attempts=0, max_fix_attempts=1), allow_merge=True)
+
+    assert payload["decision"] == "fix"
+    assert payload["human_review_errors"] == []
+    assert {"scope must be true", "tests must be true", "autoreview must be true"} <= set(payload["automatable_errors"])
 
 
 def test_file_regression_issue_labels_ready_only_with_owned_files() -> None:
