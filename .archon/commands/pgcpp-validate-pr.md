@@ -68,7 +68,8 @@ Read and synthesize, when present:
   "risky": false,
   "fixable": false,
   "fix_attempts": 0,
-  "max_fix_attempts": 1
+  "max_fix_attempts": 1,
+  "findings": ["short blocking or notable finding, max 3"]
 }
 ```
 
@@ -84,4 +85,4 @@ The controller will recheck the head SHA and then run:
 python3 scripts/factory/apply_pr_verdict.py --input "$ARTIFACTS_DIR/verdict.json" --allow-merge
 ```
 
-That helper may execute a guarded squash merge with `--match-head-commit` only when every governed gate is passing and `WORKFLOW.md` policy allows auto-merge. Return a concise review summary with decision, blocking findings, evidence checked, commands/artifacts inspected, fix attempt count, and whether the verdict file was written.
+That helper may execute a guarded squash merge with `--match-head-commit` only when every governed gate is passing and `WORKFLOW.md` policy allows auto-merge. Populate `findings` with up to three short blocking or notable findings; use an empty list when clean. Return a concise review summary with decision, blocking findings, evidence checked, commands/artifacts inspected, fix attempt count, and whether the verdict file was written.

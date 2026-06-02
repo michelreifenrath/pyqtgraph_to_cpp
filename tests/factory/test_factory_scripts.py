@@ -440,6 +440,67 @@ def test_apply_pr_verdict_routes_ordinary_gate_failures_to_fix_without_explicit_
     assert {"scope must be true", "tests must be true", "autoreview must be true"} <= set(payload["automatable_errors"])
 
 
+
+def test_post_pr_audit_comment_builds_concise_fix_comment(tmp_path: Path) -> None:
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir()
+    (artifacts / "pr.json").write_text(json.dumps({"number": 277, "headRefOid": "abcdef123456"}), encoding="utf-8")
+    (artifacts / "verdict.json").write_text(
+        json.dumps(
+            mergeable_verdict_payload(
+                pr_number=277,
+                head_sha="abcdef123456",
+                tests=True,
+                autoreview=True,
+                holdout=False,
+                fixable=True,
+                findings=["public header exposes std::optional<QImage> while QImage may be forward-declared"],
+            )
+        ),
+        encoding="utf-8",
+    )
+    (artifacts / "merge-result.json").write_text(
+        json.dumps({"decision": "fix", "errors": ["holdout must be true"], "reason": "autoreview/holdout requested fix"}),
+        encoding="utf-8",
+    )
+
+    result = run_script(
+        "scripts/factory/post_pr_audit_comment.py",
+        "--artifacts-dir",
+        str(artifacts),
+        "--workflow-id",
+        "run123456789",
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["posted"] is False
+    comment = (artifacts / "factory-pr-audit-comment.md").read_text(encoding="utf-8")
+    assert "<!-- dark-factory-validation:run123456789 -->" in comment
+    assert "Factory validation: rework required" in comment
+    assert "Run: `run12345`" in comment
+    assert "Decision: `fix`" in comment
+    assert "tests pass" in comment
+    assert "holdout fail" in comment
+    assert "std::optional<QImage>" in comment
+    assert "factory should apply a scoped fix" in comment
+
+
+def test_post_pr_audit_comment_builds_merge_comment_without_findings(tmp_path: Path) -> None:
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir()
+    (artifacts / "pr.json").write_text(json.dumps({"number": 12, "headRefOid": "abc123"}), encoding="utf-8")
+    (artifacts / "verdict.json").write_text(json.dumps(mergeable_verdict_payload()), encoding="utf-8")
+    (artifacts / "merge-result.json").write_text(json.dumps({"decision": "merge", "errors": []}), encoding="utf-8")
+
+    result = run_script("scripts/factory/post_pr_audit_comment.py", "--artifacts-dir", str(artifacts), "--workflow-id", "okrun")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    comment = (artifacts / "factory-pr-audit-comment.md").read_text(encoding="utf-8")
+    assert "Factory validation: auto-merge approved" in comment
+    assert "Findings:\n- none" in comment
+    assert "merged automatically" in comment
+
 def test_file_regression_issue_labels_ready_only_with_owned_files() -> None:
     result = run_script(
         "scripts/factory/file_regression_issue.py",

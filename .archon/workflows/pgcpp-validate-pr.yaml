@@ -694,3 +694,14 @@ nodes:
       # Human-review/no-merge is a governed terminal outcome, not a workflow infrastructure failure.
     depends_on: [workflow-integrity-audit]
     timeout: 120000
+
+
+  - id: post-pr-audit-comment
+    bash: |
+      set +e
+      python3 scripts/factory/post_pr_audit_comment.py --artifacts-dir "$ARTIFACTS_DIR" --repo michelreifenrath/pyqtgraph_to_cpp --post | tee "$ARTIFACTS_DIR/pr-audit-comment-status.json"
+      code=${PIPESTATUS[0]}
+      # Audit comments are for traceability and must not turn a governed validation result into an infra failure.
+      exit 0
+    depends_on: [governed-auto-merge]
+    timeout: 120000
