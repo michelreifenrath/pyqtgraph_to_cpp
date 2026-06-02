@@ -31,6 +31,7 @@ public:
 
     [[nodiscard]] Point operator+(const QPointF& other) const;
     [[nodiscard]] Point operator-(const QPointF& other) const;
+    [[nodiscard]] Point operator-() const;
     [[nodiscard]] Point operator*(const QPointF& other) const;
     [[nodiscard]] Point operator/(const QPointF& other) const;
 
