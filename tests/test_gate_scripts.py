@@ -728,6 +728,57 @@ def test_run_autoreview_maps_merge_mode_to_branch_for_autoreview(
     assert summary["mode"] == "merge"
 
 
+
+
+def test_run_autoreview_treats_codex_p1_p2_findings_as_gate_failure(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "WORKFLOW.md"
+    reports = tmp_path / "reports"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    make_executable(
+        bin_dir / "autoreview",
+        f"#!{sys.executable}\n"
+        "print('Review comment:')\n"
+        "print('')\n"
+        "print('- [P2] Avoid optional<QImage> when Qt is absent — include/pyqtgraph/functions_qimage.hpp:37-40')\n"
+        "print('  QImage may be forward-declared, but std::optional<QImage> requires a complete type.')\n"
+        "raise SystemExit(0)\n",
+    )
+    write_workflow(workflow, autoreview_command="autoreview")
+
+    result = run_script(
+        "scripts/run_autoreview",
+        "--workflow",
+        str(workflow),
+        "--reports-dir",
+        str(reports),
+        env={"PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"},
+    )
+
+    assert result.returncode == 1
+    assert "P1/P2 finding" in result.stderr
+    summary = json.loads(
+        (reports / "autoreview-summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "failed"
+    assert summary["returncode"] == 1
+    assert summary["raw_returncode"] == 0
+    assert summary["has_findings"] is True
+    assert summary["findings"] == [
+        {
+            "severity": "P2",
+            "title": "Avoid optional<QImage> when Qt is absent",
+            "location": "include/pyqtgraph/functions_qimage.hpp:37-40",
+            "evidence": "QImage may be forward-declared, but std::optional<QImage> requires a complete type.",
+        }
+    ]
+    findings = json.loads(
+        (reports / "autoreview-findings.json").read_text(encoding="utf-8")
+    )
+    assert findings["has_findings"] is True
+
 def test_run_autoreview_uses_available_autoreview_and_writes_outputs(
     tmp_path: Path,
 ) -> None:

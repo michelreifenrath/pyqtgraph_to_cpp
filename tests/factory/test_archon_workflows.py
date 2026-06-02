@@ -244,6 +244,9 @@ def test_validate_pr_workflow_is_governed_merge_controller() -> None:
     assert "scripts/gate merge" in workflow
     assert "scripts/gate commit --dry-run" not in workflow
     assert "scripts/run_autoreview --mode merge" in workflow
+    assert "has_findings" in workflow
+    assert "autoreview-pass1" in workflow
+    assert "autoreview-summary.json" in workflow
     assert "apply_pr_verdict.py --input \"$ARTIFACTS_DIR/verdict.json\" --allow-merge" in workflow
     assert "--match-head-commit" in workflow
     assert "from scripts.factory.workflow_config import load_workflow" in workflow

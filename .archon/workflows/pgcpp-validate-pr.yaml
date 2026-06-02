@@ -281,7 +281,17 @@ nodes:
       import json, os
       from pathlib import Path
       artifacts = Path(os.environ["ARTIFACTS_DIR"])
-      (artifacts / "autoreview-status-pass1.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      summary_path = artifacts / "autoreview-pass1" / "autoreview-summary.json"
+      summary = json.loads(summary_path.read_text()) if summary_path.exists() else {}
+      status = {
+          "returncode": $code,
+          "raw_returncode": summary.get("raw_returncode", $code),
+          "ok": $code == 0 and not summary.get("has_findings", False),
+          "has_findings": bool(summary.get("has_findings", False)),
+          "findings": summary.get("findings", []),
+          "summary": str(summary_path),
+      }
+      (artifacts / "autoreview-status-pass1.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
       PY
       exit 0
     depends_on: [visual-oracle-gate-pass1]
@@ -510,7 +520,17 @@ nodes:
       import json, os
       from pathlib import Path
       artifacts = Path(os.environ["ARTIFACTS_DIR"])
-      (artifacts / "autoreview-status-pass2.json").write_text(json.dumps({"returncode": $code, "ok": $code == 0}, indent=2, sort_keys=True) + "\n")
+      summary_path = artifacts / "autoreview-pass2" / "autoreview-summary.json"
+      summary = json.loads(summary_path.read_text()) if summary_path.exists() else {}
+      status = {
+          "returncode": $code,
+          "raw_returncode": summary.get("raw_returncode", $code),
+          "ok": $code == 0 and not summary.get("has_findings", False),
+          "has_findings": bool(summary.get("has_findings", False)),
+          "findings": summary.get("findings", []),
+          "summary": str(summary_path),
+      }
+      (artifacts / "autoreview-status-pass2.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
       PY
       exit 0
     depends_on: [visual-oracle-gate-pass2]
