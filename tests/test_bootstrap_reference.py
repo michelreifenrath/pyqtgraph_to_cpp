@@ -316,3 +316,45 @@ def test_refresh_existing_checkout_fetches_requested_repo(tmp_path: Path):
 
 def test_script_is_executable():
     assert os.access(SCRIPT, os.X_OK)
+
+
+def test_p2_08_oracle_check_uses_checked_in_fixture_without_optional_checkout(tmp_path: Path):
+    root = tmp_path / "workspace"
+    fixture = root / "oracle" / "fixtures" / "P2_08" / "signal_proxy_timer_oracle.json"
+    fixture.parent.mkdir(parents=True)
+    script = Path("oracle/scripts/generate_P2_08_signal_proxy_timer_oracle.py")
+    script_copy = root / script
+    script_copy.parent.mkdir(parents=True)
+    shutil.copy2(script, script_copy)
+    fixture.write_text(
+        Path("oracle/fixtures/P2_08/signal_proxy_timer_oracle.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, str(script_copy), "--check"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "P2.08 oracle fixture OK" in result.stdout
+
+
+def test_p2_08_oracle_require_source_keeps_strict_source_validation(tmp_path: Path):
+    root = tmp_path / "workspace"
+    script = Path("oracle/scripts/generate_P2_08_signal_proxy_timer_oracle.py")
+    script_copy = root / script
+    script_copy.parent.mkdir(parents=True)
+    shutil.copy2(script, script_copy)
+
+    result = subprocess.run(
+        [sys.executable, str(script_copy), "--check", "--require-source"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode != 0
+    assert "Pinned PyQtGraph checkout is unavailable" in result.stderr
