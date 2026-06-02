@@ -85,6 +85,7 @@ nodes:
       set -euo pipefail
       # POISON IMMUNITY: read governance from origin/main before checking out the PR.
       git fetch origin main --quiet
+      git rev-parse origin/main | tee "$ARTIFACTS_DIR/.base-sha-pass1"
       for path in MISSION.md FACTORY_RULES.md AGENTS.md WORKFLOW.md; do
         echo "=== origin/main:$path ==="
         git show "origin/main:$path" || true
@@ -143,6 +144,7 @@ nodes:
         echo "ERROR: validator worktree is dirty immediately after checkout" >&2
         exit 1
       fi
+      git rev-parse HEAD | tee "$ARTIFACTS_DIR/.head-sha-pass1"
       git diff --name-only origin/main...HEAD | tee "$ARTIFACTS_DIR/changed-files.txt"
       git diff --stat origin/main...HEAD | tee "$ARTIFACTS_DIR/diff-stat.txt"
       git diff origin/main...HEAD > "$ARTIFACTS_DIR/pr-local.diff"
@@ -379,6 +381,10 @@ nodes:
       git reset --hard
       git checkout --detach "$expected"
       git reset --hard "$expected"
+      # Refresh the base SHA before final deterministic pass. If it differs from pass 1,
+      # pass-2 agentic gates must run even when pass 1 was clean.
+      git fetch origin main --quiet
+      git rev-parse origin/main | tee "$ARTIFACTS_DIR/.base-sha-pass2"
       # Cursor fix attempts may leave repo-root scratch files even when no PR changes are made.
       git ls-files --others --exclude-standard .tmp_run_cmds.sh fix-attempt.json .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs .run_validation.sh 2>/dev/null | xargs -r rm -f
       find .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs artifacts -type d -empty -delete 2>/dev/null || true
@@ -491,6 +497,13 @@ nodes:
   - id: autoreview-merge-gate-pass2
     bash: |
       set +e
+      scripts/factory/pass2_agentic_fast_path.py --artifacts-dir "$ARTIFACTS_DIR"
+      if [ $? -eq 0 ]; then
+        cp "$ARTIFACTS_DIR/autoreview-status-pass1.json" "$ARTIFACTS_DIR/autoreview-status-pass2.json"
+        cp "$ARTIFACTS_DIR/autoreview-pass1.txt" "$ARTIFACTS_DIR/autoreview-pass2.txt"
+        echo "pass-2 autoreview skipped: pass-1 clean and PR/base SHAs unchanged" | tee -a "$ARTIFACTS_DIR/autoreview-pass2.txt"
+        exit 0
+      fi
       scripts/run_autoreview --mode merge --base origin/main --reports-dir "$ARTIFACTS_DIR/autoreview-pass2" | tee "$ARTIFACTS_DIR/autoreview-pass2.txt"
       code=${PIPESTATUS[0]}
       python3 - <<PY
@@ -560,6 +573,7 @@ nodes:
       payload["scope"] = payload.get("scope") is True and statuses["scope"].get("ok") is True
       payload["tests"] = payload.get("tests") is True and statuses["tests"].get("ok") is True
       payload["autoreview"] = payload.get("autoreview") is True and statuses["autoreview"].get("ok") is True
+      payload["pass2_agentic_fast_path"] = load_json("pass2-agentic-fast-path.json", {"skip": False})
       payload["diff_check"] = payload.get("diff_check") is True and statuses["diff_check"].get("ok") is True
       if errors:
           payload["auto_merge_enabled"] = False
@@ -682,7 +696,7 @@ nodes:
     depends_on: [final-head-check]
     env:
       AUDIT_REQUIRED: "pr.json,issue.json,verdict.json,deterministic-verdict-guard.json"
-      AUDIT_STATUS_JSONS: "pr-metadata-check.json,readiness-status-pass2.json,scope-status-pass2.json,evidence-packet-check-pass1.json,diff-check-status-pass2.json,local-gate-status-pass2.json,autoreview-status-pass2.json,visual-oracle-pass2.json,deterministic-verdict-guard.json,verdict.json"
+      AUDIT_STATUS_JSONS: "pr-metadata-check.json,readiness-status-pass2.json,scope-status-pass2.json,evidence-packet-check-pass1.json,diff-check-status-pass2.json,local-gate-status-pass2.json,autoreview-status-pass2.json,visual-oracle-pass2.json,pass2-agentic-fast-path.json,deterministic-verdict-guard.json,verdict.json"
     timeout: 120000
 
   - id: governed-auto-merge
