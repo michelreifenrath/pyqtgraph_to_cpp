@@ -117,9 +117,10 @@ nodes:
       # Validate in this isolated Archon worktree without taking ownership of the PR branch.
       # `gh pr checkout` fails if the PR branch is already used by the implementation worktree.
       git fetch origin "pull/$PR_NUM/head" --quiet
-      git checkout --detach "$expected"
       # The validator worktree may be created from a newer factory checkout than the PR branch.
-      # Reset hard after detached checkout so local workflow-command updates do not appear as PR dirt.
+      # Clear local workflow-command updates before detached checkout and again at the target commit.
+      git reset --hard
+      git checkout --detach "$expected"
       git reset --hard "$expected"
       # Cursor fix attempts may leave repo-root scratch files even when no PR changes are made.
       git ls-files --others --exclude-standard .tmp_run_cmds.sh fix-attempt.json .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs .run_validation.sh 2>/dev/null | xargs -r rm -f
@@ -373,9 +374,10 @@ nodes:
       PR_NUM=$(cat "$ARTIFACTS_DIR/.pr-number")
       expected=$(cat "$ARTIFACTS_DIR/.head-sha")
       git fetch origin "pull/$PR_NUM/head" --quiet
-      git checkout --detach "$expected"
       # The validator worktree may be created from a newer factory checkout than the PR branch.
-      # Reset hard after detached checkout so local workflow-command updates do not appear as PR dirt.
+      # Clear local workflow-command updates before detached checkout and again at the target commit.
+      git reset --hard
+      git checkout --detach "$expected"
       git reset --hard "$expected"
       # Cursor fix attempts may leave repo-root scratch files even when no PR changes are made.
       git ls-files --others --exclude-standard .tmp_run_cmds.sh fix-attempt.json .archon-fix-staging .archon-artifacts-staging reports/agents artifacts/runs .run_validation.sh 2>/dev/null | xargs -r rm -f
