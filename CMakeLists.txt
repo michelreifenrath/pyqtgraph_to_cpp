@@ -327,6 +327,17 @@ if(BUILD_TESTING)
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_makeqimage)
         add_test(NAME pyqtgraph_cpp.core.makeQImage COMMAND pyqtgraph_cpp_core_makeqimage)
 
+        add_executable(pyqtgraph_cpp_core_functions_qimage tests/core/test_functions_qimage.cpp)
+        target_link_libraries(pyqtgraph_cpp_core_functions_qimage
+            PRIVATE
+                pyqtgraph_cpp
+                pyqtgraph_cpp_project_options
+                pyqtgraph_cpp_project_warnings
+        )
+        pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_core_functions_qimage)
+        add_test(NAME pyqtgraph_cpp.core.functions_qimage COMMAND pyqtgraph_cpp_core_functions_qimage)
+        set_tests_properties(pyqtgraph_cpp.core.functions_qimage PROPERTIES LABELS P2.11)
+
         add_executable(pyqtgraph_cpp_core_colormap tests/core/test_ColorMap.cpp)
         target_link_libraries(pyqtgraph_cpp_core_colormap
             PRIVATE

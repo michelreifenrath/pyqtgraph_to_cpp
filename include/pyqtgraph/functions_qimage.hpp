@@ -1,6 +1,7 @@
 #pragma once
 
-// Source note: translated/adapted from PyQtGraph pyqtgraph/functions.py
+// Source note: translated/adapted from PyQtGraph pyqtgraph/functions.py and
+// pyqtgraph/functions_qimage.py
 // PyQtGraph ref: pyqtgraph-0.14.0
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
@@ -30,5 +31,13 @@ struct MakeQImageOptions {
                                 const MakeQImageOptions& options = {});
 [[nodiscard]] QImage makeQImage(core::ArrayView<const std::uint8_t, 3> imageData,
                                 const MakeQImageOptions& options = {});
+
+// Core pass-through conversion matching upstream try_make_qimage without levels/LUT.
+// Unsupported inputs return std::nullopt. Accepted inputs are copied to a contiguous
+// QImage-owned buffer (upstream numpy.ascontiguousarray semantics).
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData);
 
 } // namespace pyqtgraph
