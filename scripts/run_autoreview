@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -53,6 +54,45 @@ def timeout_output(value: str | bytes | None) -> str:
         return value.decode("utf-8", errors="replace")
     return value
 
+
+
+def parse_review_findings(text: str) -> list[dict[str, str]]:
+    """Extract gate-relevant P1/P2 review findings from autoreview/Codex text."""
+    findings: list[dict[str, str]] = []
+    lines = text.splitlines()
+    marker = re.compile(r"^\s*-\s*\[(P[12])\]\s*(.+?)(?:\s+[—-]\s+(.+))?\s*$")
+    index = 0
+    while index < len(lines):
+        match = marker.match(lines[index])
+        if match is None:
+            index += 1
+            continue
+
+        severity, title, location = match.groups()
+        detail_lines: list[str] = []
+        index += 1
+        while index < len(lines):
+            line = lines[index]
+            if marker.match(line):
+                break
+            if line.startswith("[") and line.endswith("]"):
+                break
+            if line.strip():
+                detail_lines.append(line.strip())
+            elif detail_lines:
+                break
+            index += 1
+
+        finding = {
+            "severity": severity,
+            "title": title.strip(),
+            "evidence": " ".join(detail_lines).strip(),
+        }
+        if location:
+            finding["location"] = location.strip()
+        findings.append(finding)
+
+    return findings
 
 def autoreview_cli_mode(mode: str) -> str:
     if mode not in SUPPORTED_WRAPPER_MODES:
@@ -258,20 +298,34 @@ def main(argv: list[str] | None = None) -> int:
         return 124
 
     write_text(log_path, f"$ {' '.join(command)}\n\n[stdout]\n{result.stdout}\n[stderr]\n{result.stderr}")
+    findings = parse_review_findings("\n".join([result.stdout or "", result.stderr or ""]))
+    has_findings = bool(findings)
+    effective_returncode = result.returncode if result.returncode != 0 else (1 if has_findings else 0)
+    findings_path = reports_dir / "autoreview-findings.json"
+    write_text(
+        findings_path,
+        json.dumps({"has_findings": has_findings, "findings": findings}, indent=2, sort_keys=True) + "\n",
+    )
     summary = {
-        "status": "passed" if result.returncode == 0 else "failed",
+        "status": "passed" if effective_returncode == 0 else "failed",
         "mode": mode,
         "base": base,
-        "returncode": result.returncode,
+        "returncode": effective_returncode,
+        "raw_returncode": result.returncode,
+        "has_findings": has_findings,
+        "findings": findings,
+        "findings_output": str(findings_path),
         "command": command,
         "log": str(log_path),
         "json_output": str(json_output_path),
         "finished_at": time.time(),
     }
     write_text(summary_path, json.dumps(summary, indent=2, sort_keys=True) + "\n")
-    if result.returncode != 0:
-        print(f"autoreview gate failed ({result.returncode})", file=sys.stderr)
-    return result.returncode
+    if has_findings:
+        print(f"autoreview gate found {len(findings)} P1/P2 finding(s)", file=sys.stderr)
+    if effective_returncode != 0:
+        print(f"autoreview gate failed ({effective_returncode})", file=sys.stderr)
+    return effective_returncode
 
 
 if __name__ == "__main__":
