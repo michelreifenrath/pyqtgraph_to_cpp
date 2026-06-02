@@ -4,1286 +4,1499 @@ reference:
   pinned_commit: a20028b98294b9cc8770f2015a92eb342224b788
   docs_url: https://pyqtgraph.readthedocs.io/
 manifest_schema:
-  status_metadata: adopted
+  status_metadata: evidence_backed
 source_files:
 - upstream_path: pyqtgraph/GraphicsScene/GraphicsScene.py
   target_header_path: include/pyqtgraph/GraphicsScene/GraphicsScene.hpp
   target_source_path: src/pyqtgraph/GraphicsScene/GraphicsScene.cpp
   subsystem: GraphicsScene
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/GraphicsScene/__init__.py
   target_header_path: include/pyqtgraph/GraphicsScene/__init__.hpp
   target_source_path: src/pyqtgraph/GraphicsScene/__init__.cpp
   subsystem: GraphicsScene
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/GraphicsScene/exportDialog.py
   target_header_path: include/pyqtgraph/GraphicsScene/exportDialog.hpp
   target_source_path: src/pyqtgraph/GraphicsScene/exportDialog.cpp
   subsystem: GraphicsScene
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/GraphicsScene/exportDialogTemplate_generic.py
   target_header_path: include/pyqtgraph/GraphicsScene/exportDialogTemplate_generic.hpp
   target_source_path: src/pyqtgraph/GraphicsScene/exportDialogTemplate_generic.cpp
   subsystem: GraphicsScene
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/GraphicsScene/mouseEvents.py
   target_header_path: include/pyqtgraph/GraphicsScene/mouseEvents.hpp
   target_source_path: src/pyqtgraph/GraphicsScene/mouseEvents.cpp
   subsystem: GraphicsScene
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/PlotData.py
   target_header_path: include/pyqtgraph/PlotData.hpp
   target_source_path: src/pyqtgraph/PlotData.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/Point.py
   target_header_path: include/pyqtgraph/Point.hpp
   target_source_path: src/pyqtgraph/Point.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/Qt/OpenGLConstants.py
   target_header_path: include/pyqtgraph/Qt/OpenGLConstants.hpp
   target_source_path: src/pyqtgraph/Qt/OpenGLConstants.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Qt/OpenGLHelpers.py
   target_header_path: include/pyqtgraph/Qt/OpenGLHelpers.hpp
   target_source_path: src/pyqtgraph/Qt/OpenGLHelpers.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Qt/QtCore/__init__.py
   target_header_path: include/pyqtgraph/Qt/QtCore/__init__.hpp
   target_source_path: src/pyqtgraph/Qt/QtCore/__init__.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Qt/QtGui/__init__.py
   target_header_path: include/pyqtgraph/Qt/QtGui/__init__.hpp
   target_source_path: src/pyqtgraph/Qt/QtGui/__init__.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Qt/QtWidgets/__init__.py
   target_header_path: include/pyqtgraph/Qt/QtWidgets/__init__.hpp
   target_source_path: src/pyqtgraph/Qt/QtWidgets/__init__.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Qt/__init__.py
   target_header_path: include/pyqtgraph/Qt/__init__.hpp
   target_source_path: src/pyqtgraph/Qt/__init__.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Qt/compat/__init__.py
   target_header_path: include/pyqtgraph/Qt/compat/__init__.hpp
   target_source_path: src/pyqtgraph/Qt/compat/__init__.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Qt/internals.py
   target_header_path: include/pyqtgraph/Qt/internals.hpp
   target_source_path: src/pyqtgraph/Qt/internals.cpp
   subsystem: Qt
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/SRTTransform.py
   target_header_path: include/pyqtgraph/SRTTransform.hpp
   target_source_path: src/pyqtgraph/SRTTransform.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/SRTTransform3D.py
   target_header_path: include/pyqtgraph/SRTTransform3D.hpp
   target_source_path: src/pyqtgraph/SRTTransform3D.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/SignalProxy.py
   target_header_path: include/pyqtgraph/SignalProxy.hpp
   target_source_path: src/pyqtgraph/SignalProxy.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/ThreadsafeTimer.py
   target_header_path: include/pyqtgraph/ThreadsafeTimer.hpp
   target_source_path: src/pyqtgraph/ThreadsafeTimer.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/Transform3D.py
   target_header_path: include/pyqtgraph/Transform3D.hpp
   target_source_path: src/pyqtgraph/Transform3D.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/Vector.py
   target_header_path: include/pyqtgraph/Vector.hpp
   target_source_path: src/pyqtgraph/Vector.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/WidgetGroup.py
   target_header_path: include/pyqtgraph/WidgetGroup.hpp
   target_source_path: src/pyqtgraph/WidgetGroup.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/__init__.py
   target_header_path: include/pyqtgraph/__init__.hpp
   target_source_path: src/pyqtgraph/__init__.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/colormap.py
   target_header_path: include/pyqtgraph/colormap.hpp
   target_source_path: src/pyqtgraph/colormap.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/colors/__init__.py
   target_header_path: include/pyqtgraph/colors/__init__.hpp
   target_source_path: src/pyqtgraph/colors/__init__.cpp
   subsystem: colors
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/colors/palette.py
   target_header_path: include/pyqtgraph/colors/palette.hpp
   target_source_path: src/pyqtgraph/colors/palette.cpp
   subsystem: colors
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/configfile.py
   target_header_path: include/pyqtgraph/configfile.hpp
   target_source_path: src/pyqtgraph/configfile.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/console/CmdInput.py
   target_header_path: include/pyqtgraph/console/CmdInput.hpp
   target_source_path: src/pyqtgraph/console/CmdInput.cpp
   subsystem: console
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/console/Console.py
   target_header_path: include/pyqtgraph/console/Console.hpp
   target_source_path: src/pyqtgraph/console/Console.cpp
   subsystem: console
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/console/__init__.py
   target_header_path: include/pyqtgraph/console/__init__.hpp
   target_source_path: src/pyqtgraph/console/__init__.cpp
   subsystem: console
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/console/exception_widget.py
   target_header_path: include/pyqtgraph/console/exception_widget.hpp
   target_source_path: src/pyqtgraph/console/exception_widget.cpp
   subsystem: console
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/console/repl_widget.py
   target_header_path: include/pyqtgraph/console/repl_widget.hpp
   target_source_path: src/pyqtgraph/console/repl_widget.cpp
   subsystem: console
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/console/stackwidget.py
   target_header_path: include/pyqtgraph/console/stackwidget.hpp
   target_source_path: src/pyqtgraph/console/stackwidget.cpp
   subsystem: console
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
   target_source_path: src/pyqtgraph/debug.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
   target_source_path: src/pyqtgraph/dockarea/Container.cpp
   subsystem: dockarea
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/dockarea/Dock.py
   target_header_path: include/pyqtgraph/dockarea/Dock.hpp
   target_source_path: src/pyqtgraph/dockarea/Dock.cpp
   subsystem: dockarea
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/dockarea/DockArea.py
   target_header_path: include/pyqtgraph/dockarea/DockArea.hpp
   target_source_path: src/pyqtgraph/dockarea/DockArea.cpp
   subsystem: dockarea
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/dockarea/DockDrop.py
   target_header_path: include/pyqtgraph/dockarea/DockDrop.hpp
   target_source_path: src/pyqtgraph/dockarea/DockDrop.cpp
   subsystem: dockarea
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/dockarea/__init__.py
   target_header_path: include/pyqtgraph/dockarea/__init__.hpp
   target_source_path: src/pyqtgraph/dockarea/__init__.cpp
   subsystem: dockarea
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exceptionHandling.py
   target_header_path: include/pyqtgraph/exceptionHandling.hpp
   target_source_path: src/pyqtgraph/exceptionHandling.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/CSVExporter.py
   target_header_path: include/pyqtgraph/exporters/CSVExporter.hpp
   target_source_path: src/pyqtgraph/exporters/CSVExporter.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/Exporter.py
   target_header_path: include/pyqtgraph/exporters/Exporter.hpp
   target_source_path: src/pyqtgraph/exporters/Exporter.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/HDF5Exporter.py
   target_header_path: include/pyqtgraph/exporters/HDF5Exporter.hpp
   target_source_path: src/pyqtgraph/exporters/HDF5Exporter.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/ImageExporter.py
   target_header_path: include/pyqtgraph/exporters/ImageExporter.hpp
   target_source_path: src/pyqtgraph/exporters/ImageExporter.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/Matplotlib.py
   target_header_path: include/pyqtgraph/exporters/Matplotlib.hpp
   target_source_path: src/pyqtgraph/exporters/Matplotlib.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/PrintExporter.py
   target_header_path: include/pyqtgraph/exporters/PrintExporter.hpp
   target_source_path: src/pyqtgraph/exporters/PrintExporter.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/SVGExporter.py
   target_header_path: include/pyqtgraph/exporters/SVGExporter.hpp
   target_source_path: src/pyqtgraph/exporters/SVGExporter.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/__init__.py
   target_header_path: include/pyqtgraph/exporters/__init__.hpp
   target_source_path: src/pyqtgraph/exporters/__init__.cpp
   subsystem: exporters
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/Flowchart.py
   target_header_path: include/pyqtgraph/flowchart/Flowchart.hpp
   target_source_path: src/pyqtgraph/flowchart/Flowchart.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/FlowchartCtrlTemplate_generic.py
   target_header_path: include/pyqtgraph/flowchart/FlowchartCtrlTemplate_generic.hpp
   target_source_path: src/pyqtgraph/flowchart/FlowchartCtrlTemplate_generic.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/FlowchartGraphicsView.py
   target_header_path: include/pyqtgraph/flowchart/FlowchartGraphicsView.hpp
   target_source_path: src/pyqtgraph/flowchart/FlowchartGraphicsView.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/Node.py
   target_header_path: include/pyqtgraph/flowchart/Node.hpp
   target_source_path: src/pyqtgraph/flowchart/Node.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/NodeLibrary.py
   target_header_path: include/pyqtgraph/flowchart/NodeLibrary.hpp
   target_source_path: src/pyqtgraph/flowchart/NodeLibrary.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/Terminal.py
   target_header_path: include/pyqtgraph/flowchart/Terminal.hpp
   target_source_path: src/pyqtgraph/flowchart/Terminal.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/__init__.py
   target_header_path: include/pyqtgraph/flowchart/__init__.hpp
   target_source_path: src/pyqtgraph/flowchart/__init__.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
   target_source_path: src/pyqtgraph/flowchart/library/Data.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/library/Display.py
   target_header_path: include/pyqtgraph/flowchart/library/Display.hpp
   target_source_path: src/pyqtgraph/flowchart/library/Display.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
   target_source_path: src/pyqtgraph/flowchart/library/Filters.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
   target_source_path: src/pyqtgraph/flowchart/library/Operators.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/library/__init__.py
   target_header_path: include/pyqtgraph/flowchart/library/__init__.hpp
   target_source_path: src/pyqtgraph/flowchart/library/__init__.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/library/common.py
   target_header_path: include/pyqtgraph/flowchart/library/common.hpp
   target_source_path: src/pyqtgraph/flowchart/library/common.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/flowchart/library/functions.py
   target_header_path: include/pyqtgraph/flowchart/library/functions.hpp
   target_source_path: src/pyqtgraph/flowchart/library/functions.cpp
   subsystem: flowchart
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/frozenSupport.py
   target_header_path: include/pyqtgraph/frozenSupport.hpp
   target_source_path: src/pyqtgraph/frozenSupport.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/functions.py
   target_header_path: include/pyqtgraph/functions.hpp
   target_source_path: src/pyqtgraph/functions.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/functions_numba.py
   target_header_path: include/pyqtgraph/functions_numba.hpp
   target_source_path: src/pyqtgraph/functions_numba.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/functions_qimage.py
   target_header_path: include/pyqtgraph/functions_qimage.hpp
   target_source_path: src/pyqtgraph/functions_qimage.cpp
   subsystem: core
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ArrowItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ArrowItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ArrowItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/AxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/AxisItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/AxisItem.cpp
   subsystem: graphicsItems
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/BarGraphItem.py
   target_header_path: include/pyqtgraph/graphicsItems/BarGraphItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/BarGraphItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/BoxplotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/BoxplotItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/BoxplotItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ButtonItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ButtonItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ButtonItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ColorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ColorBarItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ColorBarItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/CurvePoint.py
   target_header_path: include/pyqtgraph/graphicsItems/CurvePoint.hpp
   target_source_path: src/pyqtgraph/graphicsItems/CurvePoint.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/DateAxisItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ErrorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ErrorBarItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ErrorBarItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/FillBetweenItem.py
   target_header_path: include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/FillBetweenItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientEditorItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/GradientLegend.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientLegend.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientLegend.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/GradientPresets.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientPresets.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientPresets.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/GraphItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/GraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsItem.cpp
   subsystem: graphicsItems
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GraphicsLayout.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsLayout.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsLayout.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/GraphicsObject.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsObject.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsObject.cpp
   subsystem: graphicsItems
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GraphicsWidget.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsWidget.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
   subsystem: graphicsItems
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GraphicsWidgetAnchor.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/GridItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GridItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GridItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/HistogramLUTItem.py
   target_header_path: include/pyqtgraph/graphicsItems/HistogramLUTItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/HistogramLUTItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ImageItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ImageItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ImageItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/InfiniteLine.py
   target_header_path: include/pyqtgraph/graphicsItems/InfiniteLine.hpp
   target_source_path: src/pyqtgraph/graphicsItems/InfiniteLine.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/IsocurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/IsocurveItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/IsocurveItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ItemGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/ItemGroup.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ItemGroup.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/LabelItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LabelItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/LabelItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/LegendItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LegendItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/LegendItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/LinearRegionItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LinearRegionItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/LinearRegionItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/NonUniformImage.py
   target_header_path: include/pyqtgraph/graphicsItems/NonUniformImage.hpp
   target_source_path: src/pyqtgraph/graphicsItems/NonUniformImage.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PColorMeshItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/PlotCurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotCurveItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
   subsystem: graphicsItems
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotDataItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/PlotItem/PlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp
   subsystem: graphicsItems
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/PlotItem/__init__.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/__init__.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotItem/__init__.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ROI.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ScaleBar.py
   target_header_path: include/pyqtgraph/graphicsItems/ScaleBar.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ScaleBar.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ScatterPlotItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/TargetItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TargetItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/TargetItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/TextItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TextItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/TextItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/UIGraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/UIGraphicsItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/UIGraphicsItem.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/VTickGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/VTickGroup.hpp
   target_source_path: src/pyqtgraph/graphicsItems/VTickGroup.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBox.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/ViewBox.cpp
   subsystem: graphicsItems
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/__init__.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/__init__.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/__init__.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/graphicsItems/__init__.py
   target_header_path: include/pyqtgraph/graphicsItems/__init__.hpp
   target_source_path: src/pyqtgraph/graphicsItems/__init__.cpp
   subsystem: graphicsItems
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/icons/__init__.py
   target_header_path: include/pyqtgraph/icons/__init__.hpp
   target_source_path: src/pyqtgraph/icons/__init__.cpp
   subsystem: icons
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/imageview/ImageView.py
   target_header_path: include/pyqtgraph/imageview/ImageView.hpp
   target_source_path: src/pyqtgraph/imageview/ImageView.cpp
   subsystem: imageview
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/imageview/ImageViewTemplate_generic.py
   target_header_path: include/pyqtgraph/imageview/ImageViewTemplate_generic.hpp
   target_source_path: src/pyqtgraph/imageview/ImageViewTemplate_generic.cpp
   subsystem: imageview
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/imageview/__init__.py
   target_header_path: include/pyqtgraph/imageview/__init__.hpp
   target_source_path: src/pyqtgraph/imageview/__init__.cpp
   subsystem: imageview
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/jupyter/GraphicsView.py
   target_header_path: include/pyqtgraph/jupyter/GraphicsView.hpp
   target_source_path: src/pyqtgraph/jupyter/GraphicsView.cpp
   subsystem: jupyter
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/jupyter/__init__.py
   target_header_path: include/pyqtgraph/jupyter/__init__.hpp
   target_source_path: src/pyqtgraph/jupyter/__init__.cpp
   subsystem: jupyter
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/multiprocess/__init__.py
   target_header_path: include/pyqtgraph/multiprocess/__init__.hpp
   target_source_path: src/pyqtgraph/multiprocess/__init__.cpp
   subsystem: multiprocess
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/multiprocess/bootstrap.py
   target_header_path: include/pyqtgraph/multiprocess/bootstrap.hpp
   target_source_path: src/pyqtgraph/multiprocess/bootstrap.cpp
   subsystem: multiprocess
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/multiprocess/parallelizer.py
   target_header_path: include/pyqtgraph/multiprocess/parallelizer.hpp
   target_source_path: src/pyqtgraph/multiprocess/parallelizer.cpp
   subsystem: multiprocess
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/multiprocess/processes.py
   target_header_path: include/pyqtgraph/multiprocess/processes.hpp
   target_source_path: src/pyqtgraph/multiprocess/processes.cpp
   subsystem: multiprocess
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
   target_source_path: src/pyqtgraph/multiprocess/remoteproxy.cpp
   subsystem: multiprocess
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/GLGraphicsItem.py
   target_header_path: include/pyqtgraph/opengl/GLGraphicsItem.hpp
   target_source_path: src/pyqtgraph/opengl/GLGraphicsItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/GLViewWidget.py
   target_header_path: include/pyqtgraph/opengl/GLViewWidget.hpp
   target_source_path: src/pyqtgraph/opengl/GLViewWidget.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/MeshData.py
   target_header_path: include/pyqtgraph/opengl/MeshData.hpp
   target_source_path: src/pyqtgraph/opengl/MeshData.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/__init__.py
   target_header_path: include/pyqtgraph/opengl/__init__.hpp
   target_source_path: src/pyqtgraph/opengl/__init__.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLAxisItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLAxisItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLAxisItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLBarGraphItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLBarGraphItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLBarGraphItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLBoxItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLBoxItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLBoxItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLGradientLegendItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLGradientLegendItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLGradientLegendItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLGraphItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLGraphItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLGraphItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLGridItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLGridItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLGridItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLImageItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLImageItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLImageItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLLinePlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLLinePlotItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLLinePlotItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLMeshItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLMeshItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLMeshItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLScatterPlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLScatterPlotItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLScatterPlotItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLSurfacePlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLSurfacePlotItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLSurfacePlotItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLTextItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLTextItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLTextItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/GLVolumeItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLVolumeItem.hpp
   target_source_path: src/pyqtgraph/opengl/items/GLVolumeItem.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/items/__init__.py
   target_header_path: include/pyqtgraph/opengl/items/__init__.hpp
   target_source_path: src/pyqtgraph/opengl/items/__init__.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/opengl/shaders.py
   target_header_path: include/pyqtgraph/opengl/shaders.hpp
   target_source_path: src/pyqtgraph/opengl/shaders.cpp
   subsystem: opengl
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/Parameter.py
   target_header_path: include/pyqtgraph/parametertree/Parameter.hpp
   target_source_path: src/pyqtgraph/parametertree/Parameter.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/ParameterItem.py
   target_header_path: include/pyqtgraph/parametertree/ParameterItem.hpp
   target_source_path: src/pyqtgraph/parametertree/ParameterItem.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/ParameterSystem.py
   target_header_path: include/pyqtgraph/parametertree/ParameterSystem.hpp
   target_source_path: src/pyqtgraph/parametertree/ParameterSystem.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/ParameterTree.py
   target_header_path: include/pyqtgraph/parametertree/ParameterTree.hpp
   target_source_path: src/pyqtgraph/parametertree/ParameterTree.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/SystemSolver.py
   target_header_path: include/pyqtgraph/parametertree/SystemSolver.hpp
   target_source_path: src/pyqtgraph/parametertree/SystemSolver.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/__init__.py
   target_header_path: include/pyqtgraph/parametertree/__init__.hpp
   target_source_path: src/pyqtgraph/parametertree/__init__.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/interactive.py
   target_header_path: include/pyqtgraph/parametertree/interactive.hpp
   target_source_path: src/pyqtgraph/parametertree/interactive.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/__init__.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/__init__.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/__init__.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/action.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/action.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/action.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/actiongroup.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/actiongroup.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/actiongroup.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/basetypes.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/basetypes.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/basetypes.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/bool.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/bool.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/bool.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/calendar.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/calendar.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/calendar.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/checklist.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/checklist.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/checklist.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/color.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/color.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/color.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/colormap.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/colormap.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/colormap.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/colormaplut.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/colormaplut.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/colormaplut.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/file.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/file.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/file.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/font.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/font.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/font.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/list.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/list.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/list.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/numeric.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/numeric.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/numeric.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/pen.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/pen.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/pen.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/progress.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/progress.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/progress.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/qtenum.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/qtenum.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/qtenum.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/slider.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/slider.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/slider.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/str.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/str.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/str.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/parametertree/parameterTypes/text.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/text.hpp
   target_source_path: src/pyqtgraph/parametertree/parameterTypes/text.cpp
   subsystem: parametertree
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/reload.py
   target_header_path: include/pyqtgraph/reload.hpp
   target_source_path: src/pyqtgraph/reload.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/units.py
   target_header_path: include/pyqtgraph/units.hpp
   target_source_path: src/pyqtgraph/units.cpp
   subsystem: core
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/__init__.py
   target_header_path: include/pyqtgraph/util/__init__.hpp
   target_source_path: src/pyqtgraph/util/__init__.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/cprint.py
   target_header_path: include/pyqtgraph/util/cprint.hpp
   target_source_path: src/pyqtgraph/util/cprint.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/cupy_helper.py
   target_header_path: include/pyqtgraph/util/cupy_helper.hpp
   target_source_path: src/pyqtgraph/util/cupy_helper.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/garbage_collector.py
   target_header_path: include/pyqtgraph/util/garbage_collector.hpp
   target_source_path: src/pyqtgraph/util/garbage_collector.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/get_resolution.py
   target_header_path: include/pyqtgraph/util/get_resolution.hpp
   target_source_path: src/pyqtgraph/util/get_resolution.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/glinfo.py
   target_header_path: include/pyqtgraph/util/glinfo.hpp
   target_source_path: src/pyqtgraph/util/glinfo.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/mutex.py
   target_header_path: include/pyqtgraph/util/mutex.hpp
   target_source_path: src/pyqtgraph/util/mutex.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/util/numba_helper.py
   target_header_path: include/pyqtgraph/util/numba_helper.hpp
   target_source_path: src/pyqtgraph/util/numba_helper.cpp
   subsystem: util
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/BusyCursor.py
   target_header_path: include/pyqtgraph/widgets/BusyCursor.hpp
   target_source_path: src/pyqtgraph/widgets/BusyCursor.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/CheckTable.py
   target_header_path: include/pyqtgraph/widgets/CheckTable.hpp
   target_source_path: src/pyqtgraph/widgets/CheckTable.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/ColorButton.py
   target_header_path: include/pyqtgraph/widgets/ColorButton.hpp
   target_source_path: src/pyqtgraph/widgets/ColorButton.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/ColorMapButton.py
   target_header_path: include/pyqtgraph/widgets/ColorMapButton.hpp
   target_source_path: src/pyqtgraph/widgets/ColorMapButton.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/ColorMapMenu.py
   target_header_path: include/pyqtgraph/widgets/ColorMapMenu.hpp
   target_source_path: src/pyqtgraph/widgets/ColorMapMenu.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/ColorMapWidget.py
   target_header_path: include/pyqtgraph/widgets/ColorMapWidget.hpp
   target_source_path: src/pyqtgraph/widgets/ColorMapWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/ComboBox.py
   target_header_path: include/pyqtgraph/widgets/ComboBox.hpp
   target_source_path: src/pyqtgraph/widgets/ComboBox.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/DataFilterWidget.py
   target_header_path: include/pyqtgraph/widgets/DataFilterWidget.hpp
   target_source_path: src/pyqtgraph/widgets/DataFilterWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/DataTreeWidget.py
   target_header_path: include/pyqtgraph/widgets/DataTreeWidget.hpp
   target_source_path: src/pyqtgraph/widgets/DataTreeWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/DiffTreeWidget.py
   target_header_path: include/pyqtgraph/widgets/DiffTreeWidget.hpp
   target_source_path: src/pyqtgraph/widgets/DiffTreeWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/FeedbackButton.py
   target_header_path: include/pyqtgraph/widgets/FeedbackButton.hpp
   target_source_path: src/pyqtgraph/widgets/FeedbackButton.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/FileDialog.py
   target_header_path: include/pyqtgraph/widgets/FileDialog.hpp
   target_source_path: src/pyqtgraph/widgets/FileDialog.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/GradientWidget.py
   target_header_path: include/pyqtgraph/widgets/GradientWidget.hpp
   target_source_path: src/pyqtgraph/widgets/GradientWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/GraphicsLayoutWidget.py
   target_header_path: include/pyqtgraph/widgets/GraphicsLayoutWidget.hpp
   target_source_path: src/pyqtgraph/widgets/GraphicsLayoutWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/GraphicsView.py
   target_header_path: include/pyqtgraph/widgets/GraphicsView.hpp
   target_source_path: src/pyqtgraph/widgets/GraphicsView.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/GroupBox.py
   target_header_path: include/pyqtgraph/widgets/GroupBox.hpp
   target_source_path: src/pyqtgraph/widgets/GroupBox.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/HistogramLUTWidget.py
   target_header_path: include/pyqtgraph/widgets/HistogramLUTWidget.hpp
   target_source_path: src/pyqtgraph/widgets/HistogramLUTWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/JoystickButton.py
   target_header_path: include/pyqtgraph/widgets/JoystickButton.hpp
   target_source_path: src/pyqtgraph/widgets/JoystickButton.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/LayoutWidget.py
   target_header_path: include/pyqtgraph/widgets/LayoutWidget.hpp
   target_source_path: src/pyqtgraph/widgets/LayoutWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/MatplotlibWidget.py
   target_header_path: include/pyqtgraph/widgets/MatplotlibWidget.hpp
   target_source_path: src/pyqtgraph/widgets/MatplotlibWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/PathButton.py
   target_header_path: include/pyqtgraph/widgets/PathButton.hpp
   target_source_path: src/pyqtgraph/widgets/PathButton.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/PenPreviewLabel.py
   target_header_path: include/pyqtgraph/widgets/PenPreviewLabel.hpp
   target_source_path: src/pyqtgraph/widgets/PenPreviewLabel.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/PlotWidget.py
   target_header_path: include/pyqtgraph/widgets/PlotWidget.hpp
   target_source_path: src/pyqtgraph/widgets/PlotWidget.cpp
   subsystem: widgets
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/widgets/ProgressDialog.py
   target_header_path: include/pyqtgraph/widgets/ProgressDialog.hpp
   target_source_path: src/pyqtgraph/widgets/ProgressDialog.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/RawImageWidget.py
   target_header_path: include/pyqtgraph/widgets/RawImageWidget.hpp
   target_source_path: src/pyqtgraph/widgets/RawImageWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/RemoteGraphicsView.py
   target_header_path: include/pyqtgraph/widgets/RemoteGraphicsView.hpp
   target_source_path: src/pyqtgraph/widgets/RemoteGraphicsView.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/ScatterPlotWidget.py
   target_header_path: include/pyqtgraph/widgets/ScatterPlotWidget.hpp
   target_source_path: src/pyqtgraph/widgets/ScatterPlotWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/SpinBox.py
   target_header_path: include/pyqtgraph/widgets/SpinBox.hpp
   target_source_path: src/pyqtgraph/widgets/SpinBox.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/TableWidget.py
   target_header_path: include/pyqtgraph/widgets/TableWidget.hpp
   target_source_path: src/pyqtgraph/widgets/TableWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/TreeWidget.py
   target_header_path: include/pyqtgraph/widgets/TreeWidget.hpp
   target_source_path: src/pyqtgraph/widgets/TreeWidget.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/ValueLabel.py
   target_header_path: include/pyqtgraph/widgets/ValueLabel.hpp
   target_source_path: src/pyqtgraph/widgets/ValueLabel.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/VerticalLabel.py
   target_header_path: include/pyqtgraph/widgets/VerticalLabel.hpp
   target_source_path: src/pyqtgraph/widgets/VerticalLabel.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/__init__.py
   target_header_path: include/pyqtgraph/widgets/__init__.hpp
   target_source_path: src/pyqtgraph/widgets/__init__.cpp
   subsystem: widgets
   status: not_started
   completion: missing
+  target_presence: none
 examples:
 - upstream_path: pyqtgraph/examples/Arrow.py
   target_source_path: examples/Arrow.cpp
@@ -1291,839 +1504,984 @@ examples:
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/AxisItem_label_overlap.py
   target_source_path: examples/AxisItem_label_overlap.cpp
   name: AxisItem_label_overlap
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/BarGraphItem.py
   target_source_path: examples/BarGraphItem.cpp
   name: BarGraphItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/BoxplotItem.py
   target_source_path: examples/BoxplotItem.cpp
   name: BoxplotItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/CLIexample.py
   target_source_path: examples/CLIexample.cpp
   name: CLIexample
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ColorBarItem.py
   target_source_path: examples/ColorBarItem.cpp
   name: ColorBarItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ColorButton.py
   target_source_path: examples/ColorButton.cpp
   name: ColorButton
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ColorGradientPlots.py
   target_source_path: examples/ColorGradientPlots.cpp
   name: ColorGradientPlots
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ConsoleWidget.py
   target_source_path: examples/ConsoleWidget.cpp
   name: ConsoleWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/CustomGraphItem.py
   target_source_path: examples/CustomGraphItem.cpp
   name: CustomGraphItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/DataSlicing.py
   target_source_path: examples/DataSlicing.cpp
   name: DataSlicing
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/DataTreeWidget.py
   target_source_path: examples/DataTreeWidget.cpp
   name: DataTreeWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/DateAxisItem.py
   target_source_path: examples/DateAxisItem.cpp
   name: DateAxisItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/DateAxisItem_QtDesigner.py
   target_source_path: examples/DateAxisItem_QtDesigner.cpp
   name: DateAxisItem_QtDesigner
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/DiffTreeWidget.py
   target_source_path: examples/DiffTreeWidget.cpp
   name: DiffTreeWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/Draw.py
   target_source_path: examples/Draw.cpp
   name: Draw
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ErrorBarItem.py
   target_source_path: examples/ErrorBarItem.cpp
   name: ErrorBarItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ExampleApp.py
   target_source_path: examples/ExampleApp.cpp
   name: ExampleApp
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/FillBetweenItem.py
   target_source_path: examples/FillBetweenItem.cpp
   name: FillBetweenItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/Flowchart.py
   target_source_path: examples/Flowchart.cpp
   name: Flowchart
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/FlowchartCustomNode.py
   target_source_path: examples/FlowchartCustomNode.cpp
   name: FlowchartCustomNode
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLBarGraphItem.py
   target_source_path: examples/GLBarGraphItem.cpp
   name: GLBarGraphItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLGradientLegendItem.py
   target_source_path: examples/GLGradientLegendItem.cpp
   name: GLGradientLegendItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLGraphItem.py
   target_source_path: examples/GLGraphItem.cpp
   name: GLGraphItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLImageItem.py
   target_source_path: examples/GLImageItem.cpp
   name: GLImageItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLIsosurface.py
   target_source_path: examples/GLIsosurface.cpp
   name: GLIsosurface
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLLinePlotItem.py
   target_source_path: examples/GLLinePlotItem.cpp
   name: GLLinePlotItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLMeshItem.py
   target_source_path: examples/GLMeshItem.cpp
   name: GLMeshItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLPainterItem.py
   target_source_path: examples/GLPainterItem.cpp
   name: GLPainterItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLScatterPlotItem.py
   target_source_path: examples/GLScatterPlotItem.cpp
   name: GLScatterPlotItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLSurfacePlot.py
   target_source_path: examples/GLSurfacePlot.cpp
   name: GLSurfacePlot
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLTextItem.py
   target_source_path: examples/GLTextItem.cpp
   name: GLTextItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLViewWidget.py
   target_source_path: examples/GLViewWidget.cpp
   name: GLViewWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLVolumeItem.py
   target_source_path: examples/GLVolumeItem.cpp
   name: GLVolumeItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GLshaders.py
   target_source_path: examples/GLshaders.cpp
   name: GLshaders
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GradientEditor.py
   target_source_path: examples/GradientEditor.cpp
   name: GradientEditor
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GradientWidget.py
   target_source_path: examples/GradientWidget.cpp
   name: GradientWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GraphItem.py
   target_source_path: examples/GraphItem.cpp
   name: GraphItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GraphicsLayout.py
   target_source_path: examples/GraphicsLayout.cpp
   name: GraphicsLayout
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/GraphicsScene.py
   target_source_path: examples/GraphicsScene.cpp
   name: GraphicsScene
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/HistogramLUT.py
   target_source_path: examples/HistogramLUT.cpp
   name: HistogramLUT
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ImageItem.py
   target_source_path: examples/ImageItem.cpp
   name: ImageItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ImageView.py
   target_source_path: examples/ImageView.cpp
   name: ImageView
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/InfiniteLine.py
   target_source_path: examples/InfiniteLine.cpp
   name: InfiniteLine
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/InteractiveParameter.py
   target_source_path: examples/InteractiveParameter.cpp
   name: InteractiveParameter
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/JoystickButton.py
   target_source_path: examples/JoystickButton.cpp
   name: JoystickButton
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/Legend.py
   target_source_path: examples/Legend.cpp
   name: Legend
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/LogPlotTest.py
   target_source_path: examples/LogPlotTest.cpp
   name: LogPlotTest
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/MatrixDisplayExample.py
   target_source_path: examples/MatrixDisplayExample.cpp
   name: MatrixDisplayExample
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/MouseSelection.py
   target_source_path: examples/MouseSelection.cpp
   name: MouseSelection
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/MultiDataPlot.py
   target_source_path: examples/MultiDataPlot.cpp
   name: MultiDataPlot
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/MultiPlotSpeedTest.py
   target_source_path: examples/MultiPlotSpeedTest.cpp
   name: MultiPlotSpeedTest
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/MultiplePlotAxes.py
   target_source_path: examples/MultiplePlotAxes.cpp
   name: MultiplePlotAxes
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/NonUniformImage.py
   target_source_path: examples/NonUniformImage.cpp
   name: NonUniformImage
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/PColorMeshItem.py
   target_source_path: examples/PColorMeshItem.cpp
   name: PColorMeshItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/PanningPlot.py
   target_source_path: examples/PanningPlot.cpp
   name: PanningPlot
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/PlotAutoRange.py
   target_source_path: examples/PlotAutoRange.cpp
   name: PlotAutoRange
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/PlotSpeedTest.py
   target_source_path: examples/PlotSpeedTest.cpp
   name: PlotSpeedTest
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/PlotWidget.py
   target_source_path: examples/PlotWidget.cpp
   name: PlotWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/Plotting.py
   target_source_path: examples/Plotting.cpp
   name: Plotting
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ProgressDialog.py
   target_source_path: examples/ProgressDialog.cpp
   name: ProgressDialog
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ROIExamples.py
   target_source_path: examples/ROIExamples.cpp
   name: ROIExamples
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ROItypes.py
   target_source_path: examples/ROItypes.cpp
   name: ROItypes
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/RemoteGraphicsView.py
   target_source_path: examples/RemoteGraphicsView.cpp
   name: RemoteGraphicsView
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/RemoteSpeedTest.py
   target_source_path: examples/RemoteSpeedTest.cpp
   name: RemoteSpeedTest
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/RunExampleApp.py
   target_source_path: examples/RunExampleApp.cpp
   name: RunExampleApp
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ScaleBar.py
   target_source_path: examples/ScaleBar.cpp
   name: ScaleBar
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ScatterPlot.py
   target_source_path: examples/ScatterPlot.cpp
   name: ScatterPlot
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ScatterPlotSpeedTest.py
   target_source_path: examples/ScatterPlotSpeedTest.cpp
   name: ScatterPlotSpeedTest
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ScatterPlotWidget.py
   target_source_path: examples/ScatterPlotWidget.cpp
   name: ScatterPlotWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/SimplePlot.py
   target_source_path: examples/SimplePlot.cpp
   name: SimplePlot
   category: root
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/examples/SpinBox.py
   target_source_path: examples/SpinBox.cpp
   name: SpinBox
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/Symbols.py
   target_source_path: examples/Symbols.cpp
   name: Symbols
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/TableWidget.py
   target_source_path: examples/TableWidget.cpp
   name: TableWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/TreeWidget.py
   target_source_path: examples/TreeWidget.cpp
   name: TreeWidget
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/VideoSpeedTest.py
   target_source_path: examples/VideoSpeedTest.cpp
   name: VideoSpeedTest
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/VideoTemplate_generic.py
   target_source_path: examples/VideoTemplate_generic.cpp
   name: VideoTemplate_generic
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ViewBox.py
   target_source_path: examples/ViewBox.cpp
   name: ViewBox
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ViewBoxFeatures.py
   target_source_path: examples/ViewBoxFeatures.cpp
   name: ViewBoxFeatures
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ViewLimits.py
   target_source_path: examples/ViewLimits.cpp
   name: ViewLimits
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/__init__.py
   target_source_path: examples/__init__.cpp
   name: __init__
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/__main__.py
   target_source_path: examples/__main__.cpp
   name: __main__
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/_buildParamTypes.py
   target_source_path: examples/_buildParamTypes.cpp
   name: _buildParamTypes
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/_paramtreecfg.py
   target_source_path: examples/_paramtreecfg.cpp
   name: _paramtreecfg
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/beeswarm.py
   target_source_path: examples/beeswarm.cpp
   name: beeswarm
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/colorMaps.py
   target_source_path: examples/colorMaps.cpp
   name: colorMaps
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/colorMapsLinearized.py
   target_source_path: examples/colorMapsLinearized.cpp
   name: colorMapsLinearized
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/console_exception_inspection.py
   target_source_path: examples/console_exception_inspection.cpp
   name: console_exception_inspection
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/contextMenu.py
   target_source_path: examples/contextMenu.cpp
   name: contextMenu
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/crosshair.py
   target_source_path: examples/crosshair.cpp
   name: crosshair
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/customGraphicsItem.py
   target_source_path: examples/customGraphicsItem.cpp
   name: customGraphicsItem
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/customPlot.py
   target_source_path: examples/customPlot.cpp
   name: customPlot
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/cx_freeze/plotTest.py
   target_source_path: examples/cx_freeze/plotTest.cpp
   name: cx_freeze/plotTest
   category: cx_freeze
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/cx_freeze/setup.py
   target_source_path: examples/cx_freeze/setup.cpp
   name: cx_freeze/setup
   category: cx_freeze
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/designerExample.py
   target_source_path: examples/designerExample.cpp
   name: designerExample
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/dockarea.py
   target_source_path: examples/dockarea.cpp
   name: dockarea
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/exampleLoaderTemplate_generic.py
   target_source_path: examples/exampleLoaderTemplate_generic.cpp
   name: exampleLoaderTemplate_generic
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/fractal.py
   target_source_path: examples/fractal.cpp
   name: fractal
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/glow.py
   target_source_path: examples/glow.cpp
   name: glow
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/hdf5.py
   target_source_path: examples/hdf5.cpp
   name: hdf5
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/histogram.py
   target_source_path: examples/histogram.cpp
   name: histogram
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/imageAnalysis.py
   target_source_path: examples/imageAnalysis.cpp
   name: imageAnalysis
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/infiniteline_performance.py
   target_source_path: examples/infiniteline_performance.cpp
   name: infiniteline_performance
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/isocurve.py
   target_source_path: examples/isocurve.cpp
   name: isocurve
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/jupyter_console_example.py
   target_source_path: examples/jupyter_console_example.cpp
   name: jupyter_console_example
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/linkedViews.py
   target_source_path: examples/linkedViews.cpp
   name: linkedViews
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/logAxis.py
   target_source_path: examples/logAxis.cpp
   name: logAxis
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/multiplePlotSpeedTest.py
   target_source_path: examples/multiplePlotSpeedTest.cpp
   name: multiplePlotSpeedTest
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/multiprocess.py
   target_source_path: examples/multiprocess.cpp
   name: multiprocess
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/optics/__init__.py
   target_source_path: examples/optics/__init__.cpp
   name: optics/__init__
   category: optics
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/optics/pyoptic.py
   target_source_path: examples/optics/pyoptic.cpp
   name: optics/pyoptic
   category: optics
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/optics_demos.py
   target_source_path: examples/optics_demos.cpp
   name: optics_demos
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/parallelize.py
   target_source_path: examples/parallelize.cpp
   name: parallelize
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/parametertree.py
   target_source_path: examples/parametertree.cpp
   name: parametertree
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/py2exe/plotTest.py
   target_source_path: examples/py2exe/plotTest.cpp
   name: py2exe/plotTest
   category: py2exe
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/py2exe/setup.py
   target_source_path: examples/py2exe/setup.cpp
   name: py2exe/setup
   category: py2exe
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/relativity/__init__.py
   target_source_path: examples/relativity/__init__.cpp
   name: relativity/__init__
   category: relativity
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/relativity/relativity.py
   target_source_path: examples/relativity/relativity.cpp
   name: relativity/relativity
   category: relativity
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/relativity_demo.py
   target_source_path: examples/relativity_demo.cpp
   name: relativity_demo
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/scrollingPlots.py
   target_source_path: examples/scrollingPlots.cpp
   name: scrollingPlots
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/syntax.py
   target_source_path: examples/syntax.cpp
   name: syntax
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/template.py
   target_source_path: examples/template.cpp
   name: template
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/test_examples.py
   target_source_path: examples/test_examples.cpp
   name: test_examples
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/text.py
   target_source_path: examples/text.cpp
   name: text
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/utils.py
   target_source_path: examples/utils.cpp
   name: utils
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/verlet_chain/__init__.py
   target_source_path: examples/verlet_chain/__init__.cpp
   name: verlet_chain/__init__
   category: verlet_chain
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/verlet_chain/chain.py
   target_source_path: examples/verlet_chain/chain.cpp
   name: verlet_chain/chain
   category: verlet_chain
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/verlet_chain/relax.py
   target_source_path: examples/verlet_chain/relax.cpp
   name: verlet_chain/relax
   category: verlet_chain
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/verlet_chain_demo.py
   target_source_path: examples/verlet_chain_demo.cpp
   name: verlet_chain_demo
   category: root
   status: not_started
   completion: missing
+  target_presence: none
 example_assets:
 - upstream_path: pyqtgraph/examples/DateAxisItem_QtDesigner.ui
   target_path: examples/DateAxisItem_QtDesigner.ui
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/VideoTemplate.ui
   target_path: examples/VideoTemplate.ui
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/designerExample.ui
   target_path: examples/designerExample.ui
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/exampleLoaderTemplate.ui
   target_path: examples/exampleLoaderTemplate.ui
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/notebooks/ImageAnalysis.ipynb
   target_path: examples/notebooks/ImageAnalysis.ipynb
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/notebooks/PColorMeshItem.ipynb
   target_path: examples/notebooks/PColorMeshItem.ipynb
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/notebooks/Plotting.ipynb
   target_path: examples/notebooks/Plotting.ipynb
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/notebooks/ROIExamples.ipynb
   target_path: examples/notebooks/ROIExamples.ipynb
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/notebooks/ScatterPlot.ipynb
   target_path: examples/notebooks/ScatterPlot.ipynb
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/notebooks/simple.ipynb
   target_path: examples/notebooks/simple.ipynb
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/optics/schott_glasses.csv.gz
   target_path: examples/optics/schott_glasses.csv.gz
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/relativity/presets/Grid Expansion.cfg
   target_path: examples/relativity/presets/Grid Expansion.cfg
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/relativity/presets/Twin Paradox (grid).cfg
   target_path: examples/relativity/presets/Twin Paradox (grid).cfg
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/relativity/presets/Twin Paradox.cfg
   target_path: examples/relativity/presets/Twin Paradox.cfg
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/verlet_chain/make
   target_path: examples/verlet_chain/make
   status: not_started
   completion: missing
+  target_presence: none
 - upstream_path: pyqtgraph/examples/verlet_chain/relax.c
   target_path: examples/verlet_chain/relax.c
   status: not_started
   completion: missing
+  target_presence: none
 example_inventory_summary:
   example_count: 129
   asset_count: 16
@@ -2138,7 +2496,8 @@ classes:
   - QtWidgets.QGraphicsScene
   line: 16
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: FormatExportListWidgetItem
   upstream_path: pyqtgraph/GraphicsScene/exportDialog.py
   target_header_path: include/pyqtgraph/GraphicsScene/exportDialog.hpp
@@ -2149,6 +2508,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ExportDialog
   upstream_path: pyqtgraph/GraphicsScene/exportDialog.py
   target_header_path: include/pyqtgraph/GraphicsScene/exportDialog.hpp
@@ -2159,6 +2519,7 @@ classes:
   line: 15
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Ui_Form
   upstream_path: pyqtgraph/GraphicsScene/exportDialogTemplate_generic.py
   target_header_path: include/pyqtgraph/GraphicsScene/exportDialogTemplate_generic.hpp
@@ -2169,6 +2530,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MouseDragEvent
   upstream_path: pyqtgraph/GraphicsScene/mouseEvents.py
   target_header_path: include/pyqtgraph/GraphicsScene/mouseEvents.hpp
@@ -2178,7 +2540,8 @@ classes:
   - object
   line: 10
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: MouseClickEvent
   upstream_path: pyqtgraph/GraphicsScene/mouseEvents.py
   target_header_path: include/pyqtgraph/GraphicsScene/mouseEvents.hpp
@@ -2188,7 +2551,8 @@ classes:
   - object
   line: 155
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: HoverEvent
   upstream_path: pyqtgraph/GraphicsScene/mouseEvents.py
   target_header_path: include/pyqtgraph/GraphicsScene/mouseEvents.hpp
@@ -2198,7 +2562,8 @@ classes:
   - object
   line: 246
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: PlotData
   upstream_path: pyqtgraph/PlotData.py
   target_header_path: include/pyqtgraph/PlotData.hpp
@@ -2208,7 +2573,8 @@ classes:
   - object
   line: 4
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: Point
   upstream_path: pyqtgraph/Point.py
   target_header_path: include/pyqtgraph/Point.hpp
@@ -2218,7 +2584,8 @@ classes:
   - QtCore.QPointF
   line: 12
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: GraphicsViewGLWidget
   upstream_path: pyqtgraph/Qt/OpenGLHelpers.py
   target_header_path: include/pyqtgraph/Qt/OpenGLHelpers.hpp
@@ -2229,6 +2596,7 @@ classes:
   line: 70
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FailedImport
   upstream_path: pyqtgraph/Qt/__init__.py
   target_header_path: include/pyqtgraph/Qt/__init__.hpp
@@ -2239,6 +2607,7 @@ classes:
   line: 60
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: _StringIO
   upstream_path: pyqtgraph/Qt/__init__.py
   target_header_path: include/pyqtgraph/Qt/__init__.hpp
@@ -2249,6 +2618,7 @@ classes:
   line: 75
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Element
   upstream_path: pyqtgraph/Qt/internals.py
   target_header_path: include/pyqtgraph/Qt/internals.hpp
@@ -2259,6 +2629,7 @@ classes:
   line: 22
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: QArrayData
   upstream_path: pyqtgraph/Qt/internals.py
   target_header_path: include/pyqtgraph/Qt/internals.hpp
@@ -2269,6 +2640,7 @@ classes:
   line: 25
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: QPainterPathPrivate
   upstream_path: pyqtgraph/Qt/internals.py
   target_header_path: include/pyqtgraph/Qt/internals.hpp
@@ -2279,6 +2651,7 @@ classes:
   line: 28
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PrimitiveArray
   upstream_path: pyqtgraph/Qt/internals.py
   target_header_path: include/pyqtgraph/Qt/internals.hpp
@@ -2288,6 +2661,7 @@ classes:
   line: 85
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SRTTransform
   upstream_path: pyqtgraph/SRTTransform.py
   target_header_path: include/pyqtgraph/SRTTransform.hpp
@@ -2298,6 +2672,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SRTTransform3D
   upstream_path: pyqtgraph/SRTTransform3D.py
   target_header_path: include/pyqtgraph/SRTTransform3D.hpp
@@ -2308,6 +2683,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SignalProxy
   upstream_path: pyqtgraph/SignalProxy.py
   target_header_path: include/pyqtgraph/SignalProxy.hpp
@@ -2317,7 +2693,8 @@ classes:
   - QtCore.QObject
   line: 11
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ThreadsafeTimer
   upstream_path: pyqtgraph/ThreadsafeTimer.py
   target_header_path: include/pyqtgraph/ThreadsafeTimer.hpp
@@ -2327,7 +2704,8 @@ classes:
   - QtCore.QObject
   line: 5
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: Transform3D
   upstream_path: pyqtgraph/Transform3D.py
   target_header_path: include/pyqtgraph/Transform3D.hpp
@@ -2338,6 +2716,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Vector
   upstream_path: pyqtgraph/Vector.py
   target_header_path: include/pyqtgraph/Vector.hpp
@@ -2347,7 +2726,8 @@ classes:
   - QtGui.QVector3D
   line: 12
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: WidgetGroup
   upstream_path: pyqtgraph/WidgetGroup.py
   target_header_path: include/pyqtgraph/WidgetGroup.hpp
@@ -2358,6 +2738,7 @@ classes:
   line: 59
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMap
   upstream_path: pyqtgraph/colormap.py
   target_header_path: include/pyqtgraph/colormap.hpp
@@ -2367,7 +2748,8 @@ classes:
   - object
   line: 337
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ParseError
   upstream_path: pyqtgraph/configfile.py
   target_header_path: include/pyqtgraph/configfile.hpp
@@ -2378,6 +2760,7 @@ classes:
   line: 29
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CmdInput
   upstream_path: pyqtgraph/console/CmdInput.py
   target_header_path: include/pyqtgraph/console/CmdInput.hpp
@@ -2388,6 +2771,7 @@ classes:
   line: 4
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ConsoleWidget
   upstream_path: pyqtgraph/console/Console.py
   target_header_path: include/pyqtgraph/console/Console.hpp
@@ -2398,6 +2782,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ExceptionHandlerWidget
   upstream_path: pyqtgraph/console/exception_widget.py
   target_header_path: include/pyqtgraph/console/exception_widget.hpp
@@ -2408,6 +2793,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ReplWidget
   upstream_path: pyqtgraph/console/repl_widget.py
   target_header_path: include/pyqtgraph/console/repl_widget.hpp
@@ -2418,6 +2804,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ReplThread
   upstream_path: pyqtgraph/console/repl_widget.py
   target_header_path: include/pyqtgraph/console/repl_widget.hpp
@@ -2428,6 +2815,7 @@ classes:
   line: 158
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: StdoutInterceptor
   upstream_path: pyqtgraph/console/repl_widget.py
   target_header_path: include/pyqtgraph/console/repl_widget.hpp
@@ -2437,6 +2825,7 @@ classes:
   line: 242
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: StackWidget
   upstream_path: pyqtgraph/console/stackwidget.py
   target_header_path: include/pyqtgraph/console/stackwidget.hpp
@@ -2447,6 +2836,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Tracer
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2457,6 +2847,7 @@ classes:
   line: 62
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GarbageWatcher
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2467,6 +2858,7 @@ classes:
   line: 440
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Profiler
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2477,6 +2869,7 @@ classes:
   line: 481
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ObjTracker
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2487,6 +2880,7 @@ classes:
   line: 661
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PrintDetector
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2497,6 +2891,7 @@ classes:
   line: 1096
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ThreadTrace
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2507,6 +2902,7 @@ classes:
   line: 1158
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ThreadColor
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2517,6 +2913,7 @@ classes:
   line: 1248
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Container
   upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
@@ -2527,6 +2924,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SplitContainer
   upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
@@ -2538,6 +2936,7 @@ classes:
   line: 116
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: HContainer
   upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
@@ -2548,6 +2947,7 @@ classes:
   line: 155
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: VContainer
   upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
@@ -2558,6 +2958,7 @@ classes:
   line: 186
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: StackedWidget
   upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
@@ -2568,6 +2969,7 @@ classes:
   line: 216
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TContainer
   upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
@@ -2579,6 +2981,7 @@ classes:
   line: 226
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Dock
   upstream_path: pyqtgraph/dockarea/Dock.py
   target_header_path: include/pyqtgraph/dockarea/Dock.hpp
@@ -2589,6 +2992,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DockLabel
   upstream_path: pyqtgraph/dockarea/Dock.py
   target_header_path: include/pyqtgraph/dockarea/Dock.hpp
@@ -2599,6 +3003,7 @@ classes:
   line: 260
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DockArea
   upstream_path: pyqtgraph/dockarea/DockArea.py
   target_header_path: include/pyqtgraph/dockarea/DockArea.hpp
@@ -2610,6 +3015,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TempAreaWindow
   upstream_path: pyqtgraph/dockarea/DockArea.py
   target_header_path: include/pyqtgraph/dockarea/DockArea.hpp
@@ -2620,6 +3026,7 @@ classes:
   line: 375
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DockDrop
   upstream_path: pyqtgraph/dockarea/DockDrop.py
   target_header_path: include/pyqtgraph/dockarea/DockDrop.hpp
@@ -2629,6 +3036,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DropAreaOverlay
   upstream_path: pyqtgraph/dockarea/DockDrop.py
   target_header_path: include/pyqtgraph/dockarea/DockDrop.hpp
@@ -2639,6 +3047,7 @@ classes:
   line: 94
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ExceptionHandler
   upstream_path: pyqtgraph/exceptionHandling.py
   target_header_path: include/pyqtgraph/exceptionHandling.hpp
@@ -2649,6 +3058,7 @@ classes:
   line: 68
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CSVExporter
   upstream_path: pyqtgraph/exporters/CSVExporter.py
   target_header_path: include/pyqtgraph/exporters/CSVExporter.hpp
@@ -2659,6 +3069,7 @@ classes:
   line: 16
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Exporter
   upstream_path: pyqtgraph/exporters/Exporter.py
   target_header_path: include/pyqtgraph/exporters/Exporter.hpp
@@ -2669,6 +3080,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: HDF5Exporter
   upstream_path: pyqtgraph/exporters/HDF5Exporter.py
   target_header_path: include/pyqtgraph/exporters/HDF5Exporter.hpp
@@ -2679,6 +3091,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ImageExporter
   upstream_path: pyqtgraph/exporters/ImageExporter.py
   target_header_path: include/pyqtgraph/exporters/ImageExporter.hpp
@@ -2689,6 +3102,7 @@ classes:
   line: 13
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MatplotlibExporter
   upstream_path: pyqtgraph/exporters/Matplotlib.py
   target_header_path: include/pyqtgraph/exporters/Matplotlib.hpp
@@ -2699,6 +3113,7 @@ classes:
   line: 55
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MatplotlibWindow
   upstream_path: pyqtgraph/exporters/Matplotlib.py
   target_header_path: include/pyqtgraph/exporters/Matplotlib.hpp
@@ -2709,6 +3124,7 @@ classes:
   line: 150
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PrintExporter
   upstream_path: pyqtgraph/exporters/PrintExporter.py
   target_header_path: include/pyqtgraph/exporters/PrintExporter.hpp
@@ -2719,6 +3135,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SVGExporter
   upstream_path: pyqtgraph/exporters/SVGExporter.py
   target_header_path: include/pyqtgraph/exporters/SVGExporter.hpp
@@ -2729,6 +3146,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Flowchart
   upstream_path: pyqtgraph/flowchart/Flowchart.py
   target_header_path: include/pyqtgraph/flowchart/Flowchart.hpp
@@ -2739,6 +3157,7 @@ classes:
   line: 27
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FlowchartGraphicsItem
   upstream_path: pyqtgraph/flowchart/Flowchart.py
   target_header_path: include/pyqtgraph/flowchart/Flowchart.hpp
@@ -2749,6 +3168,7 @@ classes:
   line: 553
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FlowchartCtrlWidget
   upstream_path: pyqtgraph/flowchart/Flowchart.py
   target_header_path: include/pyqtgraph/flowchart/Flowchart.hpp
@@ -2759,6 +3179,7 @@ classes:
   line: 592
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FlowchartWidget
   upstream_path: pyqtgraph/flowchart/Flowchart.py
   target_header_path: include/pyqtgraph/flowchart/Flowchart.hpp
@@ -2769,6 +3190,7 @@ classes:
   line: 752
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FlowchartNode
   upstream_path: pyqtgraph/flowchart/Flowchart.py
   target_header_path: include/pyqtgraph/flowchart/Flowchart.hpp
@@ -2779,6 +3201,7 @@ classes:
   line: 924
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Ui_Form
   upstream_path: pyqtgraph/flowchart/FlowchartCtrlTemplate_generic.py
   target_header_path: include/pyqtgraph/flowchart/FlowchartCtrlTemplate_generic.hpp
@@ -2789,6 +3212,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FlowchartGraphicsView
   upstream_path: pyqtgraph/flowchart/FlowchartGraphicsView.py
   target_header_path: include/pyqtgraph/flowchart/FlowchartGraphicsView.hpp
@@ -2799,6 +3223,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FlowchartViewBox
   upstream_path: pyqtgraph/flowchart/FlowchartGraphicsView.py
   target_header_path: include/pyqtgraph/flowchart/FlowchartGraphicsView.hpp
@@ -2809,6 +3234,7 @@ classes:
   line: 22
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Node
   upstream_path: pyqtgraph/flowchart/Node.py
   target_header_path: include/pyqtgraph/flowchart/Node.hpp
@@ -2819,6 +3245,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TextItem
   upstream_path: pyqtgraph/flowchart/Node.py
   target_header_path: include/pyqtgraph/flowchart/Node.hpp
@@ -2829,6 +3256,7 @@ classes:
   line: 432
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: NodeGraphicsItem
   upstream_path: pyqtgraph/flowchart/Node.py
   target_header_path: include/pyqtgraph/flowchart/Node.hpp
@@ -2839,6 +3267,7 @@ classes:
   line: 458
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: NodeLibrary
   upstream_path: pyqtgraph/flowchart/NodeLibrary.py
   target_header_path: include/pyqtgraph/flowchart/NodeLibrary.hpp
@@ -2848,6 +3277,7 @@ classes:
   line: 16
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Terminal
   upstream_path: pyqtgraph/flowchart/Terminal.py
   target_header_path: include/pyqtgraph/flowchart/Terminal.hpp
@@ -2858,6 +3288,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TextItem
   upstream_path: pyqtgraph/flowchart/Terminal.py
   target_header_path: include/pyqtgraph/flowchart/Terminal.hpp
@@ -2868,6 +3299,7 @@ classes:
   line: 280
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TerminalGraphicsItem
   upstream_path: pyqtgraph/flowchart/Terminal.py
   target_header_path: include/pyqtgraph/flowchart/Terminal.hpp
@@ -2878,6 +3310,7 @@ classes:
   line: 298
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ConnectionItem
   upstream_path: pyqtgraph/flowchart/Terminal.py
   target_header_path: include/pyqtgraph/flowchart/Terminal.hpp
@@ -2888,6 +3321,7 @@ classes:
   line: 460
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColumnSelectNode
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2898,6 +3332,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RegionSelectNode
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2908,6 +3343,7 @@ classes:
   line: 87
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TextEdit
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2918,6 +3354,7 @@ classes:
   line: 160
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: EvalNode
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2928,6 +3365,7 @@ classes:
   line: 174
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColumnJoinNode
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2938,6 +3376,7 @@ classes:
   line: 251
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Mean
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2948,6 +3387,7 @@ classes:
   line: 353
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Max
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2958,6 +3398,7 @@ classes:
   line: 367
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Min
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2968,6 +3409,7 @@ classes:
   line: 381
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Stdev
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2978,6 +3420,7 @@ classes:
   line: 395
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Index
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2988,6 +3431,7 @@ classes:
   line: 409
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Slice
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -2998,6 +3442,7 @@ classes:
   line: 429
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: AsType
   upstream_path: pyqtgraph/flowchart/library/Data.py
   target_header_path: include/pyqtgraph/flowchart/library/Data.hpp
@@ -3008,6 +3453,7 @@ classes:
   line: 455
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotWidgetNode
   upstream_path: pyqtgraph/flowchart/library/Display.py
   target_header_path: include/pyqtgraph/flowchart/library/Display.hpp
@@ -3018,6 +3464,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CanvasNode
   upstream_path: pyqtgraph/flowchart/library/Display.py
   target_header_path: include/pyqtgraph/flowchart/library/Display.hpp
@@ -3028,6 +3475,7 @@ classes:
   line: 116
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotCurve
   upstream_path: pyqtgraph/flowchart/library/Display.py
   target_header_path: include/pyqtgraph/flowchart/library/Display.hpp
@@ -3038,6 +3486,7 @@ classes:
   line: 161
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ScatterPlot
   upstream_path: pyqtgraph/flowchart/library/Display.py
   target_header_path: include/pyqtgraph/flowchart/library/Display.hpp
@@ -3048,6 +3497,7 @@ classes:
   line: 187
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Downsample
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3058,6 +3508,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Subsample
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3068,6 +3519,7 @@ classes:
   line: 20
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Bessel
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3078,6 +3530,7 @@ classes:
   line: 31
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Butterworth
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3088,6 +3541,7 @@ classes:
   line: 50
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ButterworthNotch
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3098,6 +3552,7 @@ classes:
   line: 72
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Mean
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3108,6 +3563,7 @@ classes:
   line: 95
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Median
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3118,6 +3574,7 @@ classes:
   line: 107
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Mode
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3128,6 +3585,7 @@ classes:
   line: 121
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Denoise
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3138,6 +3596,7 @@ classes:
   line: 132
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Gaussian
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3148,6 +3607,7 @@ classes:
   line: 146
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Derivative
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3158,6 +3618,7 @@ classes:
   line: 162
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Integral
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3168,6 +3629,7 @@ classes:
   line: 170
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Detrend
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3178,6 +3640,7 @@ classes:
   line: 179
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RemoveBaseline
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3188,6 +3651,7 @@ classes:
   line: 190
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: AdaptiveDetrend
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3198,6 +3662,7 @@ classes:
   line: 257
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: HistogramDetrend
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3208,6 +3673,7 @@ classes:
   line: 267
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RemovePeriodic
   upstream_path: pyqtgraph/flowchart/library/Filters.py
   target_header_path: include/pyqtgraph/flowchart/library/Filters.hpp
@@ -3218,6 +3684,7 @@ classes:
   line: 285
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: UniOpNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3228,6 +3695,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: BinOpNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3238,6 +3706,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: AbsNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3248,6 +3717,7 @@ classes:
   line: 69
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: AddNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3258,6 +3728,7 @@ classes:
   line: 75
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SubtractNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3268,6 +3739,7 @@ classes:
   line: 81
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MultiplyNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3278,6 +3750,7 @@ classes:
   line: 87
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DivideNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3288,6 +3761,7 @@ classes:
   line: 93
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FloorDivideNode
   upstream_path: pyqtgraph/flowchart/library/Operators.py
   target_header_path: include/pyqtgraph/flowchart/library/Operators.hpp
@@ -3298,6 +3772,7 @@ classes:
   line: 100
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CtrlNode
   upstream_path: pyqtgraph/flowchart/library/common.py
   target_header_path: include/pyqtgraph/flowchart/library/common.hpp
@@ -3308,6 +3783,7 @@ classes:
   line: 86
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlottingCtrlNode
   upstream_path: pyqtgraph/flowchart/library/common.py
   target_header_path: include/pyqtgraph/flowchart/library/common.hpp
@@ -3318,6 +3794,7 @@ classes:
   line: 139
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: HueKeywordArgs
   upstream_path: pyqtgraph/functions.py
   target_header_path: include/pyqtgraph/functions.hpp
@@ -3327,7 +3804,8 @@ classes:
   - TypedDict
   line: 74
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: Color
   upstream_path: pyqtgraph/functions.py
   target_header_path: include/pyqtgraph/functions.hpp
@@ -3337,7 +3815,8 @@ classes:
   - QtGui.QColor
   line: 304
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: SignalBlock
   upstream_path: pyqtgraph/functions.py
   target_header_path: include/pyqtgraph/functions.hpp
@@ -3347,7 +3826,8 @@ classes:
   - object
   line: 3215
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ArrowItem
   upstream_path: pyqtgraph/graphicsItems/ArrowItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ArrowItem.hpp
@@ -3358,6 +3838,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: AxisItem
   upstream_path: pyqtgraph/graphicsItems/AxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/AxisItem.hpp
@@ -3367,7 +3848,8 @@ classes:
   - GraphicsWidget
   line: 16
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: BarGraphItem
   upstream_path: pyqtgraph/graphicsItems/BarGraphItem.py
   target_header_path: include/pyqtgraph/graphicsItems/BarGraphItem.hpp
@@ -3378,6 +3860,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: BoxplotItem
   upstream_path: pyqtgraph/graphicsItems/BoxplotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/BoxplotItem.hpp
@@ -3388,6 +3871,7 @@ classes:
   line: 44
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ButtonItem
   upstream_path: pyqtgraph/graphicsItems/ButtonItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ButtonItem.hpp
@@ -3398,6 +3882,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorBarItem
   upstream_path: pyqtgraph/graphicsItems/ColorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ColorBarItem.hpp
@@ -3408,6 +3893,7 @@ classes:
   line: 15
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CurvePoint
   upstream_path: pyqtgraph/graphicsItems/CurvePoint.py
   target_header_path: include/pyqtgraph/graphicsItems/CurvePoint.hpp
@@ -3418,6 +3904,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CurveArrow
   upstream_path: pyqtgraph/graphicsItems/CurvePoint.py
   target_header_path: include/pyqtgraph/graphicsItems/CurvePoint.hpp
@@ -3428,6 +3915,7 @@ classes:
   line: 107
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TickSpec
   upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
@@ -3437,6 +3925,7 @@ classes:
   line: 94
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ZoomLevel
   upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
@@ -3446,6 +3935,7 @@ classes:
   line: 141
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DateAxisItem
   upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
@@ -3456,6 +3946,7 @@ classes:
   line: 296
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ErrorBarItem
   upstream_path: pyqtgraph/graphicsItems/ErrorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ErrorBarItem.hpp
@@ -3466,6 +3957,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FillBetweenItem
   upstream_path: pyqtgraph/graphicsItems/FillBetweenItem.py
   target_header_path: include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
@@ -3476,6 +3968,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TickSliderItem
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -3486,6 +3979,7 @@ classes:
   line: 29
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GradientEditorItem
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -3496,6 +3990,7 @@ classes:
   line: 377
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Tick
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -3506,6 +4001,7 @@ classes:
   line: 840
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TickMenu
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -3516,6 +4012,7 @@ classes:
   line: 927
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GradientLegend
   upstream_path: pyqtgraph/graphicsItems/GradientLegend.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientLegend.hpp
@@ -3526,6 +4023,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GraphItem
   upstream_path: pyqtgraph/graphicsItems/GraphItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphItem.hpp
@@ -3536,6 +4034,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LRU
   upstream_path: pyqtgraph/graphicsItems/GraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsItem.hpp
@@ -3545,7 +4044,8 @@ classes:
   - OrderedDict
   line: 19
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: GraphicsItem
   upstream_path: pyqtgraph/graphicsItems/GraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsItem.hpp
@@ -3555,7 +4055,8 @@ classes:
   - object
   line: 40
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: GraphicsLayout
   upstream_path: pyqtgraph/graphicsItems/GraphicsLayout.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsLayout.hpp
@@ -3566,6 +4067,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GraphicsObject
   upstream_path: pyqtgraph/graphicsItems/GraphicsObject.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsObject.hpp
@@ -3576,7 +4078,8 @@ classes:
   - QtWidgets.QGraphicsObject
   line: 5
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: GraphicsWidget
   upstream_path: pyqtgraph/graphicsItems/GraphicsWidget.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsWidget.hpp
@@ -3587,7 +4090,8 @@ classes:
   - QtWidgets.QGraphicsWidget
   line: 9
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: GraphicsWidgetAnchor
   upstream_path: pyqtgraph/graphicsItems/GraphicsWidgetAnchor.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.hpp
@@ -3598,6 +4102,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GridItem
   upstream_path: pyqtgraph/graphicsItems/GridItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GridItem.hpp
@@ -3608,6 +4113,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: HistogramLUTItem
   upstream_path: pyqtgraph/graphicsItems/HistogramLUTItem.py
   target_header_path: include/pyqtgraph/graphicsItems/HistogramLUTItem.hpp
@@ -3618,6 +4124,7 @@ classes:
   line: 25
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ImageItem
   upstream_path: pyqtgraph/graphicsItems/ImageItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ImageItem.hpp
@@ -3628,6 +4135,7 @@ classes:
   line: 24
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: InfiniteLine
   upstream_path: pyqtgraph/graphicsItems/InfiniteLine.py
   target_header_path: include/pyqtgraph/graphicsItems/InfiniteLine.hpp
@@ -3638,6 +4146,7 @@ classes:
   line: 16
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: InfLineLabel
   upstream_path: pyqtgraph/graphicsItems/InfiniteLine.py
   target_header_path: include/pyqtgraph/graphicsItems/InfiniteLine.hpp
@@ -3648,6 +4157,7 @@ classes:
   line: 445
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: IsocurveItem
   upstream_path: pyqtgraph/graphicsItems/IsocurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/IsocurveItem.hpp
@@ -3658,6 +4168,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ItemGroup
   upstream_path: pyqtgraph/graphicsItems/ItemGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/ItemGroup.hpp
@@ -3668,6 +4179,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LabelItem
   upstream_path: pyqtgraph/graphicsItems/LabelItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LabelItem.hpp
@@ -3679,6 +4191,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LegendItem
   upstream_path: pyqtgraph/graphicsItems/LegendItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LegendItem.hpp
@@ -3690,6 +4203,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ItemSample
   upstream_path: pyqtgraph/graphicsItems/LegendItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LegendItem.hpp
@@ -3700,6 +4214,7 @@ classes:
   line: 353
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LinearRegionItem
   upstream_path: pyqtgraph/graphicsItems/LinearRegionItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LinearRegionItem.hpp
@@ -3710,6 +4225,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: NonUniformImage
   upstream_path: pyqtgraph/graphicsItems/NonUniformImage.py
   target_header_path: include/pyqtgraph/graphicsItems/NonUniformImage.hpp
@@ -3720,6 +4236,7 @@ classes:
   line: 13
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DirtyFlag
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
@@ -3730,6 +4247,7 @@ classes:
   line: 23
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: QuadInstances
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
@@ -3739,6 +4257,7 @@ classes:
   line: 30
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PColorMeshItem
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
@@ -3749,6 +4268,7 @@ classes:
   line: 71
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: OpenGLState
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
@@ -3759,6 +4279,7 @@ classes:
   line: 620
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: OpenGLState
   upstream_path: pyqtgraph/graphicsItems/PlotCurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotCurveItem.hpp
@@ -3768,7 +4289,8 @@ classes:
   - QtCore.QObject
   line: 24
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: PlotCurveItem
   upstream_path: pyqtgraph/graphicsItems/PlotCurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotCurveItem.hpp
@@ -3778,7 +4300,8 @@ classes:
   - GraphicsObject
   line: 213
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ROIPlotItem
   upstream_path: pyqtgraph/graphicsItems/PlotCurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotCurveItem.hpp
@@ -3788,7 +4311,8 @@ classes:
   - PlotCurveItem
   line: 1275
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: MetaKeywordArgs
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -3799,6 +4323,7 @@ classes:
   line: 22
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PointStyleKeywordArgs
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -3809,6 +4334,7 @@ classes:
   line: 26
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LineStyleKeywordArgs
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -3819,6 +4345,7 @@ classes:
   line: 34
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: OptimizationKeywordArgs
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -3829,6 +4356,7 @@ classes:
   line: 44
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotDataset
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -3838,6 +4366,7 @@ classes:
   line: 56
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotDataItem
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -3848,6 +4377,7 @@ classes:
   line: 214
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotItem
   upstream_path: pyqtgraph/graphicsItems/PlotItem/PlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp
@@ -3857,7 +4387,8 @@ classes:
   - GraphicsWidget
   line: 32
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: Ui_Form
   upstream_path: pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.hpp
@@ -3868,6 +4399,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3878,6 +4410,7 @@ classes:
   line: 41
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Handle
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3888,6 +4421,7 @@ classes:
   line: 1321
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MouseDragHandler
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3898,6 +4432,7 @@ classes:
   line: 1538
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TestROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3908,6 +4443,7 @@ classes:
   line: 1609
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RectROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3918,6 +4454,7 @@ classes:
   line: 1621
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LineROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3928,6 +4465,7 @@ classes:
   line: 1650
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MultiRectROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3938,6 +4476,7 @@ classes:
   line: 1682
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MultiLineROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3948,6 +4487,7 @@ classes:
   line: 1824
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: EllipseROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3958,6 +4498,7 @@ classes:
   line: 1830
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CircleROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3968,6 +4509,7 @@ classes:
   line: 1935
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PolyLineROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3978,6 +4520,7 @@ classes:
   line: 1959
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LineSegmentROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3988,6 +4531,7 @@ classes:
   line: 2134
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: _PolyLineSegment
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -3998,6 +4542,7 @@ classes:
   line: 2240
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CrosshairROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4008,6 +4553,7 @@ classes:
   line: 2266
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RulerROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4018,6 +4564,7 @@ classes:
   line: 2314
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TriangleROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4028,6 +4575,7 @@ classes:
   line: 2344
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ScaleBar
   upstream_path: pyqtgraph/graphicsItems/ScaleBar.py
   target_header_path: include/pyqtgraph/graphicsItems/ScaleBar.hpp
@@ -4039,6 +4587,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SymbolAtlas
   upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
@@ -4049,6 +4598,7 @@ classes:
   line: 141
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ScatterPlotItem
   upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
@@ -4059,6 +4609,7 @@ classes:
   line: 334
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SpotItem
   upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
@@ -4069,6 +4620,7 @@ classes:
   line: 1126
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TargetItem
   upstream_path: pyqtgraph/graphicsItems/TargetItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TargetItem.hpp
@@ -4079,6 +4631,7 @@ classes:
   line: 15
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TargetLabel
   upstream_path: pyqtgraph/graphicsItems/TargetItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TargetItem.hpp
@@ -4089,6 +4642,7 @@ classes:
   line: 350
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TextItem
   upstream_path: pyqtgraph/graphicsItems/TextItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TextItem.hpp
@@ -4099,6 +4653,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: UIGraphicsItem
   upstream_path: pyqtgraph/graphicsItems/UIGraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/UIGraphicsItem.hpp
@@ -4109,6 +4664,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: VTickGroup
   upstream_path: pyqtgraph/graphicsItems/VTickGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/VTickGroup.hpp
@@ -4119,6 +4675,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: WeakList
   upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBox.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
@@ -4128,7 +4685,8 @@ classes:
   - object
   line: 19
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ChildGroup
   upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBox.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
@@ -4138,7 +4696,8 @@ classes:
   - ItemGroup
   line: 40
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ViewBox
   upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBox.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
@@ -4148,7 +4707,8 @@ classes:
   - GraphicsWidget
   line: 74
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ViewBoxMenu
   upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.hpp
@@ -4159,6 +4719,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Ui_Form
   upstream_path: pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.hpp
@@ -4169,6 +4730,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GraphIcon
   upstream_path: pyqtgraph/icons/__init__.py
   target_header_path: include/pyqtgraph/icons/__init__.hpp
@@ -4178,6 +4740,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotROI
   upstream_path: pyqtgraph/imageview/ImageView.py
   target_header_path: include/pyqtgraph/imageview/ImageView.hpp
@@ -4188,6 +4751,7 @@ classes:
   line: 42
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ImageView
   upstream_path: pyqtgraph/imageview/ImageView.py
   target_header_path: include/pyqtgraph/imageview/ImageView.hpp
@@ -4198,6 +4762,7 @@ classes:
   line: 49
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Ui_Form
   upstream_path: pyqtgraph/imageview/ImageViewTemplate_generic.py
   target_header_path: include/pyqtgraph/imageview/ImageViewTemplate_generic.hpp
@@ -4208,6 +4773,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GraphicsView
   upstream_path: pyqtgraph/jupyter/GraphicsView.py
   target_header_path: include/pyqtgraph/jupyter/GraphicsView.hpp
@@ -4218,6 +4784,7 @@ classes:
   line: 44
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GraphicsLayoutWidget
   upstream_path: pyqtgraph/jupyter/GraphicsView.py
   target_header_path: include/pyqtgraph/jupyter/GraphicsView.hpp
@@ -4228,6 +4795,7 @@ classes:
   line: 127
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotWidget
   upstream_path: pyqtgraph/jupyter/GraphicsView.py
   target_header_path: include/pyqtgraph/jupyter/GraphicsView.hpp
@@ -4238,6 +4806,7 @@ classes:
   line: 155
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CanceledError
   upstream_path: pyqtgraph/multiprocess/parallelizer.py
   target_header_path: include/pyqtgraph/multiprocess/parallelizer.hpp
@@ -4248,6 +4817,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Parallelize
   upstream_path: pyqtgraph/multiprocess/parallelizer.py
   target_header_path: include/pyqtgraph/multiprocess/parallelizer.hpp
@@ -4258,6 +4828,7 @@ classes:
   line: 15
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Tasker
   upstream_path: pyqtgraph/multiprocess/parallelizer.py
   target_header_path: include/pyqtgraph/multiprocess/parallelizer.hpp
@@ -4268,6 +4839,7 @@ classes:
   line: 247
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Process
   upstream_path: pyqtgraph/multiprocess/processes.py
   target_header_path: include/pyqtgraph/multiprocess/processes.hpp
@@ -4278,6 +4850,7 @@ classes:
   line: 23
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ForkedProcess
   upstream_path: pyqtgraph/multiprocess/processes.py
   target_header_path: include/pyqtgraph/multiprocess/processes.hpp
@@ -4288,6 +4861,7 @@ classes:
   line: 233
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RemoteQtEventHandler
   upstream_path: pyqtgraph/multiprocess/processes.py
   target_header_path: include/pyqtgraph/multiprocess/processes.hpp
@@ -4298,6 +4872,7 @@ classes:
   line: 391
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: QtProcess
   upstream_path: pyqtgraph/multiprocess/processes.py
   target_header_path: include/pyqtgraph/multiprocess/processes.hpp
@@ -4308,6 +4883,7 @@ classes:
   line: 410
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FileForwarder
   upstream_path: pyqtgraph/multiprocess/processes.py
   target_header_path: include/pyqtgraph/multiprocess/processes.hpp
@@ -4318,6 +4894,7 @@ classes:
   line: 492
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ClosedError
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4328,6 +4905,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: NoResultError
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4338,6 +4916,7 @@ classes:
   line: 22
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RemoteExceptionWarning
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4348,6 +4927,7 @@ classes:
   line: 27
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RemoteEventHandler
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4358,6 +4938,7 @@ classes:
   line: 31
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Request
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4368,6 +4949,7 @@ classes:
   line: 619
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LocalObjectProxy
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4378,6 +4960,7 @@ classes:
   line: 677
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ObjectProxy
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4388,6 +4971,7 @@ classes:
   line: 749
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DeferredObjectProxy
   upstream_path: pyqtgraph/multiprocess/remoteproxy.py
   target_header_path: include/pyqtgraph/multiprocess/remoteproxy.hpp
@@ -4398,6 +4982,7 @@ classes:
   line: 1095
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLGraphicsItem
   upstream_path: pyqtgraph/opengl/GLGraphicsItem.py
   target_header_path: include/pyqtgraph/opengl/GLGraphicsItem.hpp
@@ -4408,6 +4993,7 @@ classes:
   line: 28
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLViewMixin
   upstream_path: pyqtgraph/opengl/GLViewWidget.py
   target_header_path: include/pyqtgraph/opengl/GLViewWidget.hpp
@@ -4417,6 +5003,7 @@ classes:
   line: 18
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLViewWidget
   upstream_path: pyqtgraph/opengl/GLViewWidget.py
   target_header_path: include/pyqtgraph/opengl/GLViewWidget.hpp
@@ -4428,6 +5015,7 @@ classes:
   line: 550
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MeshData
   upstream_path: pyqtgraph/opengl/MeshData.py
   target_header_path: include/pyqtgraph/opengl/MeshData.hpp
@@ -4438,6 +5026,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLAxisItem
   upstream_path: pyqtgraph/opengl/items/GLAxisItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLAxisItem.hpp
@@ -4448,6 +5037,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLBarGraphItem
   upstream_path: pyqtgraph/opengl/items/GLBarGraphItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLBarGraphItem.hpp
@@ -4458,6 +5048,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLBoxItem
   upstream_path: pyqtgraph/opengl/items/GLBoxItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLBoxItem.hpp
@@ -4468,6 +5059,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLGradientLegendItem
   upstream_path: pyqtgraph/opengl/items/GLGradientLegendItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLGradientLegendItem.hpp
@@ -4478,6 +5070,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLGraphItem
   upstream_path: pyqtgraph/opengl/items/GLGraphItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLGraphItem.hpp
@@ -4488,6 +5081,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLGridItem
   upstream_path: pyqtgraph/opengl/items/GLGridItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLGridItem.hpp
@@ -4498,6 +5092,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLImageItem
   upstream_path: pyqtgraph/opengl/items/GLImageItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLImageItem.hpp
@@ -4508,6 +5103,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DirtyFlag
   upstream_path: pyqtgraph/opengl/items/GLLinePlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLLinePlotItem.hpp
@@ -4518,6 +5114,7 @@ classes:
   line: 20
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLLinePlotItem
   upstream_path: pyqtgraph/opengl/items/GLLinePlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLLinePlotItem.hpp
@@ -4528,6 +5125,7 @@ classes:
   line: 25
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DirtyFlag
   upstream_path: pyqtgraph/opengl/items/GLMeshItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLMeshItem.hpp
@@ -4538,6 +5136,7 @@ classes:
   line: 20
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLMeshItem
   upstream_path: pyqtgraph/opengl/items/GLMeshItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLMeshItem.hpp
@@ -4548,6 +5147,7 @@ classes:
   line: 29
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DirtyFlag
   upstream_path: pyqtgraph/opengl/items/GLScatterPlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLScatterPlotItem.hpp
@@ -4558,6 +5158,7 @@ classes:
   line: 20
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLScatterPlotItem
   upstream_path: pyqtgraph/opengl/items/GLScatterPlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLScatterPlotItem.hpp
@@ -4568,6 +5169,7 @@ classes:
   line: 26
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLSurfacePlotItem
   upstream_path: pyqtgraph/opengl/items/GLSurfacePlotItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLSurfacePlotItem.hpp
@@ -4578,6 +5180,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLTextItem
   upstream_path: pyqtgraph/opengl/items/GLTextItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLTextItem.hpp
@@ -4588,6 +5191,7 @@ classes:
   line: 9
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GLVolumeItem
   upstream_path: pyqtgraph/opengl/items/GLVolumeItem.py
   target_header_path: include/pyqtgraph/opengl/items/GLVolumeItem.hpp
@@ -4598,6 +5202,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Shader
   upstream_path: pyqtgraph/opengl/shaders.py
   target_header_path: include/pyqtgraph/opengl/shaders.hpp
@@ -4608,6 +5213,7 @@ classes:
   line: 242
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: VertexShader
   upstream_path: pyqtgraph/opengl/shaders.py
   target_header_path: include/pyqtgraph/opengl/shaders.hpp
@@ -4618,6 +5224,7 @@ classes:
   line: 287
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FragmentShader
   upstream_path: pyqtgraph/opengl/shaders.py
   target_header_path: include/pyqtgraph/opengl/shaders.hpp
@@ -4628,6 +5235,7 @@ classes:
   line: 291
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ShaderProgram
   upstream_path: pyqtgraph/opengl/shaders.py
   target_header_path: include/pyqtgraph/opengl/shaders.hpp
@@ -4638,6 +5246,7 @@ classes:
   line: 298
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Parameter
   upstream_path: pyqtgraph/parametertree/Parameter.py
   target_header_path: include/pyqtgraph/parametertree/Parameter.hpp
@@ -4648,6 +5257,7 @@ classes:
   line: 52
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SignalBlocker
   upstream_path: pyqtgraph/parametertree/Parameter.py
   target_header_path: include/pyqtgraph/parametertree/Parameter.hpp
@@ -4658,6 +5268,7 @@ classes:
   line: 868
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ParameterItem
   upstream_path: pyqtgraph/parametertree/ParameterItem.py
   target_header_path: include/pyqtgraph/parametertree/ParameterItem.hpp
@@ -4668,6 +5279,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ParameterSystem
   upstream_path: pyqtgraph/parametertree/ParameterSystem.py
   target_header_path: include/pyqtgraph/parametertree/ParameterSystem.hpp
@@ -4678,6 +5290,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ParameterTree
   upstream_path: pyqtgraph/parametertree/ParameterTree.py
   target_header_path: include/pyqtgraph/parametertree/ParameterTree.hpp
@@ -4688,6 +5301,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SystemSolver
   upstream_path: pyqtgraph/parametertree/SystemSolver.py
   target_header_path: include/pyqtgraph/parametertree/SystemSolver.hpp
@@ -4698,6 +5312,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PARAM_UNSET
   upstream_path: pyqtgraph/parametertree/interactive.py
   target_header_path: include/pyqtgraph/parametertree/interactive.hpp
@@ -4707,6 +5322,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RunOptions
   upstream_path: pyqtgraph/parametertree/interactive.py
   target_header_path: include/pyqtgraph/parametertree/interactive.hpp
@@ -4716,6 +5332,7 @@ classes:
   line: 15
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: InteractiveFunction
   upstream_path: pyqtgraph/parametertree/interactive.py
   target_header_path: include/pyqtgraph/parametertree/interactive.hpp
@@ -4725,6 +5342,7 @@ classes:
   line: 34
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Interactor
   upstream_path: pyqtgraph/parametertree/interactive.py
   target_header_path: include/pyqtgraph/parametertree/interactive.hpp
@@ -4734,6 +5352,7 @@ classes:
   line: 206
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ParameterControlledButton
   upstream_path: pyqtgraph/parametertree/parameterTypes/action.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/action.hpp
@@ -4744,6 +5363,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ActionParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/action.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/action.hpp
@@ -4754,6 +5374,7 @@ classes:
   line: 47
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ActionParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/action.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/action.hpp
@@ -4764,6 +5385,7 @@ classes:
   line: 74
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ActionGroupParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/actiongroup.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/actiongroup.hpp
@@ -4774,6 +5396,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ActionGroupParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/actiongroup.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/actiongroup.hpp
@@ -4784,6 +5407,7 @@ classes:
   line: 41
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ActionGroup
   upstream_path: pyqtgraph/parametertree/parameterTypes/actiongroup.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/actiongroup.hpp
@@ -4794,6 +5418,7 @@ classes:
   line: 65
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: WidgetParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/basetypes.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/basetypes.hpp
@@ -4804,6 +5429,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: EventProxy
   upstream_path: pyqtgraph/parametertree/parameterTypes/basetypes.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/basetypes.hpp
@@ -4814,6 +5440,7 @@ classes:
   line: 249
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SimpleParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/basetypes.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/basetypes.hpp
@@ -4824,6 +5451,7 @@ classes:
   line: 259
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GroupParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/basetypes.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/basetypes.hpp
@@ -4834,6 +5462,7 @@ classes:
   line: 299
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GroupParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/basetypes.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/basetypes.hpp
@@ -4844,6 +5473,7 @@ classes:
   line: 408
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Emitter
   upstream_path: pyqtgraph/parametertree/parameterTypes/basetypes.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/basetypes.hpp
@@ -4854,6 +5484,7 @@ classes:
   line: 436
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: BoolParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/bool.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/bool.hpp
@@ -4864,6 +5495,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CalendarParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/calendar.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/calendar.hpp
@@ -4874,6 +5506,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CalendarParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/calendar.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/calendar.hpp
@@ -4884,6 +5517,7 @@ classes:
   line: 19
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ChecklistParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/checklist.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/checklist.hpp
@@ -4894,6 +5528,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RadioParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/checklist.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/checklist.hpp
@@ -4904,6 +5539,7 @@ classes:
   line: 101
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: BoolOrRadioParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/checklist.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/checklist.hpp
@@ -4914,6 +5550,7 @@ classes:
   line: 132
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ChecklistParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/checklist.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/checklist.hpp
@@ -4924,6 +5561,7 @@ classes:
   line: 142
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/color.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/color.hpp
@@ -4934,6 +5572,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/color.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/color.hpp
@@ -4944,6 +5583,7 @@ classes:
   line: 19
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/colormap.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/colormap.hpp
@@ -4954,6 +5594,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/colormap.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/colormap.hpp
@@ -4964,6 +5605,7 @@ classes:
   line: 21
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapLutParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/colormaplut.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/colormaplut.hpp
@@ -4974,6 +5616,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapLutParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/colormaplut.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/colormaplut.hpp
@@ -4984,6 +5627,7 @@ classes:
   line: 16
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FileParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/file.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/file.hpp
@@ -4994,6 +5638,7 @@ classes:
   line: 97
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FileParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/file.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/file.hpp
@@ -5004,6 +5649,7 @@ classes:
   line: 174
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FontParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/font.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/font.hpp
@@ -5014,6 +5660,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FontParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/font.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/font.hpp
@@ -5024,6 +5671,7 @@ classes:
   line: 22
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ListParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/list.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/list.hpp
@@ -5034,6 +5682,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ListParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/list.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/list.hpp
@@ -5044,6 +5693,7 @@ classes:
   line: 73
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: NumericParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/numeric.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/numeric.hpp
@@ -5054,6 +5704,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PenParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/pen.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/pen.hpp
@@ -5064,6 +5715,7 @@ classes:
   line: 13
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PenParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/pen.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/pen.hpp
@@ -5074,6 +5726,7 @@ classes:
   line: 58
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ProgressBarParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/progress.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/progress.hpp
@@ -5084,6 +5737,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ProgressBarParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/progress.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/progress.hpp
@@ -5094,6 +5748,7 @@ classes:
   line: 15
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: QtEnumParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/qtenum.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/qtenum.hpp
@@ -5104,6 +5759,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SliderParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/slider.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/slider.hpp
@@ -5114,6 +5770,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SliderParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/slider.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/slider.hpp
@@ -5124,6 +5781,7 @@ classes:
   line: 119
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: StrParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/str.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/str.hpp
@@ -5134,6 +5792,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TextParameterItem
   upstream_path: pyqtgraph/parametertree/parameterTypes/text.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/text.hpp
@@ -5144,6 +5803,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TextParameter
   upstream_path: pyqtgraph/parametertree/parameterTypes/text.py
   target_header_path: include/pyqtgraph/parametertree/parameterTypes/text.hpp
@@ -5154,6 +5814,7 @@ classes:
   line: 20
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GarbageCollector
   upstream_path: pyqtgraph/util/garbage_collector.py
   target_header_path: include/pyqtgraph/util/garbage_collector.hpp
@@ -5164,6 +5825,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Mutex
   upstream_path: pyqtgraph/util/mutex.py
   target_header_path: include/pyqtgraph/util/mutex.hpp
@@ -5174,6 +5836,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RecursiveMutex
   upstream_path: pyqtgraph/util/mutex.py
   target_header_path: include/pyqtgraph/util/mutex.hpp
@@ -5184,6 +5847,7 @@ classes:
   line: 108
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: CheckTable
   upstream_path: pyqtgraph/widgets/CheckTable.py
   target_header_path: include/pyqtgraph/widgets/CheckTable.hpp
@@ -5194,6 +5858,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorButton
   upstream_path: pyqtgraph/widgets/ColorButton.py
   target_header_path: include/pyqtgraph/widgets/ColorButton.hpp
@@ -5204,6 +5869,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapDisplayMixin
   upstream_path: pyqtgraph/widgets/ColorMapButton.py
   target_header_path: include/pyqtgraph/widgets/ColorMapButton.hpp
@@ -5213,6 +5879,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapButton
   upstream_path: pyqtgraph/widgets/ColorMapButton.py
   target_header_path: include/pyqtgraph/widgets/ColorMapButton.hpp
@@ -5224,6 +5891,7 @@ classes:
   line: 88
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapMenu
   upstream_path: pyqtgraph/widgets/ColorMapMenu.py
   target_header_path: include/pyqtgraph/widgets/ColorMapMenu.hpp
@@ -5234,6 +5902,7 @@ classes:
   line: 129
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapWidget
   upstream_path: pyqtgraph/widgets/ColorMapWidget.py
   target_header_path: include/pyqtgraph/widgets/ColorMapWidget.hpp
@@ -5244,6 +5913,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ColorMapParameter
   upstream_path: pyqtgraph/widgets/ColorMapWidget.py
   target_header_path: include/pyqtgraph/widgets/ColorMapWidget.hpp
@@ -5254,6 +5924,7 @@ classes:
   line: 53
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RangeColorMapItem
   upstream_path: pyqtgraph/widgets/ColorMapWidget.py
   target_header_path: include/pyqtgraph/widgets/ColorMapWidget.hpp
@@ -5264,6 +5935,7 @@ classes:
   line: 189
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: EnumColorMapItem
   upstream_path: pyqtgraph/widgets/ColorMapWidget.py
   target_header_path: include/pyqtgraph/widgets/ColorMapWidget.hpp
@@ -5274,6 +5946,7 @@ classes:
   line: 226
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ComboBox
   upstream_path: pyqtgraph/widgets/ComboBox.py
   target_header_path: include/pyqtgraph/widgets/ComboBox.hpp
@@ -5284,6 +5957,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DataFilterWidget
   upstream_path: pyqtgraph/widgets/DataFilterWidget.py
   target_header_path: include/pyqtgraph/widgets/DataFilterWidget.hpp
@@ -5294,6 +5968,7 @@ classes:
   line: 12
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DataFilterParameter
   upstream_path: pyqtgraph/widgets/DataFilterWidget.py
   target_header_path: include/pyqtgraph/widgets/DataFilterWidget.hpp
@@ -5304,6 +5979,7 @@ classes:
   line: 44
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RangeFilterItem
   upstream_path: pyqtgraph/widgets/DataFilterWidget.py
   target_header_path: include/pyqtgraph/widgets/DataFilterWidget.hpp
@@ -5314,6 +5990,7 @@ classes:
   line: 128
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: EnumFilterItem
   upstream_path: pyqtgraph/widgets/DataFilterWidget.py
   target_header_path: include/pyqtgraph/widgets/DataFilterWidget.hpp
@@ -5324,6 +6001,7 @@ classes:
   line: 154
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DataTreeWidget
   upstream_path: pyqtgraph/widgets/DataTreeWidget.py
   target_header_path: include/pyqtgraph/widgets/DataTreeWidget.hpp
@@ -5334,6 +6012,7 @@ classes:
   line: 13
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: DiffTreeWidget
   upstream_path: pyqtgraph/widgets/DiffTreeWidget.py
   target_header_path: include/pyqtgraph/widgets/DiffTreeWidget.hpp
@@ -5344,6 +6023,7 @@ classes:
   line: 10
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FeedbackButton
   upstream_path: pyqtgraph/widgets/FeedbackButton.py
   target_header_path: include/pyqtgraph/widgets/FeedbackButton.hpp
@@ -5354,6 +6034,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: FileDialog
   upstream_path: pyqtgraph/widgets/FileDialog.py
   target_header_path: include/pyqtgraph/widgets/FileDialog.hpp
@@ -5364,6 +6045,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GradientWidget
   upstream_path: pyqtgraph/widgets/GradientWidget.py
   target_header_path: include/pyqtgraph/widgets/GradientWidget.hpp
@@ -5374,6 +6056,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GraphicsLayoutWidget
   upstream_path: pyqtgraph/widgets/GraphicsLayoutWidget.py
   target_header_path: include/pyqtgraph/widgets/GraphicsLayoutWidget.hpp
@@ -5384,6 +6067,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GraphicsView
   upstream_path: pyqtgraph/widgets/GraphicsView.py
   target_header_path: include/pyqtgraph/widgets/GraphicsView.hpp
@@ -5394,6 +6078,7 @@ classes:
   line: 17
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: GroupBox
   upstream_path: pyqtgraph/widgets/GroupBox.py
   target_header_path: include/pyqtgraph/widgets/GroupBox.hpp
@@ -5404,6 +6089,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: HistogramLUTWidget
   upstream_path: pyqtgraph/widgets/HistogramLUTWidget.py
   target_header_path: include/pyqtgraph/widgets/HistogramLUTWidget.hpp
@@ -5414,6 +6100,7 @@ classes:
   line: 13
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: JoystickButton
   upstream_path: pyqtgraph/widgets/JoystickButton.py
   target_header_path: include/pyqtgraph/widgets/JoystickButton.hpp
@@ -5424,6 +6111,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LayoutWidget
   upstream_path: pyqtgraph/widgets/LayoutWidget.py
   target_header_path: include/pyqtgraph/widgets/LayoutWidget.hpp
@@ -5434,6 +6122,7 @@ classes:
   line: 4
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MatplotlibWidget
   upstream_path: pyqtgraph/widgets/MatplotlibWidget.py
   target_header_path: include/pyqtgraph/widgets/MatplotlibWidget.hpp
@@ -5444,6 +6133,7 @@ classes:
   line: 11
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PathButton
   upstream_path: pyqtgraph/widgets/PathButton.py
   target_header_path: include/pyqtgraph/widgets/PathButton.hpp
@@ -5454,6 +6144,7 @@ classes:
   line: 7
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PenPreviewLabel
   upstream_path: pyqtgraph/widgets/PenPreviewLabel.py
   target_header_path: include/pyqtgraph/widgets/PenPreviewLabel.hpp
@@ -5464,6 +6155,7 @@ classes:
   line: 5
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: PlotWidget
   upstream_path: pyqtgraph/widgets/PlotWidget.py
   target_header_path: include/pyqtgraph/widgets/PlotWidget.hpp
@@ -5473,7 +6165,8 @@ classes:
   - GraphicsView
   line: 12
   status: ported
-  completion: complete
+  completion: missing
+  target_presence: all
 - class_name: ProgressDialog
   upstream_path: pyqtgraph/widgets/ProgressDialog.py
   target_header_path: include/pyqtgraph/widgets/ProgressDialog.hpp
@@ -5484,6 +6177,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ProgressWidget
   upstream_path: pyqtgraph/widgets/ProgressDialog.py
   target_header_path: include/pyqtgraph/widgets/ProgressDialog.hpp
@@ -5494,6 +6188,7 @@ classes:
   line: 245
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RawImageWidget
   upstream_path: pyqtgraph/widgets/RawImageWidget.py
   target_header_path: include/pyqtgraph/widgets/RawImageWidget.hpp
@@ -5504,6 +6199,7 @@ classes:
   line: 33
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RawImageGLWidget
   upstream_path: pyqtgraph/widgets/RawImageWidget.py
   target_header_path: include/pyqtgraph/widgets/RawImageWidget.hpp
@@ -5514,6 +6210,7 @@ classes:
   line: 126
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: MouseEvent
   upstream_path: pyqtgraph/widgets/RemoteGraphicsView.py
   target_header_path: include/pyqtgraph/widgets/RemoteGraphicsView.hpp
@@ -5524,6 +6221,7 @@ classes:
   line: 29
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: WheelEvent
   upstream_path: pyqtgraph/widgets/RemoteGraphicsView.py
   target_header_path: include/pyqtgraph/widgets/RemoteGraphicsView.hpp
@@ -5534,6 +6232,7 @@ classes:
   line: 63
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: EnterEvent
   upstream_path: pyqtgraph/widgets/RemoteGraphicsView.py
   target_header_path: include/pyqtgraph/widgets/RemoteGraphicsView.hpp
@@ -5544,6 +6243,7 @@ classes:
   line: 96
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: LeaveEvent
   upstream_path: pyqtgraph/widgets/RemoteGraphicsView.py
   target_header_path: include/pyqtgraph/widgets/RemoteGraphicsView.hpp
@@ -5554,6 +6254,7 @@ classes:
   line: 114
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: RemoteGraphicsView
   upstream_path: pyqtgraph/widgets/RemoteGraphicsView.py
   target_header_path: include/pyqtgraph/widgets/RemoteGraphicsView.hpp
@@ -5564,6 +6265,7 @@ classes:
   line: 134
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: Renderer
   upstream_path: pyqtgraph/widgets/RemoteGraphicsView.py
   target_header_path: include/pyqtgraph/widgets/RemoteGraphicsView.hpp
@@ -5574,6 +6276,7 @@ classes:
   line: 248
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ScatterPlotWidget
   upstream_path: pyqtgraph/widgets/ScatterPlotWidget.py
   target_header_path: include/pyqtgraph/widgets/ScatterPlotWidget.hpp
@@ -5584,6 +6287,7 @@ classes:
   line: 16
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: SpinBox
   upstream_path: pyqtgraph/widgets/SpinBox.py
   target_header_path: include/pyqtgraph/widgets/SpinBox.hpp
@@ -5594,6 +6298,7 @@ classes:
   line: 13
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ErrorBox
   upstream_path: pyqtgraph/widgets/SpinBox.py
   target_header_path: include/pyqtgraph/widgets/SpinBox.hpp
@@ -5604,6 +6309,7 @@ classes:
   line: 632
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TableWidget
   upstream_path: pyqtgraph/widgets/TableWidget.py
   target_header_path: include/pyqtgraph/widgets/TableWidget.hpp
@@ -5614,6 +6320,7 @@ classes:
   line: 28
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TableWidgetItem
   upstream_path: pyqtgraph/widgets/TableWidget.py
   target_header_path: include/pyqtgraph/widgets/TableWidget.hpp
@@ -5624,6 +6331,7 @@ classes:
   line: 373
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TreeWidget
   upstream_path: pyqtgraph/widgets/TreeWidget.py
   target_header_path: include/pyqtgraph/widgets/TreeWidget.hpp
@@ -5634,6 +6342,7 @@ classes:
   line: 6
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: TreeWidgetItem
   upstream_path: pyqtgraph/widgets/TreeWidget.py
   target_header_path: include/pyqtgraph/widgets/TreeWidget.hpp
@@ -5644,6 +6353,7 @@ classes:
   line: 240
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: InvisibleRootItem
   upstream_path: pyqtgraph/widgets/TreeWidget.py
   target_header_path: include/pyqtgraph/widgets/TreeWidget.hpp
@@ -5654,6 +6364,7 @@ classes:
   line: 354
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: ValueLabel
   upstream_path: pyqtgraph/widgets/ValueLabel.py
   target_header_path: include/pyqtgraph/widgets/ValueLabel.hpp
@@ -5664,6 +6375,7 @@ classes:
   line: 8
   status: not_started
   completion: missing
+  target_presence: none
 - class_name: VerticalLabel
   upstream_path: pyqtgraph/widgets/VerticalLabel.py
   target_header_path: include/pyqtgraph/widgets/VerticalLabel.hpp
@@ -5674,6 +6386,7 @@ classes:
   line: 21
   status: not_started
   completion: missing
+  target_presence: none
 excluded:
   examples:
   - pyqtgraph/examples/Arrow.py

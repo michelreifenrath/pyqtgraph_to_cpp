@@ -27,9 +27,18 @@ CLASS_SUMMARY_KEYS = (
 )
 TARGET_PATH_KEYS = ("target_header_path", "target_source_path")
 STATUS_BY_PRESENT_COUNT = {
-    "all": ("ported", "complete"),
-    "some": ("partial", "partial"),
-    "none": ("not_started", "missing"),
+    "all": "ported",
+    "some": "partial",
+    "none": "not_started",
+}
+COMPLETION_EVIDENCE_KEY = "completion_evidence"
+COMPLETION_EVIDENCE_TYPES = {
+    "focused_test",
+    "numeric_oracle",
+    "visual_proof",
+    "interaction_proof",
+    "completion_report",
+    "approved_equivalence",
 }
 
 
@@ -194,22 +203,92 @@ def target_record(upstream_path: str) -> dict[str, str]:
     }
 
 
-def row_status(root: Path, row: dict[str, Any]) -> dict[str, str]:
+def row_identity(row: dict[str, Any]) -> tuple[str, str, str]:
+    return ("classes", str(row.get("upstream_path", "")), str(row.get("class_name", "")))
+
+
+def validate_evidence_artifact(root: Path, prefix: str, value: Any) -> str:
+    if not isinstance(value, str) or not value:
+        raise InventoryError(f"{prefix}.artifact_path must be a non-empty string")
+    relative_path = Path(value)
+    if relative_path.is_absolute():
+        raise InventoryError(f"{prefix}.artifact_path must be relative: {value}")
+    root_path = root.resolve()
+    artifact_path = (root_path / relative_path).resolve()
+    if not artifact_path.is_relative_to(root_path):
+        raise InventoryError(f"{prefix}.artifact_path escapes repository root: {value}")
+    if not artifact_path.is_file():
+        raise InventoryError(f"{prefix}.artifact_path missing: {value}")
+    return value
+
+
+def parse_completion_evidence(root: Path, manifest: dict[str, Any]) -> dict[tuple[str, str, str], dict[str, str]]:
+    records = manifest.get(COMPLETION_EVIDENCE_KEY)
+    if records is None:
+        return {}
+    if not isinstance(records, list):
+        raise InventoryError(f"{COMPLETION_EVIDENCE_KEY} must be a list")
+
+    parsed: dict[tuple[str, str, str], dict[str, str]] = {}
+    for index, record in enumerate(records):
+        prefix = f"{COMPLETION_EVIDENCE_KEY}[{index}]"
+        if not isinstance(record, dict):
+            raise InventoryError(f"{prefix} must be a mapping")
+        section = record.get("section")
+        upstream_path = record.get("upstream_path")
+        class_name = record.get("class_name")
+        evidence_type = record.get("evidence_type")
+        if section != "classes":
+            continue
+        if not isinstance(upstream_path, str) or not upstream_path:
+            raise InventoryError(f"{prefix}.upstream_path must be a non-empty string")
+        if not isinstance(class_name, str) or not class_name:
+            raise InventoryError(f"{prefix}.class_name must be a non-empty string")
+        if evidence_type not in COMPLETION_EVIDENCE_TYPES:
+            raise InventoryError(f"{prefix}.evidence_type is invalid: {evidence_type}")
+        artifact_path = validate_evidence_artifact(root, prefix, record.get("artifact_path"))
+        key = ("classes", upstream_path, class_name)
+        if key in parsed:
+            raise InventoryError(f"duplicate {COMPLETION_EVIDENCE_KEY} record: {key}")
+        parsed[key] = {"type": evidence_type, "artifact_path": artifact_path}
+    return parsed
+
+
+def row_status(
+    root: Path,
+    row: dict[str, Any],
+    evidence: dict[tuple[str, str, str], dict[str, str]],
+) -> dict[str, Any]:
     target_paths = [row[key] for key in TARGET_PATH_KEYS if key in row]
     present_count = sum(1 for path in target_paths if (root / path).exists())
-    if present_count == len(target_paths):
-        status, completion = STATUS_BY_PRESENT_COUNT["all"]
+    if target_paths and present_count == len(target_paths):
+        target_presence = "all"
     elif present_count == 0:
-        status, completion = STATUS_BY_PRESENT_COUNT["none"]
+        target_presence = "none"
     else:
-        status, completion = STATUS_BY_PRESENT_COUNT["some"]
-    return {"status": status, "completion": completion}
+        target_presence = "some"
+
+    metadata: dict[str, Any] = {
+        "status": STATUS_BY_PRESENT_COUNT[target_presence],
+        "completion": "missing",
+        "target_presence": target_presence,
+    }
+    row_evidence = evidence.get(row_identity(row))
+    if row_evidence is not None:
+        if target_presence != "all":
+            raise InventoryError(
+                f"{COMPLETION_EVIDENCE_KEY} references row without all target files: "
+                f"classes {row.get('upstream_path')} class_name={row.get('class_name')}"
+            )
+        metadata["completion"] = "complete"
+        metadata[COMPLETION_EVIDENCE_KEY] = row_evidence
+    return metadata
 
 
 def with_completion_metadata(
-    root: Path, rows: list[dict[str, Any]]
+    root: Path, rows: list[dict[str, Any]], evidence: dict[tuple[str, str, str], dict[str, str]]
 ) -> list[dict[str, Any]]:
-    return [{**row, **row_status(root, row)} for row in rows]
+    return [{**row, **row_status(root, row, evidence)} for row in rows]
 
 
 def base_expression(base: ast.expr) -> str:
@@ -329,7 +408,8 @@ def class_summary_subset(summary: Any) -> Any:
 def update_manifest(root: Path, inventory: dict[str, Any]) -> None:
     manifest_path = root / "port_manifest.yaml"
     manifest = load_manifest(manifest_path, inventory)
-    manifest["classes"] = with_completion_metadata(root, inventory["classes"])
+    completion_evidence = parse_completion_evidence(root, manifest)
+    manifest["classes"] = with_completion_metadata(root, inventory["classes"], completion_evidence)
     manifest["excluded"] = inventory["excluded"]
     summary = manifest.get("summary")
     if not isinstance(summary, dict):
@@ -348,13 +428,14 @@ def validate_manifest_current(root: Path, inventory: dict[str, Any]) -> None:
         return
 
     manifest = load_manifest(manifest_path, inventory)
+    completion_evidence = parse_completion_evidence(root, manifest)
     manifest_sections = {
         "classes": manifest.get("classes"),
         "excluded": manifest.get("excluded"),
         "summary": class_summary_subset(manifest.get("summary")),
     }
     expected_sections = {
-        "classes": with_completion_metadata(root, inventory["classes"]),
+        "classes": with_completion_metadata(root, inventory["classes"], completion_evidence),
         "excluded": inventory["excluded"],
         "summary": class_summary_subset(inventory["summary"]),
     }

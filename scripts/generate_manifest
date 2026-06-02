@@ -17,7 +17,7 @@ REPO_ROOT = SCRIPT_DIR.parent
 ORACLE_SCRIPT_DIR = REPO_ROOT / "oracle" / "scripts"
 MANIFEST_PATH = Path("port_manifest.yaml")
 MANIFEST_SCHEMA_KEY = "manifest_schema"
-CURRENT_MANIFEST_SCHEMA = {"status_metadata": "adopted"}
+CURRENT_MANIFEST_SCHEMA = {"status_metadata": "evidence_backed"}
 GENERATED_MANIFEST_KEYS = (
     "reference",
     MANIFEST_SCHEMA_KEY,
@@ -32,11 +32,20 @@ GENERATED_MANIFEST_KEYS = (
 MANIFEST_REFERENCE_KEYS = ("repo", "ref", "pinned_commit", "docs_url")
 TARGET_PATH_KEYS = ("target_header_path", "target_source_path", "target_path")
 STATUS_METADATA_SECTIONS = ("source_files", "examples", "example_assets", "classes")
-STATUS_METADATA_KEYS = ("status", "completion")
+STATUS_METADATA_KEYS = ("status", "completion", "target_presence")
+COMPLETION_EVIDENCE_KEY = "completion_evidence"
+COMPLETION_EVIDENCE_TYPES = {
+    "focused_test",
+    "numeric_oracle",
+    "visual_proof",
+    "interaction_proof",
+    "completion_report",
+    "approved_equivalence",
+}
 STATUS_BY_PRESENT_COUNT = {
-    "all": ("ported", "complete"),
-    "some": ("partial", "partial"),
-    "none": ("not_started", "missing"),
+    "all": "ported",
+    "some": "partial",
+    "none": "not_started",
 }
 
 
@@ -94,22 +103,130 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def row_status(root: Path, row: dict[str, Any]) -> dict[str, str]:
+def row_identity(section: str, row: dict[str, Any]) -> tuple[str, str, str | None]:
+    return (section, str(row.get("upstream_path", "")), row.get("class_name"))
+
+
+def validate_evidence_artifact(root: Path, prefix: str, value: Any) -> str:
+    if not isinstance(value, str) or not value:
+        raise ManifestError(f"{prefix}.artifact_path must be a non-empty string")
+    relative_path = Path(value)
+    if relative_path.is_absolute():
+        raise ManifestError(f"{prefix}.artifact_path must be relative: {value}")
+    root_path = root.resolve()
+    artifact_path = (root_path / relative_path).resolve()
+    if not artifact_path.is_relative_to(root_path):
+        raise ManifestError(f"{prefix}.artifact_path escapes repository root: {value}")
+    if not artifact_path.is_file():
+        raise ManifestError(f"{prefix}.artifact_path missing: {value}")
+    return value
+
+
+def parse_completion_evidence(
+    root: Path, records: Any
+) -> dict[tuple[str, str, str | None], dict[str, str]]:
+    if records is None:
+        return {}
+    if not isinstance(records, list):
+        raise ManifestError(f"{COMPLETION_EVIDENCE_KEY} must be a list")
+
+    parsed: dict[tuple[str, str, str | None], dict[str, str]] = {}
+    for index, record in enumerate(records):
+        prefix = f"{COMPLETION_EVIDENCE_KEY}[{index}]"
+        if not isinstance(record, dict):
+            raise ManifestError(f"{prefix} must be a mapping")
+        section = record.get("section")
+        upstream_path = record.get("upstream_path")
+        class_name = record.get("class_name")
+        evidence_type = record.get("evidence_type")
+        if section not in STATUS_METADATA_SECTIONS:
+            raise ManifestError(f"{prefix}.section is invalid: {section}")
+        if not isinstance(upstream_path, str) or not upstream_path:
+            raise ManifestError(f"{prefix}.upstream_path must be a non-empty string")
+        if section == "classes":
+            if not isinstance(class_name, str) or not class_name:
+                raise ManifestError(f"{prefix}.class_name must be a non-empty string")
+        elif class_name is not None:
+            raise ManifestError(f"{prefix}.class_name is only valid for classes")
+        if evidence_type not in COMPLETION_EVIDENCE_TYPES:
+            raise ManifestError(f"{prefix}.evidence_type is invalid: {evidence_type}")
+        artifact_path = validate_evidence_artifact(root, prefix, record.get("artifact_path"))
+        key = (section, upstream_path, class_name)
+        if key in parsed:
+            raise ManifestError(f"duplicate {COMPLETION_EVIDENCE_KEY} record: {key}")
+        parsed[key] = {"type": evidence_type, "artifact_path": artifact_path}
+    return parsed
+
+
+def load_completion_evidence(root: Path) -> dict[tuple[str, str, str | None], dict[str, str]]:
+    existing = load_existing_manifest(root / MANIFEST_PATH)
+    return parse_completion_evidence(root, existing.get(COMPLETION_EVIDENCE_KEY))
+
+
+def row_status(
+    root: Path,
+    section: str,
+    row: dict[str, Any],
+    evidence: dict[tuple[str, str, str | None], dict[str, str]],
+) -> dict[str, Any]:
     target_paths = [row[key] for key in TARGET_PATH_KEYS if key in row]
     present_count = sum(1 for path in target_paths if (root / path).exists())
-    if present_count == len(target_paths):
-        status, completion = STATUS_BY_PRESENT_COUNT["all"]
+    if target_paths and present_count == len(target_paths):
+        target_presence = "all"
     elif present_count == 0:
-        status, completion = STATUS_BY_PRESENT_COUNT["none"]
+        target_presence = "none"
     else:
-        status, completion = STATUS_BY_PRESENT_COUNT["some"]
-    return {"status": status, "completion": completion}
+        target_presence = "some"
+
+    metadata: dict[str, Any] = {
+        "status": STATUS_BY_PRESENT_COUNT[target_presence],
+        "completion": "missing",
+        "target_presence": target_presence,
+    }
+    row_evidence = evidence.get(row_identity(section, row))
+    if row_evidence is not None:
+        if target_presence != "all":
+            raise ManifestError(
+                f"{COMPLETION_EVIDENCE_KEY} references row without all target files: "
+                f"{section} {row.get('upstream_path')}"
+            )
+        metadata["completion"] = "complete"
+        metadata[COMPLETION_EVIDENCE_KEY] = row_evidence
+    return metadata
 
 
 def with_completion_metadata(
-    root: Path, rows: list[dict[str, Any]]
+    root: Path,
+    section: str,
+    rows: list[dict[str, Any]],
+    evidence: dict[tuple[str, str, str | None], dict[str, str]],
 ) -> list[dict[str, Any]]:
-    return [{**row, **row_status(root, row)} for row in rows]
+    return [{**row, **row_status(root, section, row, evidence)} for row in rows]
+
+
+def validate_completion_evidence_matches_manifest(
+    generated: dict[str, Any],
+    evidence: dict[tuple[str, str, str | None], dict[str, str]],
+) -> None:
+    if not evidence:
+        return
+    generated_keys: set[tuple[str, str, str | None]] = set()
+    for section in STATUS_METADATA_SECTIONS:
+        rows = generated.get(section, [])
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if isinstance(row, dict):
+                generated_keys.add(row_identity(section, row))
+
+    unknown_keys = sorted(evidence.keys() - generated_keys)
+    if unknown_keys:
+        section, upstream_path, class_name = unknown_keys[0]
+        class_suffix = f" class_name={class_name}" if class_name is not None else ""
+        raise ManifestError(
+            f"{COMPLETION_EVIDENCE_KEY} references unknown manifest row: "
+            f"section={section} upstream_path={upstream_path}{class_suffix}"
+        )
 
 
 def validate_generated_status_metadata(generated: dict[str, Any]) -> None:
@@ -126,6 +243,7 @@ def validate_generated_status_metadata(generated: dict[str, Any]) -> None:
 
 
 def build_manifest(root: Path) -> dict[str, Any]:
+    completion_evidence = load_completion_evidence(root)
     lock = source_inventory.load_lock(root)
     with source_inventory.source_checkout(root, lock) as checkout:
         source = source_inventory.enumerate_inventory(checkout, lock)
@@ -138,16 +256,24 @@ def build_manifest(root: Path) -> dict[str, Any]:
         raise ManifestError("source and class inventory exclusions disagree")
 
     example_summary = examples["summary"]
-    return {
+    generated = {
         "reference": {
             key: source["reference"][key] for key in MANIFEST_REFERENCE_KEYS
         },
         MANIFEST_SCHEMA_KEY: dict(CURRENT_MANIFEST_SCHEMA),
-        "source_files": with_completion_metadata(root, source["source_files"]),
-        "examples": with_completion_metadata(root, examples["examples"]),
-        "example_assets": with_completion_metadata(root, examples["assets"]),
+        "source_files": with_completion_metadata(
+            root, "source_files", source["source_files"], completion_evidence
+        ),
+        "examples": with_completion_metadata(
+            root, "examples", examples["examples"], completion_evidence
+        ),
+        "example_assets": with_completion_metadata(
+            root, "example_assets", examples["assets"], completion_evidence
+        ),
         "example_inventory_summary": example_summary,
-        "classes": with_completion_metadata(root, classes["classes"]),
+        "classes": with_completion_metadata(
+            root, "classes", classes["classes"], completion_evidence
+        ),
         "excluded": source["excluded"],
         "summary": {
             "source_file_count": len(source["source_files"]),
@@ -161,6 +287,9 @@ def build_manifest(root: Path) -> dict[str, Any]:
             "excluded_test_count": len(source["excluded"]["tests"]),
         },
     }
+    validate_completion_evidence_matches_manifest(generated, completion_evidence)
+    validate_generated_status_metadata(generated)
+    return generated
 
 
 def render_manifest(manifest: dict[str, Any], output_format: str) -> str:
