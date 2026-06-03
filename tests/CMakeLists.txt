@@ -79,9 +79,25 @@ set_tests_properties(
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
 )
 
+add_test(
+    NAME pyqtgraph_cpp.oracle.P2_03
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_03_plotdata_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P2_03
+    PROPERTIES
+        LABELS P2.03
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_arrayview core/test_ArrayView.cpp pyqtgraph_cpp.core.ArrayView)
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_nan_minmax core/test_nan_minmax.cpp pyqtgraph_cpp.core.nan_minmax)
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_plotdata core/test_PlotData.cpp pyqtgraph_cpp.core.PlotData)
+target_compile_definitions(pyqtgraph_cpp_core_plotdata
+    PRIVATE
+        PYQTGRAPH_CPP_P2_03_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P2_03/plotdata_oracle.json"
+)
+set_tests_properties(pyqtgraph_cpp.core.PlotData PROPERTIES LABELS P2.03)
 
 if(_pyqtgraph_cpp_has_qtcore)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_point core/test_Point.cpp pyqtgraph_cpp.core.Point)

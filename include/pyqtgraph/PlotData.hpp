@@ -5,14 +5,17 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <initializer_list>
 #if __has_include(<span>)
 #include <span>
 #endif
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #if !defined(__cpp_lib_span)
@@ -49,10 +52,14 @@ namespace pyqtgraph {
 class PlotData {
 public:
     using Values = std::vector<double>;
+    using Mask = std::vector<bool>;
 
     // C++ port restriction: upstream PlotData stores arbitrary Python values and
     // uses None for fields added without data. This native value model stores
     // owning one-dimensional double arrays; default-added fields are empty.
+    // Masked extrema ignore masked entries; an all-masked field throws from
+    // min()/max() because the public C++ API returns double and cannot represent
+    // NumPy's masked scalar result.
     void addFields(std::initializer_list<std::string> fields);
 
     [[nodiscard]] bool hasField(std::string_view field) const;
@@ -64,14 +71,48 @@ public:
     void set(std::string field, const Values& values);
     void set(std::string field, std::initializer_list<double> values);
 
+    template <std::ranges::input_range Range>
+        requires std::convertible_to<std::ranges::range_reference_t<Range>, double>
+    void set(std::string field, Range&& values)
+    {
+        Values copied;
+        for (auto&& value : values) {
+            copied.push_back(static_cast<double>(value));
+        }
+        set(std::move(field), std::span<const double>(copied.data(), copied.size()));
+    }
+
+    void setMasked(std::string field, std::initializer_list<double> values, std::initializer_list<bool> mask);
+
+    template <std::ranges::input_range ValuesRange, std::ranges::input_range MaskRange>
+        requires(std::convertible_to<std::ranges::range_reference_t<ValuesRange>, double>
+            && std::convertible_to<std::ranges::range_reference_t<MaskRange>, bool>)
+    void setMasked(std::string field, ValuesRange&& values, MaskRange&& mask)
+    {
+        Values copiedValues;
+        for (auto&& value : values) {
+            copiedValues.push_back(static_cast<double>(value));
+        }
+
+        Mask copiedMask;
+        for (auto&& masked : mask) {
+            copiedMask.push_back(static_cast<bool>(masked));
+        }
+
+        setMaskedValues(std::move(field), std::move(copiedValues), std::move(copiedMask));
+    }
+
     [[nodiscard]] double min(std::string_view field) const;
     [[nodiscard]] double max(std::string_view field) const;
 
 private:
+    void setMaskedValues(std::string field, Values values, Mask mask);
+
     [[nodiscard]] const Values& valuesFor(std::string_view field) const;
     [[nodiscard]] Values& valuesFor(std::string_view field);
 
     std::unordered_map<std::string, Values> fields_;
+    std::unordered_map<std::string, Mask> masks_;
     mutable std::unordered_map<std::string, double> minValues_;
     mutable std::unordered_map<std::string, double> maxValues_;
 };

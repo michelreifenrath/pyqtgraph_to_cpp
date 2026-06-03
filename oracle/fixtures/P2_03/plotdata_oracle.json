@@ -1,0 +1,108 @@
+{
+  "cases": {
+    "added_field_default_is_none": true,
+    "all_masked": {
+      "input_kind": "MaskedArray",
+      "max": {
+        "kind": "masked"
+      },
+      "min": {
+        "kind": "masked"
+      }
+    },
+    "empty_exception": "ValueError",
+    "finite_list": {
+      "input_kind": "list",
+      "max": {
+        "kind": "number",
+        "value": 5.0
+      },
+      "min": {
+        "kind": "number",
+        "value": -2.0
+      }
+    },
+    "masked_partial": {
+      "input_kind": "MaskedArray",
+      "max": {
+        "kind": "number",
+        "value": 7.0
+      },
+      "min": {
+        "kind": "number",
+        "value": 2.0
+      }
+    },
+    "nan_propagates": {
+      "input_kind": "list",
+      "max": {
+        "kind": "nan"
+      },
+      "min": {
+        "kind": "nan"
+      }
+    },
+    "range_container": {
+      "input_kind": "range",
+      "max": {
+        "kind": "number",
+        "value": 4.0
+      },
+      "min": {
+        "kind": "number",
+        "value": 1.0
+      }
+    },
+    "stale_cache_after_assignment": {
+      "after_replace_max": {
+        "kind": "number",
+        "value": 5.0
+      },
+      "after_replace_min": {
+        "kind": "number",
+        "value": -2.0
+      },
+      "first_max": {
+        "kind": "number",
+        "value": 5.0
+      },
+      "first_min": {
+        "kind": "number",
+        "value": -2.0
+      }
+    },
+    "tuple_container": {
+      "input_kind": "tuple",
+      "max": {
+        "kind": "number",
+        "value": 8.0
+      },
+      "min": {
+        "kind": "number",
+        "value": -4.0
+      }
+    }
+  },
+  "cpp_deviations": [
+    "C++ stores one-dimensional double arrays instead of arbitrary Python objects; addFields creates empty arrays instead of None.",
+    "C++ all-masked extrema throw std::invalid_argument because the public min/max API returns double and cannot represent NumPy's masked scalar.",
+    "C++ set()/setMasked() intentionally preserve PyQtGraph PlotData.py stale min/max caches after replacement."
+  ],
+  "issue": "P2.03",
+  "schema_version": 1,
+  "tolerances": {
+    "absolute": 0.0,
+    "nan": "both_nan"
+  },
+  "upstream": {
+    "commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "files": [
+      "pyqtgraph/PlotData.py",
+      "tests/graphicsItems/test_PlotDataItem.py",
+      "pyqtgraph/graphicsItems/PlotDataItem.py"
+    ],
+    "probe_note": "Executes pyqtgraph/PlotData.py with a minimal NumPy reduction stand-in for list/range/NaN/masked cases.",
+    "project": "pyqtgraph",
+    "ref": "pyqtgraph-0.14.0"
+  }
+}
