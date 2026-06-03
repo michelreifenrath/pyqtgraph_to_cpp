@@ -4,24 +4,110 @@
 from __future__ import annotations
 
 import argparse
+import importlib.machinery
+import importlib.util
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.factory.workflow_config import (  # noqa: E402
-    CommandResult,
-    ConfigError,
-    _subprocess_env,
-    load_workflow_with_context,
-)
+try:
+    from scripts.factory.workflow_config import (  # type: ignore[import-not-found]  # noqa: E402
+        CommandResult,
+        ConfigError,
+        _subprocess_env,
+        load_workflow_with_context,
+    )
+except ModuleNotFoundError:  # Product checkout fallback; Factory is not vendored here.
+    try:
+        import yaml
+    except Exception:  # pragma: no cover - reported through ConfigError at runtime
+        yaml = None
+
+    class ConfigError(ValueError):
+        pass
+
+    @dataclass(frozen=True)
+    class CommandResult:
+        args: list[str] | str
+        returncode: int
+        stdout: str
+        stderr: str
+
+    @dataclass(frozen=True)
+    class LoadedWorkflow:
+        config: Any
+        path: Path
+        repo_root: Path
+
+    def _namespace(value: Any) -> Any:
+        if isinstance(value, dict):
+            return SimpleNamespace(**{str(key): _namespace(item) for key, item in value.items()})
+        if isinstance(value, list):
+            return [_namespace(item) for item in value]
+        return value
+
+    def _section(data: dict[str, Any], name: str) -> dict[str, Any]:
+        value = data.get(name, {})
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise ConfigError(f"{name} must be a mapping")
+        return value
+
+    def _split_front_matter(text: str) -> str:
+        if not text.startswith("---\n"):
+            raise ConfigError("WORKFLOW.md must start with YAML front matter")
+        try:
+            _prefix, front_matter, _body = text.split("---", 2)
+        except ValueError as error:
+            raise ConfigError("WORKFLOW.md front matter is not closed") from error
+        return front_matter.strip()
+
+    def _parse_workflow_text(text: str) -> Any:
+        if yaml is None:
+            raise ConfigError("PyYAML is required to parse WORKFLOW.md")
+        loaded = yaml.safe_load(_split_front_matter(text)) or {}
+        if not isinstance(loaded, dict):
+            raise ConfigError("WORKFLOW.md front matter must be a mapping")
+
+        validation = _section(loaded, "validation")
+        commands = validation.get("commands", [])
+        if commands is None:
+            commands = []
+        if not isinstance(commands, list) or not all(isinstance(command, str) for command in commands):
+            raise ConfigError("validation.commands must be a list of shell command strings")
+        validation.setdefault("commands", commands)
+        validation.setdefault("diff_check", True)
+        loaded["validation"] = validation
+
+        autoreview = _section(loaded, "autoreview")
+        autoreview.setdefault("base", "origin/main")
+        loaded["autoreview"] = autoreview
+        return _namespace(loaded)
+
+    def load_workflow_with_context(path: str | Path = "WORKFLOW.md") -> LoadedWorkflow:
+        workflow_path = Path(path).resolve()
+        return LoadedWorkflow(
+            config=_parse_workflow_text(workflow_path.read_text(encoding="utf-8")),
+            path=workflow_path,
+            repo_root=workflow_path.parent,
+        )
+
+    def _subprocess_env() -> dict[str, str]:
+        return os.environ.copy()
+
 
 DEFAULT_REPORTS_DIR = ".factory/logs/gates"
 
@@ -31,22 +117,41 @@ CMAKE_VALIDATION_COMMANDS = [
     "ctest --preset dev --output-on-failure",
 ]
 
-VISUAL_COMMANDS = {
-    "SimplePlot": [
-        "cmake --preset visual",
-        "cmake --build --preset visual --target pyqtgraph_cpp_visual_render_example --parallel",
-        "ctest --preset visual -R '^P1\\.08\\.visual\\.SimplePlot$' --output-on-failure",
-    ],
-}
+
+def _load_example_registry() -> Any:
+    script = REPO_ROOT / "scripts" / "run_changed_examples"
+    loader = importlib.machinery.SourceFileLoader("pgcpp_run_changed_examples_registry", str(script))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    if spec is None:
+        raise ValueError("could not load example manifest registry")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[loader.name] = module
+    loader.exec_module(module)
+    return module
+
+
+def visual_examples() -> dict[str, Any]:
+    """Return visual-gated examples from the shared manifest registry."""
+    registry = _load_example_registry()
+    return {
+        example.name: example
+        for example in registry.manifest_examples(REPO_ROOT)
+        if example.visual_required
+    }
 
 
 def visual_gate_commands(example: str) -> list[str]:
     """Return focused visual oracle validation commands for an example."""
-    try:
-        return list(VISUAL_COMMANDS[example])
-    except KeyError as error:
-        known = ", ".join(sorted(VISUAL_COMMANDS))
-        raise ValueError(f"unsupported visual gate target: {example}; known targets: {known}") from error
+    targets = visual_examples()
+    selected = targets.get(example)
+    if selected is None:
+        known = ", ".join(sorted(targets)) or "(none)"
+        raise ValueError(f"unsupported visual gate target: {example}; known targets: {known}")
+    return [
+        "cmake --preset visual",
+        "cmake --build --preset visual --target pyqtgraph_cpp_visual_render_example --parallel",
+        f"ctest --preset visual -R '^P1\\.08\\.visual\\.{re.escape(selected.name)}$' --output-on-failure",
+    ]
 
 
 def validate_visual_target(parser: argparse.ArgumentParser, mode: str, target: str | None) -> None:
