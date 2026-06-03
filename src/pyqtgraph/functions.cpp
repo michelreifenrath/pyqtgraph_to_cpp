@@ -188,14 +188,16 @@ void applyWideLineCap(QPen& pen, double width)
 
 [[nodiscard]] QPainterPath polygonSymbol(std::initializer_list<QPointF> points)
 {
-    QPolygonF polygon;
-    polygon.reserve(static_cast<qsizetype>(points.size()));
-    for (const QPointF& point : points) {
-        polygon.append(point);
+    QPainterPath path;
+    if (points.size() == 0) {
+        return path;
     }
 
-    QPainterPath path;
-    path.addPolygon(polygon);
+    auto point = points.begin();
+    path.moveTo(*point++);
+    for (; point != points.end(); ++point) {
+        path.lineTo(*point);
+    }
     path.closeSubpath();
     return path;
 }
@@ -207,77 +209,103 @@ void applyWideLineCap(QPen& pen, double width)
     return path;
 }
 
+[[nodiscard]] QPainterPath rectSymbol()
+{
+    QPainterPath path;
+    path.addRect(QRectF(-0.5, -0.5, 1.0, 1.0));
+    return path;
+}
+
+[[nodiscard]] QPainterPath crosshairSymbol()
+{
+    QPainterPath path;
+    path.addEllipse(QRectF(-0.5, -0.5, 1.0, 1.0));
+    path.moveTo(-1.0, 0.0);
+    path.lineTo(1.0, 0.0);
+    path.moveTo(0.0, -1.0);
+    path.lineTo(0.0, 1.0);
+    return path;
+}
+
 [[nodiscard]] QPainterPath plusSymbol()
 {
-    return polygonSymbol({QPointF(-0.5, -0.15),
-                          QPointF(-0.15, -0.15),
-                          QPointF(-0.15, -0.5),
-                          QPointF(0.15, -0.5),
-                          QPointF(0.15, -0.15),
-                          QPointF(0.5, -0.15),
-                          QPointF(0.5, 0.15),
-                          QPointF(0.15, 0.15),
-                          QPointF(0.15, 0.5),
-                          QPointF(-0.15, 0.5),
-                          QPointF(-0.15, 0.15),
-                          QPointF(-0.5, 0.15)});
-}
-
-[[nodiscard]] QPainterPath regularPolygonSymbol(int sides, double phaseRadians)
-{
-    constexpr double pi = 3.141592653589793238462643383279502884;
-    QPolygonF polygon;
-    polygon.reserve(sides);
-    for (int side = 0; side < sides; ++side) {
-        const double angle = phaseRadians + 2.0 * pi * static_cast<double>(side) / static_cast<double>(sides);
-        polygon.append(QPointF(0.5 * std::cos(angle), 0.5 * std::sin(angle)));
-    }
-
-    QPainterPath path;
-    path.addPolygon(polygon);
-    path.closeSubpath();
-    return path;
-}
-
-[[nodiscard]] QPainterPath starSymbol()
-{
-    constexpr double pi = 3.141592653589793238462643383279502884;
-    QPolygonF polygon;
-    polygon.reserve(10);
-    for (int point = 0; point < 10; ++point) {
-        const double radius = point % 2 == 0 ? 0.5 : 0.2;
-        const double angle = -pi / 2.0 + pi * static_cast<double>(point) / 5.0;
-        polygon.append(QPointF(radius * std::cos(angle), radius * std::sin(angle)));
-    }
-
-    QPainterPath path;
-    path.addPolygon(polygon);
-    path.closeSubpath();
-    return path;
+    return polygonSymbol({QPointF(-0.5, -0.1),
+                          QPointF(-0.5, 0.1),
+                          QPointF(-0.1, 0.1),
+                          QPointF(-0.1, 0.5),
+                          QPointF(0.1, 0.5),
+                          QPointF(0.1, 0.1),
+                          QPointF(0.5, 0.1),
+                          QPointF(0.5, -0.1),
+                          QPointF(0.1, -0.1),
+                          QPointF(0.1, -0.5),
+                          QPointF(-0.1, -0.5),
+                          QPointF(-0.1, -0.1)});
 }
 
 [[nodiscard]] SymbolPathMap makeSymbolPaths()
 {
-    constexpr double pi = 3.141592653589793238462643383279502884;
     SymbolPathMap symbols;
     symbols.emplace(QStringLiteral("o"), ellipseSymbol());
-    symbols.emplace(QStringLiteral("s"), polygonSymbol({QPointF(-0.5, -0.5),
-                                                         QPointF(0.5, -0.5),
-                                                         QPointF(0.5, 0.5),
-                                                         QPointF(-0.5, 0.5)}));
-    symbols.emplace(QStringLiteral("t"), polygonSymbol({QPointF(0.0, -0.5), QPointF(-0.5, 0.5), QPointF(0.5, 0.5)}));
-    symbols.emplace(QStringLiteral("t1"), polygonSymbol({QPointF(0.0, 0.5), QPointF(-0.5, -0.5), QPointF(0.5, -0.5)}));
-    symbols.emplace(QStringLiteral("t2"), polygonSymbol({QPointF(0.5, 0.0), QPointF(-0.5, -0.5), QPointF(-0.5, 0.5)}));
-    symbols.emplace(QStringLiteral("t3"), polygonSymbol({QPointF(-0.5, 0.0), QPointF(0.5, -0.5), QPointF(0.5, 0.5)}));
+    symbols.emplace(QStringLiteral("s"), rectSymbol());
+    symbols.emplace(QStringLiteral("t"), polygonSymbol({QPointF(-0.5, -0.5), QPointF(0.0, 0.5), QPointF(0.5, -0.5)}));
+    symbols.emplace(QStringLiteral("t1"), polygonSymbol({QPointF(-0.5, 0.5), QPointF(0.0, -0.5), QPointF(0.5, 0.5)}));
+    symbols.emplace(QStringLiteral("t2"), polygonSymbol({QPointF(-0.5, -0.5), QPointF(-0.5, 0.5), QPointF(0.5, 0.0)}));
+    symbols.emplace(QStringLiteral("t3"), polygonSymbol({QPointF(0.5, 0.5), QPointF(0.5, -0.5), QPointF(-0.5, 0.0)}));
     symbols.emplace(QStringLiteral("d"), polygonSymbol({QPointF(0.0, -0.5),
-                                                         QPointF(-0.5, 0.0),
+                                                         QPointF(-0.4, 0.0),
                                                          QPointF(0.0, 0.5),
-                                                         QPointF(0.5, 0.0)}));
-    symbols.emplace(QStringLiteral("+"), plusSymbol());
-    symbols.emplace(QStringLiteral("x"), QTransform().rotate(45.0).map(plusSymbol()));
-    symbols.emplace(QStringLiteral("p"), regularPolygonSymbol(5, -pi / 2.0));
-    symbols.emplace(QStringLiteral("h"), regularPolygonSymbol(6, pi / 6.0));
-    symbols.emplace(QStringLiteral("star"), starSymbol());
+                                                         QPointF(0.4, 0.0)}));
+
+    const QPainterPath plus = plusSymbol();
+    symbols.emplace(QStringLiteral("+"), plus);
+    symbols.emplace(QStringLiteral("x"), QTransform().rotate(45.0).map(plus));
+    symbols.emplace(QStringLiteral("p"), polygonSymbol({QPointF(0.0, -0.5),
+                                                         QPointF(-0.4755, -0.1545),
+                                                         QPointF(-0.2939, 0.4045),
+                                                         QPointF(0.2939, 0.4045),
+                                                         QPointF(0.4755, -0.1545)}));
+    symbols.emplace(QStringLiteral("h"), polygonSymbol({QPointF(0.433, 0.25),
+                                                         QPointF(0.0, 0.5),
+                                                         QPointF(-0.433, 0.25),
+                                                         QPointF(-0.433, -0.25),
+                                                         QPointF(0.0, -0.5),
+                                                         QPointF(0.433, -0.25)}));
+    symbols.emplace(QStringLiteral("star"), polygonSymbol({QPointF(0.0, -0.5),
+                                                            QPointF(-0.1123, -0.1545),
+                                                            QPointF(-0.4755, -0.1545),
+                                                            QPointF(-0.1816, 0.059),
+                                                            QPointF(-0.2939, 0.4045),
+                                                            QPointF(0.0, 0.1910),
+                                                            QPointF(0.2939, 0.4045),
+                                                            QPointF(0.1816, 0.059),
+                                                            QPointF(0.4755, -0.1545),
+                                                            QPointF(0.1123, -0.1545)}));
+
+    const QPainterPath verticalBar = polygonSymbol({QPointF(-0.1, 0.5),
+                                                    QPointF(0.1, 0.5),
+                                                    QPointF(0.1, -0.5),
+                                                    QPointF(-0.1, -0.5)});
+    const QPainterPath arrowUp = polygonSymbol({QPointF(-0.125, 0.125),
+                                                QPointF(0.0, 0.0),
+                                                QPointF(0.125, 0.125),
+                                                QPointF(0.05, 0.125),
+                                                QPointF(0.05, 0.5),
+                                                QPointF(-0.05, 0.5),
+                                                QPointF(-0.05, 0.125)});
+    QTransform rotate90;
+    rotate90.rotate(90.0);
+    const QPainterPath arrowRight = rotate90.map(arrowUp);
+    const QPainterPath arrowDown = rotate90.map(arrowRight);
+    const QPainterPath arrowLeft = rotate90.map(arrowDown);
+
+    symbols.emplace(QStringLiteral("|"), verticalBar);
+    symbols.emplace(QStringLiteral("_"), rotate90.map(verticalBar));
+    symbols.emplace(QStringLiteral("arrow_up"), arrowUp);
+    symbols.emplace(QStringLiteral("arrow_right"), arrowRight);
+    symbols.emplace(QStringLiteral("arrow_down"), arrowDown);
+    symbols.emplace(QStringLiteral("arrow_left"), arrowLeft);
+    symbols.emplace(QStringLiteral("crosshair"), crosshairSymbol());
     return symbols;
 }
 

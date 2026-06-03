@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <exception>
+#include <initializer_list>
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
@@ -81,6 +82,25 @@ bool checkPathElement(const QPainterPath& path, int index, double x, double y, s
 #define CHECK_PATH_ELEMENT(path, index, x, y) \
     do { \
         if (!checkPathElement((path), (index), (x), (y), #path)) { \
+            return false; \
+        } \
+    } while (false)
+
+bool checkPathPrefix(const QPainterPath& path, std::initializer_list<QPointF> points, std::string_view label)
+{
+    int index = 0;
+    for (const QPointF& point : points) {
+        if (!checkPathElement(path, index, point.x(), point.y(), label)) {
+            return false;
+        }
+        ++index;
+    }
+    return true;
+}
+
+#define CHECK_PATH_PREFIX(path, ...) \
+    do { \
+        if (!checkPathPrefix((path), {__VA_ARGS__}, #path)) { \
             return false; \
         } \
     } while (false)
@@ -250,12 +270,32 @@ bool testPenOptionsAndBrushEdges()
 
 bool testSymbolBehavior()
 {
-    // Representative scatter symbol painter paths from pinned pyqtgraph-0.14.0
-    // graphicsItems/ScatterPlotItem.py. Paths are normalized to the upstream unit-size
-    // coordinate contract centered on (0, 0).
+    // Complete symbol oracle from pinned pyqtgraph-0.14.0 commit
+    // a20028b98294b9cc8770f2015a92eb342224b788,
+    // pyqtgraph/graphicsItems/ScatterPlotItem.py name_list and coords. Paths are
+    // normalized to the upstream unit-size coordinate contract centered on (0, 0).
     const auto& symbols = pyqtgraph::symbolPaths();
-    constexpr std::array<std::string_view, 10> representativeSymbols = {"o", "s", "t", "t1", "t2", "t3", "d", "+", "x", "star"};
-    for (const std::string_view symbol : representativeSymbols) {
+    constexpr std::array<std::string_view, 19> upstreamSymbols = {"o",
+                                                                 "s",
+                                                                 "t",
+                                                                 "t1",
+                                                                 "t2",
+                                                                 "t3",
+                                                                 "d",
+                                                                 "+",
+                                                                 "x",
+                                                                 "p",
+                                                                 "h",
+                                                                 "star",
+                                                                 "|",
+                                                                 "_",
+                                                                 "arrow_up",
+                                                                 "arrow_right",
+                                                                 "arrow_down",
+                                                                 "arrow_left",
+                                                                 "crosshair"};
+    CHECK(symbols.size() == upstreamSymbols.size());
+    for (const std::string_view symbol : upstreamSymbols) {
         CHECK(symbols.find(QString::fromUtf8(symbol.data(), static_cast<qsizetype>(symbol.size()))) != symbols.end());
         CHECK(!pyqtgraph::symbolPath(symbol).isEmpty());
     }
@@ -269,31 +309,109 @@ bool testSymbolBehavior()
     CHECK_RECT(square.boundingRect(), -0.5, -0.5, 1.0, 1.0);
     CHECK(square.contains(QPointF(0.25, 0.25)));
 
-    const QPainterPath triangle = pyqtgraph::symbolPath("t");
-    CHECK_PATH_ELEMENT(triangle, 0, 0.0, -0.5);
-    CHECK_PATH_ELEMENT(triangle, 1, -0.5, 0.5);
-    CHECK_PATH_ELEMENT(triangle, 2, 0.5, 0.5);
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t"), QPointF(-0.5, -0.5), QPointF(0.0, 0.5), QPointF(0.5, -0.5));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t1"), QPointF(-0.5, 0.5), QPointF(0.0, -0.5), QPointF(0.5, 0.5));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t2"), QPointF(-0.5, -0.5), QPointF(-0.5, 0.5), QPointF(0.5, 0.0));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t3"), QPointF(0.5, 0.5), QPointF(0.5, -0.5), QPointF(-0.5, 0.0));
 
     const QPainterPath diamond = pyqtgraph::symbolPath("d");
-    CHECK_RECT(diamond.boundingRect(), -0.5, -0.5, 1.0, 1.0);
-    CHECK_PATH_ELEMENT(diamond, 0, 0.0, -0.5);
-    CHECK_PATH_ELEMENT(diamond, 2, 0.0, 0.5);
+    CHECK_RECT(diamond.boundingRect(), -0.4, -0.5, 0.8, 1.0);
+    CHECK_PATH_PREFIX(diamond, QPointF(0.0, -0.5), QPointF(-0.4, 0.0), QPointF(0.0, 0.5), QPointF(0.4, 0.0));
 
     const QPainterPath plus = pyqtgraph::symbolPath("+");
     CHECK_RECT(plus.boundingRect(), -0.5, -0.5, 1.0, 1.0);
+    CHECK_PATH_PREFIX(plus,
+                      QPointF(-0.5, -0.1),
+                      QPointF(-0.5, 0.1),
+                      QPointF(-0.1, 0.1),
+                      QPointF(-0.1, 0.5),
+                      QPointF(0.1, 0.5),
+                      QPointF(0.1, 0.1),
+                      QPointF(0.5, 0.1),
+                      QPointF(0.5, -0.1),
+                      QPointF(0.1, -0.1),
+                      QPointF(0.1, -0.5),
+                      QPointF(-0.1, -0.5),
+                      QPointF(-0.1, -0.1));
     CHECK(plus.contains(QPointF(0.0, 0.45)));
     CHECK(plus.contains(QPointF(0.45, 0.0)));
     CHECK(!plus.contains(QPointF(0.45, 0.45)));
 
     const QPainterPath cross = pyqtgraph::symbolPath("x");
     CHECK(cross.contains(QPointF(0.0, 0.0)));
-    CHECK(cross.boundingRect().width() > 0.9);
-    CHECK(cross.boundingRect().height() > 0.9);
+    const double crossExtent = 0.6 / std::sqrt(2.0);
+    CHECK_RECT(cross.boundingRect(), -crossExtent, -crossExtent, 2.0 * crossExtent, 2.0 * crossExtent);
+
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("p"),
+                      QPointF(0.0, -0.5),
+                      QPointF(-0.4755, -0.1545),
+                      QPointF(-0.2939, 0.4045),
+                      QPointF(0.2939, 0.4045),
+                      QPointF(0.4755, -0.1545));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("h"),
+                      QPointF(0.433, 0.25),
+                      QPointF(0.0, 0.5),
+                      QPointF(-0.433, 0.25),
+                      QPointF(-0.433, -0.25),
+                      QPointF(0.0, -0.5),
+                      QPointF(0.433, -0.25));
 
     const QPainterPath star = pyqtgraph::symbolPath(std::string_view("star"));
-    CHECK(star.elementCount() >= 10);
-    CHECK_PATH_ELEMENT(star, 0, 0.0, -0.5);
+    CHECK_PATH_PREFIX(star,
+                      QPointF(0.0, -0.5),
+                      QPointF(-0.1123, -0.1545),
+                      QPointF(-0.4755, -0.1545),
+                      QPointF(-0.1816, 0.059),
+                      QPointF(-0.2939, 0.4045),
+                      QPointF(0.0, 0.1910),
+                      QPointF(0.2939, 0.4045),
+                      QPointF(0.1816, 0.059),
+                      QPointF(0.4755, -0.1545),
+                      QPointF(0.1123, -0.1545));
     CHECK(star.contains(QPointF(0.0, 0.0)));
+
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("|"), QPointF(-0.1, 0.5), QPointF(0.1, 0.5), QPointF(0.1, -0.5), QPointF(-0.1, -0.5));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("_"), QPointF(-0.5, -0.1), QPointF(-0.5, 0.1), QPointF(0.5, 0.1), QPointF(0.5, -0.1));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_up"),
+                      QPointF(-0.125, 0.125),
+                      QPointF(0.0, 0.0),
+                      QPointF(0.125, 0.125),
+                      QPointF(0.05, 0.125),
+                      QPointF(0.05, 0.5),
+                      QPointF(-0.05, 0.5),
+                      QPointF(-0.05, 0.125));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_right"),
+                      QPointF(-0.125, -0.125),
+                      QPointF(0.0, 0.0),
+                      QPointF(-0.125, 0.125),
+                      QPointF(-0.125, 0.05),
+                      QPointF(-0.5, 0.05),
+                      QPointF(-0.5, -0.05),
+                      QPointF(-0.125, -0.05));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_down"),
+                      QPointF(0.125, -0.125),
+                      QPointF(0.0, 0.0),
+                      QPointF(-0.125, -0.125),
+                      QPointF(-0.05, -0.125),
+                      QPointF(-0.05, -0.5),
+                      QPointF(0.05, -0.5),
+                      QPointF(0.05, -0.125));
+    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_left"),
+                      QPointF(0.125, 0.125),
+                      QPointF(0.0, 0.0),
+                      QPointF(0.125, -0.125),
+                      QPointF(0.125, -0.05),
+                      QPointF(0.5, -0.05),
+                      QPointF(0.5, 0.05),
+                      QPointF(0.125, 0.05));
+
+    const QPainterPath crosshair = pyqtgraph::symbolPath("crosshair");
+    CHECK_RECT(crosshair.boundingRect(), -1.0, -1.0, 2.0, 2.0);
+    CHECK(crosshair.elementCount() >= 17);
+    CHECK_PATH_ELEMENT(crosshair, crosshair.elementCount() - 4, -1.0, 0.0);
+    CHECK_PATH_ELEMENT(crosshair, crosshair.elementCount() - 3, 1.0, 0.0);
+    CHECK_PATH_ELEMENT(crosshair, crosshair.elementCount() - 2, 0.0, -1.0);
+    CHECK_PATH_ELEMENT(crosshair, crosshair.elementCount() - 1, 0.0, 1.0);
 
     bool rejectedUnknown = false;
     try {
