@@ -338,10 +338,16 @@ bool testSymbolBehavior()
                                                                  "arrow_left",
                                                                  "crosshair"};
     CHECK(symbols.size() == upstreamSymbols.size());
+    auto symbolPath = symbols.begin();
     for (const std::string_view symbol : upstreamSymbols) {
-        CHECK(symbols.find(QString::fromUtf8(symbol.data(), static_cast<qsizetype>(symbol.size()))) != symbols.end());
+        const QString symbolName = QString::fromUtf8(symbol.data(), static_cast<qsizetype>(symbol.size()));
+        CHECK(symbolPath != symbols.end());
+        CHECK(symbolPath->first == symbolName);
+        CHECK(symbols.find(symbolName) != symbols.end());
         CHECK(!pyqtgraph::symbolPath(symbol).isEmpty());
+        ++symbolPath;
     }
+    CHECK(symbolPath == symbols.end());
 
     const QPainterPath circle = pyqtgraph::symbolPath("o");
     CHECK_RECT(circle.boundingRect(), -0.5, -0.5, 1.0, 1.0);

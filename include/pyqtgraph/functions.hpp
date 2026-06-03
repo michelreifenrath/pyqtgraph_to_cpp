@@ -421,7 +421,11 @@ QBrush mkBrush(double red, double green, double blue);
 QBrush mkBrush(double red, double green, double blue, double alpha, Qt::BrushStyle style = Qt::SolidPattern);
 QBrush mkBrush(std::initializer_list<double> values, Qt::BrushStyle style = Qt::SolidPattern);
 
-using SymbolPathMap = std::map<QString, QPainterPath>;
+struct SymbolPathOrder {
+    [[nodiscard]] bool operator()(const QString& lhs, const QString& rhs) const;
+};
+
+using SymbolPathMap = std::map<QString, QPainterPath, SymbolPathOrder>;
 
 [[nodiscard]] const SymbolPathMap& symbolPaths();
 [[nodiscard]] QPainterPath symbolPath(const QString& symbol);

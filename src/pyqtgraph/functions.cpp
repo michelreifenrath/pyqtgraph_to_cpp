@@ -244,6 +244,41 @@ void applyWideLineCap(QPen& pen, double width)
                           QPointF(-0.1, -0.1)});
 }
 
+[[nodiscard]] const std::array<QString, 19>& orderedSymbolNames()
+{
+    static const std::array<QString, 19> names = {QStringLiteral("o"),
+                                                  QStringLiteral("s"),
+                                                  QStringLiteral("t"),
+                                                  QStringLiteral("t1"),
+                                                  QStringLiteral("t2"),
+                                                  QStringLiteral("t3"),
+                                                  QStringLiteral("d"),
+                                                  QStringLiteral("+"),
+                                                  QStringLiteral("x"),
+                                                  QStringLiteral("p"),
+                                                  QStringLiteral("h"),
+                                                  QStringLiteral("star"),
+                                                  QStringLiteral("|"),
+                                                  QStringLiteral("_"),
+                                                  QStringLiteral("arrow_up"),
+                                                  QStringLiteral("arrow_right"),
+                                                  QStringLiteral("arrow_down"),
+                                                  QStringLiteral("arrow_left"),
+                                                  QStringLiteral("crosshair")};
+    return names;
+}
+
+[[nodiscard]] int symbolOrderIndex(const QString& symbol)
+{
+    const auto& names = orderedSymbolNames();
+    for (std::size_t index = 0; index < names.size(); ++index) {
+        if (names[index] == symbol) {
+            return static_cast<int>(index);
+        }
+    }
+    return -1;
+}
+
 [[nodiscard]] SymbolPathMap makeSymbolPaths()
 {
     SymbolPathMap symbols;
@@ -341,6 +376,22 @@ template <typename T, typename Compare>
 } // namespace
 
 #if PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
+
+bool SymbolPathOrder::operator()(const QString& lhs, const QString& rhs) const
+{
+    const int lhsIndex = symbolOrderIndex(lhs);
+    const int rhsIndex = symbolOrderIndex(rhs);
+    if (lhsIndex >= 0 && rhsIndex >= 0) {
+        return lhsIndex < rhsIndex;
+    }
+    if (lhsIndex >= 0) {
+        return true;
+    }
+    if (rhsIndex >= 0) {
+        return false;
+    }
+    return QString::compare(lhs, rhs, Qt::CaseSensitive) < 0;
+}
 
 QColor intColor(int index,
                 int hues,
