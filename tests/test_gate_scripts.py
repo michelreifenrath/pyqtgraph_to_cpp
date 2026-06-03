@@ -10,8 +10,15 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+RUN_AUTOREVIEW = REPO_ROOT / "scripts" / "run_autoreview"
+requires_run_autoreview = pytest.mark.skipif(
+    not RUN_AUTOREVIEW.exists(),
+    reason="scripts/run_autoreview moved to the Factory control plane",
+)
 
 
 def write_workflow(
@@ -533,6 +540,7 @@ def test_gate_visual_requires_known_target(tmp_path: Path) -> None:
     assert "Traceback" not in result.stderr
 
 
+@requires_run_autoreview
 def test_run_autoreview_fails_safely_when_tools_unavailable(tmp_path: Path) -> None:
     workflow = tmp_path / "WORKFLOW.md"
     write_workflow(workflow, autoreview_command="definitely-not-autoreview")
@@ -555,6 +563,7 @@ def test_run_autoreview_fails_safely_when_tools_unavailable(tmp_path: Path) -> N
     assert summary["status"] == "unavailable"
 
 
+@requires_run_autoreview
 def test_run_autoreview_defaults_reports_to_ignored_hermes_logs(tmp_path: Path) -> None:
     workflow = tmp_path / "WORKFLOW.md"
     write_workflow(workflow, autoreview_command="definitely-not-autoreview")
@@ -572,6 +581,7 @@ def test_run_autoreview_defaults_reports_to_ignored_hermes_logs(tmp_path: Path) 
     assert not (tmp_path / "reports" / "gates" / "autoreview-summary.json").exists()
 
 
+@requires_run_autoreview
 def test_run_autoreview_requires_clean_worktree_before_review(
     tmp_path: Path,
 ) -> None:
@@ -618,6 +628,7 @@ def test_run_autoreview_requires_clean_worktree_before_review(
     assert summary["status"] == "dirty_worktree"
 
 
+@requires_run_autoreview
 def test_run_autoreview_times_out_safely(tmp_path: Path) -> None:
     workflow = tmp_path / "WORKFLOW.md"
     reports = tmp_path / "reports"
@@ -650,6 +661,7 @@ def test_run_autoreview_times_out_safely(tmp_path: Path) -> None:
     assert summary["timeout_seconds"] == 1
 
 
+@requires_run_autoreview
 def test_run_autoreview_timeout_kills_reviewer_process_group(tmp_path: Path) -> None:
     workflow = tmp_path / "WORKFLOW.md"
     reports = tmp_path / "reports"
@@ -691,6 +703,7 @@ def test_run_autoreview_timeout_kills_reviewer_process_group(tmp_path: Path) -> 
     assert not marker.exists()
 
 
+@requires_run_autoreview
 def test_run_autoreview_maps_merge_mode_to_branch_for_autoreview(
     tmp_path: Path,
 ) -> None:
@@ -732,6 +745,7 @@ def test_run_autoreview_maps_merge_mode_to_branch_for_autoreview(
 
 
 
+@requires_run_autoreview
 def test_run_autoreview_treats_codex_p1_p2_findings_as_gate_failure(
     tmp_path: Path,
 ) -> None:
@@ -781,6 +795,7 @@ def test_run_autoreview_treats_codex_p1_p2_findings_as_gate_failure(
     )
     assert findings["has_findings"] is True
 
+@requires_run_autoreview
 def test_run_autoreview_uses_available_autoreview_and_writes_outputs(
     tmp_path: Path,
 ) -> None:
