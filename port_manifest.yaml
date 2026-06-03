@@ -598,9 +598,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GridItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GridItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GridItem.cpp
@@ -4100,9 +4100,9 @@ classes:
   bases:
   - object
   line: 5
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: GridItem
   upstream_path: pyqtgraph/graphicsItems/GridItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GridItem.hpp
