@@ -11,6 +11,12 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+
+try:
+    import yaml
+except Exception:  # pragma: no cover - reported when the manifest is loaded
+    yaml = None
 
 
 @dataclass(frozen=True)
@@ -19,21 +25,11 @@ class Example:
     target_path: str
     ctest_name: str
     aliases: tuple[str, ...]
+    visual_required: bool = False
 
 
-EXAMPLES = (
-    Example(
-        name="SimplePlot",
-        target_path="examples/SimplePlot.cpp",
-        ctest_name="pyqtgraph_cpp.examples.SimplePlot",
-        aliases=(
-            "SimplePlot",
-            "SimplePlot.cpp",
-            "examples/SimplePlot.cpp",
-            "pyqtgraph/examples/SimplePlot.py",
-        ),
-    ),
-)
+class ManifestError(RuntimeError):
+    pass
 
 
 def repo_root() -> Path:
@@ -76,16 +72,105 @@ def normalize_path(path: str) -> str:
     return path.strip().replace("\\", "/")
 
 
-def known_aliases() -> dict[str, Example]:
+def _manifest_path(root: Path) -> Path:
+    return root / "port_manifest.yaml"
+
+
+def _load_manifest(root: Path) -> dict[str, Any]:
+    if yaml is None:
+        raise ManifestError("PyYAML is required to read port_manifest.yaml")
+    path = _manifest_path(root)
+    try:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except OSError as error:
+        raise ManifestError(f"could not read {path}: {error}") from error
+    except Exception as error:
+        raise ManifestError(f"could not parse {path}: {error}") from error
+    if not isinstance(loaded, dict):
+        raise ManifestError(f"{path} must contain a mapping")
+    return loaded
+
+
+def _records(manifest: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    records = manifest.get(key, [])
+    if records is None:
+        return []
+    if not isinstance(records, list):
+        raise ManifestError(f"port_manifest.yaml field {key!r} must be a list")
+    return [record for record in records if isinstance(record, dict)]
+
+
+def _validation_by_identity(manifest: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
+    lookup: dict[tuple[str, str], dict[str, Any]] = {}
+    for record in _records(manifest, "example_validation_levels"):
+        name = record.get("name")
+        upstream_path = record.get("upstream_path")
+        validation = record.get("validation")
+        if isinstance(name, str) and isinstance(upstream_path, str) and isinstance(validation, dict):
+            lookup[(name, upstream_path)] = validation
+    return lookup
+
+
+def _unique_aliases(*aliases: str | None) -> tuple[str, ...]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for alias in aliases:
+        if not alias:
+            continue
+        normalized = normalize_path(alias)
+        if normalized and normalized not in seen:
+            result.append(normalized)
+            seen.add(normalized)
+    return tuple(result)
+
+
+def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
+    """Return local example validation targets derived from port_manifest.yaml."""
+    root = root or repo_root()
+    manifest = _load_manifest(root)
+    validations = _validation_by_identity(manifest)
+    examples: list[Example] = []
+
+    for record in _records(manifest, "examples"):
+        if record.get("status") != "ported" or record.get("target_presence") != "all":
+            continue
+        name = record.get("name")
+        target_path = record.get("target_source_path")
+        upstream_path = record.get("upstream_path")
+        if not isinstance(name, str) or not name:
+            continue
+        if not isinstance(target_path, str) or not target_path:
+            continue
+        if not isinstance(upstream_path, str):
+            upstream_path = None
+
+        validation = validations.get((name, upstream_path or ""), {})
+        aliases = _unique_aliases(name, Path(target_path).name, target_path, upstream_path)
+        examples.append(
+            Example(
+                name=name,
+                target_path=normalize_path(target_path),
+                ctest_name=f"pyqtgraph_cpp.examples.{name}",
+                aliases=aliases,
+                visual_required=validation.get("visual") == "required",
+            )
+        )
+
+    return tuple(examples)
+
+
+def known_aliases(root: Path | None = None) -> dict[str, Example]:
     aliases: dict[str, Example] = {}
-    for example in EXAMPLES:
+    for example in manifest_examples(root):
         for alias in example.aliases:
             aliases[normalize_path(alias)] = example
     return aliases
 
 
-def examples_from_selections(selections: list[str], argument_parser: argparse.ArgumentParser) -> list[Example]:
-    aliases = known_aliases()
+def examples_from_selections(
+    selections: list[str], argument_parser: argparse.ArgumentParser, root: Path | None = None
+) -> list[Example]:
+    aliases = known_aliases(root)
     selected: list[Example] = []
     seen: set[str] = set()
     for selection in selections:
@@ -130,10 +215,10 @@ def changed_paths(base: str, root: Path) -> list[str]:
     return paths
 
 
-def examples_from_changed_paths(paths: list[str]) -> list[Example]:
+def examples_from_changed_paths(paths: list[str], root: Path | None = None) -> list[Example]:
     changed = set(paths)
     selected: list[Example] = []
-    for example in EXAMPLES:
+    for example in manifest_examples(root):
         if example.target_path in changed:
             selected.append(example)
     return selected
@@ -173,10 +258,13 @@ def main(argv: list[str] | None = None) -> int:
     args = argument_parser.parse_args(argv)
     root = repo_root()
 
-    if args.selections:
-        selected = examples_from_selections(args.selections, argument_parser)
-    else:
-        selected = examples_from_changed_paths(changed_paths(args.base, root))
+    try:
+        if args.selections:
+            selected = examples_from_selections(args.selections, argument_parser, root)
+        else:
+            selected = examples_from_changed_paths(changed_paths(args.base, root), root)
+    except ManifestError as error:
+        argument_parser.exit(2, f"example manifest failed: {error}\n")
 
     return run_examples(selected, args.runner, args.ctest_preset, root, args.dry_run)
 
