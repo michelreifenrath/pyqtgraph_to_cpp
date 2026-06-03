@@ -1,10 +1,13 @@
 #include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
 #include <pyqtgraph/widgets/PlotWidget.hpp>
 
+#include <QtCore/QPointer>
+#include <QtCore/QRectF>
 #include <QtCore/QtGlobal>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QGraphicsWidget>
 #include <QtWidgets/QWidget>
 
 #include <iostream>
@@ -43,6 +46,18 @@ public:
 private:
     std::unique_ptr<QApplication> application_;
 };
+
+bool sameRect(const QRectF& left, const QRectF& right)
+{
+    return qFuzzyCompare(left.x(), right.x()) && qFuzzyCompare(left.y(), right.y())
+        && qFuzzyCompare(left.width(), right.width()) && qFuzzyCompare(left.height(), right.height());
+}
+
+QRectF sceneRectForViewport(const pyqtgraph::widgets::PlotWidget& widget)
+{
+    const QSize viewportSize = widget.viewport()->size();
+    return QRectF(0.0, 0.0, static_cast<qreal>(viewportSize.width()), static_cast<qreal>(viewportSize.height()));
+}
 
 bool testConstructionAndApiShape()
 {
@@ -112,6 +127,105 @@ bool testOwnedPlotItemInScene()
     return true;
 }
 
+bool testP301OwnershipInteractionReplay()
+{
+    using pyqtgraph::GraphicsScene::GraphicsScene;
+    using pyqtgraph::graphicsItems::PlotItem;
+    using pyqtgraph::widgets::PlotWidget;
+
+    PlotWidget widget;
+    widget.resize(240, 180);
+    widget.show();
+    QApplication::processEvents();
+
+    auto* scene = dynamic_cast<GraphicsScene*>(widget.scene());
+    PlotItem* plotItem = widget.getPlotItem();
+    CHECK(scene != nullptr);
+    CHECK(plotItem != nullptr);
+
+    const QRectF preSceneRect = scene->sceneRect();
+    const QRectF prePlotGeometry = plotItem->geometry();
+    const bool preParentedScene = scene->parent() == &widget;
+    const bool prePlotInScene = plotItem->scene() == scene && scene->items().contains(plotItem);
+    const bool preStableGetPlotItem = widget.getPlotItem() == plotItem && widget.getPlotItem() == plotItem;
+
+    int sceneRectChangedCount = 0;
+    int plotGeometryChangedCount = 0;
+    QObject::connect(scene, &QGraphicsScene::sceneRectChanged, [&sceneRectChangedCount](const QRectF&) {
+        ++sceneRectChangedCount;
+    });
+    QObject::connect(plotItem, &QGraphicsWidget::geometryChanged, [&plotGeometryChangedCount]() {
+        ++plotGeometryChangedCount;
+    });
+
+    const QSize targetSize = widget.size() == QSize(321, 239) ? QSize(347, 251) : QSize(321, 239);
+    widget.resize(targetSize);
+    QApplication::processEvents();
+
+    const QRectF expectedPostRect = sceneRectForViewport(widget);
+    const QRectF postSceneRect = scene->sceneRect();
+    const QRectF postPlotGeometry = plotItem->geometry();
+
+    const int sceneRectCountAfterResize = sceneRectChangedCount;
+    const int plotGeometryCountAfterResize = plotGeometryChangedCount;
+    const QRectF noOpBaselineSceneRect = scene->sceneRect();
+    const QRectF noOpBaselinePlotGeometry = plotItem->geometry();
+    widget.resize(widget.size());
+    QApplication::processEvents();
+    const bool noOpKeptSceneRect = sameRect(scene->sceneRect(), noOpBaselineSceneRect);
+    const bool noOpKeptPlotGeometry = sameRect(plotItem->geometry(), noOpBaselinePlotGeometry);
+    const bool noOpStableGetPlotItem = widget.getPlotItem() == plotItem;
+
+    std::cout << "P3.01 interaction report\n"
+              << "pre_state: scene_parent_is_widget=" << preParentedScene
+              << " plot_in_scene=" << prePlotInScene
+              << " stable_getPlotItem=" << preStableGetPlotItem
+              << " sceneRect=" << preSceneRect.width() << 'x' << preSceneRect.height()
+              << " plotGeometry=" << prePlotGeometry.width() << 'x' << prePlotGeometry.height() << '\n'
+              << "event_sequence: show processEvents resize_to=" << targetSize.width() << 'x' << targetSize.height()
+              << " processEvents resize_same_size processEvents destruction_probe\n"
+              << "post_state: sceneRect=" << postSceneRect.width() << 'x' << postSceneRect.height()
+              << " plotGeometry=" << postPlotGeometry.width() << 'x' << postPlotGeometry.height()
+              << " expectedViewport=" << expectedPostRect.width() << 'x' << expectedPostRect.height()
+              << " sceneRectChanged=" << sceneRectCountAfterResize
+              << " plotGeometryChanged=" << plotGeometryCountAfterResize
+              << " noOpKeptSceneRect=" << noOpKeptSceneRect
+              << " noOpKeptPlotGeometry=" << noOpKeptPlotGeometry
+              << " noOpStableGetPlotItem=" << noOpStableGetPlotItem << '\n';
+
+    CHECK(preParentedScene);
+    CHECK(prePlotInScene);
+    CHECK(preStableGetPlotItem);
+    CHECK(sameRect(postSceneRect, expectedPostRect));
+    CHECK(sameRect(postPlotGeometry, expectedPostRect));
+    CHECK(plotItem->scene() == scene);
+    CHECK(scene->items().contains(plotItem));
+    CHECK(sceneRectCountAfterResize > 0);
+    CHECK(plotGeometryCountAfterResize > 0);
+    CHECK(noOpKeptSceneRect);
+    CHECK(noOpKeptPlotGeometry);
+    CHECK(noOpStableGetPlotItem);
+
+    QPointer<GraphicsScene> sceneAfterDestruction;
+    QPointer<PlotItem> plotAfterDestruction;
+    {
+        auto ownedWidget = std::make_unique<PlotWidget>();
+        sceneAfterDestruction = dynamic_cast<GraphicsScene*>(ownedWidget->scene());
+        plotAfterDestruction = ownedWidget->getPlotItem();
+        CHECK(sceneAfterDestruction != nullptr);
+        CHECK(plotAfterDestruction != nullptr);
+        CHECK(sceneAfterDestruction->parent() == ownedWidget.get());
+        CHECK(plotAfterDestruction->scene() == sceneAfterDestruction);
+    }
+    QApplication::processEvents();
+    std::cout << "destruction_post_state: scene_destroyed=" << sceneAfterDestruction.isNull()
+              << " plotItem_destroyed=" << plotAfterDestruction.isNull() << '\n';
+    CHECK(sceneAfterDestruction.isNull());
+    CHECK(plotAfterDestruction.isNull());
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -129,6 +243,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testOwnedPlotItemInScene()) {
+        return 1;
+    }
+    if (!testP301OwnershipInteractionReplay()) {
         return 1;
     }
 

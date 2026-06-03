@@ -23,7 +23,7 @@ QRectF sceneRectForSize(const QSize& size)
 
 PlotWidget::PlotWidget(QWidget* parent)
     : QGraphicsView(parent)
-    , scene_(std::make_unique<GraphicsScene::GraphicsScene>())
+    , scene_(std::make_unique<GraphicsScene::GraphicsScene>(2, 5.0, this))
     , plotItem_(new graphicsItems::PlotItem())
 {
     setFrameStyle(QFrame::NoFrame);
