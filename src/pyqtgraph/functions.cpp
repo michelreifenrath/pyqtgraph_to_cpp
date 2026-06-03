@@ -16,6 +16,11 @@
 #else
 #include <QtCore/QLatin1Char>
 #endif
+#if __has_include(<QList>)
+#include <QList>
+#else
+#include <QtCore/QList>
+#endif
 #endif
 
 #include <algorithm>
@@ -102,6 +107,13 @@ namespace {
     });
 }
 
+void applyWideLineCap(QPen& pen, double width)
+{
+    if (width > 4.0) {
+        pen.setCapStyle(Qt::RoundCap);
+    }
+}
+
 [[nodiscard]] QPen makePenFromColor(const QColor& color, double width, Qt::PenStyle style, bool cosmetic)
 {
     QPen pen;
@@ -109,9 +121,7 @@ namespace {
     pen.setWidthF(width);
     pen.setStyle(style);
     pen.setCosmetic(cosmetic);
-    if (width > 4.0) {
-        pen.setCapStyle(Qt::RoundCap);
-    }
+    applyWideLineCap(pen, width);
     return pen;
 }
 
@@ -318,6 +328,146 @@ QColor mkColor(std::initializer_list<double> values)
     throw std::invalid_argument("mkColor sequence input must contain 2, 3, or 4 values");
 }
 
+QColor hsvColor(double hue, double sat, double val, double alpha)
+{
+    return QColor::fromHsvF(hue, sat, val, alpha);
+}
+
+std::array<int, 4> colorTuple(const QColor& color)
+{
+    return {color.red(), color.green(), color.blue(), color.alpha()};
+}
+
+QString colorStr(const QColor& color)
+{
+    const auto channels = colorTuple(color);
+    return QString::asprintf("%02x%02x%02x%02x", channels[0], channels[1], channels[2], channels[3]);
+}
+
+std::array<double, 4> glColor(const QColor& color)
+{
+    return {color.redF(), color.greenF(), color.blueF(), color.alphaF()};
+}
+
+std::array<double, 4> glColor(const QString& color)
+{
+    return glColor(mkColor(color));
+}
+
+std::array<double, 4> glColor(const char* color)
+{
+    return glColor(mkColor(color));
+}
+
+std::array<double, 4> glColor(std::string_view color)
+{
+    return glColor(mkColor(color));
+}
+
+std::array<double, 4> glColor(char color)
+{
+    return glColor(mkColor(color));
+}
+
+std::array<double, 4> glColor(signed char color)
+{
+    return glColor(mkColor(color));
+}
+
+std::array<double, 4> glColor(unsigned char color)
+{
+    return glColor(mkColor(color));
+}
+
+std::array<double, 4> glColor(int index)
+{
+    return glColor(mkColor(index));
+}
+
+std::array<double, 4> glColor(double gray)
+{
+    return glColor(mkColor(gray));
+}
+
+std::array<double, 4> glColor(double red, double green, double blue)
+{
+    return glColor(mkColor(red, green, blue));
+}
+
+std::array<double, 4> glColor(double red, double green, double blue, double alpha)
+{
+    return glColor(mkColor(red, green, blue, alpha));
+}
+
+std::array<double, 4> glColor(std::initializer_list<double> values)
+{
+    return glColor(mkColor(values));
+}
+
+Color::Color(const QColor& color)
+    : QColor(mkColor(color))
+{
+}
+
+Color::Color(const QString& color)
+    : QColor(mkColor(color))
+{
+}
+
+Color::Color(const char* color)
+    : QColor(mkColor(color))
+{
+}
+
+Color::Color(std::string_view color)
+    : QColor(mkColor(color))
+{
+}
+
+Color::Color(char color)
+    : QColor(mkColor(color))
+{
+}
+
+Color::Color(signed char color)
+    : QColor(mkColor(color))
+{
+}
+
+Color::Color(unsigned char color)
+    : QColor(mkColor(color))
+{
+}
+
+Color::Color(int index)
+    : QColor(mkColor(index))
+{
+}
+
+Color::Color(double gray)
+    : QColor(mkColor(gray))
+{
+}
+
+Color::Color(double red, double green, double blue)
+    : QColor(mkColor(red, green, blue))
+{
+}
+
+Color::Color(double red, double green, double blue, double alpha)
+    : QColor(mkColor(red, green, blue, alpha))
+{
+}
+
+Color::Color(std::initializer_list<double> values)
+    : QColor(mkColor(values))
+{
+}
+
+std::array<double, 4> Color::glColor() const
+{
+    return pyqtgraph::glColor(*this);
+}
 
 QPen mkPen()
 {
@@ -332,9 +482,7 @@ QPen mkPen(std::nullptr_t, double width, Qt::PenStyle style, bool cosmetic)
     pen.setWidthF(width);
     pen.setStyle(Qt::NoPen);
     pen.setCosmetic(cosmetic);
-    if (width > 4.0) {
-        pen.setCapStyle(Qt::RoundCap);
-    }
+    applyWideLineCap(pen, width);
     return pen;
 }
 
@@ -401,6 +549,31 @@ QPen mkPen(double red, double green, double blue, double alpha, double width, Qt
 QPen mkPen(std::initializer_list<double> values, double width, Qt::PenStyle style, bool cosmetic)
 {
     return makePenFromColor(mkColor(values), width, style, cosmetic);
+}
+
+QPen mkPen(const PenOptions& options)
+{
+    const QColor color = options.hsv.has_value()
+        ? hsvColor((*options.hsv)[0], (*options.hsv)[1], (*options.hsv)[2], (*options.hsv)[3])
+        : (options.color.has_value() ? mkColor(*options.color) : mkColor("l"));
+
+    QPen pen;
+    pen.setColor(color);
+    pen.setWidthF(options.width);
+    pen.setCosmetic(options.cosmetic);
+    if (options.style.has_value()) {
+        pen.setStyle(*options.style);
+    }
+    if (options.hasDash) {
+        QList<qreal> dashPattern;
+        dashPattern.reserve(static_cast<qsizetype>(options.dash.size()));
+        for (const double dash : options.dash) {
+            dashPattern.append(static_cast<qreal>(dash));
+        }
+        pen.setDashPattern(dashPattern);
+    }
+    applyWideLineCap(pen, options.width);
+    return pen;
 }
 
 QBrush mkBrush(std::nullptr_t)

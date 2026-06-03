@@ -34,6 +34,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <limits>
+#include <optional>
 #if __has_include(<span>)
 #include <span>
 #endif
@@ -42,6 +43,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #if !defined(__cpp_lib_span)
 namespace std {
@@ -142,6 +144,43 @@ QColor mkColor(double red, double green, double blue);
 QColor mkColor(double red, double green, double blue, double alpha);
 QColor mkColor(std::initializer_list<double> values);
 
+// Color helpers mirror PyQtGraph functions.py. Scatter symbol painter paths are intentionally
+// not exposed here; upstream defines them in graphicsItems/ScatterPlotItem.py.
+QColor hsvColor(double hue, double sat = 1.0, double val = 1.0, double alpha = 1.0);
+[[nodiscard]] std::array<int, 4> colorTuple(const QColor& color);
+[[nodiscard]] QString colorStr(const QColor& color);
+[[nodiscard]] std::array<double, 4> glColor(const QColor& color);
+[[nodiscard]] std::array<double, 4> glColor(const QString& color);
+[[nodiscard]] std::array<double, 4> glColor(const char* color);
+[[nodiscard]] std::array<double, 4> glColor(std::string_view color);
+[[nodiscard]] std::array<double, 4> glColor(char color);
+[[nodiscard]] std::array<double, 4> glColor(signed char color);
+[[nodiscard]] std::array<double, 4> glColor(unsigned char color);
+[[nodiscard]] std::array<double, 4> glColor(int index);
+
+class Color : public QColor {
+public:
+    Color() = default;
+    explicit Color(const QColor& color);
+    explicit Color(const QString& color);
+    explicit Color(const char* color);
+    explicit Color(std::string_view color);
+    explicit Color(char color);
+    explicit Color(signed char color);
+    explicit Color(unsigned char color);
+    explicit Color(int index);
+    explicit Color(double gray);
+    Color(double red, double green, double blue);
+    Color(double red, double green, double blue, double alpha);
+    explicit Color(std::initializer_list<double> values);
+    template <typename T, std::size_t N>
+    explicit Color(const std::array<T, N>& values);
+    template <typename... Values>
+    explicit Color(const std::tuple<Values...>& values);
+
+    [[nodiscard]] std::array<double, 4> glColor() const;
+};
+
 #endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
 
 [[nodiscard]] float nanmin(std::span<const float> values);
@@ -224,6 +263,42 @@ template <typename... Values>
     return detail::mkColorFromTupleImpl(values, std::index_sequence_for<Values...>{});
 }
 
+template <typename T>
+    requires(std::is_integral_v<std::remove_cvref_t<T>> && !std::is_same_v<std::remove_cvref_t<T>, int> &&
+             !detail::is_character_integral_v<T>)
+[[nodiscard]] std::array<double, 4> glColor(T index)
+{
+    return glColor(mkColor(index));
+}
+
+[[nodiscard]] std::array<double, 4> glColor(double gray);
+[[nodiscard]] std::array<double, 4> glColor(double red, double green, double blue);
+[[nodiscard]] std::array<double, 4> glColor(double red, double green, double blue, double alpha);
+[[nodiscard]] std::array<double, 4> glColor(std::initializer_list<double> values);
+
+template <typename T, std::size_t N>
+[[nodiscard]] std::array<double, 4> glColor(const std::array<T, N>& values)
+{
+    return glColor(mkColor(values));
+}
+
+template <typename... Values>
+[[nodiscard]] std::array<double, 4> glColor(const std::tuple<Values...>& values)
+{
+    return glColor(mkColor(values));
+}
+
+template <typename T, std::size_t N>
+Color::Color(const std::array<T, N>& values)
+    : QColor(mkColor(values))
+{
+}
+
+template <typename... Values>
+Color::Color(const std::tuple<Values...>& values)
+    : QColor(mkColor(values))
+{
+}
 
 QPen mkPen();
 QPen mkPen(std::nullptr_t, double width = 1.0, Qt::PenStyle style = Qt::SolidLine, bool cosmetic = true);
@@ -287,6 +362,20 @@ QPen mkPen(std::initializer_list<double> values,
            double width = 1.0,
            Qt::PenStyle style = Qt::SolidLine,
            bool cosmetic = true);
+
+// C++ equivalent of mkPen(dict/kwargs): color or hsv override, width/style,
+// dash pattern, and cosmetic flag.
+struct PenOptions {
+    std::optional<QColor> color;
+    std::optional<std::array<double, 4>> hsv;
+    double width = 1.0;
+    std::optional<Qt::PenStyle> style;
+    std::vector<double> dash;
+    bool hasDash = false;
+    bool cosmetic = true;
+};
+
+QPen mkPen(const PenOptions& options);
 
 template <typename T, std::size_t N>
 [[nodiscard]] QPen mkPen(const std::array<T, N>& values,

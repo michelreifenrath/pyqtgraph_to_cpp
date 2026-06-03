@@ -130,6 +130,12 @@ endif()
 
 if(_pyqtgraph_cpp_has_mkcolor)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_mkcolor core/test_mkColor.cpp pyqtgraph_cpp.core.mkColor)
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_core_functions_p2_04
+        core/test_functions_P2_04.cpp
+        pyqtgraph_cpp.core.functions_P2_04
+    )
+    set_tests_properties(pyqtgraph_cpp.core.functions_P2_04 PROPERTIES LABELS P2.04)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_makeqimage core/test_makeQImage.cpp pyqtgraph_cpp.core.makeQImage)
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_core_functions_qimage
