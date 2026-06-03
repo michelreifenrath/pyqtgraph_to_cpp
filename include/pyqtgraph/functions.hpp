@@ -10,20 +10,22 @@
 #endif
 
 #if PYQTGRAPH_CPP_ENABLE_QT_COLOR
-#if __has_include(<QBrush>) && __has_include(<QColor>) && __has_include(<QPen>) && __has_include(<QString>)
+#if __has_include(<QBrush>) && __has_include(<QColor>) && __has_include(<QPainterPath>) && __has_include(<QPen>) && __has_include(<QString>)
 #include <QBrush>
 #include <QColor>
+#include <QPainterPath>
 #include <QPen>
 #include <QString>
 #define PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS 1
-#elif __has_include(<QtGui/QBrush>) && __has_include(<QtGui/QColor>) && __has_include(<QtGui/QPen>) && __has_include(<QtCore/QString>)
+#elif __has_include(<QtGui/QBrush>) && __has_include(<QtGui/QColor>) && __has_include(<QtGui/QPainterPath>) && __has_include(<QtGui/QPen>) && __has_include(<QtCore/QString>)
 #include <QtCore/QString>
 #include <QtGui/QBrush>
 #include <QtGui/QColor>
+#include <QtGui/QPainterPath>
 #include <QtGui/QPen>
 #define PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS 1
 #else
-#error "PYQTGRAPH_CPP_ENABLE_QT_COLOR requires Qt QBrush, QColor, QPen, and QString headers"
+#error "PYQTGRAPH_CPP_ENABLE_QT_COLOR requires Qt QBrush, QColor, QPainterPath, QPen, and QString headers"
 #endif
 #else
 #define PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS 0
@@ -34,6 +36,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <limits>
+#include <map>
 #include <optional>
 #if __has_include(<span>)
 #include <span>
@@ -144,8 +147,6 @@ QColor mkColor(double red, double green, double blue);
 QColor mkColor(double red, double green, double blue, double alpha);
 QColor mkColor(std::initializer_list<double> values);
 
-// Color helpers mirror PyQtGraph functions.py. Scatter symbol painter paths are intentionally
-// not exposed here; upstream defines them in graphicsItems/ScatterPlotItem.py.
 QColor hsvColor(double hue, double sat = 1.0, double val = 1.0, double alpha = 1.0);
 [[nodiscard]] std::array<int, 4> colorTuple(const QColor& color);
 [[nodiscard]] QString colorStr(const QColor& color);
@@ -418,6 +419,13 @@ QBrush mkBrush(double gray, Qt::BrushStyle style = Qt::SolidPattern);
 QBrush mkBrush(double red, double green, double blue);
 QBrush mkBrush(double red, double green, double blue, double alpha, Qt::BrushStyle style = Qt::SolidPattern);
 QBrush mkBrush(std::initializer_list<double> values, Qt::BrushStyle style = Qt::SolidPattern);
+
+using SymbolPathMap = std::map<QString, QPainterPath>;
+
+[[nodiscard]] const SymbolPathMap& symbolPaths();
+[[nodiscard]] QPainterPath symbolPath(const QString& symbol);
+[[nodiscard]] QPainterPath symbolPath(const char* symbol);
+[[nodiscard]] QPainterPath symbolPath(std::string_view symbol);
 
 template <typename T, std::size_t N>
 [[nodiscard]] QBrush mkBrush(const std::array<T, N>& values, Qt::BrushStyle style = Qt::SolidPattern)

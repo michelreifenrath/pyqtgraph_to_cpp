@@ -2,13 +2,17 @@
 
 #include <QBrush>
 #include <QColor>
+#include <QPainterPath>
 #include <QPen>
+#include <QPointF>
+#include <QRectF>
 #include <QString>
 
 #include <array>
 #include <cmath>
 #include <exception>
 #include <iostream>
+#include <stdexcept>
 #include <string_view>
 
 namespace {
@@ -25,6 +29,58 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
 #define CHECK(expression) \
     do { \
         if (!check((expression), #expression, __FILE__, __LINE__)) { \
+            return false; \
+        } \
+    } while (false)
+
+bool almostEqual(double lhs, double rhs)
+{
+    return std::abs(lhs - rhs) < 1.0e-12;
+}
+
+bool checkRect(const QRectF& rect,
+               double left,
+               double top,
+               double width,
+               double height,
+               std::string_view label)
+{
+    if (!almostEqual(rect.left(), left) || !almostEqual(rect.top(), top) || !almostEqual(rect.width(), width) ||
+        !almostEqual(rect.height(), height)) {
+        std::cerr << label << ": expected rect(" << left << ", " << top << ", " << width << ", " << height
+                  << ") got rect(" << rect.left() << ", " << rect.top() << ", " << rect.width() << ", "
+                  << rect.height() << ")\n";
+        return false;
+    }
+    return true;
+}
+
+#define CHECK_RECT(rect, left, top, width, height) \
+    do { \
+        if (!checkRect((rect), (left), (top), (width), (height), #rect)) { \
+            return false; \
+        } \
+    } while (false)
+
+bool checkPathElement(const QPainterPath& path, int index, double x, double y, std::string_view label)
+{
+    if (path.elementCount() <= index) {
+        std::cerr << label << ": expected at least " << (index + 1) << " path elements, got " << path.elementCount()
+                  << '\n';
+        return false;
+    }
+    const auto element = path.elementAt(index);
+    if (!almostEqual(element.x, x) || !almostEqual(element.y, y)) {
+        std::cerr << label << '[' << index << "]: expected point(" << x << ", " << y << ") got point("
+                  << element.x << ", " << element.y << ")\n";
+        return false;
+    }
+    return true;
+}
+
+#define CHECK_PATH_ELEMENT(path, index, x, y) \
+    do { \
+        if (!checkPathElement((path), (index), (x), (y), #path)) { \
             return false; \
         } \
     } while (false)
@@ -192,17 +248,68 @@ bool testPenOptionsAndBrushEdges()
     return true;
 }
 
-bool testAcceptedSymbolDeferralEvidence()
+bool testSymbolBehavior()
 {
-    // P2.04 is scoped to pyqtgraph/functions.py helpers. In the pinned upstream release,
-    // scatter symbol painter paths are owned outside functions.py by graphicsItems/ScatterPlotItem,
-    // so this focused proof records the accepted functions-slice deferral instead of inventing
-    // a pyqtgraph::functions symbol API here.
-    constexpr std::array<std::string_view, 10> representativeDeferredSymbols = {
-        "o", "s", "t", "t1", "t2", "t3", "d", "+", "x", "star"};
-    CHECK(representativeDeferredSymbols.front() == "o");
-    CHECK(representativeDeferredSymbols.back() == "star");
-    CHECK(representativeDeferredSymbols[7] == "+");
+    // Representative scatter symbol painter paths from pinned pyqtgraph-0.14.0
+    // graphicsItems/ScatterPlotItem.py. Paths are normalized to the upstream unit-size
+    // coordinate contract centered on (0, 0).
+    const auto& symbols = pyqtgraph::symbolPaths();
+    constexpr std::array<std::string_view, 10> representativeSymbols = {"o", "s", "t", "t1", "t2", "t3", "d", "+", "x", "star"};
+    for (const std::string_view symbol : representativeSymbols) {
+        CHECK(symbols.find(QString::fromUtf8(symbol.data(), static_cast<qsizetype>(symbol.size()))) != symbols.end());
+        CHECK(!pyqtgraph::symbolPath(symbol).isEmpty());
+    }
+
+    const QPainterPath circle = pyqtgraph::symbolPath("o");
+    CHECK_RECT(circle.boundingRect(), -0.5, -0.5, 1.0, 1.0);
+    CHECK(circle.contains(QPointF(0.0, 0.0)));
+    CHECK(!circle.contains(QPointF(0.6, 0.0)));
+
+    const QPainterPath square = pyqtgraph::symbolPath(QString("s"));
+    CHECK_RECT(square.boundingRect(), -0.5, -0.5, 1.0, 1.0);
+    CHECK(square.contains(QPointF(0.25, 0.25)));
+
+    const QPainterPath triangle = pyqtgraph::symbolPath("t");
+    CHECK_PATH_ELEMENT(triangle, 0, 0.0, -0.5);
+    CHECK_PATH_ELEMENT(triangle, 1, -0.5, 0.5);
+    CHECK_PATH_ELEMENT(triangle, 2, 0.5, 0.5);
+
+    const QPainterPath diamond = pyqtgraph::symbolPath("d");
+    CHECK_RECT(diamond.boundingRect(), -0.5, -0.5, 1.0, 1.0);
+    CHECK_PATH_ELEMENT(diamond, 0, 0.0, -0.5);
+    CHECK_PATH_ELEMENT(diamond, 2, 0.0, 0.5);
+
+    const QPainterPath plus = pyqtgraph::symbolPath("+");
+    CHECK_RECT(plus.boundingRect(), -0.5, -0.5, 1.0, 1.0);
+    CHECK(plus.contains(QPointF(0.0, 0.45)));
+    CHECK(plus.contains(QPointF(0.45, 0.0)));
+    CHECK(!plus.contains(QPointF(0.45, 0.45)));
+
+    const QPainterPath cross = pyqtgraph::symbolPath("x");
+    CHECK(cross.contains(QPointF(0.0, 0.0)));
+    CHECK(cross.boundingRect().width() > 0.9);
+    CHECK(cross.boundingRect().height() > 0.9);
+
+    const QPainterPath star = pyqtgraph::symbolPath(std::string_view("star"));
+    CHECK(star.elementCount() >= 10);
+    CHECK_PATH_ELEMENT(star, 0, 0.0, -0.5);
+    CHECK(star.contains(QPointF(0.0, 0.0)));
+
+    bool rejectedUnknown = false;
+    try {
+        (void)pyqtgraph::symbolPath("not-a-symbol");
+    } catch (const std::invalid_argument&) {
+        rejectedUnknown = true;
+    }
+    CHECK(rejectedUnknown);
+
+    bool rejectedNull = false;
+    try {
+        (void)pyqtgraph::symbolPath(nullptr);
+    } catch (const std::invalid_argument&) {
+        rejectedNull = true;
+    }
+    CHECK(rejectedNull);
     return true;
 }
 
@@ -214,6 +321,6 @@ int main()
     success = testUpstreamMkColorOracleCases() && success;
     success = testColorHelpers() && success;
     success = testPenOptionsAndBrushEdges() && success;
-    success = testAcceptedSymbolDeferralEvidence() && success;
+    success = testSymbolBehavior() && success;
     return success ? 0 : 1;
 }

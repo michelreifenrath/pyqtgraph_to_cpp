@@ -21,6 +21,26 @@
 #else
 #include <QtCore/QList>
 #endif
+#if __has_include(<QPointF>)
+#include <QPointF>
+#else
+#include <QtCore/QPointF>
+#endif
+#if __has_include(<QPolygonF>)
+#include <QPolygonF>
+#else
+#include <QtGui/QPolygonF>
+#endif
+#if __has_include(<QRectF>)
+#include <QRectF>
+#else
+#include <QtCore/QRectF>
+#endif
+#if __has_include(<QTransform>)
+#include <QTransform>
+#else
+#include <QtGui/QTransform>
+#endif
 #endif
 
 #include <algorithm>
@@ -164,6 +184,101 @@ void applyWideLineCap(QPen& pen, double width)
                   static_cast<unsigned char>(bytes[1]),
                   static_cast<unsigned char>(bytes[2]),
                   static_cast<unsigned char>(bytes[3]));
+}
+
+[[nodiscard]] QPainterPath polygonSymbol(std::initializer_list<QPointF> points)
+{
+    QPolygonF polygon;
+    polygon.reserve(static_cast<qsizetype>(points.size()));
+    for (const QPointF& point : points) {
+        polygon.append(point);
+    }
+
+    QPainterPath path;
+    path.addPolygon(polygon);
+    path.closeSubpath();
+    return path;
+}
+
+[[nodiscard]] QPainterPath ellipseSymbol()
+{
+    QPainterPath path;
+    path.addEllipse(QRectF(-0.5, -0.5, 1.0, 1.0));
+    return path;
+}
+
+[[nodiscard]] QPainterPath plusSymbol()
+{
+    return polygonSymbol({QPointF(-0.5, -0.15),
+                          QPointF(-0.15, -0.15),
+                          QPointF(-0.15, -0.5),
+                          QPointF(0.15, -0.5),
+                          QPointF(0.15, -0.15),
+                          QPointF(0.5, -0.15),
+                          QPointF(0.5, 0.15),
+                          QPointF(0.15, 0.15),
+                          QPointF(0.15, 0.5),
+                          QPointF(-0.15, 0.5),
+                          QPointF(-0.15, 0.15),
+                          QPointF(-0.5, 0.15)});
+}
+
+[[nodiscard]] QPainterPath regularPolygonSymbol(int sides, double phaseRadians)
+{
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    QPolygonF polygon;
+    polygon.reserve(sides);
+    for (int side = 0; side < sides; ++side) {
+        const double angle = phaseRadians + 2.0 * pi * static_cast<double>(side) / static_cast<double>(sides);
+        polygon.append(QPointF(0.5 * std::cos(angle), 0.5 * std::sin(angle)));
+    }
+
+    QPainterPath path;
+    path.addPolygon(polygon);
+    path.closeSubpath();
+    return path;
+}
+
+[[nodiscard]] QPainterPath starSymbol()
+{
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    QPolygonF polygon;
+    polygon.reserve(10);
+    for (int point = 0; point < 10; ++point) {
+        const double radius = point % 2 == 0 ? 0.5 : 0.2;
+        const double angle = -pi / 2.0 + pi * static_cast<double>(point) / 5.0;
+        polygon.append(QPointF(radius * std::cos(angle), radius * std::sin(angle)));
+    }
+
+    QPainterPath path;
+    path.addPolygon(polygon);
+    path.closeSubpath();
+    return path;
+}
+
+[[nodiscard]] SymbolPathMap makeSymbolPaths()
+{
+    constexpr double pi = 3.141592653589793238462643383279502884;
+    SymbolPathMap symbols;
+    symbols.emplace(QStringLiteral("o"), ellipseSymbol());
+    symbols.emplace(QStringLiteral("s"), polygonSymbol({QPointF(-0.5, -0.5),
+                                                         QPointF(0.5, -0.5),
+                                                         QPointF(0.5, 0.5),
+                                                         QPointF(-0.5, 0.5)}));
+    symbols.emplace(QStringLiteral("t"), polygonSymbol({QPointF(0.0, -0.5), QPointF(-0.5, 0.5), QPointF(0.5, 0.5)}));
+    symbols.emplace(QStringLiteral("t1"), polygonSymbol({QPointF(0.0, 0.5), QPointF(-0.5, -0.5), QPointF(0.5, -0.5)}));
+    symbols.emplace(QStringLiteral("t2"), polygonSymbol({QPointF(0.5, 0.0), QPointF(-0.5, -0.5), QPointF(-0.5, 0.5)}));
+    symbols.emplace(QStringLiteral("t3"), polygonSymbol({QPointF(-0.5, 0.0), QPointF(0.5, -0.5), QPointF(0.5, 0.5)}));
+    symbols.emplace(QStringLiteral("d"), polygonSymbol({QPointF(0.0, -0.5),
+                                                         QPointF(-0.5, 0.0),
+                                                         QPointF(0.0, 0.5),
+                                                         QPointF(0.5, 0.0)}));
+    symbols.emplace(QStringLiteral("+"), plusSymbol());
+    symbols.emplace(QStringLiteral("x"), QTransform().rotate(45.0).map(plusSymbol()));
+    symbols.emplace(QStringLiteral("p"), regularPolygonSymbol(5, -pi / 2.0));
+    symbols.emplace(QStringLiteral("h"), regularPolygonSymbol(6, pi / 6.0));
+    symbols.emplace(QStringLiteral("star"), starSymbol());
+    return symbols;
 }
 
 #endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
@@ -644,6 +759,35 @@ QBrush mkBrush(double red, double green, double blue, double alpha, Qt::BrushSty
 QBrush mkBrush(std::initializer_list<double> values, Qt::BrushStyle style)
 {
     return makeBrushFromColor(mkColor(values), style);
+}
+
+const SymbolPathMap& symbolPaths()
+{
+    static const SymbolPathMap symbols = makeSymbolPaths();
+    return symbols;
+}
+
+QPainterPath symbolPath(const QString& symbol)
+{
+    const auto& symbols = symbolPaths();
+    const auto found = symbols.find(symbol);
+    if (found == symbols.end()) {
+        throw std::invalid_argument("Unknown scatter symbol \"" + symbol.toStdString() + "\"");
+    }
+    return found->second;
+}
+
+QPainterPath symbolPath(const char* symbol)
+{
+    if (symbol == nullptr) {
+        throw std::invalid_argument("Unknown null scatter symbol");
+    }
+    return symbolPath(QString::fromUtf8(symbol));
+}
+
+QPainterPath symbolPath(std::string_view symbol)
+{
+    return symbolPath(QString::fromUtf8(symbol.data(), static_cast<qsizetype>(symbol.size())));
 }
 
 #endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
