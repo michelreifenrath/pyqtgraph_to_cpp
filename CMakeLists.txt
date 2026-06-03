@@ -129,6 +129,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GraphicsItem.cpp
             src/pyqtgraph/graphicsItems/GraphicsObject.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
+            src/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
             src/pyqtgraph/graphicsItems/AxisItem.cpp
             src/pyqtgraph/graphicsItems/ViewBox/ViewBox.cpp
             src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp

@@ -179,6 +179,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         graphicsItems/test_GraphicsWidget.cpp
         pyqtgraph_cpp.graphicsItems.GraphicsWidget
     )
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_graphicswidgetanchor
+        graphicsItems/test_GraphicsWidgetAnchor.cpp
+        pyqtgraph_cpp.graphicsItems.GraphicsWidgetAnchor
+    )
+    set_tests_properties(
+        pyqtgraph_cpp.graphicsItems.GraphicsItem
+        pyqtgraph_cpp.graphicsItems.GraphicsObject
+        pyqtgraph_cpp.graphicsItems.GraphicsWidget
+        pyqtgraph_cpp.graphicsItems.GraphicsWidgetAnchor
+        PROPERTIES LABELS P3.02
+    )
 
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsscene_graphicsscene
