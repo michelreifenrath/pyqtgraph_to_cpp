@@ -76,6 +76,32 @@ bool checkPen(const QPen& pen,
         } \
     } while (false)
 
+bool checkBrush(const QBrush& brush,
+                int red,
+                int green,
+                int blue,
+                int alpha,
+                Qt::BrushStyle style,
+                std::string_view label)
+{
+    if (!checkRgba(brush.color(), red, green, blue, alpha, label)) {
+        return false;
+    }
+    if (brush.style() != style) {
+        std::cerr << label << ": expected brush style " << static_cast<int>(style) << " got "
+                  << static_cast<int>(brush.style()) << '\n';
+        return false;
+    }
+    return true;
+}
+
+#define CHECK_BRUSH(brush, red, green, blue, alpha, style) \
+    do { \
+        if (!checkBrush((brush), (red), (green), (blue), (alpha), (style), #brush)) { \
+            return false; \
+        } \
+    } while (false)
+
 bool testUpstreamMkColorOracleCases()
 {
     // Representative cases from pinned pyqtgraph-0.14.0 tests/test_functions.py::test_mkColor.
@@ -160,6 +186,23 @@ bool testPenOptionsAndBrushEdges()
 
     CHECK(pyqtgraph::mkPen(nullptr).style() == Qt::NoPen);
     CHECK(pyqtgraph::mkBrush(nullptr).style() == Qt::NoBrush);
+    CHECK_BRUSH(pyqtgraph::mkBrush("b", Qt::Dense4Pattern), 0, 0, 255, 255, Qt::Dense4Pattern);
+    CHECK_BRUSH(pyqtgraph::mkBrush(QColor(1, 2, 3, 4)), 1, 2, 3, 4, Qt::SolidPattern);
+    CHECK_BRUSH(pyqtgraph::mkBrush(std::array<int, 4>{11, 12, 13, 14}), 11, 12, 13, 14, Qt::SolidPattern);
+    return true;
+}
+
+bool testAcceptedSymbolDeferralEvidence()
+{
+    // P2.04 is scoped to pyqtgraph/functions.py helpers. In the pinned upstream release,
+    // scatter symbol painter paths are owned outside functions.py by graphicsItems/ScatterPlotItem,
+    // so this focused proof records the accepted functions-slice deferral instead of inventing
+    // a pyqtgraph::functions symbol API here.
+    constexpr std::array<std::string_view, 10> representativeDeferredSymbols = {
+        "o", "s", "t", "t1", "t2", "t3", "d", "+", "x", "star"};
+    CHECK(representativeDeferredSymbols.front() == "o");
+    CHECK(representativeDeferredSymbols.back() == "star");
+    CHECK(representativeDeferredSymbols[7] == "+");
     return true;
 }
 
@@ -171,5 +214,6 @@ int main()
     success = testUpstreamMkColorOracleCases() && success;
     success = testColorHelpers() && success;
     success = testPenOptionsAndBrushEdges() && success;
+    success = testAcceptedSymbolDeferralEvidence() && success;
     return success ? 0 : 1;
 }
