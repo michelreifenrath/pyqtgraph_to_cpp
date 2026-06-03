@@ -505,6 +505,7 @@ if(BUILD_TESTING)
         )
         pyqtgraph_cpp_enable_sanitizers(pyqtgraph_cpp_widgets_plotwidget)
         add_test(NAME pyqtgraph_cpp.widgets.PlotWidget COMMAND pyqtgraph_cpp_widgets_plotwidget)
+        set_tests_properties(pyqtgraph_cpp.widgets.PlotWidget PROPERTIES LABELS P3.01)
 
         add_executable(pyqtgraph_cpp_graphicsitems_plotcurveitem tests/graphicsItems/test_PlotCurveItem.cpp)
         target_link_libraries(pyqtgraph_cpp_graphicsitems_plotcurveitem
