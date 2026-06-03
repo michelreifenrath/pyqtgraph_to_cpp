@@ -1,0 +1,582 @@
+{
+  "cases": {
+    "mkBrush": {
+      "array_rgba": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "none": "Qt::NoBrush",
+      "solid_qcolor_copy": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "mkColor": {
+      "hex_strings": {
+        "#4488cc": [
+          68,
+          136,
+          204,
+          255
+        ],
+        "#4488cc00": [
+          68,
+          136,
+          204,
+          0
+        ],
+        "#89a": [
+          136,
+          153,
+          170,
+          255
+        ],
+        "#89ab": [
+          136,
+          153,
+          170,
+          187
+        ]
+      },
+      "named_colors": {
+        "b": [
+          0,
+          0,
+          255,
+          255
+        ],
+        "c": [
+          0,
+          255,
+          255,
+          255
+        ],
+        "d": [
+          150,
+          150,
+          150,
+          255
+        ],
+        "g": [
+          0,
+          255,
+          0,
+          255
+        ],
+        "k": [
+          0,
+          0,
+          0,
+          255
+        ],
+        "l": [
+          200,
+          200,
+          200,
+          255
+        ],
+        "m": [
+          255,
+          0,
+          255,
+          255
+        ],
+        "r": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "s": [
+          100,
+          100,
+          150,
+          255
+        ],
+        "w": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "y": [
+          255,
+          255,
+          0,
+          255
+        ]
+      },
+      "numeric": {
+        "gray_0_75": [
+          191,
+          191,
+          191,
+          255
+        ],
+        "indexed_0_of_2": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "indexed_1_of_2": [
+          0,
+          255,
+          255,
+          255
+        ],
+        "indexed_2_of_2": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "rgb": [
+          11,
+          22,
+          33,
+          255
+        ],
+        "rgba": [
+          11,
+          22,
+          33,
+          44
+        ]
+      },
+      "qcolor_copy": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "qt_named_colors": {
+        "lawngreen": [
+          124,
+          252,
+          0,
+          255
+        ],
+        "steelblue": [
+          70,
+          130,
+          180,
+          255
+        ]
+      }
+    },
+    "mkPen": {
+      "kwargs_equivalent": "PenOptions covers hsv, width, style, dash, and cosmetic flags",
+      "none": "Qt::NoPen",
+      "wide_line_cap_threshold": 4.0
+    },
+    "symbols": {
+      "edge_cases": {
+        "null_c_string": "rejected by C++ helper before QString conversion",
+        "unknown_symbol": "rejected"
+      },
+      "names_in_order": [
+        "o",
+        "s",
+        "t",
+        "t1",
+        "t2",
+        "t3",
+        "d",
+        "+",
+        "x",
+        "p",
+        "h",
+        "star",
+        "|",
+        "_",
+        "arrow_up",
+        "arrow_right",
+        "arrow_down",
+        "arrow_left",
+        "crosshair"
+      ],
+      "path_prefixes": {
+        "_": [
+          [
+            -0.5,
+            -0.1
+          ],
+          [
+            -0.5,
+            0.1
+          ],
+          [
+            0.5,
+            0.1
+          ],
+          [
+            0.5,
+            -0.1
+          ]
+        ],
+        "arrow_down": [
+          [
+            0.125,
+            -0.125
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            -0.125,
+            -0.125
+          ],
+          [
+            -0.05,
+            -0.125
+          ],
+          [
+            -0.05,
+            -0.5
+          ],
+          [
+            0.05,
+            -0.5
+          ],
+          [
+            0.05,
+            -0.125
+          ]
+        ],
+        "arrow_left": [
+          [
+            0.125,
+            0.125
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.125,
+            -0.125
+          ],
+          [
+            0.125,
+            -0.05
+          ],
+          [
+            0.5,
+            -0.05
+          ],
+          [
+            0.5,
+            0.05
+          ],
+          [
+            0.125,
+            0.05
+          ]
+        ],
+        "arrow_right": [
+          [
+            -0.125,
+            -0.125
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            -0.125,
+            0.125
+          ],
+          [
+            -0.125,
+            0.05
+          ],
+          [
+            -0.5,
+            0.05
+          ],
+          [
+            -0.5,
+            -0.05
+          ],
+          [
+            -0.125,
+            -0.05
+          ]
+        ],
+        "arrow_up": [
+          [
+            -0.125,
+            0.125
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.125,
+            0.125
+          ],
+          [
+            0.05,
+            0.125
+          ],
+          [
+            0.05,
+            0.5
+          ],
+          [
+            -0.05,
+            0.5
+          ],
+          [
+            -0.05,
+            0.125
+          ]
+        ],
+        "d": [
+          [
+            0.0,
+            -0.5
+          ],
+          [
+            -0.4,
+            0.0
+          ],
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.4,
+            0.0
+          ]
+        ],
+        "h": [
+          [
+            0.433,
+            0.25
+          ],
+          [
+            0.0,
+            0.5
+          ],
+          [
+            -0.433,
+            0.25
+          ],
+          [
+            -0.433,
+            -0.25
+          ],
+          [
+            0.0,
+            -0.5
+          ],
+          [
+            0.433,
+            -0.25
+          ]
+        ],
+        "p": [
+          [
+            0.0,
+            -0.5
+          ],
+          [
+            -0.4755,
+            -0.1545
+          ],
+          [
+            -0.2939,
+            0.4045
+          ],
+          [
+            0.2939,
+            0.4045
+          ],
+          [
+            0.4755,
+            -0.1545
+          ]
+        ],
+        "star": [
+          [
+            0.0,
+            -0.5
+          ],
+          [
+            -0.1123,
+            -0.1545
+          ],
+          [
+            -0.4755,
+            -0.1545
+          ],
+          [
+            -0.1816,
+            0.059
+          ],
+          [
+            -0.2939,
+            0.4045
+          ],
+          [
+            0.0,
+            0.191
+          ],
+          [
+            0.2939,
+            0.4045
+          ],
+          [
+            0.1816,
+            0.059
+          ],
+          [
+            0.4755,
+            -0.1545
+          ],
+          [
+            0.1123,
+            -0.1545
+          ]
+        ],
+        "t": [
+          [
+            -0.5,
+            -0.5
+          ],
+          [
+            0.0,
+            0.5
+          ],
+          [
+            0.5,
+            -0.5
+          ]
+        ],
+        "t1": [
+          [
+            -0.5,
+            0.5
+          ],
+          [
+            0.0,
+            -0.5
+          ],
+          [
+            0.5,
+            0.5
+          ]
+        ],
+        "t2": [
+          [
+            -0.5,
+            -0.5
+          ],
+          [
+            -0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.0
+          ]
+        ],
+        "t3": [
+          [
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            -0.5
+          ],
+          [
+            -0.5,
+            0.0
+          ]
+        ],
+        "|": [
+          [
+            -0.1,
+            0.5
+          ],
+          [
+            0.1,
+            0.5
+          ],
+          [
+            0.1,
+            -0.5
+          ],
+          [
+            -0.1,
+            -0.5
+          ]
+        ]
+      },
+      "source_contract": "pyqtgraph/graphicsItems/ScatterPlotItem.py Symbols OrderedDict, name_list, and coords",
+      "unit_rect_bounds": {
+        "+": [
+          -0.5,
+          -0.5,
+          1.0,
+          1.0
+        ],
+        "crosshair": [
+          -1.0,
+          -1.0,
+          2.0,
+          2.0
+        ],
+        "d": [
+          -0.4,
+          -0.5,
+          0.8,
+          1.0
+        ],
+        "o": [
+          -0.5,
+          -0.5,
+          1.0,
+          1.0
+        ],
+        "s": [
+          -0.5,
+          -0.5,
+          1.0,
+          1.0
+        ]
+      }
+    }
+  },
+  "cpp_deviations": [
+    "C++ exposes symbolPaths()/symbolPath() accessors for the ScatterPlotItem.py Symbols table instead of a mutable Python module-level OrderedDict.",
+    "C++ unknown symbols raise std::invalid_argument; Python callers indexing Symbols would receive KeyError."
+  ],
+  "issue": "P2.04",
+  "schema_version": 1,
+  "tolerances": {
+    "path_contains": "Qt QPainterPath boolean containment for representative interior/exterior points",
+    "path_coordinates_absolute": 1e-12,
+    "qcolor_channels": 0
+  },
+  "upstream": {
+    "commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "files": [
+      "pyqtgraph/functions.py",
+      "tests/test_functions.py",
+      "pyqtgraph/graphicsItems/ScatterPlotItem.py"
+    ],
+    "probe_note": "Color/pen/brush cases come from functions.py and tests/test_functions.py; symbol names and coordinates come from graphicsItems/ScatterPlotItem.py.",
+    "project": "pyqtgraph",
+    "ref": "pyqtgraph-0.14.0"
+  }
+}

@@ -11,10 +11,18 @@
 #include <array>
 #include <cmath>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <initializer_list>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
+
+#ifndef PYQTGRAPH_CPP_P2_04_FIXTURE
+#define PYQTGRAPH_CPP_P2_04_FIXTURE "oracle/fixtures/P2_04/functions_symbol_oracle.json"
+#endif
 
 namespace {
 
@@ -33,6 +41,39 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
             return false; \
         } \
     } while (false)
+
+std::string readOracleFixture()
+{
+    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_04_FIXTURE});
+    if (!input.good()) {
+        std::cerr << "missing P2.04 oracle fixture: " << PYQTGRAPH_CPP_P2_04_FIXTURE << '\n';
+        return {};
+    }
+    std::ostringstream buffer;
+    buffer << input.rdbuf();
+    return buffer.str();
+}
+
+bool contains(std::string_view text, std::string_view needle)
+{
+    return text.find(needle) != std::string_view::npos;
+}
+
+bool requireP204OracleFixture()
+{
+    const std::string fixture = readOracleFixture();
+    CHECK(contains(fixture, "\"issue\": \"P2.04\""));
+    CHECK(contains(fixture, "\"commit\": \"a20028b98294b9cc8770f2015a92eb342224b788\""));
+    CHECK(contains(fixture, "\"pyqtgraph/functions.py\""));
+    CHECK(contains(fixture, "\"tests/test_functions.py\""));
+    CHECK(contains(fixture, "\"pyqtgraph/graphicsItems/ScatterPlotItem.py\""));
+    CHECK(contains(fixture, "ScatterPlotItem.py Symbols OrderedDict, name_list, and coords"));
+    CHECK(contains(fixture, "\"names_in_order\""));
+    CHECK(contains(fixture, "\"crosshair\""));
+    CHECK(contains(fixture, "\"path_coordinates_absolute\": 1e-12"));
+    CHECK(contains(fixture, "unknown symbols raise std::invalid_argument"));
+    return true;
+}
 
 bool almostEqual(double lhs, double rhs)
 {
@@ -272,8 +313,10 @@ bool testSymbolBehavior()
 {
     // Complete symbol oracle from pinned pyqtgraph-0.14.0 commit
     // a20028b98294b9cc8770f2015a92eb342224b788,
-    // pyqtgraph/graphicsItems/ScatterPlotItem.py name_list and coords. Paths are
-    // normalized to the upstream unit-size coordinate contract centered on (0, 0).
+    // pyqtgraph/graphicsItems/ScatterPlotItem.py Symbols OrderedDict, name_list,
+    // and coords. Paths are normalized to the upstream unit-size coordinate
+    // contract centered on (0, 0); see the P2.04 fixture for the recorded
+    // ScatterPlotItem.py symbol contract and tolerances.
     const auto& symbols = pyqtgraph::symbolPaths();
     constexpr std::array<std::string_view, 19> upstreamSymbols = {"o",
                                                                  "s",
@@ -436,6 +479,7 @@ bool testSymbolBehavior()
 int main()
 {
     bool success = true;
+    success = requireP204OracleFixture() && success;
     success = testUpstreamMkColorOracleCases() && success;
     success = testColorHelpers() && success;
     success = testPenOptionsAndBrushEdges() && success;

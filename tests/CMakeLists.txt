@@ -90,6 +90,17 @@ set_tests_properties(
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
 )
 
+add_test(
+    NAME pyqtgraph_cpp.oracle.P2_04
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_04_functions_symbol_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P2_04
+    PROPERTIES
+        LABELS P2.04
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_arrayview core/test_ArrayView.cpp pyqtgraph_cpp.core.ArrayView)
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_nan_minmax core/test_nan_minmax.cpp pyqtgraph_cpp.core.nan_minmax)
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_plotdata core/test_PlotData.cpp pyqtgraph_cpp.core.PlotData)
@@ -134,6 +145,10 @@ if(_pyqtgraph_cpp_has_mkcolor)
         pyqtgraph_cpp_core_functions_p2_04
         core/test_functions_P2_04.cpp
         pyqtgraph_cpp.core.functions_P2_04
+    )
+    target_compile_definitions(pyqtgraph_cpp_core_functions_p2_04
+        PRIVATE
+            PYQTGRAPH_CPP_P2_04_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P2_04/functions_symbol_oracle.json"
     )
     set_tests_properties(pyqtgraph_cpp.core.functions_P2_04 PROPERTIES LABELS P2.04)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_makeqimage core/test_makeQImage.cpp pyqtgraph_cpp.core.makeQImage)
