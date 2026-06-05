@@ -200,6 +200,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_target_properties(pyqtgraph_cpp_graphicsscene_graphicsscene PROPERTIES AUTOMOC ON)
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsscene_event_dispatch
+        graphicsItems/test_GraphicsScene_event_dispatch.cpp
+        pyqtgraph_cpp.GraphicsScene.event_dispatch
+    )
+    set_target_properties(pyqtgraph_cpp_graphicsscene_event_dispatch PROPERTIES AUTOMOC ON)
+    target_compile_definitions(pyqtgraph_cpp_graphicsscene_event_dispatch
+        PRIVATE
+            PYQTGRAPH_CPP_P3_03_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P3.03"
+    )
+    set_tests_properties(pyqtgraph_cpp.GraphicsScene.event_dispatch PROPERTIES LABELS P3.03)
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsscene_mouseevents
         graphicsItems/test_mouseEvents.cpp
         pyqtgraph_cpp.GraphicsScene.mouseEvents
