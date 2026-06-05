@@ -235,6 +235,17 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ViewBox.transforms_autorange PROPERTIES LABELS P3.05)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_viewbox_interaction_linking
+        graphicsItems/test_ViewBox_interaction_linking.cpp
+        pyqtgraph_cpp.graphicsItems.ViewBox.interaction_linking
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_viewbox_interaction_linking
+        PRIVATE
+            PYQTGRAPH_CPP_P3_06_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P3.06"
+    )
+    target_link_libraries(pyqtgraph_cpp_graphicsitems_viewbox_interaction_linking PRIVATE Qt6::Test)
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ViewBox.interaction_linking PROPERTIES LABELS P3.06)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem

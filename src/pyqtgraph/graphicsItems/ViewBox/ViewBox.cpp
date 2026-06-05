@@ -9,7 +9,9 @@
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsSceneMouseEvent>
 #include <QtWidgets/QGraphicsSceneResizeEvent>
+#include <QtWidgets/QGraphicsSceneWheelEvent>
 #include <QtWidgets/QGraphicsView>
 
 #include <algorithm>
@@ -318,6 +320,17 @@ bool axisIsValid(int axis)
     return axis == ViewBox::XAxis || axis == ViewBox::YAxis || axis == ViewBox::XYAxes;
 }
 
+bool linkAxisIsValid(int axis)
+{
+    return axis == ViewBox::XAxis || axis == ViewBox::YAxis;
+}
+
+bool axisRangeChanged(const AxisRange& before, const AxisRange& after)
+{
+    const qreal threshold = std::abs(axisSpan(after)) * 1.0e-9;
+    return std::abs(after[0] - before[0]) > threshold || std::abs(after[1] - before[1]) > threshold;
+}
+
 AxisRange expandedAxis(AxisRange range, qreal delta)
 {
     range[0] -= delta;
@@ -388,12 +401,19 @@ ViewBox::ViewBox(QGraphicsItem* parent, Qt::WindowFlags flags)
     , childGroup_(this)
 {
     setFlag(QGraphicsItem::ItemClipsChildrenToShape, true);
+    setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+    setAcceptHoverEvents(true);
     childGroup_.setHandlesChildEvents(false);
     updateAutoRangeSceneConnection();
 }
 
 ViewBox::~ViewBox()
 {
+    for (auto& axisConnections : linkConnections_) {
+        for (auto& connection : axisConnections) {
+            QObject::disconnect(connection);
+        }
+    }
     QObject::disconnect(sceneChangedConnection_);
     for (auto* child : childGroup_.childItems()) {
         child->setParentItem(nullptr);
@@ -608,6 +628,7 @@ void ViewBox::setLimits(const Limits& limits)
 {
     validateLimits(limits);
 
+    const Range2D previousViewRange = viewRange_;
     const Range2D nextTargetRange = clampRangeToLimits(targetRange_, limits);
     const Range2D nextViewRange = clampRangeToLimits(viewRange_, limits);
 
@@ -617,6 +638,178 @@ void ViewBox::setLimits(const Limits& limits)
         markMatrixDirty();
     }
     viewRange_ = nextViewRange;
+
+    const std::array<bool, 2> changed{{
+        axisRangeChanged(previousViewRange[xAxis], viewRange_[xAxis]),
+        axisRangeChanged(previousViewRange[yAxis], viewRange_[yAxis]),
+    }};
+    if (changed[xAxis] || changed[yAxis]) {
+        notifyLinkedViews(changed);
+        emitRangeChanges(changed);
+    }
+}
+
+void ViewBox::setMouseMode(int mode)
+{
+    if (mode != PanMode && mode != RectMode) {
+        throw std::invalid_argument("mouse mode must be PanMode or RectMode");
+    }
+    if (mouseMode_ == mode) {
+        return;
+    }
+    mouseMode_ = mode;
+    emit sigStateChanged(this);
+}
+
+int ViewBox::mouseMode() const
+{
+    return mouseMode_;
+}
+
+void ViewBox::setMouseEnabled(std::optional<bool> x, std::optional<bool> y)
+{
+    bool changed = false;
+    if (x.has_value() && mouseEnabled_[xAxis] != *x) {
+        mouseEnabled_[xAxis] = *x;
+        changed = true;
+    }
+    if (y.has_value() && mouseEnabled_[yAxis] != *y) {
+        mouseEnabled_[yAxis] = *y;
+        changed = true;
+    }
+    if (changed) {
+        emit sigStateChanged(this);
+    }
+}
+
+std::array<bool, 2> ViewBox::mouseEnabled() const
+{
+    return mouseEnabled_;
+}
+
+void ViewBox::setWheelScaleFactor(qreal factor)
+{
+    if (!isFinite(factor)) {
+        throw std::invalid_argument("wheel scale factor must be finite");
+    }
+    if (wheelScaleFactor_ == factor) {
+        return;
+    }
+    wheelScaleFactor_ = factor;
+    emit sigStateChanged(this);
+}
+
+qreal ViewBox::wheelScaleFactor() const
+{
+    return wheelScaleFactor_;
+}
+
+void ViewBox::setXLink(ViewBox* view)
+{
+    linkView(xAxis, view);
+}
+
+void ViewBox::setYLink(ViewBox* view)
+{
+    linkView(yAxis, view);
+}
+
+void ViewBox::linkView(int axis, ViewBox* view)
+{
+    if (!linkAxisIsValid(axis)) {
+        throw std::invalid_argument("linked axis must be XAxis or YAxis");
+    }
+    if (view == this) {
+        throw std::invalid_argument("ViewBox cannot link an axis to itself");
+    }
+
+    for (auto& connection : linkConnections_[axis]) {
+        QObject::disconnect(connection);
+        connection = QMetaObject::Connection{};
+    }
+
+    linkedViews_[axis] = view;
+    if (view != nullptr) {
+        if (axis == xAxis) {
+            linkConnections_[axis][0] = QObject::connect(view, &ViewBox::sigXRangeChanged, this, [this, view](ViewBox*, AxisRange) {
+                linkedViewChanged(view, xAxis);
+            });
+        } else {
+            linkConnections_[axis][0] = QObject::connect(view, &ViewBox::sigYRangeChanged, this, [this, view](ViewBox*, AxisRange) {
+                linkedViewChanged(view, yAxis);
+            });
+        }
+        linkConnections_[axis][1] = QObject::connect(view, &ViewBox::sigResized, this, [this, view, axis](ViewBox*) {
+            linkedViewChanged(view, axis);
+        });
+        linkedViewChanged(view, axis);
+    }
+
+    emit sigStateChanged(this);
+}
+
+ViewBox* ViewBox::linkedView(int axis) const
+{
+    if (!linkAxisIsValid(axis)) {
+        throw std::invalid_argument("linked axis must be XAxis or YAxis");
+    }
+    return linkedViews_[axis].data();
+}
+
+void ViewBox::linkedViewChanged(ViewBox* view, int axis)
+{
+    if (!linkAxisIsValid(axis)) {
+        throw std::invalid_argument("linked axis must be XAxis or YAxis");
+    }
+    if (linksBlocked_ || view == nullptr) {
+        return;
+    }
+
+    const QRectF sourceRange = view->viewRect();
+    const QRectF sourceGeometry = view->screenGeometry();
+    const QRectF targetGeometry = screenGeometry();
+
+    view->blockLink(true);
+    try {
+        if (axis == xAxis) {
+            qreal x1 = sourceRange.left();
+            qreal x2 = sourceRange.right();
+            if (sourceGeometry.isValid() && targetGeometry.isValid() && sourceGeometry.width() > 0.0 && targetGeometry.width() > 0.0) {
+                const qreal overlap = std::min(targetGeometry.right(), sourceGeometry.right()) - std::max(targetGeometry.left(), sourceGeometry.left());
+                if (overlap >= std::min(sourceGeometry.width() / 3.0, targetGeometry.width() / 3.0)) {
+                    const qreal unitsPerPixel = sourceRange.width() / sourceGeometry.width();
+                    x1 = xInverted_ ? sourceRange.left() + (targetGeometry.right() - sourceGeometry.right()) * unitsPerPixel
+                                     : sourceRange.left() + (targetGeometry.left() - sourceGeometry.left()) * unitsPerPixel;
+                    x2 = x1 + targetGeometry.width() * unitsPerPixel;
+                }
+            }
+            enableAutoRange(xAxis, false);
+            setXRange(x1, x2, 0.0);
+        } else {
+            qreal y1 = sourceRange.top();
+            qreal y2 = sourceRange.bottom();
+            if (sourceGeometry.isValid() && targetGeometry.isValid() && sourceGeometry.height() > 0.0 && targetGeometry.height() > 0.0) {
+                const qreal overlap = std::min(targetGeometry.bottom(), sourceGeometry.bottom()) - std::max(targetGeometry.top(), sourceGeometry.top());
+                if (overlap >= std::min(sourceGeometry.height() / 3.0, targetGeometry.height() / 3.0)) {
+                    const qreal unitsPerPixel = sourceRange.height() / sourceGeometry.height();
+                    y2 = yInverted_ ? sourceRange.bottom() + (targetGeometry.bottom() - sourceGeometry.bottom()) * unitsPerPixel
+                                     : sourceRange.bottom() - (targetGeometry.top() - sourceGeometry.top()) * unitsPerPixel;
+                    y1 = y2 - targetGeometry.height() * unitsPerPixel;
+                }
+            }
+            enableAutoRange(yAxis, false);
+            setYRange(y1, y2, 0.0);
+        }
+    } catch (...) {
+        view->blockLink(false);
+        throw;
+    }
+    view->blockLink(false);
+}
+
+void ViewBox::blockLink(bool block)
+{
+    linksBlocked_ = block;
 }
 
 void ViewBox::autoRange(std::optional<qreal> padding)
@@ -839,6 +1032,111 @@ void ViewBox::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, Q
     GraphicsWidget::paint(painter, option, widget);
 }
 
+void ViewBox::wheelEvent(QGraphicsSceneWheelEvent* event)
+{
+    const std::array<bool, 2> mask = mouseEnabled_;
+    if (!mask[xAxis] && !mask[yAxis]) {
+        event->ignore();
+        return;
+    }
+
+    const qreal scale = std::pow(1.02, static_cast<qreal>(event->delta()) * wheelScaleFactor_);
+    const QPointF center = mapToView(event->pos());
+    scaleBy(mask[xAxis] ? std::optional<qreal>{scale} : std::nullopt,
+            mask[yAxis] ? std::optional<qreal>{scale} : std::nullopt,
+            center);
+    event->accept();
+    emit sigRangeChangedManually(mask);
+}
+
+void ViewBox::mousePressEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (!mouseEnabled_[xAxis] && !mouseEnabled_[yAxis]) {
+        event->ignore();
+        return;
+    }
+
+    const Qt::MouseButton button = event->button();
+    if (button != Qt::LeftButton && button != Qt::MiddleButton && button != Qt::RightButton) {
+        GraphicsWidget::mousePressEvent(event);
+        return;
+    }
+
+    dragActive_ = true;
+    dragButton_ = button;
+    dragLastPos_ = event->pos();
+    dragButtonDownPos_ = event->buttonDownPos(button).isNull() ? event->pos() : event->buttonDownPos(button);
+    dragLastScreenPos_ = event->screenPos();
+    event->accept();
+}
+
+void ViewBox::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (!dragActive_ || (!mouseEnabled_[xAxis] && !mouseEnabled_[yAxis])) {
+        event->ignore();
+        return;
+    }
+
+    const std::array<bool, 2> mask = mouseEnabled_;
+    if ((dragButton_ == Qt::LeftButton || dragButton_ == Qt::MiddleButton) && (mouseMode_ == PanMode || dragButton_ == Qt::MiddleButton)) {
+        const QPointF diff = (event->pos() - dragLastPos_) * -1.0;
+        const QTransform inverse = childTransform().inverted();
+        const QPointF mapped = inverse.map(QPointF(mask[xAxis] ? diff.x() : 0.0, mask[yAxis] ? diff.y() : 0.0)) - inverse.map(QPointF(0.0, 0.0));
+        if (mask[xAxis] || mask[yAxis]) {
+            translateBy(mask[xAxis] ? std::optional<qreal>{mapped.x()} : std::nullopt,
+                        mask[yAxis] ? std::optional<qreal>{mapped.y()} : std::nullopt);
+            emit sigRangeChangedManually(mask);
+        }
+        dragLastPos_ = event->pos();
+        dragLastScreenPos_ = event->screenPos();
+        event->accept();
+        return;
+    }
+
+    if (dragButton_ == Qt::LeftButton && mouseMode_ == RectMode) {
+        dragLastPos_ = event->pos();
+        dragLastScreenPos_ = event->screenPos();
+        event->accept();
+        return;
+    }
+
+    if (dragButton_ == Qt::RightButton) {
+        const QPoint screenDelta = event->screenPos() - dragLastScreenPos_;
+        const qreal xExponent = -static_cast<qreal>(screenDelta.x());
+        const qreal yExponent = static_cast<qreal>(screenDelta.y());
+        const std::optional<qreal> xScale = mask[xAxis] ? std::optional<qreal>{std::pow(1.02, xExponent)} : std::nullopt;
+        const std::optional<qreal> yScale = mask[yAxis] ? std::optional<qreal>{std::pow(1.02, yExponent)} : std::nullopt;
+        if (xScale.has_value() || yScale.has_value()) {
+            scaleBy(xScale, yScale, mapToView(dragButtonDownPos_));
+            emit sigRangeChangedManually(mask);
+        }
+        dragLastPos_ = event->pos();
+        dragLastScreenPos_ = event->screenPos();
+        event->accept();
+        return;
+    }
+
+    event->ignore();
+}
+
+void ViewBox::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (dragActive_ && event->button() == dragButton_) {
+        if (dragButton_ == Qt::LeftButton && mouseMode_ == RectMode) {
+            const QRectF zoomRect = QRectF(mapToView(dragButtonDownPos_), mapToView(event->pos())).normalized();
+            if (!zoomRect.isEmpty()) {
+                setRange(zoomRect, 0.0);
+                emit sigRangeChangedManually(mouseEnabled_);
+            }
+        }
+        dragActive_ = false;
+        dragButton_ = Qt::NoButton;
+        event->accept();
+        return;
+    }
+    GraphicsWidget::mouseReleaseEvent(event);
+}
+
 void ViewBox::resizeEvent(QGraphicsSceneResizeEvent* event)
 {
     GraphicsWidget::resizeEvent(event);
@@ -850,6 +1148,8 @@ void ViewBox::resizeEvent(QGraphicsSceneResizeEvent* event)
     } else {
         updateViewRange();
     }
+    notifyLinkedViews(std::array<bool, 2>{{true, true}});
+    emit sigResized(this);
 }
 
 QVariant ViewBox::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value)
@@ -877,6 +1177,7 @@ bool ViewBox::applyAutoRange(std::optional<qreal> padding, const std::array<bool
 
 void ViewBox::updateViewRange(bool forceX, bool forceY)
 {
+    const Range2D previousViewRange = viewRange_;
     Range2D nextViewRange = targetRange_;
 
     if (aspectLocked_.has_value()) {
@@ -914,11 +1215,19 @@ void ViewBox::updateViewRange(bool forceX, bool forceY)
 
     nextViewRange = clampRangeToLimits(nextViewRange, limits_);
     validateFiniteRange(nextViewRange, "updateViewRange produced non-finite view range");
-    if (viewRange_ != nextViewRange) {
+    const std::array<bool, 2> changed{{
+        axisRangeChanged(previousViewRange[xAxis], nextViewRange[xAxis]),
+        axisRangeChanged(previousViewRange[yAxis], nextViewRange[yAxis]),
+    }};
+    if (changed[xAxis] || changed[yAxis]) {
         markMatrixDirty();
     }
     viewRange_ = nextViewRange;
     targetRange_ = clampRangeToLimits(targetRange_, limits_);
+    if (changed[xAxis] || changed[yAxis]) {
+        notifyLinkedViews(changed);
+        emitRangeChanges(changed);
+    }
 }
 
 void ViewBox::markMatrixDirty()
@@ -960,6 +1269,44 @@ void ViewBox::pruneAddedItems() const
                       addedItems_.end());
 }
 
+void ViewBox::emitRangeChanges(const std::array<bool, 2>& changed)
+{
+    if (changed[xAxis]) {
+        emit sigXRangeChanged(this, viewRange_[xAxis]);
+    }
+    if (changed[yAxis]) {
+        emit sigYRangeChanged(this, viewRange_[yAxis]);
+    }
+    emit sigRangeChanged(this, viewRange_, changed);
+}
+
+void ViewBox::notifyLinkedViews(const std::array<bool, 2>& changed)
+{
+    if (linksBlocked_) {
+        return;
+    }
+    for (int axis : {xAxis, yAxis}) {
+        if (!changed[axis]) {
+            continue;
+        }
+        if (auto* link = linkedViews_[axis].data(); link != nullptr) {
+            link->linkedViewChanged(this, axis);
+        }
+    }
+}
+
+QRectF ViewBox::screenGeometry() const
+{
+    QRectF geometry = sceneBoundingRect();
+    if (!geometry.isValid()) {
+        return QRectF{};
+    }
+    if (auto* currentScene = scene(); currentScene != nullptr && !currentScene->views().isEmpty()) {
+        geometry = currentScene->views().front()->mapFromScene(sceneBoundingRect()).boundingRect();
+    }
+    return geometry;
+}
+
 void ViewBox::updateMatrix()
 {
     refreshAutoRangeIfNeeded();
@@ -988,8 +1335,12 @@ void ViewBox::updateMatrix()
     const QPointF viewCenter = visible.center();
     transform.translate(-viewCenter.x(), -viewCenter.y());
 
+    const bool transformChanged = childGroup_.transform() != transform;
     childGroup_.setTransform(transform);
     matrixNeedsUpdate_ = false;
+    if (transformChanged) {
+        emit sigTransformChanged(this);
+    }
 }
 
 qreal ViewBox::currentAspectRatio() const

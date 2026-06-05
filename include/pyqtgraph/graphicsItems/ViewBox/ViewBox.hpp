@@ -8,7 +8,9 @@
 #include "../GraphicsWidget.hpp"
 
 #include <QtCore/QMetaObject>
+#include <QtCore/QObject>
 #include <QtCore/QPointF>
+#include <QtCore/QPointer>
 #include <QtCore/QRectF>
 #include <QtCore/QSizeF>
 #include <QtCore/Qt>
@@ -16,7 +18,9 @@
 #include <QtGui/QTransform>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsItemGroup>
+#include <QtWidgets/QGraphicsSceneMouseEvent>
 #include <QtWidgets/QGraphicsSceneResizeEvent>
+#include <QtWidgets/QGraphicsSceneWheelEvent>
 
 #include <array>
 #include <optional>
@@ -25,6 +29,8 @@
 namespace pyqtgraph::graphicsItems {
 
 class ViewBox : public GraphicsWidget {
+    Q_OBJECT
+
 public:
     static constexpr int PanMode = 3;
     static constexpr int RectMode = 1;
@@ -78,6 +84,20 @@ public:
     void translateBy(const QPointF& offset);
     void setLimits(const Limits& limits);
 
+    void setMouseMode(int mode);
+    [[nodiscard]] int mouseMode() const;
+    void setMouseEnabled(std::optional<bool> x = std::nullopt, std::optional<bool> y = std::nullopt);
+    [[nodiscard]] std::array<bool, 2> mouseEnabled() const;
+    void setWheelScaleFactor(qreal factor);
+    [[nodiscard]] qreal wheelScaleFactor() const;
+
+    void setXLink(ViewBox* view);
+    void setYLink(ViewBox* view);
+    void linkView(int axis, ViewBox* view);
+    [[nodiscard]] ViewBox* linkedView(int axis) const;
+    void linkedViewChanged(ViewBox* view, int axis);
+    void blockLink(bool block);
+
     void autoRange(std::optional<qreal> padding = std::nullopt);
     void enableAutoRange(int axis = XYAxes, bool enable = true);
     void disableAutoRange(int axis = XYAxes);
@@ -103,8 +123,21 @@ public:
     [[nodiscard]] QRectF childrenBoundingRect() const;
     [[nodiscard]] QSizeF viewPixelSize();
 
+signals:
+    void sigXRangeChanged(ViewBox* view, AxisRange range);
+    void sigYRangeChanged(ViewBox* view, AxisRange range);
+    void sigRangeChangedManually(std::array<bool, 2> mask);
+    void sigRangeChanged(ViewBox* view, Range2D range, std::array<bool, 2> changed);
+    void sigStateChanged(ViewBox* view);
+    void sigTransformChanged(ViewBox* view);
+    void sigResized(ViewBox* view);
+
 protected:
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
+    void wheelEvent(QGraphicsSceneWheelEvent* event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
     void resizeEvent(QGraphicsSceneResizeEvent* event) override;
     QVariant itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value) override;
 
@@ -116,6 +149,9 @@ private:
     void updateAutoRangeSceneConnection();
     void refreshAutoRangeIfNeeded();
     void pruneAddedItems() const;
+    void emitRangeChanges(const std::array<bool, 2>& changed);
+    void notifyLinkedViews(const std::array<bool, 2>& changed);
+    [[nodiscard]] QRectF screenGeometry() const;
     [[nodiscard]] qreal currentAspectRatio() const;
 
     QGraphicsItemGroup childGroup_;
@@ -129,6 +165,17 @@ private:
     bool yInverted_ = false;
     std::optional<qreal> aspectLocked_;
     bool matrixNeedsUpdate_ = true;
+    std::array<bool, 2> mouseEnabled_{{true, true}};
+    int mouseMode_ = PanMode;
+    qreal wheelScaleFactor_ = -1.0 / 8.0;
+    bool dragActive_ = false;
+    Qt::MouseButton dragButton_ = Qt::NoButton;
+    QPointF dragLastPos_;
+    QPointF dragButtonDownPos_;
+    QPoint dragLastScreenPos_;
+    std::array<QPointer<ViewBox>, 2> linkedViews_{{nullptr, nullptr}};
+    std::array<std::array<QMetaObject::Connection, 2>, 2> linkConnections_{};
+    bool linksBlocked_ = false;
     QMetaObject::Connection sceneChangedConnection_;
 };
 
