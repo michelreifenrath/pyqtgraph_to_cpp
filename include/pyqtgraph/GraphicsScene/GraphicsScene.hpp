@@ -5,14 +5,31 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
+#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
+
+#include <QtCore/QList>
+#include <QtCore/QPointF>
+#include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsScene>
 
-class QGraphicsItem;
+#include <memory>
+
+class QEvent;
+class QGraphicsSceneMouseEvent;
 class QGraphicsView;
 class QObject;
 class QPainter;
 
 namespace pyqtgraph::GraphicsScene {
+
+class GraphicsSceneEventHandler {
+public:
+    virtual ~GraphicsSceneEventHandler() = default;
+
+    virtual void hoverEvent(HoverEvent* event) { Q_UNUSED(event); }
+    virtual void mouseClickEvent(MouseClickEvent* event) { Q_UNUSED(event); }
+    virtual void mouseDragEvent(MouseDragEvent* event) { Q_UNUSED(event); }
+};
 
 class GraphicsScene : public QGraphicsScene {
     Q_OBJECT
@@ -34,6 +51,10 @@ public:
 
     [[nodiscard]] QGraphicsView* getViewWidget() const;
 
+    [[nodiscard]] QList<QGraphicsItem*> itemsNearEvent(const MouseClickEvent& event, bool hoverable = false) const;
+    [[nodiscard]] QList<QGraphicsItem*> itemsNearEvent(const MouseDragEvent& event, bool hoverable = false) const;
+    [[nodiscard]] QList<QGraphicsItem*> itemsNearEvent(const HoverEvent& event, bool hoverable = false) const;
+
     void addItem(QGraphicsItem* item);
     void removeItem(QGraphicsItem* item);
 
@@ -44,13 +65,36 @@ public slots:
     void prepareForPaint();
 
 signals:
+    void sigMouseHover(const QList<QGraphicsItem*>& items);
+    void sigMouseMoved(const QPointF& scenePos);
+    void sigMouseClicked(MouseClickEvent* event);
     void sigPrepareForPaint();
     void sigItemAdded(QGraphicsItem* item);
     void sigItemRemoved(QGraphicsItem* item);
 
+protected:
+    bool event(QEvent* event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
+
 private:
+    [[nodiscard]] bool moveEventIsAllowed() const noexcept;
+    void sendHoverEvents(QGraphicsSceneMouseEvent* event, bool exitOnly = false);
+    [[nodiscard]] bool sendDragEvent(QGraphicsSceneMouseEvent* event, bool init = false, bool final = false);
+    [[nodiscard]] bool sendClickEvent(MouseClickEvent& event);
+    [[nodiscard]] QList<QGraphicsItem*> itemsNearPoint(const QPointF& point, bool hoverable) const;
+
     int clickRadius_ = 2;
     qreal moveDistance_ = 5.0;
+    QList<MouseClickEvent> clickEvents_;
+    QList<Qt::MouseButton> dragButtons_;
+    QGraphicsItem* dragItem_ = nullptr;
+    std::unique_ptr<MouseDragEvent> lastDrag_;
+    QList<QGraphicsItem*> hoverItems_;
+    std::unique_ptr<HoverEvent> lastHoverEvent_;
+    qint64 minDragTimeMilliseconds_ = 500;
 };
 
 } // namespace pyqtgraph::GraphicsScene
