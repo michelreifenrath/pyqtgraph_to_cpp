@@ -217,6 +217,16 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         pyqtgraph_cpp.GraphicsScene.mouseEvents
     )
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsscene_mouseevents_p3_04
+        graphicsItems/test_mouseEvents_P3_04.cpp
+        pyqtgraph_cpp.GraphicsScene.mouseEvents.P3_04
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsscene_mouseevents_p3_04
+        PRIVATE
+            PYQTGRAPH_CPP_P3_04_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P3.04"
+    )
+    set_tests_properties(pyqtgraph_cpp.GraphicsScene.mouseEvents.P3_04 PROPERTIES LABELS P3.04)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_axisitem
         graphicsItems/test_AxisItem.cpp
         pyqtgraph_cpp.graphicsItems.AxisItem
