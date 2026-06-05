@@ -7,13 +7,20 @@
 
 #include "../GraphicsWidget.hpp"
 
+#include <QtCore/QMetaObject>
 #include <QtCore/QPointF>
 #include <QtCore/QRectF>
+#include <QtCore/QSizeF>
 #include <QtCore/Qt>
+#include <QtCore/QVariant>
+#include <QtGui/QTransform>
 #include <QtWidgets/QGraphicsItem>
+#include <QtWidgets/QGraphicsItemGroup>
+#include <QtWidgets/QGraphicsSceneResizeEvent>
 
 #include <array>
 #include <optional>
+#include <vector>
 
 namespace pyqtgraph::graphicsItems {
 
@@ -53,6 +60,10 @@ public:
     [[nodiscard]] QRectF targetRect() const;
     [[nodiscard]] Limits limits() const;
 
+    void addItem(QGraphicsItem* item, bool ignoreBounds = false);
+    void removeItem(QGraphicsItem* item);
+    void clear();
+
     void setRange(const QRectF& rect, qreal padding = 0.02, bool update = true, bool disableAutoRange = true);
     void setRange(std::optional<AxisRange> xRange,
                   std::optional<AxisRange> yRange,
@@ -67,11 +78,58 @@ public:
     void translateBy(const QPointF& offset);
     void setLimits(const Limits& limits);
 
+    void autoRange(std::optional<qreal> padding = std::nullopt);
+    void enableAutoRange(int axis = XYAxes, bool enable = true);
+    void disableAutoRange(int axis = XYAxes);
+    [[nodiscard]] std::array<bool, 2> autoRangeEnabled() const;
+    void setDefaultPadding(qreal padding = 0.02);
+
+    void setAspectLocked(bool lock = true, std::optional<qreal> ratio = 1.0);
+    void invertX(bool inverted = true);
+    void invertY(bool inverted = true);
+    [[nodiscard]] bool xInverted() const;
+    [[nodiscard]] bool yInverted() const;
+
+    [[nodiscard]] QTransform childTransform();
+    [[nodiscard]] QPointF mapToView(const QPointF& point);
+    [[nodiscard]] QRectF mapToView(const QRectF& rect);
+    [[nodiscard]] QPointF mapFromView(const QPointF& point);
+    [[nodiscard]] QRectF mapFromView(const QRectF& rect);
+    [[nodiscard]] QPointF mapSceneToView(const QPointF& point);
+    [[nodiscard]] QRectF mapSceneToView(const QRectF& rect);
+    [[nodiscard]] QPointF mapViewToScene(const QPointF& point);
+    [[nodiscard]] QRectF mapViewToScene(const QRectF& rect);
+    [[nodiscard]] std::array<std::optional<AxisRange>, 2> childrenBounds() const;
+    [[nodiscard]] QRectF childrenBoundingRect() const;
+    [[nodiscard]] QSizeF viewPixelSize();
+
+protected:
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
+    void resizeEvent(QGraphicsSceneResizeEvent* event) override;
+    QVariant itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value) override;
+
 private:
+    bool applyAutoRange(std::optional<qreal> padding, const std::array<bool, 2>& axes, bool disableAutoRange = false);
+    void updateViewRange(bool forceX = false, bool forceY = false);
+    void updateMatrix();
+    void markMatrixDirty();
+    void updateAutoRangeSceneConnection();
+    void refreshAutoRangeIfNeeded();
+    void pruneAddedItems() const;
+    [[nodiscard]] qreal currentAspectRatio() const;
+
+    QGraphicsItemGroup childGroup_;
     Range2D targetRange_{{AxisRange{0.0, 1.0}, AxisRange{0.0, 1.0}}};
     Range2D viewRange_{{AxisRange{0.0, 1.0}, AxisRange{0.0, 1.0}}};
     Limits limits_;
     std::array<bool, 2> autoRange_{{true, true}};
+    mutable std::vector<QGraphicsItem*> addedItems_;
+    qreal defaultPadding_ = 0.02;
+    bool xInverted_ = false;
+    bool yInverted_ = false;
+    std::optional<qreal> aspectLocked_;
+    bool matrixNeedsUpdate_ = true;
+    QMetaObject::Connection sceneChangedConnection_;
 };
 
 } // namespace pyqtgraph::graphicsItems

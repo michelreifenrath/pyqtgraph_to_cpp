@@ -229,6 +229,12 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             PYQTGRAPH_CPP_INTERACTION_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/oracle/fixtures/interactions"
     )
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_viewbox_transforms_autorange
+        graphicsItems/test_ViewBox_transforms_autorange.cpp
+        pyqtgraph_cpp.graphicsItems.ViewBox.transforms_autorange
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ViewBox.transforms_autorange PROPERTIES LABELS P3.05)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem
