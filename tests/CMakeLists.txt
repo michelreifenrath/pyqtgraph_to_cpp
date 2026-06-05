@@ -273,6 +273,12 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         graphicsItems/test_PlotCurveItem_setData.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem.setData
     )
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_plotdataitem
+        graphicsItems/test_PlotDataItem.cpp
+        pyqtgraph_cpp.graphicsItems.PlotDataItem
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.PlotDataItem PROPERTIES LABELS P3.10)
 
     add_executable(pyqtgraph_cpp_examples_simpleplot "${PROJECT_SOURCE_DIR}/examples/SimplePlot.cpp")
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_examples_simpleplot)
