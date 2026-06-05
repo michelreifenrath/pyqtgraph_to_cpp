@@ -209,6 +209,13 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         graphicsItems/test_AxisItem.cpp
         pyqtgraph_cpp.graphicsItems.AxisItem
     )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_axisitem
+        PRIVATE
+            PYQTGRAPH_CPP_P3_07_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual/P3.07/AxisItem"
+            PYQTGRAPH_CPP_P3_07_CANONICAL_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/P3.07-AxisItem"
+            PYQTGRAPH_CPP_P3_07_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual/P3.07/AxisItem/gpt5_vision_review.md"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.AxisItem PROPERTIES LABELS "visual;P3.07")
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_viewbox
         graphicsItems/test_ViewBox.cpp
