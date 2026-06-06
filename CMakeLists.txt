@@ -140,6 +140,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
             src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
+            include/pyqtgraph/graphicsItems/ImageItem.hpp
+            src/pyqtgraph/graphicsItems/ImageItem.cpp
     )
     set_target_properties(pyqtgraph_cpp PROPERTIES AUTOMOC ON)
     target_link_libraries(pyqtgraph_cpp

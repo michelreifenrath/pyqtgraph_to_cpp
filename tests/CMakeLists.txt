@@ -302,6 +302,16 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         pyqtgraph_cpp.graphicsItems.PlotCurveItem.setData
     )
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_imageitem
+        graphicsItems/test_ImageItem.cpp
+        pyqtgraph_cpp.graphicsItems.ImageItem
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_imageitem
+        PRIVATE
+            PYQTGRAPH_CPP_P2_13_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/ImageItem/P2.13"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ImageItem PROPERTIES LABELS "visual;P2.13")
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotdataitem
         graphicsItems/test_PlotDataItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotDataItem
