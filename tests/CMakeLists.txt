@@ -341,6 +341,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(P3.09.visual.PlotCurveItem.paint PROPERTIES LABELS "visual;P3.09")
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_visual_scatterplotitem_p4_01
+        visual/P4_01_scatterplotitem_symbols.cpp
+        P4.01.visual.ScatterPlotItem.symbol_atlas
+    )
+    target_compile_definitions(pyqtgraph_cpp_visual_scatterplotitem_p4_01
+        PRIVATE
+            PYQTGRAPH_CPP_P4_01_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual/P4.01"
+            PYQTGRAPH_CPP_P4_01_CANONICAL_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/P4.01-ScatterPlotItem"
+    )
+    set_tests_properties(P4.01.visual.ScatterPlotItem.symbol_atlas PROPERTIES LABELS "visual;P4.01")
+
     add_executable(pyqtgraph_cpp_visual_plotitem_p3_11 visual/P3_11_plotitem_layout_visual.cpp)
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_visual_plotitem_p3_11)
     add_test(
