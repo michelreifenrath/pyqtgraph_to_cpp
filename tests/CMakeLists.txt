@@ -353,6 +353,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_VISUAL_RENDERER=$<TARGET_FILE:pyqtgraph_cpp_visual_render_example>;PG_VISUAL_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/visual/P1.08;PG_VISUAL_REVIEW_REPORT=${PROJECT_SOURCE_DIR}/reports/visual/P1.08/SimplePlot/gpt5_vision_review.md"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     )
+    add_test(
+        NAME P3.13.visual.SimplePlot
+        COMMAND "${Python3_EXECUTABLE}" -m pytest -q
+            "${PROJECT_SOURCE_DIR}/tests/examples/test_SimplePlot_P3_13_visual.py"
+    )
+    set_tests_properties(
+        P3.13.visual.SimplePlot
+        PROPERTIES
+            LABELS "visual;P3.13"
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_P3_13_VISUAL_RENDERER=$<TARGET_FILE:pyqtgraph_cpp_visual_render_example>;PG_P3_13_VISUAL_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/visual-diffs;PG_P3_13_EXAMPLES_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/examples/P3.13;PG_P3_13_VISUAL_REVIEW_REPORT=${PROJECT_SOURCE_DIR}/reports/examples/P3.13/gpt5_vision_review.md"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    )
 
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_examples_simpleplot_test

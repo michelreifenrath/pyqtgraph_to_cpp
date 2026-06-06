@@ -26,6 +26,7 @@ class Example:
     ctest_name: str
     aliases: tuple[str, ...]
     visual_required: bool = False
+    visual_ctest_name: str | None = None
 
 
 class ManifestError(RuntimeError):
@@ -146,13 +147,19 @@ def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
 
         validation = validations.get((name, upstream_path or ""), {})
         aliases = _unique_aliases(name, Path(target_path).name, target_path, upstream_path)
+        visual_required = validation.get("visual") == "required"
         examples.append(
             Example(
                 name=name,
                 target_path=normalize_path(target_path),
                 ctest_name=f"pyqtgraph_cpp.examples.{name}",
                 aliases=aliases,
-                visual_required=validation.get("visual") == "required",
+                visual_required=visual_required,
+                visual_ctest_name=(
+                    "P3.13.visual.SimplePlot"
+                    if name == "SimplePlot" and visual_required
+                    else None
+                ),
             )
         )
 
@@ -225,12 +232,15 @@ def examples_from_changed_paths(paths: list[str], root: Path | None = None) -> l
 
 
 def runner_command(example: Example, runner: str, ctest_preset: str) -> list[str]:
+    ctest_name = example.ctest_name
+    if ctest_preset == "visual" and example.visual_required and example.visual_ctest_name:
+        ctest_name = example.visual_ctest_name
     return [
         runner,
         "--preset",
         ctest_preset,
         "-R",
-        f"^{re.escape(example.ctest_name)}$",
+        f"^{re.escape(ctest_name)}$",
         "--output-on-failure",
     ]
 
