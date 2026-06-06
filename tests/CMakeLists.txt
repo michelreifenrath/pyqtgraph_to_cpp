@@ -308,6 +308,17 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.PlotDataItem PROPERTIES LABELS P3.10)
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_imageitem_render
+        graphicsItems/test_ImageItem_render.cpp
+        pyqtgraph_cpp.graphicsItems.ImageItem.render
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_imageitem_render
+        PRIVATE
+            PYQTGRAPH_CPP_P2_13_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/ImageItem/P2.13"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ImageItem.render PROPERTIES LABELS "visual;P2.13")
+
     add_executable(pyqtgraph_cpp_examples_simpleplot "${PROJECT_SOURCE_DIR}/examples/SimplePlot.cpp")
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_examples_simpleplot)
 
