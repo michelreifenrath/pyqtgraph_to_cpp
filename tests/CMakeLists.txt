@@ -312,6 +312,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(P1.08.visual.PlotCurveItem.bounds PROPERTIES LABELS "visual;P1.08")
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_visual_plotcurveitem_p3_09
+        visual/P3_09_plotcurveitem_paint.cpp
+        P3.09.visual.PlotCurveItem.paint
+    )
+    target_compile_definitions(pyqtgraph_cpp_visual_plotcurveitem_p3_09
+        PRIVATE
+            PYQTGRAPH_CPP_P3_09_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual/P3.09"
+            PYQTGRAPH_CPP_P3_09_CANONICAL_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/P3.09-PlotCurveItem"
+    )
+    set_tests_properties(P3.09.visual.PlotCurveItem.paint PROPERTIES LABELS "visual;P3.09")
+
     add_executable(pyqtgraph_cpp_visual_render_example visual/P1_08_render_cpp_example.cpp)
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_visual_render_example)
     add_test(
