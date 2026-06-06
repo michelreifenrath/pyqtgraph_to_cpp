@@ -324,6 +324,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(P3.09.visual.PlotCurveItem.paint PROPERTIES LABELS "visual;P3.09")
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_visual_plotitem_p3_11
+        visual/P3_11_plotitem_layout.cpp
+        P3.11.visual.PlotItem.layout
+    )
+    target_compile_definitions(pyqtgraph_cpp_visual_plotitem_p3_11
+        PRIVATE
+            PYQTGRAPH_CPP_P3_11_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual/P3.11"
+            PYQTGRAPH_CPP_P3_11_CANONICAL_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/P3.11-PlotItem-layout"
+    )
+    set_tests_properties(P3.11.visual.PlotItem.layout PROPERTIES LABELS "visual;P3.11")
+
     add_executable(pyqtgraph_cpp_visual_render_example visual/P1_08_render_cpp_example.cpp)
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_visual_render_example)
     add_test(
