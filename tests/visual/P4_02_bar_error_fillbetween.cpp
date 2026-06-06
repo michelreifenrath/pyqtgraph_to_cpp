@@ -198,9 +198,9 @@ void drawErrorReference(QPainter& painter)
         bottom.push_back(2.0 + ((0.5 - 2.0) * static_cast<double>(index) / 9.0));
     }
     for (std::size_t index = 0; index < x.size(); ++index) {
-        const qreal yTop = y[index] - top[index];
-        const qreal yBottom = y[index] + bottom[index];
-        painter.drawLine(QPointF(x[index], yTop), QPointF(x[index], yBottom));
+        const qreal yBottom = y[index] - bottom[index];
+        const qreal yTop = y[index] + top[index];
+        painter.drawLine(QPointF(x[index], yBottom), QPointF(x[index], yTop));
         painter.drawLine(QPointF(x[index] - 0.25, yTop), QPointF(x[index] + 0.25, yTop));
         painter.drawLine(QPointF(x[index] - 0.25, yBottom), QPointF(x[index] + 0.25, yBottom));
     }
@@ -646,8 +646,8 @@ bool testDataGuardsAndBounds()
     asymmetricVerticalOptions.beam = 0.0;
     pyqtgraph::graphicsItems::ErrorBarItem asymmetricVertical(asymmetricVerticalOptions);
     const QRectF asymmetricPathBounds = asymmetricVertical.path().boundingRect();
-    CHECK(std::abs(asymmetricPathBounds.top() - 17.0) < 1.0e-9);
-    CHECK(std::abs(asymmetricPathBounds.bottom() - 21.0) < 1.0e-9);
+    CHECK(std::abs(asymmetricPathBounds.top() - 19.0) < 1.0e-9);
+    CHECK(std::abs(asymmetricPathBounds.bottom() - 23.0) < 1.0e-9);
 
     pyqtgraph::graphicsItems::ErrorBarItemOptions verticalOnlyOptions;
     verticalOnlyOptions.x = {1.0};

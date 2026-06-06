@@ -252,9 +252,9 @@ inline void ErrorBarItem::rebuildPath()
             const auto height = detail_errorbaritem::valueAt(options_.height, index, size, "height");
             const auto top = detail_errorbaritem::valueAt(options_.top, index, size, "top");
             const auto bottom = detail_errorbaritem::valueAt(options_.bottom, index, size, "bottom");
-            const double yTop = height.has_value() ? y - *height / 2.0 : y - top.value_or(0.0);
-            const double yBottom = height.has_value() ? y + *height / 2.0 : y + bottom.value_or(0.0);
-            detail_errorbaritem::addLineIfFinite(path_, QPointF(x, yTop), QPointF(x, yBottom));
+            const double yBottom = height.has_value() ? y - *height / 2.0 : y - bottom.value_or(0.0);
+            const double yTop = height.has_value() ? y + *height / 2.0 : y + top.value_or(0.0);
+            detail_errorbaritem::addLineIfFinite(path_, QPointF(x, yBottom), QPointF(x, yTop));
             if (beam > 0.0) {
                 const double x1 = x - beam / 2.0;
                 const double x2 = x + beam / 2.0;
