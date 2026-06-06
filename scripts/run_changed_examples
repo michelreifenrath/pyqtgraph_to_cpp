@@ -163,6 +163,23 @@ def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
             )
         )
 
+    # P2.14 ports ImageItem as a focused example shard while the generated manifest
+    # still records the broader ImageItem source rows as pending. Let the changed-
+    # example runner select this executable without broadening the manifest update.
+    imageitem_path = root / "examples" / "ImageItem.cpp"
+    if imageitem_path.is_file() and not any(example.name == "ImageItem" for example in examples):
+        upstream_path = "pyqtgraph/examples/ImageItem.py"
+        validation = validations.get(("ImageItem", upstream_path), {})
+        examples.append(
+            Example(
+                name="ImageItem",
+                target_path="examples/ImageItem.cpp",
+                ctest_name="pyqtgraph_cpp.examples.ImageItem",
+                aliases=_unique_aliases("ImageItem", "ImageItem.cpp", "examples/ImageItem.cpp", upstream_path),
+                visual_required=validation.get("visual") == "required",
+            )
+        )
+
     return tuple(examples)
 
 

@@ -321,6 +321,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
 
     add_executable(pyqtgraph_cpp_examples_simpleplot "${PROJECT_SOURCE_DIR}/examples/SimplePlot.cpp")
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_examples_simpleplot)
+    add_executable(pyqtgraph_cpp_examples_imageitem "${PROJECT_SOURCE_DIR}/examples/ImageItem.cpp")
+    pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_examples_imageitem)
 
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_visual_plotcurveitem_bounds
@@ -400,6 +402,16 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         examples/test_SimplePlot.cpp
         pyqtgraph_cpp.examples.SimplePlot
     )
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_examples_imageitem_test
+        examples/test_ImageItem.cpp
+        pyqtgraph_cpp.examples.ImageItem
+    )
+    target_compile_definitions(pyqtgraph_cpp_examples_imageitem_test
+        PRIVATE
+            PYQTGRAPH_CPP_P2_14_VISUAL_DIFF_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/ImageItem-example"
+    )
+    set_tests_properties(pyqtgraph_cpp.examples.ImageItem PROPERTIES LABELS "visual;P2.14")
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_hierarchy_cpp hierarchy/test_cpp_hierarchy.cpp pyqtgraph_cpp.hierarchy.cpp)
 endif()
 
