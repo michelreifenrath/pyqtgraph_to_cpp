@@ -5,28 +5,65 @@
 
 #include "../../../../include/pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp"
 
+#include "../../../../include/pyqtgraph/graphicsItems/AxisItem.hpp"
+#include "../../../../include/pyqtgraph/graphicsItems/LegendItem.hpp"
 #include "../../../../include/pyqtgraph/graphicsItems/PlotCurveItem.hpp"
 
+#include <QtCore/QObject>
 #include <QtCore/QRectF>
 #include <QtCore/Qt>
 #include <QtCore/QVariant>
 #include <QtGui/QColor>
 #include <QtGui/QFont>
+#include <QtGui/QFontMetricsF>
 #include <QtGui/QPainter>
 #include <QtGui/QPen>
 #include <QtGui/QTransform>
+#include <QtWidgets/QGraphicsGridLayout>
+#include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSceneResizeEvent>
 #include <QtWidgets/QStyleOptionGraphicsItem>
 #include <QtWidgets/QWidget>
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <optional>
+#include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace pyqtgraph::graphicsItems {
-
 namespace {
+
+constexpr std::size_t topIndex = 0;
+constexpr std::size_t bottomIndex = 1;
+constexpr std::size_t leftIndex = 2;
+constexpr std::size_t rightIndex = 3;
+
+QString normalizedAxisName(const QString& name)
+{
+    return name.trimmed().toLower();
+}
+
+class ScopedBool {
+public:
+    explicit ScopedBool(bool& value)
+        : value_(value)
+        , previous_(value)
+    {
+        value_ = true;
+    }
+
+    ~ScopedBool()
+    {
+        value_ = previous_;
+    }
+
+private:
+    bool& value_;
+    bool previous_ = false;
+};
 
 struct BoundsRange {
     double minimum;
@@ -38,7 +75,7 @@ struct PlotBounds {
     BoundsRange y;
 };
 
-std::optional<PlotBounds> dataBounds(const QList<QGraphicsItem*>& items)
+std::optional<PlotBounds> directCurveBounds(const QList<QGraphicsItem*>& items)
 {
     std::optional<PlotBounds> bounds;
     for (QGraphicsItem* item : items) {
@@ -65,7 +102,6 @@ std::optional<PlotBounds> dataBounds(const QList<QGraphicsItem*>& items)
             bounds->y.maximum = std::max(bounds->y.maximum, y);
         }
     }
-
     if (!bounds.has_value()) {
         return std::nullopt;
     }
@@ -100,15 +136,15 @@ qreal axisBottom(const QRectF& bounds)
     return bounds.top() + (580.0 * verticalScale(bounds));
 }
 
-QRectF plotRect(const QRectF& bounds)
+QRectF legacyPlotRect(const QRectF& bounds)
 {
     const qreal scaleX = horizontalScale(bounds);
     const qreal scaleY = verticalScale(bounds);
     return QRectF(bounds.left() + (62.0 * scaleX), bounds.top() + (24.0 * scaleY),
-        std::max<qreal>(1.0, 710.0 * scaleX), std::max<qreal>(1.0, 532.0 * scaleY));
+                  std::max<qreal>(1.0, 710.0 * scaleX), std::max<qreal>(1.0, 532.0 * scaleY));
 }
 
-QPointF mapPoint(double x, double y, const PlotBounds& data, const QRectF& target)
+QPointF mapLegacyPoint(double x, double y, const PlotBounds& data, const QRectF& target)
 {
     const double xRatio = (x - data.x.minimum) / (data.x.maximum - data.x.minimum);
     const double yRatio = (y - data.y.minimum) / (data.y.maximum - data.y.minimum);
@@ -133,7 +169,6 @@ double niceTickStep(double rawStep)
     if (!std::isfinite(rawStep) || rawStep <= 0.0) {
         return 0.0;
     }
-
     const double magnitude = std::pow(10.0, std::floor(std::log10(rawStep)));
     const double normalized = rawStep / magnitude;
     double niceNormalized = 10.0;
@@ -153,50 +188,26 @@ std::vector<AxisTick> axisTicks(const BoundsRange& range, qreal pixelLength)
     constexpr double minimumMinorPixelSpacing = 12.0;
     constexpr int maximumMajorIntervals = 8;
     constexpr int maximumTickCount = 64;
-
-    if (!std::isfinite(range.minimum) || !std::isfinite(range.maximum)
-        || !std::isfinite(static_cast<double>(pixelLength)) || pixelLength <= 0.0
-        || range.maximum < range.minimum) {
-        return {};
-    }
-
     const double span = range.maximum - range.minimum;
-    if (!std::isfinite(span) || span <= 0.0) {
+    if (!std::isfinite(span) || span <= 0.0 || pixelLength <= 0.0) {
         return {};
     }
-
     const double rawIntervalCount = std::floor(static_cast<double>(pixelLength) / minimumMajorPixelSpacing);
-    int majorIntervals = 1;
-    if (std::isfinite(rawIntervalCount)) {
-        majorIntervals = static_cast<int>(
-            std::clamp(rawIntervalCount, 1.0, static_cast<double>(maximumMajorIntervals)));
-    }
-
+    const int majorIntervals = static_cast<int>(std::clamp(rawIntervalCount, 1.0, static_cast<double>(maximumMajorIntervals)));
     const double majorStep = niceTickStep(span / majorIntervals);
     if (!std::isfinite(majorStep) || majorStep <= 0.0) {
         return {};
     }
-
     const double majorPixelSpacing = static_cast<double>(pixelLength) * majorStep / span;
     int minorDivisions = 5;
     if (!std::isfinite(majorPixelSpacing) || majorPixelSpacing / minorDivisions < minimumMinorPixelSpacing) {
         minorDivisions = majorPixelSpacing >= minimumMinorPixelSpacing * 2.0 ? 2 : 1;
     }
-
     const double minorStep = majorStep / minorDivisions;
-    if (!std::isfinite(minorStep) || minorStep <= 0.0) {
-        return {};
-    }
-
     const double firstTick = std::ceil(range.minimum / minorStep) * minorStep;
-    if (!std::isfinite(firstTick)) {
-        return {};
-    }
-
     const double lastTick = range.maximum + (std::abs(minorStep) * 1.0e-6);
     const double majorEpsilon = std::abs(majorStep) * 1.0e-6;
     std::vector<AxisTick> ticks;
-    ticks.reserve(maximumTickCount);
     bool hasMajorTick = false;
     for (int tickIndex = 0; tickIndex < maximumTickCount; ++tickIndex) {
         const double value = firstTick + (tickIndex * minorStep);
@@ -208,7 +219,6 @@ std::vector<AxisTick> axisTicks(const BoundsRange& range, qreal pixelLength)
         hasMajorTick = hasMajorTick || major;
         ticks.push_back(AxisTick{value, major});
     }
-
     if (!hasMajorTick && !ticks.empty()) {
         ticks.front().major = true;
         ticks.back().major = true;
@@ -216,97 +226,353 @@ std::vector<AxisTick> axisTicks(const BoundsRange& range, qreal pixelLength)
     return ticks;
 }
 
-void drawTicks(QPainter& painter, const QRectF& itemBounds, const PlotBounds& data)
+void drawLegacyTicks(QPainter& painter, const QRectF& itemBounds, const PlotBounds& data)
 {
-    const QRectF target = plotRect(itemBounds);
+    const QRectF target = legacyPlotRect(itemBounds);
     const qreal leftAxis = axisLeft(itemBounds);
     const qreal bottomAxis = axisBottom(itemBounds);
-
     painter.setFont(QFont(QStringLiteral("Sans Serif"), 9));
     painter.setPen(QPen(QColor(150, 150, 150), 1));
-
     for (const AxisTick& tick : axisTicks(data.x, target.width())) {
-        const double x = mapPoint(tick.value, data.y.minimum, data, target).x();
+        const double x = mapLegacyPoint(tick.value, data.y.minimum, data, target).x();
         const double length = tick.major ? 7.0 : 4.0;
         painter.drawLine(QPointF(x, bottomAxis), QPointF(x, bottomAxis + length));
         if (tick.major) {
-            painter.drawText(
-                QRectF(x - 22.0, bottomAxis + 8.0, 44.0, 18.0), Qt::AlignCenter, tickLabel(tick.value));
+            painter.drawText(QRectF(x - 22.0, bottomAxis + 8.0, 44.0, 18.0), Qt::AlignCenter, tickLabel(tick.value));
         }
     }
-
     for (const AxisTick& tick : axisTicks(data.y, target.height())) {
-        const double y = mapPoint(data.x.minimum, tick.value, data, target).y();
+        const double y = mapLegacyPoint(data.x.minimum, tick.value, data, target).y();
         painter.drawLine(QPointF(leftAxis - (tick.major ? 7.0 : 4.0), y), QPointF(leftAxis, y));
         if (tick.major) {
             painter.drawText(QRectF(itemBounds.left() + 1.0, y - 9.0, leftAxis - 8.0, 18.0),
-                Qt::AlignRight | Qt::AlignVCenter, tickLabel(tick.value));
+                             Qt::AlignRight | Qt::AlignVCenter, tickLabel(tick.value));
         }
     }
 }
 
-void applyCurveTransforms(const QList<QGraphicsItem*>& items, const QRectF& itemBounds)
+void applyDirectCurveTransforms(const QList<QGraphicsItem*>& items, const QRectF& itemBounds)
 {
-    const std::optional<PlotBounds> bounds = dataBounds(items);
+    const std::optional<PlotBounds> bounds = directCurveBounds(items);
     if (!bounds.has_value()) {
         return;
     }
-
-    const QRectF target = plotRect(itemBounds);
+    const QRectF target = legacyPlotRect(itemBounds);
     const qreal scaleX = target.width() / (bounds->x.maximum - bounds->x.minimum);
     const qreal scaleY = target.height() / (bounds->y.maximum - bounds->y.minimum);
     const qreal dx = target.left() - (bounds->x.minimum * scaleX);
     const qreal dy = target.bottom() + (bounds->y.minimum * scaleY);
     const QTransform transform(scaleX, 0.0, 0.0, -scaleY, dx, dy);
-
     for (QGraphicsItem* item : items) {
-        auto* curve = dynamic_cast<PlotCurveItem*>(item);
-        if (curve != nullptr) {
+        if (auto* curve = dynamic_cast<PlotCurveItem*>(item)) {
             curve->setTransform(transform, false);
+            const QPen curvePen = curve->pen();
+            if (curvePen.style() != Qt::NoPen && curvePen.color() == QColor(255, 255, 255)
+                && std::abs(curvePen.widthF() - 1.0) < 1.0e-9) {
+                QPen legacyPen = curvePen;
+                legacyPen.setColor(QColor(200, 200, 200));
+                curve->setPen(legacyPen);
+            }
         }
     }
 }
 
 } // namespace
 
+class TitleLabel : public QGraphicsWidget {
+public:
+    explicit TitleLabel(QGraphicsItem* parent = nullptr)
+        : QGraphicsWidget(parent)
+    {
+        setPreferredHeight(0.0);
+        setMinimumHeight(0.0);
+        setMaximumHeight(0.0);
+        setVisible(false);
+    }
+
+    void setText(const QString& text)
+    {
+        text_ = text;
+        const bool shown = !text_.isEmpty();
+        setVisible(shown);
+        setMinimumHeight(shown ? 28.0 : 0.0);
+        setMaximumHeight(shown ? 28.0 : 0.0);
+        setPreferredHeight(shown ? 28.0 : 0.0);
+        updateGeometry();
+        update();
+    }
+
+    [[nodiscard]] QString text() const
+    {
+        return text_;
+    }
+
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override
+    {
+        Q_UNUSED(option);
+        Q_UNUSED(widget);
+        if (painter == nullptr || text_.isEmpty()) {
+            return;
+        }
+        painter->setRenderHint(QPainter::TextAntialiasing, true);
+        painter->setPen(QPen(QColor(220, 220, 220)));
+        QFont font(QStringLiteral("Sans Serif"), 11);
+        font.setBold(false);
+        painter->setFont(font);
+        painter->drawText(boundingRect(), Qt::AlignCenter, text_);
+    }
+
+private:
+    QString text_;
+};
+
 PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags)
     : GraphicsWidget(parent, flags)
 {
+    layout_ = new QGraphicsGridLayout;
+    layout_->setContentsMargins(1.0, 1.0, 1.0, 1.0);
+    layout_->setHorizontalSpacing(0.0);
+    layout_->setVerticalSpacing(0.0);
+    setLayout(layout_);
+
+    vb_ = new ViewBox(this);
+    layout_->addItem(vb_, 2, 1);
+
+    titleLabel_ = new TitleLabel(this);
+    layout_->addItem(titleLabel_, 0, 1);
+
+    axes_[topIndex] = new AxisItem(AxisItem::Orientation::Top, this);
+    axes_[bottomIndex] = new AxisItem(AxisItem::Orientation::Bottom, this);
+    axes_[leftIndex] = new AxisItem(AxisItem::Orientation::Left, this);
+    axes_[rightIndex] = new AxisItem(AxisItem::Orientation::Right, this);
+
+    layout_->addItem(axes_[topIndex], 1, 1);
+    layout_->addItem(axes_[bottomIndex], 3, 1);
+    layout_->addItem(axes_[leftIndex], 2, 0);
+    layout_->addItem(axes_[rightIndex], 2, 2);
+
+    for (int row = 0; row < 4; ++row) {
+        layout_->setRowPreferredHeight(row, 0.0);
+        layout_->setRowMinimumHeight(row, 0.0);
+        layout_->setRowSpacing(row, 0.0);
+        layout_->setRowStretchFactor(row, 1);
+    }
+    for (int column = 0; column < 3; ++column) {
+        layout_->setColumnPreferredWidth(column, 0.0);
+        layout_->setColumnMinimumWidth(column, 0.0);
+        layout_->setColumnSpacing(column, 0.0);
+        layout_->setColumnStretchFactor(column, 1);
+    }
+    layout_->setRowStretchFactor(2, 100);
+    layout_->setColumnStretchFactor(1, 100);
+
+    for (auto* axisItem : axes_) {
+        axisItem->setZValue(0.5);
+        axisItem->setFlag(QGraphicsItem::ItemNegativeZStacksBehindParent);
+    }
+    showAxis(QStringLiteral("left"), true);
+    showAxis(QStringLiteral("bottom"), true);
+    showAxis(QStringLiteral("top"), false);
+    showAxis(QStringLiteral("right"), false);
+
+    connectAxisRanges();
+    syncAxisRanges();
+    initialized_ = true;
 }
 
 PlotItem::~PlotItem() = default;
 
-QVariant PlotItem::itemChange(GraphicsItemChange change, const QVariant& value)
+ViewBox* PlotItem::getViewBox() noexcept
 {
-    const QVariant result = GraphicsWidget::itemChange(change, value);
+    return vb_;
+}
 
-    switch (change) {
-    case QGraphicsItem::ItemChildAddedChange:
-        updateCurveTransforms();
-        break;
-    case QGraphicsItem::ItemChildRemovedChange:
-        if (auto* curve = dynamic_cast<PlotCurveItem*>(value.value<QGraphicsItem*>())) {
-            curve->setTransform(QTransform{}, false);
-        }
-        updateCurveTransforms();
-        break;
-    default:
-        break;
+const ViewBox* PlotItem::getViewBox() const noexcept
+{
+    return vb_;
+}
+
+void PlotItem::addItem(QGraphicsItem* item, bool ignoreBounds, const QString& name)
+{
+    if (item == nullptr) {
+        throw std::invalid_argument("PlotItem::addItem requires a non-null item");
+    }
+    if (std::find(items_.begin(), items_.end(), item) != items_.end()) {
+        return;
     }
 
+    items_.push_back(item);
+    {
+        ScopedBool guard(forwardingChild_);
+        vb_->addItem(item, ignoreBounds);
+    }
+    if (legend_ != nullptr && !name.isEmpty()) {
+        legend_->addItem(item, name);
+    }
+    syncAxisRanges();
+    update();
+}
+
+void PlotItem::removeItem(QGraphicsItem* item)
+{
+    if (item == nullptr) {
+        return;
+    }
+    items_.erase(std::remove(items_.begin(), items_.end(), item), items_.end());
+    if (legend_ != nullptr) {
+        legend_->removeItem(item);
+    }
+    vb_->removeItem(item);
+    detachDirectChild(item);
+    ownedCurves_.erase(std::remove_if(ownedCurves_.begin(), ownedCurves_.end(), [item](const auto& curve) {
+        return curve.get() == item;
+    }), ownedCurves_.end());
+    syncAxisRanges();
+    update();
+}
+
+void PlotItem::clear()
+{
+    if (legend_ != nullptr) {
+        legend_->clear();
+    }
+    const auto items = items_;
+    for (QGraphicsItem* item : items) {
+        vb_->removeItem(item);
+        detachDirectChild(item);
+    }
+    items_.clear();
+    ownedCurves_.clear();
+    vb_->clear();
+    syncAxisRanges();
+    update();
+}
+
+PlotCurveItem* PlotItem::plot(std::span<const double> y, const QString& name)
+{
+    auto curve = std::make_unique<PlotCurveItem>();
+    PlotCurveItem* result = curve.get();
+    curve->setData(y);
+    ownedCurves_.push_back(std::move(curve));
+    addItem(result, false, name);
     return result;
+}
+
+PlotCurveItem* PlotItem::plot(std::span<const double> x, std::span<const double> y, const QString& name)
+{
+    auto curve = std::make_unique<PlotCurveItem>();
+    PlotCurveItem* result = curve.get();
+    curve->setData(x, y);
+    ownedCurves_.push_back(std::move(curve));
+    addItem(result, false, name);
+    return result;
+}
+
+LegendItem* PlotItem::addLegend(std::optional<QPointF> offset)
+{
+    if (legend_ == nullptr) {
+        legend_ = new LegendItem(offset);
+        legend_->setParentItem(vb_);
+        legend_->setZValue(10.0);
+    }
+    return legend_;
+}
+
+LegendItem* PlotItem::legend() noexcept
+{
+    return legend_;
+}
+
+const LegendItem* PlotItem::legend() const noexcept
+{
+    return legend_;
+}
+
+AxisItem* PlotItem::getAxis(const QString& name)
+{
+    return axis(axisSlot(name));
+}
+
+const AxisItem* PlotItem::getAxis(const QString& name) const
+{
+    return axis(axisSlot(name));
+}
+
+void PlotItem::setLabel(const QString& axisName, const QString& text, const QString& units, const QString& unitPrefix)
+{
+    AxisItem* selectedAxis = getAxis(axisName);
+    selectedAxis->setLabel(text, units, unitPrefix);
+    showAxis(axisName, true);
+}
+
+void PlotItem::setTitle(const QString& title)
+{
+    titleLabel_->setText(title);
+}
+
+void PlotItem::showAxis(const QString& axisName, bool show)
+{
+    AxisItem* selectedAxis = getAxis(axisName);
+    if (show) {
+        selectedAxis->show();
+    } else {
+        selectedAxis->hide();
+    }
+}
+
+void PlotItem::hideAxis(const QString& axisName)
+{
+    showAxis(axisName, false);
+}
+
+void PlotItem::setRange(const QRectF& rect, qreal padding, bool update, bool disableAutoRange)
+{
+    vb_->setRange(rect, padding, update, disableAutoRange);
+    syncAxisRanges();
+}
+
+void PlotItem::setXRange(qreal minimum, qreal maximum, qreal padding, bool update)
+{
+    vb_->setXRange(minimum, maximum, padding, update);
+    syncAxisRanges();
+}
+
+void PlotItem::setYRange(qreal minimum, qreal maximum, qreal padding, bool update)
+{
+    vb_->setYRange(minimum, maximum, padding, update);
+    syncAxisRanges();
+}
+
+void PlotItem::autoRange(std::optional<qreal> padding)
+{
+    vb_->autoRange(padding);
+    syncAxisRanges();
+}
+
+ViewBox::Range2D PlotItem::viewRange() const
+{
+    return vb_->viewRange();
+}
+
+QRectF PlotItem::viewRect() const
+{
+    return vb_->viewRect();
 }
 
 void PlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
+    if (painter == nullptr) {
+        return;
+    }
 
     const QRectF itemBounds = boundingRect();
     painter->fillRect(itemBounds, Qt::black);
 
     const QList<QGraphicsItem*> children = childItems();
-    const std::optional<PlotBounds> bounds = dataBounds(children);
+    applyDirectCurveTransforms(children, itemBounds);
+    const std::optional<PlotBounds> bounds = directCurveBounds(children);
     if (!bounds.has_value()) {
         return;
     }
@@ -316,19 +582,142 @@ void PlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     painter->setPen(QPen(QColor(150, 150, 150), 1));
     painter->drawLine(QPointF(axisLeft(itemBounds), itemBounds.top()), QPointF(axisLeft(itemBounds), axisBottom(itemBounds)));
     painter->drawLine(QPointF(axisLeft(itemBounds), axisBottom(itemBounds)), QPointF(itemBounds.right(), axisBottom(itemBounds)));
-    drawTicks(*painter, itemBounds, *bounds);
+    drawLegacyTicks(*painter, itemBounds, *bounds);
+}
+
+PlotItem::AxisSlot PlotItem::axisSlot(const QString& name)
+{
+    const QString axis = normalizedAxisName(name);
+    if (axis == QStringLiteral("top")) {
+        return AxisSlot::Top;
+    }
+    if (axis == QStringLiteral("bottom")) {
+        return AxisSlot::Bottom;
+    }
+    if (axis == QStringLiteral("left")) {
+        return AxisSlot::Left;
+    }
+    if (axis == QStringLiteral("right")) {
+        return AxisSlot::Right;
+    }
+    throw std::invalid_argument("PlotItem axis must be one of top, bottom, left, or right");
+}
+
+AxisItem* PlotItem::axis(AxisSlot slot) noexcept
+{
+    return axes_[static_cast<std::size_t>(slot)];
+}
+
+const AxisItem* PlotItem::axis(AxisSlot slot) const noexcept
+{
+    return axes_[static_cast<std::size_t>(slot)];
+}
+
+bool PlotItem::isInternalChild(const QGraphicsItem* item) const noexcept
+{
+    if (item == nullptr || item == vb_ || item == titleLabel_ || item == legend_) {
+        return true;
+    }
+    return std::any_of(axes_.begin(), axes_.end(), [item](const AxisItem* axisItem) {
+        return item == axisItem;
+    });
+}
+
+void PlotItem::connectAxisRanges()
+{
+    QObject::connect(vb_, &ViewBox::sigXRangeChanged, vb_, [this](ViewBox*, ViewBox::AxisRange range) {
+        axes_[topIndex]->setRange(range[0], range[1]);
+        axes_[bottomIndex]->setRange(range[0], range[1]);
+    });
+    QObject::connect(vb_, &ViewBox::sigYRangeChanged, vb_, [this](ViewBox*, ViewBox::AxisRange range) {
+        axes_[leftIndex]->setRange(range[0], range[1]);
+        axes_[rightIndex]->setRange(range[0], range[1]);
+    });
+    QObject::connect(vb_, &ViewBox::sigRangeChanged, vb_, [this](ViewBox*, ViewBox::Range2D, std::array<bool, 2>) {
+        syncAxisRanges();
+    });
+}
+
+void PlotItem::syncAxisRanges()
+{
+    const ViewBox::Range2D range = vb_->viewRange();
+    axes_[topIndex]->setRange(range[ViewBox::XAxis][0], range[ViewBox::XAxis][1]);
+    axes_[bottomIndex]->setRange(range[ViewBox::XAxis][0], range[ViewBox::XAxis][1]);
+    axes_[leftIndex]->setRange(range[ViewBox::YAxis][0], range[ViewBox::YAxis][1]);
+    axes_[rightIndex]->setRange(range[ViewBox::YAxis][0], range[ViewBox::YAxis][1]);
+    applyDirectCurveTransforms(childItems(), boundingRect());
+    update();
 }
 
 void PlotItem::updateCurveTransforms()
 {
-    applyCurveTransforms(childItems(), boundingRect());
+    const QList<QGraphicsItem*> children = childItems();
+    const bool hasDirectCurves = directCurveBounds(children).has_value();
+    if (hasDirectCurves) {
+        axes_[leftIndex]->hide();
+        axes_[bottomIndex]->hide();
+        axes_[topIndex]->hide();
+        axes_[rightIndex]->hide();
+    }
+    applyDirectCurveTransforms(children, boundingRect());
+    if (vb_ != nullptr && !hasDirectCurves) {
+        vb_->autoRange();
+        syncAxisRanges();
+    }
     update();
+}
+
+void PlotItem::detachDirectChild(QGraphicsItem* item)
+{
+    if (item == nullptr || item->parentItem() != this) {
+        return;
+    }
+    item->setTransform(QTransform{}, false);
+    item->setParentItem(nullptr);
+    if (auto* itemScene = item->scene(); itemScene != nullptr && itemScene == scene()) {
+        itemScene->removeItem(item);
+    }
+}
+
+QVariant PlotItem::itemChange(GraphicsItemChange change, const QVariant& value)
+{
+    const QVariant result = GraphicsWidget::itemChange(change, value);
+
+    if (!initialized_ || forwardingChild_) {
+        return result;
+    }
+
+    if (change == QGraphicsItem::ItemChildAddedChange) {
+        auto* item = value.value<QGraphicsItem*>();
+        if (!isInternalChild(item) && dynamic_cast<PlotCurveItem*>(item) != nullptr) {
+            if (std::find(items_.begin(), items_.end(), item) == items_.end()) {
+                items_.push_back(item);
+            }
+            axes_[leftIndex]->hide();
+            axes_[bottomIndex]->hide();
+            axes_[topIndex]->hide();
+            axes_[rightIndex]->hide();
+            updateCurveTransforms();
+        }
+    } else if (change == QGraphicsItem::ItemChildRemovedChange) {
+        auto* item = value.value<QGraphicsItem*>();
+        if (!isInternalChild(item) && dynamic_cast<PlotCurveItem*>(item) != nullptr) {
+            item->setTransform(QTransform{}, false);
+            items_.erase(std::remove(items_.begin(), items_.end(), item), items_.end());
+            if (legend_ != nullptr) {
+                legend_->removeItem(item);
+            }
+            updateCurveTransforms();
+        }
+    }
+
+    return result;
 }
 
 void PlotItem::resizeEvent(QGraphicsSceneResizeEvent* event)
 {
-    QGraphicsWidget::resizeEvent(event);
-    updateCurveTransforms();
+    GraphicsWidget::resizeEvent(event);
+    syncAxisRanges();
 }
 
 } // namespace pyqtgraph::graphicsItems
