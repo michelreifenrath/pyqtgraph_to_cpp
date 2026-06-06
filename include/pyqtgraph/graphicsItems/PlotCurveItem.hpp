@@ -8,6 +8,7 @@
 #include "GraphicsObject.hpp"
 
 #include <QtCore/QRectF>
+#include <QtGui/QPen>
 #include <QtWidgets/QGraphicsItem>
 
 #include <span>
@@ -29,8 +30,23 @@ public:
     PlotCurveItem(PlotCurveItem&&) = delete;
     PlotCurveItem& operator=(PlotCurveItem&&) = delete;
 
+    enum class ConnectMode { All, Pairs, Finite };
+    enum class StepMode { None, Left, Right, Center };
+
     void setData(std::span<const double> y);
     void setData(std::span<const double> x, std::span<const double> y);
+
+    void setPen(const QPen& pen);
+    [[nodiscard]] QPen pen() const;
+
+    void setConnectMode(ConnectMode mode);
+    [[nodiscard]] ConnectMode connectMode() const noexcept;
+
+    void setStepMode(StepMode mode);
+    [[nodiscard]] StepMode stepMode() const noexcept;
+
+    void setSkipFiniteCheck(bool skipFiniteCheck);
+    [[nodiscard]] bool skipFiniteCheck() const noexcept;
 
     [[nodiscard]] std::span<const double> xData() const noexcept;
     [[nodiscard]] std::span<const double> yData() const noexcept;
@@ -39,9 +55,16 @@ public:
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
 private:
+    void refreshDataBoundsCache();
+
     std::vector<double> xData_;
     std::vector<double> yData_;
+    std::vector<double> dataBoundsYData_;
     QRectF bounds_;
+    QPen pen_;
+    ConnectMode connectMode_ = ConnectMode::All;
+    StepMode stepMode_ = StepMode::None;
+    bool skipFiniteCheck_ = false;
 };
 
 } // namespace pyqtgraph::graphicsItems
