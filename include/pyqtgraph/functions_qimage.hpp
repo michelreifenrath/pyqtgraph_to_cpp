@@ -29,18 +29,45 @@ struct MakeQImageOptions {
     std::optional<bool> alpha = std::nullopt;
 };
 
+struct ImageLevels {
+    double minimum = 0.0;
+    double maximum = 255.0;
+};
+
+struct ImageLookupTable {
+    // Shape is (rows, channels), where channels is 1, 3, or 4 uint8 columns.
+    core::ArrayView<const std::uint8_t, 2> values;
+};
+
+struct TryMakeQImageOptions {
+    std::optional<ImageLevels> levels = std::nullopt;
+    std::optional<ImageLookupTable> lut = std::nullopt;
+};
+
 [[nodiscard]] QImage makeQImage(core::ArrayView<const std::uint8_t, 2> imageData,
                                 const MakeQImageOptions& options = {});
 [[nodiscard]] QImage makeQImage(core::ArrayView<const std::uint8_t, 3> imageData,
                                 const MakeQImageOptions& options = {});
 
 #if PYQTGRAPH_CPP_HAS_QIMAGE_HEADER
-// Upstream try_make_qimage pass-through (no levels/LUT); unsupported -> nullopt, else contiguous copy.
-// Hidden when QImage is unavailable so no-Qt header consumers never instantiate std::optional<QImage>.
+// Upstream try_make_qimage pass-through plus focused levels/LUT support; unsupported -> nullopt,
+// else contiguous copy. Hidden when QImage is unavailable so no-Qt header consumers never instantiate std::optional<QImage>.
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData,
+                                                  const TryMakeQImageOptions& options);
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData,
+                                                  const TryMakeQImageOptions& options);
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData,
+                                                  const TryMakeQImageOptions& options);
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData,
+                                                  const TryMakeQImageOptions& options);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const float, 2> imageData,
+                                                  const TryMakeQImageOptions& options = {});
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const double, 2> imageData,
+                                                  const TryMakeQImageOptions& options = {});
 #endif
 
 } // namespace pyqtgraph

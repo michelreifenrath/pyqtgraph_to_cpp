@@ -32,6 +32,7 @@
 #define PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS 0
 #endif
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -184,6 +185,96 @@ public:
 };
 
 #endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
+
+struct RescaleClip {
+    double minimum = 0.0;
+    double maximum = 0.0;
+};
+
+template <typename Output, typename Input>
+[[nodiscard]] Output rescaleDataValue(Input value,
+                                      double scale,
+                                      double offset,
+                                      std::optional<RescaleClip> clip = std::nullopt)
+{
+    long double scaled = (static_cast<long double>(value) - static_cast<long double>(offset)) *
+                         static_cast<long double>(scale);
+
+    if constexpr (std::is_integral_v<detail::remove_cvref_t<Output>>) {
+        RescaleClip effectiveClip{static_cast<double>(std::numeric_limits<Output>::min()),
+                                  static_cast<double>(std::numeric_limits<Output>::max())};
+        if (clip.has_value()) {
+            effectiveClip.minimum = std::max(std::trunc(clip->minimum), effectiveClip.minimum);
+            effectiveClip.maximum = std::min(std::trunc(clip->maximum), effectiveClip.maximum);
+        }
+        if (!std::isfinite(static_cast<double>(scaled))) {
+            scaled = 0.0L;
+        }
+        scaled = std::clamp(scaled,
+                            static_cast<long double>(effectiveClip.minimum),
+                            static_cast<long double>(effectiveClip.maximum));
+    } else if (clip.has_value()) {
+        scaled = std::clamp(scaled, static_cast<long double>(clip->minimum), static_cast<long double>(clip->maximum));
+    }
+
+    return static_cast<Output>(scaled);
+}
+
+template <typename Output, typename Input>
+[[nodiscard]] std::vector<Output> rescaleData(std::span<const Input> values,
+                                              double scale,
+                                              double offset,
+                                              std::optional<RescaleClip> clip = std::nullopt)
+{
+    std::vector<Output> result;
+    result.reserve(values.size());
+    const Input* data = values.data();
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        result.push_back(rescaleDataValue<Output>(data[index], scale, offset, clip));
+    }
+    return result;
+}
+
+template <typename Output, typename Container>
+[[nodiscard]] std::vector<Output> rescaleData(const Container& values,
+                                              double scale,
+                                              double offset,
+                                              std::optional<RescaleClip> clip = std::nullopt)
+{
+    using Input = std::remove_cv_t<std::remove_pointer_t<decltype(values.data())>>;
+    return rescaleData<Output>(std::span<const Input>(values.data(), values.size()), scale, offset, clip);
+}
+
+template <typename Index>
+[[nodiscard]] std::uint8_t applyLookupTableValue(Index index, std::span<const std::uint8_t> lut)
+{
+    if (lut.empty()) {
+        throw std::invalid_argument("applyLookupTable requires a non-empty LUT");
+    }
+    long long clipped = static_cast<long long>(index);
+    clipped = std::clamp(clipped, 0LL, static_cast<long long>(lut.size() - 1));
+    return lut.data()[static_cast<std::size_t>(clipped)];
+}
+
+template <typename Index>
+[[nodiscard]] std::vector<std::uint8_t> applyLookupTable(std::span<const Index> indices,
+                                                         std::span<const std::uint8_t> lut)
+{
+    std::vector<std::uint8_t> result;
+    result.reserve(indices.size());
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+        result.push_back(applyLookupTableValue(indices.data()[i], lut));
+    }
+    return result;
+}
+
+template <typename IndexContainer, typename LutContainer>
+[[nodiscard]] std::vector<std::uint8_t> applyLookupTable(const IndexContainer& indices, const LutContainer& lut)
+{
+    using Index = std::remove_cv_t<std::remove_pointer_t<decltype(indices.data())>>;
+    return applyLookupTable(std::span<const Index>(indices.data(), indices.size()),
+                            std::span<const std::uint8_t>(lut.data(), lut.size()));
+}
 
 [[nodiscard]] float nanmin(std::span<const float> values);
 [[nodiscard]] double nanmin(std::span<const double> values);

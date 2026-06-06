@@ -6,8 +6,11 @@
 
 #include "../../include/pyqtgraph/functions_qimage.hpp"
 
+#include "../../include/pyqtgraph/functions.hpp"
+
 #include <QColor>
 #include <QImage>
+#include <QList>
 
 #include <bit>
 #include <cstddef>
@@ -15,6 +18,7 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <vector>
 
 namespace pyqtgraph {
 namespace {
@@ -154,6 +158,243 @@ template <typename T, std::size_t Rank>
     return image;
 }
 
+[[nodiscard]] bool hasLevelsOrLut(const TryMakeQImageOptions& options)
+{
+    return options.levels.has_value() || options.lut.has_value();
+}
+
+[[nodiscard]] bool isValidLookupTable(const ImageLookupTable& lut)
+{
+    const auto& shape = lut.values.shape();
+    if (lut.values.data() == nullptr || shape[0] == 0) {
+        return false;
+    }
+    return shape[1] == 1 || shape[1] == 3 || shape[1] == 4;
+}
+
+[[nodiscard]] double nonZeroRange(const ImageLevels& levels)
+{
+    const double range = levels.maximum - levels.minimum;
+    return range == 0.0 ? 1.0 : range;
+}
+
+template <typename T>
+[[nodiscard]] std::size_t scaledLookupRow(T value,
+                                          const ImageLevels& levels,
+                                          double maximumScaleValue,
+                                          std::size_t clipMaximum)
+{
+    const int index = rescaleDataValue<int>(value,
+                                            maximumScaleValue / nonZeroRange(levels),
+                                            levels.minimum,
+                                            RescaleClip{0.0, static_cast<double>(clipMaximum)});
+    return static_cast<std::size_t>(index);
+}
+
+template <typename T>
+[[nodiscard]] std::uint8_t scaledIndex(T value, const ImageLevels& levels, double maximumScaleValue, std::size_t clipMaximum)
+{
+    return static_cast<std::uint8_t>(scaledLookupRow(value, levels, maximumScaleValue, clipMaximum));
+}
+
+[[nodiscard]] QRgb lutColor(const ImageLookupTable& lut, std::size_t row)
+{
+    const auto& shape = lut.values.shape();
+    const int red = static_cast<int>(lut.values(row, 0));
+    if (shape[1] == 1) {
+        return qRgb(red, red, red);
+    }
+    const int green = static_cast<int>(lut.values(row, 1));
+    const int blue = static_cast<int>(lut.values(row, 2));
+    if (shape[1] == 3) {
+        return qRgb(red, green, blue);
+    }
+    return qRgba(red, green, blue, static_cast<int>(lut.values(row, 3)));
+}
+
+[[nodiscard]] std::vector<QRgb> colorTableFromLookupTable(const ImageLookupTable& lut)
+{
+    std::vector<QRgb> colors;
+    colors.reserve(lut.values.shape()[0]);
+    for (std::size_t row = 0; row < lut.values.shape()[0]; ++row) {
+        colors.push_back(lutColor(lut, row));
+    }
+    return colors;
+}
+
+[[nodiscard]] std::vector<QRgb> grayscaleLevelsColorTable(const ImageLevels& levels)
+{
+    std::vector<QRgb> colors;
+    colors.reserve(256);
+    for (int value = 0; value < 256; ++value) {
+        const int gray = static_cast<int>(scaledIndex(value, levels, 255.0, 255));
+        colors.push_back(qRgb(gray, gray, gray));
+    }
+    return colors;
+}
+
+[[nodiscard]] std::vector<QRgb> effectiveUint8ColorTable(const TryMakeQImageOptions& options)
+{
+    if (!options.lut.has_value()) {
+        return grayscaleLevelsColorTable(*options.levels);
+    }
+
+    const ImageLevels levels = options.levels.value_or(ImageLevels{0.0, 255.0});
+    const ImageLookupTable& lut = *options.lut;
+    const std::size_t rowCount = lut.values.shape()[0];
+    std::vector<QRgb> colors;
+    colors.reserve(256);
+    for (int value = 0; value < 256; ++value) {
+        const std::uint8_t row = scaledIndex(value, levels, static_cast<double>(rowCount), rowCount - 1);
+        colors.push_back(lutColor(lut, row));
+    }
+    return colors;
+}
+
+void setColorTable(QImage& image, const std::vector<QRgb>& colors)
+{
+    QList<QRgb> table;
+    table.reserve(static_cast<qsizetype>(colors.size()));
+    for (QRgb color : colors) {
+        table.append(color);
+    }
+    image.setColorTable(table);
+}
+
+[[nodiscard]] std::optional<QImage> makeIndexed8FromUint8(core::ArrayView<const std::uint8_t, 2> imageData,
+                                                          const std::vector<QRgb>& colorTable)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Indexed8);
+    setColorTable(image, colorTable);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            row[x] = imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x));
+        }
+    }
+
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] std::optional<QImage> makeScaledGrayscale8(core::ArrayView<const T, 2> imageData, const ImageLevels& levels)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Grayscale8);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            row[x] = scaledIndex(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x)), levels, 255.0, 255);
+        }
+    }
+
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] std::optional<QImage> makeScaledIndexed8(core::ArrayView<const T, 2> imageData,
+                                                       const ImageLevels& levels,
+                                                       const ImageLookupTable& lut)
+{
+    const std::size_t rowCount = lut.values.shape()[0];
+    if (rowCount > 256) {
+        return std::nullopt;
+    }
+
+    const auto colorTable = colorTableFromLookupTable(lut);
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Indexed8);
+    setColorTable(image, colorTable);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            row[x] = scaledIndex(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x)),
+                                 levels,
+                                 static_cast<double>(rowCount),
+                                 rowCount - 1);
+        }
+    }
+
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] std::optional<QImage> makeScaledAndApplyLookup(core::ArrayView<const T, 2> imageData,
+                                                             const ImageLevels& levels,
+                                                             const ImageLookupTable& lut)
+{
+    const auto& lutShape = lut.values.shape();
+    const std::size_t rowCount = lutShape[0];
+    const std::size_t channels = lutShape[1];
+    const auto& imageShape = imageData.shape();
+    const int width = static_cast<int>(imageShape[1]);
+    const int height = static_cast<int>(imageShape[0]);
+    const QImage::Format format = channels == 1 ? QImage::Format_Grayscale8
+                                 : channels == 3 ? QImage::Format_RGB888
+                                                 : QImage::Format_RGBA8888;
+    QImage image = allocateQImage(width, height, format);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const std::size_t lutRow = scaledLookupRow(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x)),
+                                                       levels,
+                                                       static_cast<double>(rowCount),
+                                                       rowCount - 1);
+            const std::size_t base = static_cast<std::size_t>(x) * channels;
+            if (channels == 1) {
+                row[x] = lut.values(lutRow, 0);
+            } else {
+                row[base + 0] = lut.values(lutRow, 0);
+                row[base + 1] = lut.values(lutRow, 1);
+                row[base + 2] = lut.values(lutRow, 2);
+                if (channels == 4) {
+                    row[base + 3] = lut.values(lutRow, 3);
+                }
+            }
+        }
+    }
+
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] std::optional<QImage> makeScaledRgb888(core::ArrayView<const T, 3> imageData, const ImageLevels& levels)
+{
+    const auto& shape = imageData.shape();
+    if (shape[2] != 3) {
+        return std::nullopt;
+    }
+
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_RGB888);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const std::size_t rowIndex = static_cast<std::size_t>(y);
+            const std::size_t colIndex = static_cast<std::size_t>(x);
+            const std::size_t base = static_cast<std::size_t>(x) * 3;
+            row[base + 0] = scaledIndex(imageData(rowIndex, colIndex, 0), levels, 255.0, 255);
+            row[base + 1] = scaledIndex(imageData(rowIndex, colIndex, 1), levels, 255.0, 255);
+            row[base + 2] = scaledIndex(imageData(rowIndex, colIndex, 2), levels, 255.0, 255);
+        }
+    }
+
+    return image;
+}
+
 } // namespace
 
 QImage makeQImage(core::ArrayView<const std::uint8_t, 2> imageData, const MakeQImageOptions& options)
@@ -244,6 +485,22 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> image
     return image;
 }
 
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData,
+                                    const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (!hasLevelsOrLut(options)) {
+        return tryMakeQImage(imageData);
+    }
+    if (options.lut.has_value() && !isValidLookupTable(*options.lut)) {
+        return std::nullopt;
+    }
+
+    return makeIndexed8FromUint8(imageData, effectiveUint8ColorTable(options));
+}
+
 std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData)
 {
     if (!hasTryMakeData(imageData)) {
@@ -283,6 +540,21 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
     return image;
 }
 
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData,
+                                    const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (!hasLevelsOrLut(options)) {
+        return tryMakeQImage(imageData);
+    }
+    if (options.lut.has_value() || !options.levels.has_value()) {
+        return std::nullopt;
+    }
+    return makeScaledRgb888(imageData, *options.levels);
+}
+
 std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData)
 {
     if (!hasTryMakeData(imageData)) {
@@ -305,6 +577,29 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imag
     }
 
     return image;
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData,
+                                    const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (!hasLevelsOrLut(options)) {
+        return tryMakeQImage(imageData);
+    }
+    if (options.lut.has_value() && !isValidLookupTable(*options.lut)) {
+        return std::nullopt;
+    }
+
+    const ImageLevels levels = options.levels.value_or(ImageLevels{0.0, 65535.0});
+    if (options.lut.has_value()) {
+        if (options.lut->values.shape()[0] <= 256) {
+            return makeScaledIndexed8(imageData, levels, *options.lut);
+        }
+        return makeScaledAndApplyLookup(imageData, levels, *options.lut);
+    }
+    return makeScaledGrayscale8(imageData, levels);
 }
 
 std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData)
@@ -339,6 +634,49 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imag
     }
 
     return image;
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData,
+                                    const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (!hasLevelsOrLut(options)) {
+        return tryMakeQImage(imageData);
+    }
+    if (options.lut.has_value() || !options.levels.has_value()) {
+        return std::nullopt;
+    }
+    return makeScaledRgb888(imageData, *options.levels);
+}
+
+template <typename T>
+std::optional<QImage> tryMakeFloatQImage(core::ArrayView<const T, 2> imageData, const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData) || !options.levels.has_value()) {
+        return std::nullopt;
+    }
+    if (options.lut.has_value()) {
+        if (!isValidLookupTable(*options.lut)) {
+            return std::nullopt;
+        }
+        if (options.lut->values.shape()[0] <= 256) {
+            return makeScaledIndexed8(imageData, *options.levels, *options.lut);
+        }
+        return makeScaledAndApplyLookup(imageData, *options.levels, *options.lut);
+    }
+    return makeScaledGrayscale8(imageData, *options.levels);
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const float, 2> imageData, const TryMakeQImageOptions& options)
+{
+    return tryMakeFloatQImage(imageData, options);
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const double, 2> imageData, const TryMakeQImageOptions& options)
+{
+    return tryMakeFloatQImage(imageData, options);
 }
 
 } // namespace pyqtgraph

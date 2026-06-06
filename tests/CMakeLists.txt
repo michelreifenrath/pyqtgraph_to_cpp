@@ -158,6 +158,12 @@ if(_pyqtgraph_cpp_has_mkcolor)
         pyqtgraph_cpp.core.functions_qimage
     )
     set_tests_properties(pyqtgraph_cpp.core.functions_qimage PROPERTIES LABELS P2.11)
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_core_image_levels
+        core/test_image_levels.cpp
+        pyqtgraph_cpp.core.image_levels
+    )
+    set_tests_properties(pyqtgraph_cpp.core.image_levels PROPERTIES LABELS P2.12)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_colormap core/test_ColorMap.cpp pyqtgraph_cpp.core.ColorMap)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_colormap_lut core/test_ColorMap_LUT.cpp pyqtgraph_cpp.core.ColorMap.LUT)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_mkpen_mkbrush core/test_mkPen_mkBrush.cpp pyqtgraph_cpp.core.mkPen_mkBrush)
