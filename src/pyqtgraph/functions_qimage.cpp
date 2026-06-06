@@ -15,6 +15,7 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <vector>
 
 namespace pyqtgraph {
 namespace {
@@ -154,6 +155,160 @@ template <typename T, std::size_t Rank>
     return image;
 }
 
+void validateLookupTable(const ImageLookupTable& lut)
+{
+    if (lut.data == nullptr || lut.rows == 0) {
+        throw std::invalid_argument("tryMakeQImage lookup table must contain at least one row");
+    }
+    if (lut.channels != 1 && lut.channels != 3 && lut.channels != 4) {
+        throw std::invalid_argument("tryMakeQImage lookup table must have 1, 3, or 4 channels");
+    }
+    if (lut.rowStride <= 0 || lut.channelStride <= 0) {
+        throw std::invalid_argument("tryMakeQImage lookup table strides must be positive");
+    }
+}
+
+[[nodiscard]] double levelDifference(ImageLevelRange levels)
+{
+    const double difference = levels.maximum - levels.minimum;
+    return difference == 0.0 ? 1.0 : difference;
+}
+
+[[nodiscard]] std::uint8_t scaledGray(double value, ImageLevelRange levels)
+{
+    return rescaleDataToUInt8(value, 255.0 / levelDifference(levels), levels.minimum);
+}
+
+[[nodiscard]] std::size_t scaledLookupIndex(double value, ImageLevelRange levels, const ImageLookupTable& lut)
+{
+    return rescaleDataIndex(value, static_cast<double>(lut.rows) / levelDifference(levels), levels.minimum, lut.rows - 1);
+}
+
+[[nodiscard]] std::array<std::uint8_t, 4> lutColorFor(double value, ImageLevelRange levels, const ImageLookupTable& lut)
+{
+    return applyLookupTable(static_cast<std::int64_t>(scaledLookupIndex(value, levels, lut)), lut);
+}
+
+[[nodiscard]] QRgb qrbgFromColor(std::array<std::uint8_t, 4> color)
+{
+    return qRgba(color[0], color[1], color[2], color[3]);
+}
+
+[[nodiscard]] std::vector<QRgb> makeIndexedColorTable(const TryMakeQImageOptions& options, std::size_t entries)
+{
+    std::vector<QRgb> table(entries);
+    const ImageLevelRange levels = options.levels.value_or(ImageLevelRange{0.0, 255.0});
+    if (options.lut.has_value()) {
+        validateLookupTable(*options.lut);
+        for (std::size_t index = 0; index < entries; ++index) {
+            table[index] = qrbgFromColor(lutColorFor(static_cast<double>(index), levels, *options.lut));
+        }
+    } else {
+        for (std::size_t index = 0; index < entries; ++index) {
+            const std::uint8_t gray = scaledGray(static_cast<double>(index), levels);
+            table[index] = qRgb(gray, gray, gray);
+        }
+    }
+    return table;
+}
+
+void setColorTable(QImage& image, const std::vector<QRgb>& table)
+{
+    image.setColorCount(static_cast<int>(table.size()));
+    for (std::size_t index = 0; index < table.size(); ++index) {
+        image.setColor(static_cast<int>(index), table[index]);
+    }
+}
+
+[[nodiscard]] QImage makeIndexed8FromUInt8(core::ArrayView<const std::uint8_t, 2> imageData,
+                                           const TryMakeQImageOptions& options)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Indexed8);
+    setColorTable(image, makeIndexedColorTable(options, 256));
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            row[x] = imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x));
+        }
+    }
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] QImage makeGrayscale8(core::ArrayView<const T, 2> imageData, ImageLevelRange levels)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Grayscale8);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            row[x] = scaledGray(static_cast<double>(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x))), levels);
+        }
+    }
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] QImage makeIndexed8FromScalar(core::ArrayView<const T, 2> imageData,
+                                            ImageLevelRange levels,
+                                            const ImageLookupTable& lut)
+{
+    validateLookupTable(lut);
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Indexed8);
+
+    TryMakeQImageOptions tableOptions;
+    tableOptions.lut = lut;
+    setColorTable(image, makeIndexedColorTable(tableOptions, lut.rows));
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const double value = static_cast<double>(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x)));
+            row[x] = static_cast<uchar>(scaledLookupIndex(value, levels, lut));
+        }
+    }
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] QImage makeLutApplied(core::ArrayView<const T, 2> imageData, ImageLevelRange levels, const ImageLookupTable& lut)
+{
+    validateLookupTable(lut);
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    const bool grayscale = lut.channels == 1;
+    QImage image = allocateQImage(width, height, grayscale ? QImage::Format_Grayscale8 : QImage::Format_RGBA8888);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const double value = static_cast<double>(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x)));
+            const auto color = lutColorFor(value, levels, lut);
+            if (grayscale) {
+                row[x] = color[0];
+            } else {
+                const std::size_t base = static_cast<std::size_t>(x) * 4;
+                row[base + 0] = color[0];
+                row[base + 1] = color[1];
+                row[base + 2] = color[2];
+                row[base + 3] = color[3];
+            }
+        }
+    }
+    return image;
+}
+
 } // namespace
 
 QImage makeQImage(core::ArrayView<const std::uint8_t, 2> imageData, const MakeQImageOptions& options)
@@ -244,6 +399,19 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> image
     return image;
 }
 
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData,
+                                    const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (!options.levels.has_value() && !options.lut.has_value()) {
+        return tryMakeQImage(imageData);
+    }
+
+    return makeIndexed8FromUInt8(imageData, options);
+}
+
 std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData)
 {
     if (!hasTryMakeData(imageData)) {
@@ -283,6 +451,44 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
     return image;
 }
 
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData,
+                                    const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (!options.levels.has_value() && !options.lut.has_value()) {
+        return tryMakeQImage(imageData);
+    }
+    if (options.lut.has_value()) {
+        return std::nullopt;
+    }
+
+    const auto& shape = imageData.shape();
+    if (shape[2] != 3) {
+        return std::nullopt;
+    }
+
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_RGB888);
+    const ImageLevelRange levels = *options.levels;
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const std::size_t rowIndex = static_cast<std::size_t>(y);
+            const std::size_t colIndex = static_cast<std::size_t>(x);
+            const std::size_t base = static_cast<std::size_t>(x) * 3;
+            row[base + 0] = scaledGray(imageData(rowIndex, colIndex, 0), levels);
+            row[base + 1] = scaledGray(imageData(rowIndex, colIndex, 1), levels);
+            row[base + 2] = scaledGray(imageData(rowIndex, colIndex, 2), levels);
+        }
+    }
+
+    return image;
+}
+
 std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData)
 {
     if (!hasTryMakeData(imageData)) {
@@ -305,6 +511,26 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imag
     }
 
     return image;
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData,
+                                     const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (!options.levels.has_value() && !options.lut.has_value()) {
+        return tryMakeQImage(imageData);
+    }
+
+    const ImageLevelRange levels = options.levels.value_or(ImageLevelRange{0.0, 65535.0});
+    if (!options.lut.has_value()) {
+        return makeGrayscale8(imageData, levels);
+    }
+    if (options.lut->rows <= 256) {
+        return makeIndexed8FromScalar(imageData, levels, *options.lut);
+    }
+    return makeLutApplied(imageData, levels, *options.lut);
 }
 
 std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData)
@@ -339,6 +565,21 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imag
     }
 
     return image;
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const float, 2> imageData, const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData) || !options.levels.has_value()) {
+        return std::nullopt;
+    }
+
+    if (!options.lut.has_value()) {
+        return makeGrayscale8(imageData, *options.levels);
+    }
+    if (options.lut->rows <= 256) {
+        return makeIndexed8FromScalar(imageData, *options.levels, *options.lut);
+    }
+    return makeLutApplied(imageData, *options.levels, *options.lut);
 }
 
 } // namespace pyqtgraph

@@ -7,6 +7,7 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 #include "core/ArrayView.hpp"
+#include "functions.hpp"
 
 #if __has_include(<QImage>)
 #include <QImage>
@@ -29,6 +30,11 @@ struct MakeQImageOptions {
     std::optional<bool> alpha = std::nullopt;
 };
 
+struct TryMakeQImageOptions {
+    std::optional<ImageLevelRange> levels = std::nullopt;
+    std::optional<ImageLookupTable> lut = std::nullopt;
+};
+
 [[nodiscard]] QImage makeQImage(core::ArrayView<const std::uint8_t, 2> imageData,
                                 const MakeQImageOptions& options = {});
 [[nodiscard]] QImage makeQImage(core::ArrayView<const std::uint8_t, 3> imageData,
@@ -38,9 +44,17 @@ struct MakeQImageOptions {
 // Upstream try_make_qimage pass-through (no levels/LUT); unsupported -> nullopt, else contiguous copy.
 // Hidden when QImage is unavailable so no-Qt header consumers never instantiate std::optional<QImage>.
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData,
+                                                  const TryMakeQImageOptions& options);
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData,
+                                                  const TryMakeQImageOptions& options);
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData,
+                                                  const TryMakeQImageOptions& options);
 [[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData);
+[[nodiscard]] std::optional<QImage> tryMakeQImage(core::ArrayView<const float, 2> imageData,
+                                                  const TryMakeQImageOptions& options = {});
 #endif
 
 } // namespace pyqtgraph
