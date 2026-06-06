@@ -902,4 +902,27 @@ long double nanmax(std::span<const long double> values)
     return nanExtrema(values, [](long double lhs, long double rhs) { return lhs > rhs; });
 }
 
+namespace detail {
+
+std::uint8_t rescaleDataToUint8(double value, double scale, double offset)
+{
+    const double scaled = (value - offset) * scale;
+    const double clipped = std::clamp(scaled,
+                                      static_cast<double>(std::numeric_limits<std::uint8_t>::min()),
+                                      static_cast<double>(std::numeric_limits<std::uint8_t>::max()));
+    return static_cast<std::uint8_t>(clipped);
+}
+
+std::size_t clippedLookupIndex(double value, double scale, double offset, std::size_t rowCount)
+{
+    if (rowCount == 0) {
+        throw std::invalid_argument("clippedLookupIndex requires at least one LUT row");
+    }
+    const double scaled = (value - offset) * scale;
+    const double clipped = std::clamp(scaled, 0.0, static_cast<double>(rowCount - 1));
+    return static_cast<std::size_t>(clipped);
+}
+
+} // namespace detail
+
 } // namespace pyqtgraph

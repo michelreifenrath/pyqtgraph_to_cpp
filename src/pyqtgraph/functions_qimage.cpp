@@ -6,9 +6,13 @@
 
 #include "../../include/pyqtgraph/functions_qimage.hpp"
 
+#include "../../include/pyqtgraph/functions.hpp"
+
 #include <QColor>
 #include <QImage>
+#include <QVector>
 
+#include <algorithm>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
@@ -154,6 +158,219 @@ template <typename T, std::size_t Rank>
     return image;
 }
 
+[[nodiscard]] bool hasLevelsOrLut(const TryMakeQImageOptions& options)
+{
+    return options.levels.has_value() || options.lut.has_value();
+}
+
+[[nodiscard]] bool isValidLut(const LookupTableView& lut)
+{
+    if (lut.data == nullptr || lut.rows == 0) {
+        return false;
+    }
+    if (lut.channels != 1 && lut.channels != 3 && lut.channels != 4) {
+        return false;
+    }
+    if (lut.channelStride <= 0) {
+        return false;
+    }
+    const std::ptrdiff_t defaultRowStride = static_cast<std::ptrdiff_t>(lut.channels) * lut.channelStride;
+    const std::ptrdiff_t rowStride = lut.rowStride == 0 ? defaultRowStride : lut.rowStride;
+    return rowStride > 0;
+}
+
+[[nodiscard]] std::ptrdiff_t lutRowStride(const LookupTableView& lut)
+{
+    return lut.rowStride == 0 ? static_cast<std::ptrdiff_t>(lut.channels) * lut.channelStride : lut.rowStride;
+}
+
+[[nodiscard]] std::uint8_t lutValue(const LookupTableView& lut, std::size_t row, std::size_t channel)
+{
+    const std::size_t sourceChannel = lut.channels == 1 ? 0 : channel;
+    return lut.data[static_cast<std::ptrdiff_t>(row) * lutRowStride(lut)
+                    + static_cast<std::ptrdiff_t>(sourceChannel) * lut.channelStride];
+}
+
+[[nodiscard]] QRgb lutColor(const LookupTableView& lut, std::size_t row)
+{
+    if (lut.channels == 1) {
+        const std::uint8_t gray = lutValue(lut, row, 0);
+        return qRgb(gray, gray, gray);
+    }
+    if (lut.channels == 3) {
+        return qRgb(lutValue(lut, row, 0), lutValue(lut, row, 1), lutValue(lut, row, 2));
+    }
+    return qRgba(lutValue(lut, row, 0), lutValue(lut, row, 1), lutValue(lut, row, 2), lutValue(lut, row, 3));
+}
+
+[[nodiscard]] ImageLevels defaultLevels(const std::optional<ImageLevels>& levels, double maximum)
+{
+    return levels.value_or(ImageLevels{0.0, maximum});
+}
+
+[[nodiscard]] double levelRange(const ImageLevels& levels)
+{
+    const double range = levels.maximum - levels.minimum;
+    return range == 0.0 ? 1.0 : range;
+}
+
+[[nodiscard]] QVector<QRgb> grayLevelsColorTable(const ImageLevels& levels)
+{
+    QVector<QRgb> table;
+    table.reserve(256);
+    const double scale = 255.0 / levelRange(levels);
+    for (std::size_t value = 0; value < 256; ++value) {
+        const std::uint8_t gray = detail::rescaleDataToUint8(static_cast<double>(value), scale, levels.minimum);
+        table.append(qRgb(gray, gray, gray));
+    }
+    return table;
+}
+
+[[nodiscard]] QVector<QRgb> combinedLutColorTable(const ImageLevels& levels, const LookupTableView& lut)
+{
+    QVector<QRgb> table;
+    table.reserve(256);
+    const double scale = static_cast<double>(lut.rows) / levelRange(levels);
+    for (std::size_t value = 0; value < 256; ++value) {
+        const std::size_t row = detail::clippedLookupIndex(static_cast<double>(value), scale, levels.minimum, lut.rows);
+        table.append(lutColor(lut, row));
+    }
+    return table;
+}
+
+[[nodiscard]] QImage makeIndexed8FromUint8(core::ArrayView<const std::uint8_t, 2> imageData, const QVector<QRgb>& table)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Indexed8);
+    image.setColorTable(table);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            row[x] = imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x));
+        }
+    }
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] QImage makeGray8Rescaled(core::ArrayView<const T, 2> imageData, const ImageLevels& levels)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Grayscale8);
+    const double scale = 255.0 / levelRange(levels);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            row[x] = detail::rescaleDataToUint8(static_cast<double>(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x))),
+                                                scale,
+                                                levels.minimum);
+        }
+    }
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] QImage makeIndexed8Rescaled(core::ArrayView<const T, 2> imageData,
+                                          const ImageLevels& levels,
+                                          const LookupTableView& lut)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_Indexed8);
+    QVector<QRgb> table;
+    table.reserve(static_cast<qsizetype>(lut.rows));
+    for (std::size_t row = 0; row < lut.rows; ++row) {
+        table.append(lutColor(lut, row));
+    }
+    image.setColorTable(table);
+
+    const double scale = static_cast<double>(lut.rows) / levelRange(levels);
+    for (int y = 0; y < height; ++y) {
+        uchar* out = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const std::size_t row = detail::clippedLookupIndex(
+                static_cast<double>(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x))),
+                scale,
+                levels.minimum,
+                lut.rows);
+            out[x] = static_cast<uchar>(row);
+        }
+    }
+    return image;
+}
+
+[[nodiscard]] QImage allocateLutImage(int width, int height, const LookupTableView& lut)
+{
+    if (lut.channels == 1) {
+        return allocateQImage(width, height, QImage::Format_Grayscale8);
+    }
+    if (lut.channels == 3) {
+        return allocateQImage(width, height, QImage::Format_RGBX8888);
+    }
+    return allocateQImage(width, height, QImage::Format_RGBA8888);
+}
+
+template <typename T>
+[[nodiscard]] QImage makeDirectLutImage(core::ArrayView<const T, 2> imageData,
+                                        const ImageLevels& levels,
+                                        const LookupTableView& lut)
+{
+    const auto& shape = imageData.shape();
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateLutImage(width, height, lut);
+    const double scale = static_cast<double>(lut.rows) / levelRange(levels);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* out = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const std::size_t lutRow = detail::clippedLookupIndex(
+                static_cast<double>(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x))),
+                scale,
+                levels.minimum,
+                lut.rows);
+            if (lut.channels == 1) {
+                out[x] = lutValue(lut, lutRow, 0);
+            } else {
+                const std::size_t base = static_cast<std::size_t>(x) * 4;
+                out[base + 0] = lutValue(lut, lutRow, 0);
+                out[base + 1] = lutValue(lut, lutRow, 1);
+                out[base + 2] = lutValue(lut, lutRow, 2);
+                out[base + 3] = lut.channels == 4 ? lutValue(lut, lutRow, 3) : 255;
+            }
+        }
+    }
+    return image;
+}
+
+template <typename T>
+[[nodiscard]] std::optional<QImage> tryMakeMonoLeveled(core::ArrayView<const T, 2> imageData,
+                                                       const TryMakeQImageOptions& options,
+                                                       double dtypeMaximum)
+{
+    if (options.lut.has_value() && !isValidLut(*options.lut)) {
+        return std::nullopt;
+    }
+
+    const ImageLevels levels = defaultLevels(options.levels, dtypeMaximum);
+    if (!options.lut.has_value()) {
+        return makeGray8Rescaled(imageData, levels);
+    }
+
+    const LookupTableView& lut = *options.lut;
+    if (lut.rows <= 256) {
+        return makeIndexed8Rescaled(imageData, levels, lut);
+    }
+    return makeDirectLutImage(imageData, levels, lut);
+}
+
 } // namespace
 
 QImage makeQImage(core::ArrayView<const std::uint8_t, 2> imageData, const MakeQImageOptions& options)
@@ -223,10 +440,23 @@ QImage makeQImage(core::ArrayView<const std::uint8_t, 3> imageData, const MakeQI
     return image;
 }
 
-std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData)
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> imageData, const TryMakeQImageOptions& options)
 {
     if (!hasTryMakeData(imageData)) {
         return std::nullopt;
+    }
+
+    if (options.lut.has_value() && !isValidLut(*options.lut)) {
+        return std::nullopt;
+    }
+
+    if (options.lut.has_value()) {
+        const ImageLevels levels = defaultLevels(options.levels, 255.0);
+        return makeIndexed8FromUint8(imageData, combinedLutColorTable(levels, *options.lut));
+    }
+
+    if (options.levels.has_value()) {
+        return makeIndexed8FromUint8(imageData, grayLevelsColorTable(*options.levels));
     }
 
     const auto& shape = imageData.shape();
@@ -244,9 +474,12 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 2> image
     return image;
 }
 
-std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData)
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> imageData, const TryMakeQImageOptions& options)
 {
     if (!hasTryMakeData(imageData)) {
+        return std::nullopt;
+    }
+    if (options.lut.has_value()) {
         return std::nullopt;
     }
 
@@ -255,7 +488,7 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
     QImage::Format format = QImage::Format_Invalid;
     if (channels == 3) {
         format = QImage::Format_RGB888;
-    } else if (channels == 4) {
+    } else if (channels == 4 && !options.levels.has_value()) {
         format = QImage::Format_RGBA8888;
     } else {
         return std::nullopt;
@@ -264,6 +497,8 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
     const int width = static_cast<int>(shape[1]);
     const int height = static_cast<int>(shape[0]);
     QImage image = allocateQImage(width, height, format);
+    const ImageLevels levels = defaultLevels(options.levels, 255.0);
+    const double scale = 255.0 / levelRange(levels);
 
     for (int y = 0; y < height; ++y) {
         uchar* row = image.scanLine(y);
@@ -271,11 +506,11 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
             const std::size_t rowIndex = static_cast<std::size_t>(y);
             const std::size_t colIndex = static_cast<std::size_t>(x);
             const std::size_t base = static_cast<std::size_t>(x) * channels;
-            row[base + 0] = imageData(rowIndex, colIndex, 0);
-            row[base + 1] = imageData(rowIndex, colIndex, 1);
-            row[base + 2] = imageData(rowIndex, colIndex, 2);
-            if (channels == 4) {
-                row[base + 3] = imageData(rowIndex, colIndex, 3);
+            for (std::size_t channel = 0; channel < channels; ++channel) {
+                const std::uint8_t value = options.levels.has_value()
+                    ? detail::rescaleDataToUint8(static_cast<double>(imageData(rowIndex, colIndex, channel)), scale, levels.minimum)
+                    : imageData(rowIndex, colIndex, channel);
+                row[base + channel] = value;
             }
         }
     }
@@ -283,10 +518,14 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
     return image;
 }
 
-std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData)
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imageData, const TryMakeQImageOptions& options)
 {
     if (!hasTryMakeData(imageData)) {
         return std::nullopt;
+    }
+
+    if (hasLevelsOrLut(options)) {
+        return tryMakeMonoLeveled(imageData, options, 65535.0);
     }
 
     const auto& shape = imageData.shape();
@@ -307,9 +546,9 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 2> imag
     return image;
 }
 
-std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData)
+std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imageData, const TryMakeQImageOptions& options)
 {
-    if (!hasTryMakeData(imageData)) {
+    if (!hasTryMakeData(imageData) || hasLevelsOrLut(options)) {
         return std::nullopt;
     }
 
@@ -338,6 +577,45 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint16_t, 3> imag
         }
     }
 
+    return image;
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const float, 2> imageData, const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData) || !options.levels.has_value()) {
+        return std::nullopt;
+    }
+    return tryMakeMonoLeveled(imageData, options, 1.0);
+}
+
+std::optional<QImage> tryMakeQImage(core::ArrayView<const float, 3> imageData, const TryMakeQImageOptions& options)
+{
+    if (!hasTryMakeData(imageData) || !options.levels.has_value() || options.lut.has_value()) {
+        return std::nullopt;
+    }
+
+    const auto& shape = imageData.shape();
+    if (shape[2] != 3) {
+        return std::nullopt;
+    }
+
+    const int width = static_cast<int>(shape[1]);
+    const int height = static_cast<int>(shape[0]);
+    QImage image = allocateQImage(width, height, QImage::Format_RGB888);
+    const double scale = 255.0 / levelRange(*options.levels);
+
+    for (int y = 0; y < height; ++y) {
+        uchar* row = image.scanLine(y);
+        for (int x = 0; x < width; ++x) {
+            const std::size_t base = static_cast<std::size_t>(x) * 3;
+            for (std::size_t channel = 0; channel < 3; ++channel) {
+                row[base + channel] = detail::rescaleDataToUint8(
+                    static_cast<double>(imageData(static_cast<std::size_t>(y), static_cast<std::size_t>(x), channel)),
+                    scale,
+                    options.levels->minimum);
+            }
+        }
+    }
     return image;
 }
 

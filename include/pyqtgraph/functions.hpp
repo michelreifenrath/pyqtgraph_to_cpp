@@ -35,6 +35,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <map>
@@ -191,6 +192,13 @@ public:
 [[nodiscard]] float nanmax(std::span<const float> values);
 [[nodiscard]] double nanmax(std::span<const double> values);
 [[nodiscard]] long double nanmax(std::span<const long double> values);
+
+namespace detail {
+
+[[nodiscard]] std::uint8_t rescaleDataToUint8(double value, double scale, double offset);
+[[nodiscard]] std::size_t clippedLookupIndex(double value, double scale, double offset, std::size_t rowCount);
+
+} // namespace detail
 
 template <typename T,
           std::enable_if_t<std::is_floating_point_v<detail::remove_cvref_t<T>>, int> = 0>
