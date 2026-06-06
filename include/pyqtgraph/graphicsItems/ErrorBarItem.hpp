@@ -252,17 +252,17 @@ inline void ErrorBarItem::rebuildPath()
             const auto height = detail_errorbaritem::valueAt(options_.height, index, size, "height");
             const auto top = detail_errorbaritem::valueAt(options_.top, index, size, "top");
             const auto bottom = detail_errorbaritem::valueAt(options_.bottom, index, size, "bottom");
-            const double y1 = height.has_value() ? y - *height / 2.0 : y - bottom.value_or(0.0);
-            const double y2 = height.has_value() ? y + *height / 2.0 : y + top.value_or(0.0);
-            detail_errorbaritem::addLineIfFinite(path_, QPointF(x, y1), QPointF(x, y2));
+            const double yTop = height.has_value() ? y - *height / 2.0 : y - top.value_or(0.0);
+            const double yBottom = height.has_value() ? y + *height / 2.0 : y + bottom.value_or(0.0);
+            detail_errorbaritem::addLineIfFinite(path_, QPointF(x, yTop), QPointF(x, yBottom));
             if (beam > 0.0) {
                 const double x1 = x - beam / 2.0;
                 const double x2 = x + beam / 2.0;
                 if (height.has_value() || top.has_value()) {
-                    detail_errorbaritem::addLineIfFinite(path_, QPointF(x1, y2), QPointF(x2, y2));
+                    detail_errorbaritem::addLineIfFinite(path_, QPointF(x1, yTop), QPointF(x2, yTop));
                 }
                 if (height.has_value() || bottom.has_value()) {
-                    detail_errorbaritem::addLineIfFinite(path_, QPointF(x1, y1), QPointF(x2, y1));
+                    detail_errorbaritem::addLineIfFinite(path_, QPointF(x1, yBottom), QPointF(x2, yBottom));
                 }
             }
         }

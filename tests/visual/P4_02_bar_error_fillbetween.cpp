@@ -198,11 +198,11 @@ void drawErrorReference(QPainter& painter)
         bottom.push_back(2.0 + ((0.5 - 2.0) * static_cast<double>(index) / 9.0));
     }
     for (std::size_t index = 0; index < x.size(); ++index) {
-        const qreal y1 = y[index] - bottom[index];
-        const qreal y2 = y[index] + top[index];
-        painter.drawLine(QPointF(x[index], y1), QPointF(x[index], y2));
-        painter.drawLine(QPointF(x[index] - 0.25, y1), QPointF(x[index] + 0.25, y1));
-        painter.drawLine(QPointF(x[index] - 0.25, y2), QPointF(x[index] + 0.25, y2));
+        const qreal yTop = y[index] - top[index];
+        const qreal yBottom = y[index] + bottom[index];
+        painter.drawLine(QPointF(x[index], yTop), QPointF(x[index], yBottom));
+        painter.drawLine(QPointF(x[index] - 0.25, yTop), QPointF(x[index] + 0.25, yTop));
+        painter.drawLine(QPointF(x[index] - 0.25, yBottom), QPointF(x[index] + 0.25, yBottom));
     }
     painter.restore();
 }
@@ -632,11 +632,22 @@ bool testDataGuardsAndBounds()
     CHECK(deferred.isVisible());
     CHECK(deferred.boundingRect().left() <= 0.8);
     CHECK(deferred.boundingRect().right() >= 2.2);
-    CHECK(deferred.boundingRect().top() <= 2.75);
-    CHECK(deferred.boundingRect().bottom() >= 4.75);
+    CHECK(deferred.boundingRect().top() <= 2.5);
+    CHECK(deferred.boundingRect().bottom() >= 4.5);
     deferred.clear();
     CHECK(!deferred.isVisible());
     CHECK(deferred.boundingRect().isNull());
+
+    pyqtgraph::graphicsItems::ErrorBarItemOptions asymmetricVerticalOptions;
+    asymmetricVerticalOptions.x = {10.0};
+    asymmetricVerticalOptions.y = {20.0};
+    asymmetricVerticalOptions.top = {3.0};
+    asymmetricVerticalOptions.bottom = {1.0};
+    asymmetricVerticalOptions.beam = 0.0;
+    pyqtgraph::graphicsItems::ErrorBarItem asymmetricVertical(asymmetricVerticalOptions);
+    const QRectF asymmetricPathBounds = asymmetricVertical.path().boundingRect();
+    CHECK(std::abs(asymmetricPathBounds.top() - 17.0) < 1.0e-9);
+    CHECK(std::abs(asymmetricPathBounds.bottom() - 21.0) < 1.0e-9);
 
     pyqtgraph::graphicsItems::ErrorBarItemOptions verticalOnlyOptions;
     verticalOnlyOptions.x = {1.0};
