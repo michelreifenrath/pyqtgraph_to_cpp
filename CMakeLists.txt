@@ -131,8 +131,12 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
             src/pyqtgraph/graphicsItems/AxisItem.cpp
+            include/pyqtgraph/graphicsItems/GridItem.hpp
+            src/pyqtgraph/graphicsItems/GridItem.cpp
             include/pyqtgraph/graphicsItems/LegendItem.hpp
             src/pyqtgraph/graphicsItems/LegendItem.cpp
+            include/pyqtgraph/graphicsItems/VTickGroup.hpp
+            src/pyqtgraph/graphicsItems/VTickGroup.cpp
             include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
             src/pyqtgraph/graphicsItems/ViewBox/ViewBox.cpp
             src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp

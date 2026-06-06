@@ -605,9 +605,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/GridItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GridItem.cpp
   subsystem: graphicsItems
-  status: not_started
-  completion: missing
-  target_presence: none
+  status: ported
+  completion: partial
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/HistogramLUTItem.py
   target_header_path: include/pyqtgraph/graphicsItems/HistogramLUTItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/HistogramLUTItem.cpp
@@ -759,9 +759,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/VTickGroup.hpp
   target_source_path: src/pyqtgraph/graphicsItems/VTickGroup.cpp
   subsystem: graphicsItems
-  status: not_started
-  completion: missing
-  target_presence: none
+  status: ported
+  completion: partial
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBox.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/ViewBox.cpp
@@ -3858,9 +3858,9 @@ classes:
   bases:
   - GraphicsObject
   line: 11
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: BoxplotItem
   upstream_path: pyqtgraph/graphicsItems/BoxplotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/BoxplotItem.hpp
@@ -3955,9 +3955,9 @@ classes:
   bases:
   - GraphicsObject
   line: 8
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: FillBetweenItem
   upstream_path: pyqtgraph/graphicsItems/FillBetweenItem.py
   target_header_path: include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
@@ -3966,9 +3966,9 @@ classes:
   bases:
   - QtWidgets.QGraphicsPathItem
   line: 10
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: TickSliderItem
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -4111,9 +4111,9 @@ classes:
   bases:
   - UIGraphicsItem
   line: 10
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: HistogramLUTItem
   upstream_path: pyqtgraph/graphicsItems/HistogramLUTItem.py
   target_header_path: include/pyqtgraph/graphicsItems/HistogramLUTItem.hpp
@@ -4133,9 +4133,9 @@ classes:
   bases:
   - GraphicsObject
   line: 24
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: InfiniteLine
   upstream_path: pyqtgraph/graphicsItems/InfiniteLine.py
   target_header_path: include/pyqtgraph/graphicsItems/InfiniteLine.hpp
@@ -4144,9 +4144,9 @@ classes:
   bases:
   - GraphicsObject
   line: 16
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: InfLineLabel
   upstream_path: pyqtgraph/graphicsItems/InfiniteLine.py
   target_header_path: include/pyqtgraph/graphicsItems/InfiniteLine.hpp
@@ -4155,9 +4155,9 @@ classes:
   bases:
   - TextItem
   line: 445
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: IsocurveItem
   upstream_path: pyqtgraph/graphicsItems/IsocurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/IsocurveItem.hpp
@@ -4201,9 +4201,9 @@ classes:
   - GraphicsWidgetAnchor
   - GraphicsWidget
   line: 17
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ItemSample
   upstream_path: pyqtgraph/graphicsItems/LegendItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LegendItem.hpp
@@ -4212,9 +4212,9 @@ classes:
   bases:
   - GraphicsWidget
   line: 353
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: LinearRegionItem
   upstream_path: pyqtgraph/graphicsItems/LinearRegionItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LinearRegionItem.hpp
@@ -4223,9 +4223,9 @@ classes:
   bases:
   - GraphicsObject
   line: 9
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: NonUniformImage
   upstream_path: pyqtgraph/graphicsItems/NonUniformImage.py
   target_header_path: include/pyqtgraph/graphicsItems/NonUniformImage.hpp
@@ -4321,9 +4321,9 @@ classes:
   bases:
   - TypedDict
   line: 22
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: PointStyleKeywordArgs
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -4332,9 +4332,9 @@ classes:
   bases:
   - TypedDict
   line: 26
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: LineStyleKeywordArgs
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -4343,9 +4343,9 @@ classes:
   bases:
   - TypedDict
   line: 34
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: OptimizationKeywordArgs
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -4354,9 +4354,9 @@ classes:
   bases:
   - TypedDict
   line: 44
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: PlotDataset
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -4364,9 +4364,9 @@ classes:
   subsystem: graphicsItems
   bases: []
   line: 56
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: PlotDataItem
   upstream_path: pyqtgraph/graphicsItems/PlotDataItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
@@ -4375,9 +4375,9 @@ classes:
   bases:
   - GraphicsObject
   line: 214
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: PlotItem
   upstream_path: pyqtgraph/graphicsItems/PlotItem/PlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp
@@ -4596,9 +4596,9 @@ classes:
   bases:
   - object
   line: 141
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ScatterPlotItem
   upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
@@ -4607,9 +4607,9 @@ classes:
   bases:
   - GraphicsObject
   line: 334
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: SpotItem
   upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
@@ -4618,9 +4618,9 @@ classes:
   bases:
   - object
   line: 1126
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: TargetItem
   upstream_path: pyqtgraph/graphicsItems/TargetItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TargetItem.hpp
@@ -4629,9 +4629,9 @@ classes:
   bases:
   - UIGraphicsItem
   line: 15
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: TargetLabel
   upstream_path: pyqtgraph/graphicsItems/TargetItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TargetItem.hpp
@@ -4640,9 +4640,9 @@ classes:
   bases:
   - TextItem
   line: 350
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: TextItem
   upstream_path: pyqtgraph/graphicsItems/TextItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TextItem.hpp
@@ -4673,9 +4673,9 @@ classes:
   bases:
   - UIGraphicsItem
   line: 12
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: WeakList
   upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBox.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp

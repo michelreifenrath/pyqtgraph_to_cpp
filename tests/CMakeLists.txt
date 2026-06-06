@@ -380,6 +380,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(P4.02.visual.BarGraph_ErrorBar_FillBetween PROPERTIES LABELS "visual;P4.02")
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_visual_legend_grid_vtick_p4_11
+        visual/P4_11_legend_grid_vtick.cpp
+        P4.11.visual.Legend_Grid_VTickGroup
+    )
+    target_compile_definitions(pyqtgraph_cpp_visual_legend_grid_vtick_p4_11
+        PRIVATE
+            PYQTGRAPH_CPP_P4_11_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual/P4.11"
+            PYQTGRAPH_CPP_P4_11_CANONICAL_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/P4.11-legend-grid-vtick"
+    )
+    set_tests_properties(P4.11.visual.Legend_Grid_VTickGroup PROPERTIES LABELS "visual;P4.11")
+
     add_executable(pyqtgraph_cpp_visual_plotitem_p3_11 visual/P3_11_plotitem_layout_visual.cpp)
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_visual_plotitem_p3_11)
     add_test(
