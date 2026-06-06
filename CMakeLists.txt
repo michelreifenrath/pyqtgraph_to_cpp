@@ -141,6 +141,9 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
             include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
             src/pyqtgraph/graphicsItems/ScatterPlotItem.cpp
+            include/pyqtgraph/graphicsItems/BarGraphItem.hpp
+            include/pyqtgraph/graphicsItems/ErrorBarItem.hpp
+            include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
             include/pyqtgraph/graphicsItems/ImageItem.hpp
             src/pyqtgraph/graphicsItems/ImageItem.cpp
             src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
