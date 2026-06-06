@@ -280,6 +280,17 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     target_link_libraries(pyqtgraph_cpp_graphicsitems_viewbox_interaction_linking PRIVATE Qt6::Test)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ViewBox.interaction_linking PROPERTIES LABELS P3.06)
+
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_linearregion_infline_target_p4_09
+        graphicsItems/test_LinearRegion_InfiniteLine_TargetItem_P4_09.cpp
+        pyqtgraph_cpp.graphicsItems.LinearRegion_InfiniteLine_TargetItem.P4_09
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_linearregion_infline_target_p4_09
+        PRIVATE
+            PYQTGRAPH_CPP_P4_09_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.09"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.LinearRegion_InfiniteLine_TargetItem.P4_09 PROPERTIES LABELS P4.09)
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
