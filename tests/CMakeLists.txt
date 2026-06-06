@@ -324,6 +324,21 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(P3.09.visual.PlotCurveItem.paint PROPERTIES LABELS "visual;P3.09")
 
+    add_executable(pyqtgraph_cpp_visual_plotitem_p3_11 visual/P3_11_plotitem_layout_visual.cpp)
+    pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_visual_plotitem_p3_11)
+    add_test(
+        NAME P3.11.visual.PlotItem.layout_axes_legend
+        COMMAND "${Python3_EXECUTABLE}" -m pytest -q
+            "${PROJECT_SOURCE_DIR}/tests/visual/test_P3_11_plotitem_layout_visual.py"
+    )
+    set_tests_properties(
+        P3.11.visual.PlotItem.layout_axes_legend
+        PROPERTIES
+            LABELS "visual;P3.11"
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_P3_11_VISUAL_RENDERER=$<TARGET_FILE:pyqtgraph_cpp_visual_plotitem_p3_11>;PG_P3_11_VISUAL_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/visual/P3.11"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    )
+
     add_executable(pyqtgraph_cpp_visual_render_example visual/P1_08_render_cpp_example.cpp)
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_visual_render_example)
     add_test(
