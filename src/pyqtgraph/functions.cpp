@@ -902,4 +902,45 @@ long double nanmax(std::span<const long double> values)
     return nanExtrema(values, [](long double lhs, long double rhs) { return lhs > rhs; });
 }
 
+std::uint8_t rescaleDataToUInt8(double value, double scale, double offset, ImageLevelRange clip)
+{
+    const double lower = std::max(0.0, std::trunc(clip.minimum));
+    const double upper = std::min(255.0, std::trunc(clip.maximum));
+    const double scaled = (value - static_cast<double>(offset)) * static_cast<double>(scale);
+    const double clipped = std::clamp(scaled, lower, upper);
+    return static_cast<std::uint8_t>(clipped);
+}
+
+std::size_t rescaleDataIndex(double value, double scale, double offset, std::size_t maximumIndex)
+{
+    const double scaled = (value - static_cast<double>(offset)) * static_cast<double>(scale);
+    const double clipped = std::clamp(scaled, 0.0, static_cast<double>(maximumIndex));
+    return static_cast<std::size_t>(clipped);
+}
+
+std::array<std::uint8_t, 4> applyLookupTable(std::int64_t index, const ImageLookupTable& lut)
+{
+    if (lut.data == nullptr || lut.rows == 0) {
+        throw std::invalid_argument("lookup table must contain at least one row");
+    }
+    if (lut.channels != 1 && lut.channels != 3 && lut.channels != 4) {
+        throw std::invalid_argument("lookup table must have 1, 3, or 4 channels");
+    }
+
+    const std::int64_t maximumIndex = static_cast<std::int64_t>(lut.rows - 1);
+    const std::int64_t clippedIndex = std::clamp(index, std::int64_t{0}, maximumIndex);
+    const std::uint8_t* row = lut.data + static_cast<std::ptrdiff_t>(clippedIndex) * lut.rowStride;
+
+    if (lut.channels == 1) {
+        const std::uint8_t gray = row[0];
+        return {gray, gray, gray, 255};
+    }
+
+    const std::uint8_t red = row[0];
+    const std::uint8_t green = row[lut.channelStride];
+    const std::uint8_t blue = row[2 * lut.channelStride];
+    const std::uint8_t alpha = lut.channels == 4 ? row[3 * lut.channelStride] : 255;
+    return {red, green, blue, alpha};
+}
+
 } // namespace pyqtgraph

@@ -35,6 +35,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <map>
@@ -184,6 +185,26 @@ public:
 };
 
 #endif // PYQTGRAPH_CPP_HAS_QT_COLOR_HEADERS
+
+struct ImageLevelRange {
+    double minimum = 0.0;
+    double maximum = 255.0;
+};
+
+struct ImageLookupTable {
+    const std::uint8_t* data = nullptr;
+    std::size_t rows = 0;
+    std::size_t channels = 1;
+    std::ptrdiff_t rowStride = 1;
+    std::ptrdiff_t channelStride = 1;
+};
+
+[[nodiscard]] std::uint8_t rescaleDataToUInt8(double value,
+                                              double scale,
+                                              double offset,
+                                              ImageLevelRange clip = {0.0, 255.0});
+[[nodiscard]] std::size_t rescaleDataIndex(double value, double scale, double offset, std::size_t maximumIndex);
+[[nodiscard]] std::array<std::uint8_t, 4> applyLookupTable(std::int64_t index, const ImageLookupTable& lut);
 
 [[nodiscard]] float nanmin(std::span<const float> values);
 [[nodiscard]] double nanmin(std::span<const double> values);
