@@ -141,6 +141,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
             include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
             src/pyqtgraph/graphicsItems/ScatterPlotItem.cpp
+            include/pyqtgraph/graphicsItems/InfiniteLine.hpp
+            src/pyqtgraph/graphicsItems/InfiniteLine.cpp
+            include/pyqtgraph/graphicsItems/LinearRegionItem.hpp
+            include/pyqtgraph/graphicsItems/TargetItem.hpp
             include/pyqtgraph/graphicsItems/BarGraphItem.hpp
             include/pyqtgraph/graphicsItems/ErrorBarItem.hpp
             include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
