@@ -324,6 +324,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(P3.09.visual.PlotCurveItem.paint PROPERTIES LABELS "visual;P3.09")
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_visual_p3_11_plotitem_layout_legend
+        visual/P3_11_plotitem_layout_legend_visual.cpp
+        P3.11.visual.PlotItem.layout_legend
+    )
+    target_compile_definitions(pyqtgraph_cpp_visual_p3_11_plotitem_layout_legend
+        PRIVATE
+            PYQTGRAPH_CPP_P3_11_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual/P3.11"
+            PYQTGRAPH_CPP_P3_11_SIMPLEPLOT_REFERENCE="${PROJECT_SOURCE_DIR}/oracle/fixtures/screenshots/SimplePlot.reference.png"
+    )
+    set_tests_properties(P3.11.visual.PlotItem.layout_legend PROPERTIES LABELS "visual;P3.11")
+
     add_executable(pyqtgraph_cpp_visual_render_example visual/P1_08_render_cpp_example.cpp)
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_visual_render_example)
     add_test(
