@@ -80,6 +80,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME pyqtgraph_cpp.oracle.P2_09
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/scripts/generate_P2_09_widgetgroup_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P2_09
+    PROPERTIES
+        LABELS P2.09
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME pyqtgraph_cpp.oracle.P2_03
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_03_plotdata_oracle.py" --check
 )
@@ -172,6 +183,19 @@ if(_pyqtgraph_cpp_has_qtcore)
             PYQTGRAPH_CPP_P2_08_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P2_08/signal_proxy_timer_oracle.json"
     )
     set_tests_properties(pyqtgraph_cpp.core.SignalProxy_ThreadsafeTimer PROPERTIES LABELS P2.08)
+endif()
+
+if(_pyqtgraph_cpp_has_graphicsitem)
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_core_widgetgroup_p2_09
+        core/test_WidgetGroup_P2_09.cpp
+        pyqtgraph_cpp.core.WidgetGroup_P2_09
+    )
+    target_compile_definitions(pyqtgraph_cpp_core_widgetgroup_p2_09
+        PRIVATE
+            PYQTGRAPH_CPP_P2_09_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P2_09/widgetgroup_oracle.json"
+    )
+    set_tests_properties(pyqtgraph_cpp.core.WidgetGroup_P2_09 PROPERTIES LABELS P2.09)
 endif()
 
 if(_pyqtgraph_cpp_has_vector)
