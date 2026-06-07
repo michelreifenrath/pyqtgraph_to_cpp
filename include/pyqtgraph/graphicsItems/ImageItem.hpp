@@ -7,6 +7,7 @@
 
 #include "GraphicsObject.hpp"
 #include "pyqtgraph/core/ArrayView.hpp"
+#include "pyqtgraph/functions.hpp"
 
 #include <QtCore/QRectF>
 #include <QtGui/QImage>
@@ -15,6 +16,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 class QGraphicsItem;
@@ -44,6 +46,7 @@ public:
     void setImage(core::ArrayView<const std::uint8_t, 3> image);
     void setImage(core::ArrayView<const std::uint16_t, 2> image);
     void setImage(core::ArrayView<const std::uint16_t, 3> image);
+    void setImage(core::ArrayView<const float, 2> image);
     void clearImage();
 
     void setAxisOrder(AxisOrder axisOrder);
@@ -51,6 +54,12 @@ public:
 
     void setCompositionMode(QPainter::CompositionMode mode);
     void clearCompositionMode();
+
+    void setLevels(std::optional<ImageLevelRange> levels);
+    [[nodiscard]] std::optional<ImageLevelRange> getLevels() const noexcept;
+    void setLookupTable(ImageLookupTable lut);
+    void clearLookupTable();
+    [[nodiscard]] std::optional<ImageLookupTable> lookupTable() const noexcept;
 
     [[nodiscard]] bool hasImage() const noexcept;
     [[nodiscard]] std::size_t width() const noexcept;
@@ -75,12 +84,14 @@ private:
         UInt8Rank3,
         UInt16Rank2,
         UInt16Rank3,
+        FloatRank2,
     };
 
     template <typename T, std::size_t Rank>
     void setImageImpl(core::ArrayView<const T, Rank> image, DataKind kind, std::vector<T>& destination);
 
     [[nodiscard]] std::array<std::size_t, 2> extents() const noexcept;
+    [[nodiscard]] std::optional<ImageLookupTable> lookupTableView() const noexcept;
     void markRenderRequired();
 
     DataKind dataKind_ = DataKind::None;
@@ -88,6 +99,11 @@ private:
     std::array<std::size_t, 3> shape_{};
     std::vector<std::uint8_t> uint8Data_;
     std::vector<std::uint16_t> uint16Data_;
+    std::vector<float> floatData_;
+    std::optional<ImageLevelRange> levels_;
+    std::vector<std::uint8_t> lookupTableData_;
+    std::size_t lookupTableRows_ = 0;
+    std::size_t lookupTableChannels_ = 0;
     QImage qimage_;
     bool renderRequired_ = true;
     bool unrenderable_ = false;
