@@ -225,8 +225,15 @@ bool testPaletteLookupAndQPalettes()
     CHECK_SIZE(relaxed->size(), std::size_t{10});
     CHECK_NEAR(relaxed->positions()[1], 1.0 / 9.0, 1.0e-12);
     CHECK(relaxed->getByIndex(0) == QColor(QStringLiteral("#f97f10")));
+    CHECK(relaxed->getByIndex(5) == QColor(QStringLiteral("#0e56c2")));
+    CHECK(relaxed->getByIndex(6) == QColor(QStringLiteral("#813be3")));
     CHECK(relaxed->getByIndex(7) == QColor(QStringLiteral("#c01188")));
     CHECK(relaxed->getByIndex(9) == QColor(QStringLiteral("#f97f10")));
+
+    const auto relaxedBright = pyqtgraph::get(QStringLiteral("PAL-relaxed_bright"));
+    CHECK(relaxedBright.has_value());
+    CHECK(relaxedBright->getByIndex(5) == QColor(QStringLiteral("#1f78ff")));
+    CHECK(relaxedBright->getByIndex(6) == QColor(QStringLiteral("#a54dff")));
 
     CHECK(!pyqtgraph::get(QStringLiteral("missing-map")).has_value());
     CHECK(pyqtgraph::listMaps(QStringLiteral("matplotlib")).empty());

@@ -90,8 +90,8 @@ def fixture_payload() -> dict[str, Any]:
                         "#94ab00",
                         "#12a12a",
                         "#007c8c",
-                        "#0067d0",
-                        "#a02fdb",
+                        "#0e56c2",
+                        "#813be3",
                         "#c01188",
                         "#e23512",
                         "#f97f10",
@@ -104,8 +104,8 @@ def fixture_payload() -> dict[str, Any]:
                         "#b3cf00",
                         "#1ec23a",
                         "#00a0b5",
-                        "#1683f0",
-                        "#c56bff",
+                        "#1f78ff",
+                        "#a54dff",
                         "#e22ca8",
                         "#ff532b",
                         "#ff9d47",
@@ -157,8 +157,8 @@ def validate_reference_root(reference_root: Path) -> None:
             "test_ColorMap_getByIndex",
             "test_round_trip",
         ],
-        "pyqtgraph/colors/maps/PAL-relaxed.hex": ["#f97f10", "#c01188"],
-        "pyqtgraph/colors/maps/PAL-relaxed_bright.hex": ["#ff9d47", "#e22ca8"],
+        "pyqtgraph/colors/maps/PAL-relaxed.hex": ["#f97f10", "#0e56c2", "#813be3", "#c01188"],
+        "pyqtgraph/colors/maps/PAL-relaxed_bright.hex": ["#ff9d47", "#1f78ff", "#a54dff", "#e22ca8"],
     }
     for rel_path, required in markers.items():
         text = (reference_root / rel_path).read_text(encoding="utf-8")
