@@ -521,9 +521,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/DateAxisItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ErrorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ErrorBarItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ErrorBarItem.cpp
@@ -3923,9 +3923,9 @@ classes:
   subsystem: graphicsItems
   bases: []
   line: 94
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ZoomLevel
   upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
@@ -3933,9 +3933,9 @@ classes:
   subsystem: graphicsItems
   bases: []
   line: 141
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: DateAxisItem
   upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
@@ -3944,9 +3944,9 @@ classes:
   bases:
   - AxisItem
   line: 296
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ErrorBarItem
   upstream_path: pyqtgraph/graphicsItems/ErrorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ErrorBarItem.hpp

@@ -134,6 +134,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
             src/pyqtgraph/graphicsItems/AxisItem.cpp
+            include/pyqtgraph/graphicsItems/DateAxisItem.hpp
+            src/pyqtgraph/graphicsItems/DateAxisItem.cpp
             include/pyqtgraph/graphicsItems/GridItem.hpp
             src/pyqtgraph/graphicsItems/GridItem.cpp
             include/pyqtgraph/graphicsItems/LegendItem.hpp

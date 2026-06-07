@@ -91,6 +91,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME pyqtgraph_cpp.oracle.P3_08.DateAxisItem
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P3_08_dateaxis_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P3_08.DateAxisItem
+    PROPERTIES
+        LABELS P3.08
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME pyqtgraph_cpp.oracle.P2_03
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_03_plotdata_oracle.py" --check
 )
@@ -330,6 +341,16 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             PYQTGRAPH_CPP_P3_07_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual/P3.07/AxisItem/gpt5_vision_review.md"
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.AxisItem PROPERTIES LABELS "visual;P3.07")
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_dateaxisitem_p3_08
+        graphicsItems/test_DateAxisItem_P3_08.cpp
+        pyqtgraph_cpp.graphicsItems.DateAxisItem.P3_08
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_dateaxisitem_p3_08
+        PRIVATE
+            PYQTGRAPH_CPP_P3_08_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/P3.08-DateAxisItem"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.DateAxisItem.P3_08 PROPERTIES LABELS "visual;P3.08")
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_viewbox
         graphicsItems/test_ViewBox.cpp
