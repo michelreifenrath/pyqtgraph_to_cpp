@@ -75,6 +75,11 @@ void GraphicsView::setCentralItem(QGraphicsWidget* item)
 
 void GraphicsView::setCentralWidget(QGraphicsWidget* item)
 {
+    if (centralWidget_ == item) {
+        updateCentralGeometry();
+        return;
+    }
+
     if (centralWidget_ != nullptr) {
         scene_->removeItem(centralWidget_);
         if (centralWidget_ == internallyOwnedDefaultCentral_) {
