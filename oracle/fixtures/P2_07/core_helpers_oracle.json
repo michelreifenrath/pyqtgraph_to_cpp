@@ -1,0 +1,104 @@
+{
+  "cases": {
+    "CONFIG_OPTIONS": {
+      "defaults": {
+        "antialias": false,
+        "background": "k",
+        "crashWarning": false,
+        "editorCommand": null,
+        "enableExperimental": false,
+        "exitCleanup": true,
+        "foreground": "d",
+        "imageAxisOrder": "col-major",
+        "leftButtonPan": true,
+        "mouseRateLimit": 100,
+        "segmentedLineMode": "auto",
+        "useCupy": false,
+        "useNumba": false,
+        "useOpenGL": false
+      },
+      "imageAxisOrder_accepts": [
+        "row-major",
+        "col-major"
+      ],
+      "invalid_enums": "rejected with std::invalid_argument C++ equivalent of PyQtGraph ValueError",
+      "segmentedLineMode_accepts": [
+        "auto",
+        "on",
+        "off"
+      ],
+      "unknown_option": "rejected"
+    },
+    "configfile": {
+      "comment_indentation": "comment-only lines do not affect nested indentation",
+      "duplicate_key_error": "message contains Duplicate key",
+      "float_repr": "floating values that print as integral numbers retain .0 syntax for exact round-trip type parity",
+      "inline_comments": "trailing # comments outside quoted strings are ignored before literal parsing",
+      "key_validation": "blank keys, leading spaces, and ':' in keys rejected by genString",
+      "line_numbers": "comments and blanks count; duplicate on physical line 4 reports line 4",
+      "roundtrip": "nested native scalar/list/map values"
+    },
+    "debug": {
+      "Profiler": "RAII elapsed-time helper; no Python cProfile/GC integration",
+      "formatException": "includes native exception type and message",
+      "warnOnException": "suppresses a callable exception and reports false"
+    },
+    "exceptionHandling": {
+      "callbacks": "registerCallback/unregisterCallback preserve order",
+      "deprecated_callbacks": "register/unregister native equivalent preserved",
+      "traceback_clearing": "setTracebackClearing toggles stored flag; Python sys.last_traceback clearing is not installed in C++"
+    },
+    "units": {
+      "SI_PREFIXES_no_prefix": "literal space sentinel exposed publicly; allUnits translates it to an empty unit-map prefix",
+      "scales": {
+        "MHz": 1000000.0,
+        "Ohm": 1.0,
+        "cA": 0.01,
+        "dB": 0.1,
+        "daV": 10.0,
+        "hPa": 100.0,
+        "kHz": 1000.0,
+        "m": 1.0,
+        "mV": 0.001,
+        "mm": 0.001,
+        "um": 1e-06,
+        "\u00b5m": 1e-06,
+        "\u03a9": 1.0,
+        "\u03bcm": 1e-06
+      },
+      "upstream_stubs": [
+        "evalUnits",
+        "formatUnits",
+        "simplify"
+      ]
+    }
+  },
+  "cpp_deviations": [
+    "C++ config values are std::variant-backed native values; editorCommand None is std::monostate.",
+    "configfile parsing intentionally supports deterministic native literals (None/bool/int/double/quoted string/list/nested map) and rejects arbitrary Python eval, NumPy array, Point, ColorMap, QtCore, and tuple-key reconstruction.",
+    "debug.py Python GC/referrer/trace/sys.settrace/faulthandler helpers are documented as unsupported native no-ops rather than Python wrappers.",
+    "exceptionHandling.py sys.excepthook/threading.excepthook installation is represented by explicit notifyUnhandledException/ExceptionHandler::handle calls under exceptionHandling.hpp in this capped C++ proof; no global std::terminate hook is installed.",
+    "units.py evalUnits/formatUnits/simplify are upstream stubs in PyQtGraph 0.14.0; C++ returns std::nullopt instead of inventing unit algebra."
+  ],
+  "issue": "P2.07",
+  "schema_version": 1,
+  "tolerances": {
+    "config_roundtrip": "exact native ConfigValue equality",
+    "exception_callback_order": "registration order; callback failures isolated and counted",
+    "unit_scale_absolute": 1e-15
+  },
+  "upstream": {
+    "commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "files": [
+      "pyqtgraph/__init__.py",
+      "pyqtgraph/configfile.py",
+      "pyqtgraph/debug.py",
+      "pyqtgraph/exceptionHandling.py",
+      "pyqtgraph/units.py",
+      "tests/test_configparser.py"
+    ],
+    "probe_note": "Config option defaults and validation come from __init__.py; config text parsing cases come from configfile.py and tests/test_configparser.py; units come from units.py; debug/exception callback contracts come from debug.py and exceptionHandling.py.",
+    "project": "pyqtgraph",
+    "ref": "pyqtgraph-0.14.0"
+  }
+}
