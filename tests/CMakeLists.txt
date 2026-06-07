@@ -437,6 +437,13 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.PlotDataItem PROPERTIES LABELS P3.10)
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_graphitem_curvepoint_p4_03
+        graphicsItems/test_GraphItem_CurvePoint_P4_03.cpp
+        pyqtgraph_cpp.graphicsItems.GraphItem_CurvePoint.P4_03
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.GraphItem_CurvePoint.P4_03 PROPERTIES LABELS P4.03)
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_imageitem_render
         graphicsItems/test_ImageItem_render.cpp
         pyqtgraph_cpp.graphicsItems.ImageItem.render
