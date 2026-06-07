@@ -410,6 +410,16 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.PlotWidget PROPERTIES LABELS P3.01)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_graphicslayoutwidget_p3_12
+        widgets/test_GraphicsLayoutWidget_P3_12.cpp
+        pyqtgraph_cpp.widgets.GraphicsLayoutWidget.P3_12
+    )
+    target_compile_definitions(pyqtgraph_cpp_widgets_graphicslayoutwidget_p3_12
+        PRIVATE
+            PYQTGRAPH_CPP_P3_12_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P3.12"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.GraphicsLayoutWidget.P3_12 PROPERTIES LABELS P3.12)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
