@@ -133,6 +133,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GraphicsObject.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
+            include/pyqtgraph/graphicsItems/GraphicsLayout.hpp
             src/pyqtgraph/graphicsItems/AxisItem.cpp
             include/pyqtgraph/graphicsItems/DateAxisItem.hpp
             src/pyqtgraph/graphicsItems/DateAxisItem.cpp
@@ -145,6 +146,9 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
             src/pyqtgraph/graphicsItems/ViewBox/ViewBox.cpp
             src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp
+            include/pyqtgraph/widgets/GraphicsView.hpp
+            src/pyqtgraph/widgets/GraphicsView.cpp
+            include/pyqtgraph/widgets/GraphicsLayoutWidget.hpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
