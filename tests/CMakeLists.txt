@@ -348,6 +348,17 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ImageItem.render PROPERTIES LABELS "visual;P2.13")
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_imageitem_nonuniform_p4_05
+        graphicsItems/test_ImageItem_NonUniform_P4_05.cpp
+        pyqtgraph_cpp.graphicsItems.ImageItem_NonUniform.P4_05
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_imageitem_nonuniform_p4_05
+        PRIVATE
+            PYQTGRAPH_CPP_P4_05_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.05"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ImageItem_NonUniform.P4_05 PROPERTIES LABELS P4.05)
+
     add_executable(pyqtgraph_cpp_examples_simpleplot "${PROJECT_SOURCE_DIR}/examples/SimplePlot.cpp")
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_examples_simpleplot)
     add_executable(pyqtgraph_cpp_examples_imageitem "${PROJECT_SOURCE_DIR}/examples/ImageItem.cpp")

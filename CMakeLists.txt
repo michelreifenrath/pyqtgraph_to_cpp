@@ -155,6 +155,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
             include/pyqtgraph/graphicsItems/ImageItem.hpp
             src/pyqtgraph/graphicsItems/ImageItem.cpp
+            include/pyqtgraph/graphicsItems/NonUniformImage.hpp
+            src/pyqtgraph/graphicsItems/NonUniformImage.cpp
             src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
     )
     set_target_properties(pyqtgraph_cpp PROPERTIES AUTOMOC ON)

@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
 
@@ -130,6 +131,11 @@ void ImageItem::setImage(core::ArrayView<const std::uint16_t, 3> image)
     setImageImpl(image, DataKind::UInt16Rank3, uint16Data_);
 }
 
+void ImageItem::setImage(core::ArrayView<const float, 2> image)
+{
+    setImageImpl(image, DataKind::FloatRank2, floatData_);
+}
+
 template <typename T, std::size_t Rank>
 void ImageItem::setImageImpl(core::ArrayView<const T, Rank> image, DataKind kind, std::vector<T>& destination)
 {
@@ -148,10 +154,14 @@ void ImageItem::setImageImpl(core::ArrayView<const T, Rank> image, DataKind kind
     }
 
     copyImage(image, destination);
-    if constexpr (std::is_same_v<T, std::uint8_t>) {
-        uint16Data_.clear();
-    } else {
+    if constexpr (!std::is_same_v<T, std::uint8_t>) {
         uint8Data_.clear();
+    }
+    if constexpr (!std::is_same_v<T, std::uint16_t>) {
+        uint16Data_.clear();
+    }
+    if constexpr (!std::is_same_v<T, float>) {
+        floatData_.clear();
     }
     shape_ = newShape;
     dataKind_ = kind;
@@ -170,6 +180,7 @@ void ImageItem::clearImage()
     shape_ = {};
     uint8Data_.clear();
     uint16Data_.clear();
+    floatData_.clear();
     qimage_ = QImage();
     markRenderRequired();
     update();
@@ -206,6 +217,61 @@ void ImageItem::clearCompositionMode()
 {
     hasCompositionMode_ = false;
     update();
+}
+
+void ImageItem::setLevels(std::optional<ImageLevelRange> levels)
+{
+    levels_ = levels;
+    markRenderRequired();
+    update();
+}
+
+std::optional<ImageLevelRange> ImageItem::getLevels() const noexcept
+{
+    return levels_;
+}
+
+void ImageItem::setLookupTable(ImageLookupTable lut)
+{
+    if (lut.data == nullptr || lut.rows == 0) {
+        throw std::invalid_argument("ImageItem lookup table must contain at least one row");
+    }
+    if (lut.channels != 1 && lut.channels != 3 && lut.channels != 4) {
+        throw std::invalid_argument("ImageItem lookup table must have 1, 3, or 4 channels");
+    }
+    if (lut.rowStride <= 0 || lut.channelStride <= 0) {
+        throw std::invalid_argument("ImageItem lookup table strides must be positive");
+    }
+
+    lookupTableRows_ = lut.rows;
+    lookupTableChannels_ = lut.channels;
+    lookupTableData_.resize(lut.rows * lut.channels);
+    for (std::size_t row = 0; row < lut.rows; ++row) {
+        const auto* sourceRow = lut.data + static_cast<std::ptrdiff_t>(row) * lut.rowStride;
+        for (std::size_t channel = 0; channel < lut.channels; ++channel) {
+            lookupTableData_[row * lut.channels + channel] = sourceRow[static_cast<std::ptrdiff_t>(channel) * lut.channelStride];
+        }
+    }
+
+    markRenderRequired();
+    update();
+}
+
+void ImageItem::clearLookupTable()
+{
+    if (lookupTableData_.empty()) {
+        return;
+    }
+    lookupTableData_.clear();
+    lookupTableRows_ = 0;
+    lookupTableChannels_ = 0;
+    markRenderRequired();
+    update();
+}
+
+std::optional<ImageLookupTable> ImageItem::lookupTable() const noexcept
+{
+    return lookupTableView();
 }
 
 bool ImageItem::hasImage() const noexcept
@@ -252,32 +318,43 @@ bool ImageItem::render()
         return false;
     }
 
+    TryMakeQImageOptions scalarOptions;
+    scalarOptions.levels = levels_;
+    scalarOptions.lut = lookupTableView();
+
+    TryMakeQImageOptions colorOptions;
+    colorOptions.levels = levels_;
+
     std::optional<QImage> rendered;
     switch (dataKind_) {
     case DataKind::UInt8Rank2:
-        rendered = pyqtgraph::tryMakeQImage(displayView(contiguousRank2(uint8Data_, shape_), axisOrder_));
+        rendered = pyqtgraph::tryMakeQImage(displayView(contiguousRank2(uint8Data_, shape_), axisOrder_), scalarOptions);
         break;
     case DataKind::UInt8Rank3: {
         const auto input = contiguousRank3(uint8Data_, shape_);
         if (shape_[2] == 1) {
-            rendered = pyqtgraph::tryMakeQImage(displayView(singleChannelView(input), axisOrder_));
+            rendered = pyqtgraph::tryMakeQImage(displayView(singleChannelView(input), axisOrder_), scalarOptions);
         } else {
-            rendered = pyqtgraph::tryMakeQImage(displayView(input, axisOrder_));
+            rendered = levels_.has_value() ? pyqtgraph::tryMakeQImage(displayView(input, axisOrder_), colorOptions)
+                                           : pyqtgraph::tryMakeQImage(displayView(input, axisOrder_));
         }
         break;
     }
     case DataKind::UInt16Rank2:
-        rendered = pyqtgraph::tryMakeQImage(displayView(contiguousRank2(uint16Data_, shape_), axisOrder_));
+        rendered = pyqtgraph::tryMakeQImage(displayView(contiguousRank2(uint16Data_, shape_), axisOrder_), scalarOptions);
         break;
     case DataKind::UInt16Rank3: {
         const auto input = contiguousRank3(uint16Data_, shape_);
         if (shape_[2] == 1) {
-            rendered = pyqtgraph::tryMakeQImage(displayView(singleChannelView(input), axisOrder_));
+            rendered = pyqtgraph::tryMakeQImage(displayView(singleChannelView(input), axisOrder_), scalarOptions);
         } else {
             rendered = pyqtgraph::tryMakeQImage(displayView(input, axisOrder_));
         }
         break;
     }
+    case DataKind::FloatRank2:
+        rendered = pyqtgraph::tryMakeQImage(displayView(contiguousRank2(floatData_, shape_), axisOrder_), scalarOptions);
+        break;
     case DataKind::None:
         break;
     }
@@ -325,6 +402,18 @@ std::array<std::size_t, 2> ImageItem::extents() const noexcept
         return {0, 0};
     }
     return extentsForShape(shape_, axisOrder_);
+}
+
+std::optional<ImageLookupTable> ImageItem::lookupTableView() const noexcept
+{
+    if (lookupTableData_.empty()) {
+        return std::nullopt;
+    }
+    return ImageLookupTable{lookupTableData_.data(),
+                            lookupTableRows_,
+                            lookupTableChannels_,
+                            static_cast<std::ptrdiff_t>(lookupTableChannels_),
+                            1};
 }
 
 void ImageItem::markRenderRequired()
