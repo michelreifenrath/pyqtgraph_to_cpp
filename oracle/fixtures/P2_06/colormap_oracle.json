@@ -1,0 +1,221 @@
+{
+  "cases": {
+    "equal_spacing": {
+      "input_colors_rgba": [
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          128,
+          64,
+          32,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ]
+      ],
+      "lookup_5_byte_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          64,
+          32,
+          16
+        ],
+        [
+          128,
+          64,
+          32
+        ],
+        [
+          191,
+          159,
+          143
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ],
+      "lookup_5_float_red": [
+        0.0,
+        0.25098039215686274,
+        0.5019607843137255,
+        0.7509803921568627,
+        1.0
+      ],
+      "positions": [
+        0.0,
+        0.5,
+        1.0
+      ]
+    },
+    "gradient": {
+      "mirror_stops": [
+        [
+          0.0,
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        [
+          0.5,
+          [
+            0,
+            0,
+            0,
+            255
+          ]
+        ],
+        [
+          1.0,
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ]
+      ],
+      "normal_stops": [
+        [
+          0.0,
+          [
+            0,
+            0,
+            0,
+            255
+          ]
+        ],
+        [
+          1.0,
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ]
+      ],
+      "repeat_spread": "QGradient::RepeatSpread"
+    },
+    "local_palettes": {
+      "PAL-relaxed": {
+        "colors_hex": [
+          "#f97f10",
+          "#e5bb00",
+          "#94ab00",
+          "#12a12a",
+          "#007c8c",
+          "#0e56c2",
+          "#813be3",
+          "#c01188",
+          "#e23512",
+          "#f97f10"
+        ],
+        "positions": [
+          0.0,
+          0.1111111111111111,
+          0.2222222222222222,
+          0.3333333333333333,
+          0.4444444444444444,
+          0.5555555555555556,
+          0.6666666666666666,
+          0.7777777777777778,
+          0.8888888888888888,
+          1.0
+        ]
+      },
+      "PAL-relaxed_bright": {
+        "colors_hex": [
+          "#ff9d47",
+          "#f7e100",
+          "#b3cf00",
+          "#1ec23a",
+          "#00a0b5",
+          "#1f78ff",
+          "#a54dff",
+          "#e22ca8",
+          "#ff532b",
+          "#ff9d47"
+        ]
+      },
+      "listMaps_contains": [
+        "PAL-relaxed",
+        "PAL-relaxed_bright"
+      ]
+    },
+    "mapping_modes": {
+      "clip_mid_gray_byte": [
+        127,
+        127,
+        127,
+        255
+      ],
+      "diverging_samples_red": {
+        "-1.0": 0,
+        "0.0": 127,
+        "1.0": 255
+      },
+      "mirror_samples_red": {
+        "-0.25": 63,
+        "1.25": 255
+      },
+      "repeat_samples_red": {
+        "-0.25": 191,
+        "1.25": 63
+      }
+    },
+    "qdarkstyle_palettes": {
+      "dark": {
+        "Active/Base": "#19232D",
+        "Active/ButtonText": "#F0F0F0",
+        "Disabled/Text": "#9DA9B5"
+      },
+      "light": {
+        "Active/Base": "#FAFAFA",
+        "Active/Highlight": "#9FCBFF",
+        "Disabled/HighlightedText": "#293544"
+      }
+    }
+  },
+  "cpp_deviations": [
+    "C++ listMaps()/get() intentionally expose the representative local palette shard owned by P2.06 rather than vendoring every upstream colors/maps data file.",
+    "C++ ColorMap methods use typed overloads/enums instead of Python string mode dispatch."
+  ],
+  "issue": "P2.06",
+  "schema_version": 1,
+  "tolerances": {
+    "byte_channels": 0,
+    "float_channels_absolute": 1e-06,
+    "positions_absolute": 1e-12,
+    "qcolor_channels": 0
+  },
+  "upstream": {
+    "commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "files": [
+      "pyqtgraph/colormap.py",
+      "pyqtgraph/colors/palette.py",
+      "tests/test_colormap.py",
+      "pyqtgraph/colors/maps/PAL-relaxed.hex",
+      "pyqtgraph/colors/maps/PAL-relaxed_bright.hex"
+    ],
+    "probe_note": "ColorMap equal spacing, getStops/getColors/getByIndex, map/getLookupTable, getGradient, listMaps/get, and QDarkStyle palette behavior are taken from pyqtgraph/colormap.py, pyqtgraph/colors/palette.py, tests/test_colormap.py, and representative local map files.",
+    "project": "pyqtgraph",
+    "ref": "pyqtgraph-0.14.0"
+  }
+}

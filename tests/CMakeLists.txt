@@ -101,6 +101,17 @@ set_tests_properties(
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
 )
 
+add_test(
+    NAME pyqtgraph_cpp.oracle.P2_06
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_06_colormap_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P2_06
+    PROPERTIES
+        LABELS P2.06
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_arrayview core/test_ArrayView.cpp pyqtgraph_cpp.core.ArrayView)
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_nan_minmax core/test_nan_minmax.cpp pyqtgraph_cpp.core.nan_minmax)
 pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_plotdata core/test_PlotData.cpp pyqtgraph_cpp.core.PlotData)
@@ -166,6 +177,13 @@ if(_pyqtgraph_cpp_has_mkcolor)
     set_tests_properties(pyqtgraph_cpp.core.image_levels_qimage PROPERTIES LABELS P2.12)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_colormap core/test_ColorMap.cpp pyqtgraph_cpp.core.ColorMap)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_colormap_lut core/test_ColorMap_LUT.cpp pyqtgraph_cpp.core.ColorMap.LUT)
+    pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_colormap_p2_06 core/test_ColorMap_P2_06.cpp pyqtgraph_cpp.core.ColorMap.P2_06)
+    target_compile_definitions(pyqtgraph_cpp_core_colormap_p2_06
+        PRIVATE
+            PYQTGRAPH_CPP_P2_06_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P2_06/colormap_oracle.json"
+            PYQTGRAPH_CPP_P2_06_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P2.06"
+    )
+    set_tests_properties(pyqtgraph_cpp.core.ColorMap.P2_06 PROPERTIES LABELS P2.06)
     pyqtgraph_cpp_add_cpp_test(pyqtgraph_cpp_core_mkpen_mkbrush core/test_mkPen_mkBrush.cpp pyqtgraph_cpp.core.mkPen_mkBrush)
 endif()
 
