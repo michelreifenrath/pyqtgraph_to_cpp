@@ -1,0 +1,61 @@
+{
+  "issue": "P3.08",
+  "source": {
+    "id": "pyqtgraph-0.14.0",
+    "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "upstream_files": [
+      "pyqtgraph/graphicsItems/DateAxisItem.py",
+      "tests/graphicsItems/test_DateAxisItem.py"
+    ]
+  },
+  "tolerances": {
+    "tick_position_seconds": 1e-9,
+    "milliseconds_label_precision": "truncate to three fractional digits",
+    "strings": "exact C-locale match"
+  },
+  "cases": [
+    {
+      "name": "basic_utc_tick_strings",
+      "utcOffset": 0,
+      "values": [0, 978307200, 978328800, 978350400, 978372000],
+      "expected": {
+        "year": ["1970", "2001", "2001", "2001", "2001"],
+        "month": ["Jan", "Jan", "Jan", "Jan", "Jan"],
+        "day": ["Thu 01", "Mon 01", "Mon 01", "Mon 01", "Mon 01"],
+        "hour_minute": ["00:00", "00:00", "06:00", "12:00", "18:00"],
+        "hms": ["00:00:00", "00:00:00", "06:00:00", "12:00:00", "18:00:00"]
+      }
+    },
+    {
+      "name": "millisecond_labels",
+      "utcOffset": 0,
+      "values": [0.0, 0.001, 0.005, 0.123, 59.999],
+      "spacing": 0.001,
+      "expected": ["00.000", "00.001", "00.005", "00.123", "59.999"]
+    },
+    {
+      "name": "custom_utc_offset_hour_labels",
+      "utcOffset": -3600,
+      "values": [978307200, 978310800, 978314400, 978318000, 978321600],
+      "spacing": 3600,
+      "expected": ["01:00", "02:00", "03:00", "04:00", "05:00"]
+    },
+    {
+      "name": "day_hour_ticks_utc",
+      "utcOffset": 0,
+      "range": [978307199, 978372001],
+      "size": 324,
+      "expected_levels": [
+        {"spacing": 86400, "values": [978307200]},
+        {"spacing": 3600, "contains": [978328800, 978350400, 978372000]}
+      ]
+    },
+    {
+      "name": "fallback_year_for_out_of_range",
+      "utcOffset": 0,
+      "values": [1e20, -1e20],
+      "spacing": 31536000,
+      "expected": ["3.16881e+12", "-3.16881e+12"]
+    }
+  ]
+}
