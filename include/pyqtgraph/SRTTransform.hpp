@@ -76,7 +76,8 @@ public:
         const Point p3{transform.map(QPointF{0.0, 1.0})};
         const Point dp2 = p2 - p1;
         const Point dp3 = p3 - p1;
-        const double sy = dp2.angle(dp3, QStringView{u"radians"}) > 0.0 ? -1.0 : 1.0;
+        const double determinant = dp2.x() * dp3.y() - dp2.y() * dp3.x();
+        const double sy = determinant < 0.0 ? -1.0 : 1.0;
         state_ = State{
             p1,
             Point{dp2.length(), dp3.length() * sy},

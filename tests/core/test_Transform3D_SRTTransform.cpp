@@ -111,6 +111,14 @@ void assertMatrix3D(const std::array<double, 16>& matrix)
     }
 }
 
+template <std::size_t Size>
+void assertArrayNear(const std::array<double, Size>& actual, const std::array<double, Size>& expected, double tolerance = kMatrixTolerance)
+{
+    for (std::size_t index = 0; index < expected.size(); ++index) {
+        assertNear(actual[index], expected[index], tolerance);
+    }
+}
+
 void assertMatrix2D(const std::array<double, 9>& matrix)
 {
     const double c = std::sqrt(0.5);
@@ -194,6 +202,12 @@ int main()
     assertPoint(fromQTransform.getTranslation(), 10.0, 20.0);
     assertPoint(fromQTransform.getScale(), 0.2, 0.4);
     assertNear(fromQTransform.getRotation(), 45.0);
+    SRTTransform rotatedPastQuadrant;
+    rotatedPastQuadrant.setRotate(135.0);
+    rotatedPastQuadrant.setScale(2.0, 3.0);
+    const SRTTransform decomposedPastQuadrant(QTransform{rotatedPastQuadrant});
+    assertPoint(decomposedPastQuadrant.getScale(), 2.0, 3.0);
+    assertNear(decomposedPastQuadrant.getRotation(), 135.0);
     const SRTTransform divided = srt.dividedBy(SRTTransform{});
     assertMatrix2D(divided.matrix());
     const SRTTransform multiplied = SRTTransform{} * srt;
@@ -241,6 +255,10 @@ int main()
     restored3D.restoreState(saved3D);
     assertMatrix3D(restored3D.matrix3D());
 
+    SRTTransform3D zeroZScale;
+    zeroZScale.restoreState(SRTTransform3D::State{pyqtgraph::Vector{1.0, 2.0, 3.0}, pyqtgraph::Vector{2.0, 3.0, 0.0}, 0.0, pyqtgraph::Vector{0.0, 0.0, 1.0}});
+    assertVector(zeroZScale.getScale(), 2.0, 3.0, 0.0);
+
     SRTTransform3D twoValueScale;
     twoValueScale.setScale(2.0, 3.0);
     assertVector(twoValueScale.getScale(), 2.0, 3.0, 1.0);
@@ -260,6 +278,16 @@ int main()
         nonZRejected = true;
     }
     CHECK(nonZRejected);
+
+    SRTTransform3D negativeZHalfTurn;
+    negativeZHalfTurn.setRotate(180.0, QVector3D{0.0F, 0.0F, -1.0F});
+    const SRTTransform::State negativeZHalfTurn2D = negativeZHalfTurn.as2D().saveState();
+    assertNear(std::abs(negativeZHalfTurn2D.angle), 180.0, kVectorTolerance);
+
+    SRTTransform3D mixedAxisHalfTurn;
+    mixedAxisHalfTurn.setRotate(180.0, QVector3D{1.0F, -1.0F, 0.0F}.normalized());
+    const SRTTransform3D mixedAxisRoundTrip(Transform3D{mixedAxisHalfTurn});
+    assertArrayNear(mixedAxisRoundTrip.matrix3D(), mixedAxisHalfTurn.matrix3D(), 2.0e-5);
 
     const auto inverted = srt3d.inverted();
     CHECK(inverted.second);

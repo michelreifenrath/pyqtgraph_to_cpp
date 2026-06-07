@@ -60,6 +60,32 @@ inline double srt3DLength(const std::array<double, 3>& values)
     return std::sqrt(srt3DDot(values, values));
 }
 
+inline Vector srt3DHalfTurnAxis(const double (&r)[3][3])
+{
+    const double xx = std::max(0.0, (r[0][0] + 1.0) * 0.5);
+    const double yy = std::max(0.0, (r[1][1] + 1.0) * 0.5);
+    const double zz = std::max(0.0, (r[2][2] + 1.0) * 0.5);
+
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    if (xx >= yy && xx >= zz && xx > kSrtTransform3DTolerance * kSrtTransform3DTolerance) {
+        x = std::sqrt(xx);
+        y = (r[0][1] + r[1][0]) / (4.0 * x);
+        z = (r[0][2] + r[2][0]) / (4.0 * x);
+    } else if (yy >= zz && yy > kSrtTransform3DTolerance * kSrtTransform3DTolerance) {
+        y = std::sqrt(yy);
+        x = (r[0][1] + r[1][0]) / (4.0 * y);
+        z = (r[1][2] + r[2][1]) / (4.0 * y);
+    } else if (zz > kSrtTransform3DTolerance * kSrtTransform3DTolerance) {
+        z = std::sqrt(zz);
+        x = (r[0][2] + r[2][0]) / (4.0 * z);
+        y = (r[1][2] + r[2][1]) / (4.0 * z);
+    }
+
+    return srt3DNormalizedOrZ(QVector3D{static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)});
+}
+
 } // namespace detail
 
 class SRTTransform3D : public Transform3D {
@@ -211,11 +237,7 @@ public:
         if (sinMagnitude > detail::kSrtTransform3DTolerance) {
             state_.axis = Vector{skew[0] / (2.0 * sinMagnitude), skew[1] / (2.0 * sinMagnitude), skew[2] / (2.0 * sinMagnitude)};
         } else {
-            state_.axis = detail::srt3DNormalizedOrZ(QVector3D{
-                static_cast<float>(std::sqrt(std::max(0.0, (r[0][0] + 1.0) * 0.5))),
-                static_cast<float>(std::sqrt(std::max(0.0, (r[1][1] + 1.0) * 0.5))),
-                static_cast<float>(std::sqrt(std::max(0.0, (r[2][2] + 1.0) * 0.5))),
-            });
+            state_.axis = detail::srt3DHalfTurnAxis(r);
         }
         state_.angle = angle;
         update();
@@ -223,12 +245,18 @@ public:
 
     [[nodiscard]] SRTTransform as2D() const
     {
-        if (std::abs(state_.angle) > detail::kSrtTransform3DTolerance
-            && (!detail::srt3DNearlyEqual(state_.axis.x(), 0.0) || !detail::srt3DNearlyEqual(state_.axis.y(), 0.0)
-                || !detail::srt3DNearlyEqual(state_.axis.z(), 1.0))) {
-            throw std::invalid_argument("Can only convert 4x4 matrix to 3x3 if rotation is around Z-axis.");
+        double angle = state_.angle;
+        if (std::abs(state_.angle) > detail::kSrtTransform3DTolerance) {
+            const bool rotatesAroundZ = detail::srt3DNearlyEqual(state_.axis.x(), 0.0) && detail::srt3DNearlyEqual(state_.axis.y(), 0.0)
+                && detail::srt3DNearlyEqual(std::abs(state_.axis.z()), 1.0);
+            if (!rotatesAroundZ) {
+                throw std::invalid_argument("Can only convert 4x4 matrix to 3x3 if rotation is around Z-axis.");
+            }
+            if (state_.axis.z() < 0.0F) {
+                angle = -angle;
+            }
         }
-        return SRTTransform{SRTTransform::State{Point{state_.pos.x(), state_.pos.y()}, Point{state_.scale.x(), state_.scale.y()}, state_.angle}};
+        return SRTTransform{SRTTransform::State{Point{state_.pos.x(), state_.pos.y()}, Point{state_.scale.x(), state_.scale.y()}, angle}};
     }
 
     [[nodiscard]] State saveState() const { return state_; }
@@ -236,9 +264,6 @@ public:
     void restoreState(const State& state)
     {
         state_ = state;
-        if (state_.scale.z() == 0.0F) {
-            state_.scale.setZ(1.0F);
-        }
         if (state_.axis.length() == 0.0F) {
             state_.axis = Vector{0.0, 0.0, 1.0};
         }
