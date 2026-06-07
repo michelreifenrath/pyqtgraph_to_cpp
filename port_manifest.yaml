@@ -3902,9 +3902,9 @@ classes:
   bases:
   - GraphicsObject
   line: 10
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: CurveArrow
   upstream_path: pyqtgraph/graphicsItems/CurvePoint.py
   target_header_path: include/pyqtgraph/graphicsItems/CurvePoint.hpp
@@ -3915,7 +3915,7 @@ classes:
   line: 107
   status: not_started
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: TickSpec
   upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
@@ -4032,9 +4032,9 @@ classes:
   bases:
   - GraphicsObject
   line: 12
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: LRU
   upstream_path: pyqtgraph/graphicsItems/GraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsItem.hpp
@@ -4065,9 +4065,9 @@ classes:
   bases:
   - GraphicsWidget
   line: 11
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: GraphicsObject
   upstream_path: pyqtgraph/graphicsItems/GraphicsObject.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsObject.hpp
@@ -6065,9 +6065,9 @@ classes:
   bases:
   - GraphicsView
   line: 6
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: GraphicsView
   upstream_path: pyqtgraph/widgets/GraphicsView.py
   target_header_path: include/pyqtgraph/widgets/GraphicsView.hpp
@@ -6076,9 +6076,9 @@ classes:
   bases:
   - QtWidgets.QGraphicsView
   line: 17
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: GroupBox
   upstream_path: pyqtgraph/widgets/GroupBox.py
   target_header_path: include/pyqtgraph/widgets/GroupBox.hpp
