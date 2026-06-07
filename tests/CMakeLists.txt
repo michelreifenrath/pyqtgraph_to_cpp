@@ -359,6 +359,17 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ImageItem_NonUniform.P4_05 PROPERTIES LABELS P4.05)
 
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_histogramlut_colorbar_p4_06
+        graphicsItems/test_HistogramLUT_ColorBar_P4_06.cpp
+        pyqtgraph_cpp.graphicsItems.HistogramLUT_ColorBar.P4_06
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_histogramlut_colorbar_p4_06
+        PRIVATE
+            PYQTGRAPH_CPP_P4_06_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.06"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.HistogramLUT_ColorBar.P4_06 PROPERTIES LABELS P4.06)
+
     add_executable(pyqtgraph_cpp_examples_simpleplot "${PROJECT_SOURCE_DIR}/examples/SimplePlot.cpp")
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_examples_simpleplot)
     add_executable(pyqtgraph_cpp_examples_imageitem "${PROJECT_SOURCE_DIR}/examples/ImageItem.cpp")

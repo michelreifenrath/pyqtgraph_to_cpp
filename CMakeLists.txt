@@ -155,6 +155,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
             include/pyqtgraph/graphicsItems/ImageItem.hpp
             src/pyqtgraph/graphicsItems/ImageItem.cpp
+            include/pyqtgraph/graphicsItems/HistogramLUTItem.hpp
+            src/pyqtgraph/graphicsItems/HistogramLUTItem.cpp
+            include/pyqtgraph/graphicsItems/ColorBarItem.hpp
+            src/pyqtgraph/graphicsItems/ColorBarItem.cpp
             include/pyqtgraph/graphicsItems/NonUniformImage.hpp
             src/pyqtgraph/graphicsItems/NonUniformImage.cpp
             src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
