@@ -123,8 +123,10 @@ endif()
 if(_pyqtgraph_cpp_has_graphicsitem)
     target_sources(pyqtgraph_cpp
         PRIVATE
+            include/pyqtgraph/WidgetGroup.hpp
             include/pyqtgraph/GraphicsScene/GraphicsScene.hpp
             include/pyqtgraph/GraphicsScene/mouseEvents.hpp
+            src/pyqtgraph/WidgetGroup.cpp
             src/pyqtgraph/GraphicsScene/GraphicsScene.cpp
             src/pyqtgraph/GraphicsScene/mouseEvents.cpp
             src/pyqtgraph/graphicsItems/GraphicsItem.cpp

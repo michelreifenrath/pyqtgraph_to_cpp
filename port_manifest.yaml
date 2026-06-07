@@ -157,9 +157,9 @@ source_files:
   target_header_path: include/pyqtgraph/WidgetGroup.hpp
   target_source_path: src/pyqtgraph/WidgetGroup.cpp
   subsystem: core
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/__init__.py
   target_header_path: include/pyqtgraph/__init__.hpp
   target_source_path: src/pyqtgraph/__init__.cpp
@@ -2670,9 +2670,9 @@ classes:
   bases:
   - QtGui.QTransform
   line: 10
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: SRTTransform3D
   upstream_path: pyqtgraph/SRTTransform3D.py
   target_header_path: include/pyqtgraph/SRTTransform3D.hpp
@@ -2681,9 +2681,9 @@ classes:
   bases:
   - Transform3D
   line: 11
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: SignalProxy
   upstream_path: pyqtgraph/SignalProxy.py
   target_header_path: include/pyqtgraph/SignalProxy.hpp
@@ -2714,9 +2714,9 @@ classes:
   bases:
   - QtGui.QMatrix4x4
   line: 8
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: Vector
   upstream_path: pyqtgraph/Vector.py
   target_header_path: include/pyqtgraph/Vector.hpp
@@ -2736,9 +2736,9 @@ classes:
   bases:
   - QtCore.QObject
   line: 59
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ColorMap
   upstream_path: pyqtgraph/colormap.py
   target_header_path: include/pyqtgraph/colormap.hpp
@@ -2758,9 +2758,9 @@ classes:
   bases:
   - Exception
   line: 29
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: CmdInput
   upstream_path: pyqtgraph/console/CmdInput.py
   target_header_path: include/pyqtgraph/console/CmdInput.hpp
@@ -2845,9 +2845,9 @@ classes:
   bases:
   - object
   line: 62
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: GarbageWatcher
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2856,9 +2856,9 @@ classes:
   bases:
   - object
   line: 440
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: Profiler
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2867,9 +2867,9 @@ classes:
   bases:
   - object
   line: 481
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: ObjTracker
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2878,9 +2878,9 @@ classes:
   bases:
   - object
   line: 661
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: PrintDetector
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2889,9 +2889,9 @@ classes:
   bases:
   - object
   line: 1096
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: ThreadTrace
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2900,9 +2900,9 @@ classes:
   bases:
   - object
   line: 1158
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: ThreadColor
   upstream_path: pyqtgraph/debug.py
   target_header_path: include/pyqtgraph/debug.hpp
@@ -2911,9 +2911,9 @@ classes:
   bases:
   - object
   line: 1248
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: Container
   upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
@@ -3056,9 +3056,9 @@ classes:
   bases:
   - object
   line: 68
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - class_name: CSVExporter
   upstream_path: pyqtgraph/exporters/CSVExporter.py
   target_header_path: include/pyqtgraph/exporters/CSVExporter.hpp
@@ -3891,9 +3891,9 @@ classes:
   bases:
   - PlotItem
   line: 15
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: CurvePoint
   upstream_path: pyqtgraph/graphicsItems/CurvePoint.py
   target_header_path: include/pyqtgraph/graphicsItems/CurvePoint.hpp
@@ -4122,9 +4122,9 @@ classes:
   bases:
   - GraphicsWidget
   line: 25
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ImageItem
   upstream_path: pyqtgraph/graphicsItems/ImageItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ImageItem.hpp
@@ -4234,9 +4234,9 @@ classes:
   bases:
   - GraphicsObject
   line: 13
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: DirtyFlag
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
