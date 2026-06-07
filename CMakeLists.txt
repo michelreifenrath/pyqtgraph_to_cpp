@@ -107,6 +107,7 @@ if(_pyqtgraph_cpp_has_mkcolor)
     target_sources(pyqtgraph_cpp
         PRIVATE
             src/pyqtgraph/colormap.cpp
+            src/pyqtgraph/colors/palette.cpp
             src/pyqtgraph/functions_qimage.cpp
     )
     target_compile_definitions(pyqtgraph_cpp
