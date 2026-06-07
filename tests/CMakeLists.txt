@@ -91,6 +91,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME pyqtgraph_cpp.oracle.P2_02
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_02_transform_srt_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P2_02
+    PROPERTIES
+        LABELS P2.02
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME pyqtgraph_cpp.oracle.P2_04
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_04_functions_symbol_oracle.py" --check
 )
@@ -148,6 +159,17 @@ if(_pyqtgraph_cpp_has_vector)
             PYQTGRAPH_CPP_P2_01_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P2_01/point_vector_oracle.json"
     )
     set_tests_properties(pyqtgraph_cpp.core.Vector PROPERTIES LABELS P2.01)
+
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_core_transform3d_srttransform
+        core/test_Transform3D_SRTTransform.cpp
+        pyqtgraph_cpp.core.Transform3D_SRTTransform
+    )
+    target_compile_definitions(pyqtgraph_cpp_core_transform3d_srttransform
+        PRIVATE
+            PYQTGRAPH_CPP_P2_02_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P2_02/transform_srt_oracle.json"
+    )
+    set_tests_properties(pyqtgraph_cpp.core.Transform3D_SRTTransform PROPERTIES LABELS P2.02)
 endif()
 
 if(_pyqtgraph_cpp_has_mkcolor)

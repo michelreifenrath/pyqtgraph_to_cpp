@@ -1,0 +1,356 @@
+{
+  "cpp_deviations": [
+    "C++ exposes matrix3D()/matrix2D() fixed-size arrays and matrix(nd) vector output instead of numpy arrays.",
+    "C++ saveState()/restoreState() use typed state structs instead of Python dict/pickle protocols.",
+    "C++ map(std::array)/map(std::vector) are native equivalents for PyQtGraph list/tuple/numpy coordinate mapping."
+  ],
+  "issue": "P2.02",
+  "reference": {
+    "commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "project": "PyQtGraph",
+    "ref": "pyqtgraph-0.14.0",
+    "upstream_files": [
+      "pyqtgraph/Transform3D.py",
+      "pyqtgraph/SRTTransform.py",
+      "pyqtgraph/SRTTransform3D.py",
+      "pyqtgraph/functions.py",
+      "tests/test_srttransform3d.py",
+      "tests/test_pickles.py"
+    ]
+  },
+  "schema_version": 1,
+  "srttransform": {
+    "division_semantics": "A / B == B^-1 * A",
+    "map_points": [
+      {
+        "input": [
+          0.0,
+          0.0
+        ],
+        "output": [
+          10.0,
+          20.0
+        ]
+      },
+      {
+        "input": [
+          1.0,
+          0.0
+        ],
+        "output": [
+          10.14142135623731,
+          20.14142135623731
+        ]
+      },
+      {
+        "input": [
+          0.0,
+          1.0
+        ],
+        "output": [
+          9.717157287525382,
+          20.28284271247462
+        ]
+      },
+      {
+        "input": [
+          -2.0,
+          3.0
+        ],
+        "output": [
+          8.868629150101524,
+          20.565685424949237
+        ]
+      }
+    ],
+    "matrix": [
+      [
+        0.14142135623730953,
+        0.1414213562373095,
+        0.0
+      ],
+      [
+        -0.282842712474619,
+        0.28284271247461906,
+        0.0
+      ],
+      [
+        10.0,
+        20.0,
+        1.0
+      ]
+    ],
+    "state": {
+      "angle": 45.0,
+      "pos": [
+        10.0,
+        20.0
+      ],
+      "scale": [
+        0.2,
+        0.4
+      ]
+    }
+  },
+  "srttransform3d": {
+    "map_points": [
+      {
+        "input": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "output": [
+          10.0,
+          20.0,
+          40.0
+        ]
+      },
+      {
+        "input": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "output": [
+          10.14142135623731,
+          20.14142135623731,
+          40.0
+        ]
+      },
+      {
+        "input": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "output": [
+          9.717157287525382,
+          20.28284271247462,
+          40.0
+        ]
+      },
+      {
+        "input": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "output": [
+          10.0,
+          20.0,
+          41.0
+        ]
+      },
+      {
+        "input": [
+          -1.0,
+          -1.0,
+          0.0
+        ],
+        "output": [
+          10.14142135623731,
+          19.575735931288072,
+          40.0
+        ]
+      }
+    ],
+    "matrix": [
+      [
+        0.14142135623730953,
+        -0.282842712474619,
+        0.0,
+        10.0
+      ],
+      [
+        0.1414213562373095,
+        0.28284271247461906,
+        0.0,
+        20.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        40.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "non_z_as2d_exception": "invalid_argument",
+    "round_trip_from_transform3d": {
+      "angle": 45.0,
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        0.2,
+        0.4,
+        1.0
+      ],
+      "translation": [
+        10.0,
+        20.0,
+        40.0
+      ]
+    },
+    "state": {
+      "angle": 45.0,
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "pos": [
+        10.0,
+        20.0,
+        40.0
+      ],
+      "scale": [
+        0.2,
+        0.4,
+        1.0
+      ]
+    },
+    "two_value_scale_defaults_z": [
+      2.0,
+      3.0,
+      1.0
+    ],
+    "zero_angle_axis_reset": [
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "tolerances": {
+    "matrix_absolute": 1e-05,
+    "point_absolute": 1e-05,
+    "vector_absolute": 1e-05
+  },
+  "transform3d": {
+    "identity_matrix2d": [
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "identity_matrix3d": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "invalid_sequence_length_exception": "TypeError",
+    "map_vector": {
+      "input": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "output": [
+        10.14142135623731,
+        20.14142135623731,
+        40.0
+      ]
+    },
+    "srt_z_flat_row_major": [
+      0.14142135623730953,
+      -0.282842712474619,
+      0.0,
+      10.0,
+      0.1414213562373095,
+      0.28284271247461906,
+      0.0,
+      20.0,
+      0.0,
+      0.0,
+      1.0,
+      40.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "srt_z_matrix2d_projection": [
+      [
+        0.14142135623730953,
+        -0.282842712474619,
+        10.0
+      ],
+      [
+        0.1414213562373095,
+        0.28284271247461906,
+        20.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "srt_z_matrix3d": [
+      [
+        0.14142135623730953,
+        -0.282842712474619,
+        0.0,
+        10.0
+      ],
+      [
+        0.1414213562373095,
+        0.28284271247461906,
+        0.0,
+        20.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        40.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  }
+}
