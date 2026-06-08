@@ -102,6 +102,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME pyqtgraph_cpp.oracle.P4_04.Boxplot_PColorMesh
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P4_04_boxplot_pcolormesh_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P4_04.Boxplot_PColorMesh
+    PROPERTIES
+        LABELS P4.04
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME pyqtgraph_cpp.oracle.P2_03
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_03_plotdata_oracle.py" --check
 )
@@ -442,6 +453,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         pyqtgraph_cpp.graphicsItems.GraphItem_CurvePoint.P4_03
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.GraphItem_CurvePoint.P4_03 PROPERTIES LABELS P4.03)
+
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_boxplot_pcolormesh_p4_04
+        graphicsItems/test_Boxplot_PColorMesh_P4_04.cpp
+        pyqtgraph_cpp.graphicsItems.Boxplot_PColorMesh.P4_04
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_boxplot_pcolormesh_p4_04
+        PRIVATE
+            PYQTGRAPH_CPP_P4_04_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P4_04/boxplot_pcolormesh_oracle.json"
+            PYQTGRAPH_CPP_P4_04_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.04"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.Boxplot_PColorMesh.P4_04 PROPERTIES LABELS P4.04)
 
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_imageitem_render
