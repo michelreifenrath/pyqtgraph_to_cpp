@@ -500,9 +500,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/ButtonItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ButtonItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ColorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ColorBarItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ColorBarItem.cpp

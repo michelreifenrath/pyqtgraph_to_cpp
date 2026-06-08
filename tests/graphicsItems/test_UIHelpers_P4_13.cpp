@@ -86,7 +86,11 @@ bool testButtonGeometryStateEventsAndLifetime()
     using pyqtgraph::graphicsItems::ButtonItem;
 
     ButtonItem defaultButton(makePixmap(32, 32));
-    CHECK(rectsAlmostEqual(defaultButton.boundingRect(), QRectF(0.0, 0.0, 10.0, 10.0)));
+    CHECK(rectsAlmostEqual(defaultButton.boundingRect(), QRectF(0.0, 0.0, 32.0, 32.0)));
+
+    ButtonItem highDpiDefaultButton(makePixmap(32, 32, 2.0));
+    CHECK(rectsAlmostEqual(highDpiDefaultButton.boundingRect(), QRectF(0.0, 0.0, 16.0, 16.0)));
+
     CHECK(defaultButton.enabled());
     CHECK(qFuzzyCompare(defaultButton.opacity() + 1.0, 1.7));
 

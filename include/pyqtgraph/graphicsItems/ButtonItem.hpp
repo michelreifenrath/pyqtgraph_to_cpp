@@ -25,10 +25,10 @@ class ButtonItem : public GraphicsObject, public pyqtgraph::GraphicsScene::Graph
 
 public:
     explicit ButtonItem(const QPixmap& pixmap,
-        std::optional<qreal> width = 10.0,
+        std::optional<qreal> width = std::nullopt,
         QGraphicsItem* parentItem = nullptr);
     explicit ButtonItem(const QString& imageFile,
-        std::optional<qreal> width = 10.0,
+        std::optional<qreal> width = std::nullopt,
         QGraphicsItem* parentItem = nullptr);
     ~ButtonItem() override;
 
