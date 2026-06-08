@@ -1,0 +1,44 @@
+{
+    "checks": [
+        "default state and style",
+        "setLabels and setColorMap",
+        "deterministic visual reference-vs-actual pixels"
+    ],
+    "focused_proof": {
+        "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.25 --output-on-failure",
+        "exit_code": 0,
+        "test_executable": "pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25"
+    },
+    "issue": "P4.25",
+    "manifest_dashboard": "not applicable: no manifest status fields changed",
+    "manifest_targets": [
+        "include/pyqtgraph/graphicsItems/GradientLegend.hpp",
+        "src/pyqtgraph/graphicsItems/GradientLegend.cpp"
+    ],
+    "reference": "pyqtgraph-0.14.0 a20028b98294b9cc8770f2015a92eb342224b788 pyqtgraph/graphicsItems/GradientLegend.py",
+    "shared_wiring": [
+        "CMakeLists.txt",
+        "tests/CMakeLists.txt"
+    ],
+    "tdd_baseline_failure": {
+        "command": "cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25",
+        "exit_code": 2,
+        "expected": "compile failed before GradientLegend implementation was added"
+    },
+    "validation_commands": [
+        "cmake --preset dev",
+        "cmake --build --preset dev --parallel",
+        "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.25 --output-on-failure",
+        "python3 -m pytest -q",
+        "git diff --check",
+        "git diff --name-only origin/main...HEAD"
+    ],
+    "visual_artifacts": {
+        "actual": "actual.png",
+        "diff": "diff.png",
+        "gpt5_vision_review": "gpt5_vision_review.md",
+        "metrics": "metrics.json",
+        "reference": "reference.png",
+        "root": "reports/visual-diffs/GradientLegend"
+    }
+}

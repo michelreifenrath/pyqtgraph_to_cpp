@@ -546,6 +546,20 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.GradientEditorItem.P4_24 PROPERTIES LABELS "visual;P4.24")
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25
+        graphicsItems/test_GradientLegend_P4_25.cpp
+        pyqtgraph_cpp.graphicsItems.GradientLegend.P4_25
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25
+        PRIVATE
+            PYQTGRAPH_CPP_P4_25_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.25"
+            PYQTGRAPH_CPP_P4_25_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/GradientLegend"
+            PYQTGRAPH_CPP_P4_25_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual-diffs/GradientLegend/gpt5_vision_review.md"
+            PYQTGRAPH_CPP_P4_25_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.25"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.GradientLegend.P4_25 PROPERTIES LABELS "visual;P4.25")
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem
