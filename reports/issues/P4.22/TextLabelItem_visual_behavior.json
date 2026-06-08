@@ -1,0 +1,14 @@
+{
+  "issue": "P4.22",
+  "classes": ["pyqtgraph::graphicsItems::TextItem", "pyqtgraph::graphicsItems::LabelItem"],
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/TextItem.py and LabelItem.py",
+  "manifest_targets": ["include/pyqtgraph/graphicsItems/TextItem.hpp", "src/pyqtgraph/graphicsItems/TextItem.cpp", "include/pyqtgraph/graphicsItems/LabelItem.hpp", "src/pyqtgraph/graphicsItems/LabelItem.cpp"],
+  "shared_wiring": ["tests/CMakeLists.txt", "CMakeLists.txt"],
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.22 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_graphicsitems_textlabelitem_p4_22"},
+  "checks": ["TextItem child QGraphicsTextItem anchor placement", "TextItem transform compensation under scaled parent", "TextItem border/fill rendering", "LabelItem styled HTML and justify layout", "LabelItem angle rotation", "deterministic visual reference-vs-actual pixels"],
+  "visual_artifacts": {"root": "reports/visual-diffs/TextLabelItem", "reference": "reference.png", "actual": "actual.png", "diff": "diff.png", "metrics": "metrics.json", "gpt5_vision_review": "gpt5_vision_review.md"},
+  "semantic_pixels": {"reference": 1853, "actual": 1853},
+  "visual_metrics": {"changed_pixels": 0, "max_delta": 0, "mean_delta": 0.000000, "passed": true},
+  "validation_commands": ["cmake --preset dev", "cmake --build --preset dev --parallel", "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.22 --output-on-failure", "python3 -m pytest -q", "git diff --check", "git diff --name-only origin/main...HEAD"],
+  "manifest_dashboard": "not_applicable: port_manifest/dashboard updates are outside P4.22 owned paths for this shard"
+}

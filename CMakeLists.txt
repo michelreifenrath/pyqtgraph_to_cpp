@@ -143,6 +143,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GridItem.cpp
             include/pyqtgraph/graphicsItems/LegendItem.hpp
             src/pyqtgraph/graphicsItems/LegendItem.cpp
+            include/pyqtgraph/graphicsItems/TextItem.hpp
+            src/pyqtgraph/graphicsItems/TextItem.cpp
+            include/pyqtgraph/graphicsItems/LabelItem.hpp
+            src/pyqtgraph/graphicsItems/LabelItem.cpp
             include/pyqtgraph/graphicsItems/VTickGroup.hpp
             src/pyqtgraph/graphicsItems/VTickGroup.cpp
             include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
