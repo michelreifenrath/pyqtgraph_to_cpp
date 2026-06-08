@@ -309,6 +309,11 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         graphicsItems/test_GraphicsWidgetAnchor.cpp
         pyqtgraph_cpp.graphicsItems.GraphicsWidgetAnchor
     )
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_uihelpers_p4_13
+        graphicsItems/test_UIHelpers_P4_13.cpp
+        pyqtgraph_cpp.graphicsItems.UIHelpers.P4_13
+    )
     set_tests_properties(
         pyqtgraph_cpp.graphicsItems.GraphicsItem
         pyqtgraph_cpp.graphicsItems.GraphicsObject
@@ -316,6 +321,7 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         pyqtgraph_cpp.graphicsItems.GraphicsWidgetAnchor
         PROPERTIES LABELS P3.02
     )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.UIHelpers.P4_13 PROPERTIES LABELS P4.13)
 
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsscene_graphicsscene
