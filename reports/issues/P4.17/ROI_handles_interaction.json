@@ -1,0 +1,65 @@
+{
+    "events": [
+        {
+            "from": [
+                30,
+                40
+            ],
+            "item": "ROI::Handle",
+            "name": "left drag corner scale handle",
+            "to": [
+                40,
+                55
+            ]
+        },
+        {
+            "from": [
+                40,
+                55
+            ],
+            "item": "ROI::Handle",
+            "name": "right drag ignored",
+            "to": [
+                50,
+                65
+            ]
+        }
+    ],
+    "issue": "P4.17",
+    "postState": {
+        "angle": 0,
+        "pos": [
+            10,
+            10
+        ],
+        "size": [
+            30,
+            45
+        ]
+    },
+    "preState": {
+        "angle": 0,
+        "pos": [
+            10,
+            10
+        ],
+        "size": [
+            20,
+            30
+        ]
+    },
+    "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:509-620 addScaleHandle/addHandle, 665-690 get handle positions, 834-938 movePoint/stateChanged, 1321-1519 Handle rendering/drag; tests/graphicsItems/test_ROI.py:221-273,281-386,443-464",
+    "signals": {
+        "changed": 1,
+        "finished": 1,
+        "started": 1
+    },
+    "visual": {
+        "handlePixelsNearDraggedCorner": 289,
+        "imageSize": [
+            96,
+            96
+        ],
+        "nonBackgroundPixels": 5776
+    }
+}

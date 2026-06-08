@@ -7,10 +7,15 @@
 
 #include "GraphicsObject.hpp"
 
+#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
 #include <pyqtgraph/Point.hpp>
 
+#include <QtCore/QList>
 #include <QtCore/QPointF>
 #include <QtCore/QRectF>
+#include <QtCore/QString>
+#include <QtCore/QVector>
+#include <QtGui/QPainterPath>
 #include <QtGui/QPen>
 
 class QPainter;
@@ -36,6 +41,46 @@ class ROI : public GraphicsObject {
     Q_OBJECT
 
 public:
+    class Handle : public GraphicsObject, public pyqtgraph::GraphicsScene::GraphicsSceneEventHandler {
+    public:
+        enum class Type { Scale };
+
+        explicit Handle(qreal radius = 5.0,
+                        Type type = Type::Scale,
+                        const QPen& pen = QPen(Qt::white),
+                        const QPen& hoverPen = QPen(Qt::yellow),
+                        QGraphicsItem* parent = nullptr);
+        ~Handle() override;
+
+        void connectROI(ROI* roi);
+        void disconnectROI(ROI* roi);
+        void movePoint(const QPointF& pos,
+                       Qt::KeyboardModifiers modifiers = Qt::NoModifier,
+                       bool finish = true);
+        void hoverEvent(pyqtgraph::GraphicsScene::HoverEvent* event) override;
+        void mouseDragEvent(pyqtgraph::GraphicsScene::MouseDragEvent* event) override;
+
+        [[nodiscard]] QRectF boundingRect() const override;
+        [[nodiscard]] QPainterPath shape() const override;
+        void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
+
+    private:
+        void buildPath();
+
+        qreal radius_ = 5.0;
+        Type type_ = Type::Scale;
+        QPen pen_;
+        QPen hoverPen_;
+        QPen currentPen_;
+        QPainterPath path_;
+        QList<ROI*> rois_;
+        bool isMoving_ = false;
+        QPointF startPos_;
+        QPointF cursorOffset_;
+    };
+
+    enum class HandleCoordinateSystem { Parent, Scene };
+
     explicit ROI(const QPointF& pos, const QPointF& size = QPointF(1.0, 1.0), qreal angle = 0.0, QGraphicsItem* parent = nullptr);
     ~ROI() override;
 
@@ -61,6 +106,22 @@ public:
     void setSnapSize(qreal snapSize) noexcept;
     [[nodiscard]] qreal snapSize() const noexcept;
 
+    Handle* addScaleHandle(const QPointF& pos,
+                           const QPointF& center,
+                           Handle* item = nullptr,
+                           const QString& name = QString(),
+                           bool lockAspect = false);
+    [[nodiscard]] QList<Handle*> getHandles() const;
+    void handleMoveStarted();
+    [[nodiscard]] bool checkPointMove(const Handle* handle,
+                                      const QPointF& pos,
+                                      Qt::KeyboardModifiers modifiers = Qt::NoModifier) const;
+    void movePoint(Handle* handle,
+                   const QPointF& pos,
+                   Qt::KeyboardModifiers modifiers = Qt::NoModifier,
+                   bool finish = true,
+                   HandleCoordinateSystem coords = HandleCoordinateSystem::Parent);
+
     void stateChanged(bool finish = true);
     void stateChangeFinished();
 
@@ -80,11 +141,31 @@ signals:
     void sigRegionChanged(pyqtgraph::graphicsItems::ROI* roi);
 
 private:
+    struct HandleInfo {
+        QString name;
+        Handle::Type type = Handle::Type::Scale;
+        pyqtgraph::Point pos{0.0, 0.0};
+        pyqtgraph::Point center{0.0, 0.0};
+        Handle* item = nullptr;
+        bool lockAspect = false;
+        bool xOff = false;
+        bool yOff = false;
+    };
+
+    Handle* addHandle(HandleInfo info);
+    [[nodiscard]] int indexOfHandle(const Handle* handle) const;
+
     ROIState state_;
     ROIState lastState_;
+    ROIState preMoveState_;
     bool haveLastState_ = false;
     bool freeHandleMoved_ = false;
     qreal snapSize_ = 1.0;
+    bool scaleSnap_ = false;
+    qreal scaleSnapSize_ = 1.0;
+    bool invertible_ = true;
+    bool aspectLocked_ = false;
+    QVector<HandleInfo> handles_;
     QPen pen_;
     QPen hoverPen_;
     QPen currentPen_;
