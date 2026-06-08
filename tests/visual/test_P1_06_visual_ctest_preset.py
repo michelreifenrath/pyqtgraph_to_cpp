@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PRESETS = ROOT / "CMakePresets.json"
-CMAKE = ROOT / "CMakeLists.txt"
+CMAKE = ROOT / "tests" / "CMakeLists.txt"
 SMOKE_FIXTURE = "tests/visual/test_P1_06_visual_smoke.py"
 TEST_NAME = "P1.06.visual.smoke"
 

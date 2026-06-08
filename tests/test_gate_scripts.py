@@ -536,7 +536,7 @@ def test_gate_visual_requires_known_target(tmp_path: Path) -> None:
 
     assert result.returncode == 2
     assert "unsupported visual gate target" in result.stderr
-    assert "known targets: SimplePlot" in result.stderr
+    assert "known targets: ImageItem, SimplePlot" in result.stderr
     assert "Traceback" not in result.stderr
 
 
