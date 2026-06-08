@@ -115,16 +115,16 @@ source_files:
   target_header_path: include/pyqtgraph/SRTTransform.hpp
   target_source_path: src/pyqtgraph/SRTTransform.cpp
   subsystem: core
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/SRTTransform3D.py
   target_header_path: include/pyqtgraph/SRTTransform3D.hpp
   target_source_path: src/pyqtgraph/SRTTransform3D.cpp
   subsystem: core
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/SignalProxy.py
   target_header_path: include/pyqtgraph/SignalProxy.hpp
   target_source_path: src/pyqtgraph/SignalProxy.cpp
@@ -143,9 +143,9 @@ source_files:
   target_header_path: include/pyqtgraph/Transform3D.hpp
   target_source_path: src/pyqtgraph/Transform3D.cpp
   subsystem: core
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/Vector.py
   target_header_path: include/pyqtgraph/Vector.hpp
   target_source_path: src/pyqtgraph/Vector.cpp
@@ -185,16 +185,16 @@ source_files:
   target_header_path: include/pyqtgraph/colors/palette.hpp
   target_source_path: src/pyqtgraph/colors/palette.cpp
   subsystem: colors
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/configfile.py
   target_header_path: include/pyqtgraph/configfile.hpp
   target_source_path: src/pyqtgraph/configfile.cpp
   subsystem: core
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/console/CmdInput.py
   target_header_path: include/pyqtgraph/console/CmdInput.hpp
   target_source_path: src/pyqtgraph/console/CmdInput.cpp
@@ -241,9 +241,9 @@ source_files:
   target_header_path: include/pyqtgraph/debug.hpp
   target_source_path: src/pyqtgraph/debug.cpp
   subsystem: core
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
   target_source_path: src/pyqtgraph/dockarea/Container.cpp
@@ -283,9 +283,9 @@ source_files:
   target_header_path: include/pyqtgraph/exceptionHandling.hpp
   target_source_path: src/pyqtgraph/exceptionHandling.cpp
   subsystem: core
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/exporters/CSVExporter.py
   target_header_path: include/pyqtgraph/exporters/CSVExporter.hpp
   target_source_path: src/pyqtgraph/exporters/CSVExporter.cpp
@@ -472,9 +472,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/ArrowItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ArrowItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/AxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/AxisItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/AxisItem.cpp
@@ -486,16 +486,16 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/BarGraphItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/BarGraphItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/BoxplotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/BoxplotItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/BoxplotItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ButtonItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ButtonItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ButtonItem.cpp
@@ -507,16 +507,16 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/ColorBarItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ColorBarItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/CurvePoint.py
   target_header_path: include/pyqtgraph/graphicsItems/CurvePoint.hpp
   target_source_path: src/pyqtgraph/graphicsItems/CurvePoint.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/DateAxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/DateAxisItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/DateAxisItem.cpp
@@ -528,44 +528,44 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/ErrorBarItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ErrorBarItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/FillBetweenItem.py
   target_header_path: include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/FillBetweenItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientEditorItem.cpp
   subsystem: graphicsItems
-  status: partial
-  completion: partial
-  target_presence: both
+  status: ported
+  completion: missing
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GradientLegend.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientLegend.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientLegend.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GradientPresets.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientPresets.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientPresets.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GraphItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsItem.cpp
@@ -577,9 +577,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsLayout.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsLayout.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/GraphicsObject.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsObject.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GraphicsObject.cpp
@@ -606,78 +606,78 @@ source_files:
   target_source_path: src/pyqtgraph/graphicsItems/GridItem.cpp
   subsystem: graphicsItems
   status: ported
-  completion: partial
+  completion: missing
   target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/HistogramLUTItem.py
   target_header_path: include/pyqtgraph/graphicsItems/HistogramLUTItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/HistogramLUTItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ImageItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ImageItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ImageItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/InfiniteLine.py
   target_header_path: include/pyqtgraph/graphicsItems/InfiniteLine.hpp
   target_source_path: src/pyqtgraph/graphicsItems/InfiniteLine.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/IsocurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/IsocurveItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/IsocurveItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ItemGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/ItemGroup.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ItemGroup.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/LabelItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LabelItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/LabelItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/LegendItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LegendItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/LegendItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/LinearRegionItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LinearRegionItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/LinearRegionItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/NonUniformImage.py
   target_header_path: include/pyqtgraph/graphicsItems/NonUniformImage.hpp
   target_source_path: src/pyqtgraph/graphicsItems/NonUniformImage.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PColorMeshItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/PlotCurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotCurveItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
@@ -689,9 +689,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/PlotDataItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotDataItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/PlotItem/PlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp
@@ -703,64 +703,64 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/__init__.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotItem/__init__.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.hpp
   target_source_path: src/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ROI.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ScaleBar.py
   target_header_path: include/pyqtgraph/graphicsItems/ScaleBar.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ScaleBar.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ScatterPlotItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/TargetItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TargetItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/TargetItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/TextItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TextItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/TextItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/UIGraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/UIGraphicsItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/UIGraphicsItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/VTickGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/VTickGroup.hpp
   target_source_path: src/pyqtgraph/graphicsItems/VTickGroup.cpp
   subsystem: graphicsItems
   status: ported
-  completion: partial
+  completion: missing
   target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/ViewBox.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
@@ -773,30 +773,30 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/__init__.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/__init__.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/__init__.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/__init__.py
   target_header_path: include/pyqtgraph/graphicsItems/__init__.hpp
   target_source_path: src/pyqtgraph/graphicsItems/__init__.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/icons/__init__.py
   target_header_path: include/pyqtgraph/icons/__init__.hpp
   target_source_path: src/pyqtgraph/icons/__init__.cpp
@@ -1207,9 +1207,9 @@ source_files:
   target_header_path: include/pyqtgraph/units.hpp
   target_source_path: src/pyqtgraph/units.cpp
   subsystem: core
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/util/__init__.py
   target_header_path: include/pyqtgraph/util/__init__.hpp
   target_source_path: src/pyqtgraph/util/__init__.cpp
@@ -1361,16 +1361,16 @@ source_files:
   target_header_path: include/pyqtgraph/widgets/GraphicsLayoutWidget.hpp
   target_source_path: src/pyqtgraph/widgets/GraphicsLayoutWidget.cpp
   subsystem: widgets
-  status: not_started
+  status: partial
   completion: missing
-  target_presence: none
+  target_presence: some
 - upstream_path: pyqtgraph/widgets/GraphicsView.py
   target_header_path: include/pyqtgraph/widgets/GraphicsView.hpp
   target_source_path: src/pyqtgraph/widgets/GraphicsView.cpp
   subsystem: widgets
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/widgets/GroupBox.py
   target_header_path: include/pyqtgraph/widgets/GroupBox.hpp
   target_source_path: src/pyqtgraph/widgets/GroupBox.cpp
@@ -1789,9 +1789,9 @@ examples:
   target_source_path: examples/ImageItem.cpp
   name: ImageItem
   category: root
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/examples/ImageView.py
   target_source_path: examples/ImageView.cpp
   name: ImageView
@@ -3858,9 +3858,9 @@ classes:
   bases:
   - GraphicsObject
   line: 11
-  status: partial
+  status: ported
   completion: missing
-  target_presence: some
+  target_presence: all
 - class_name: BoxplotItem
   upstream_path: pyqtgraph/graphicsItems/BoxplotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/BoxplotItem.hpp
@@ -3955,9 +3955,9 @@ classes:
   bases:
   - GraphicsObject
   line: 8
-  status: partial
+  status: ported
   completion: missing
-  target_presence: some
+  target_presence: all
 - class_name: FillBetweenItem
   upstream_path: pyqtgraph/graphicsItems/FillBetweenItem.py
   target_header_path: include/pyqtgraph/graphicsItems/FillBetweenItem.hpp
@@ -3966,9 +3966,9 @@ classes:
   bases:
   - QtWidgets.QGraphicsPathItem
   line: 10
-  status: partial
+  status: ported
   completion: missing
-  target_presence: some
+  target_presence: all
 - class_name: TickSliderItem
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -4021,9 +4021,9 @@ classes:
   bases:
   - UIGraphicsItem
   line: 7
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: GraphItem
   upstream_path: pyqtgraph/graphicsItems/GraphItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphItem.hpp
@@ -4065,9 +4065,9 @@ classes:
   bases:
   - GraphicsWidget
   line: 11
-  status: partial
+  status: ported
   completion: missing
-  target_presence: some
+  target_presence: all
 - class_name: GraphicsObject
   upstream_path: pyqtgraph/graphicsItems/GraphicsObject.py
   target_header_path: include/pyqtgraph/graphicsItems/GraphicsObject.hpp
@@ -4177,9 +4177,9 @@ classes:
   bases:
   - GraphicsObject
   line: 5
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: LabelItem
   upstream_path: pyqtgraph/graphicsItems/LabelItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LabelItem.hpp
@@ -4223,9 +4223,9 @@ classes:
   bases:
   - GraphicsObject
   line: 9
-  status: partial
+  status: ported
   completion: missing
-  target_presence: some
+  target_presence: all
 - class_name: NonUniformImage
   upstream_path: pyqtgraph/graphicsItems/NonUniformImage.py
   target_header_path: include/pyqtgraph/graphicsItems/NonUniformImage.hpp
@@ -4629,9 +4629,9 @@ classes:
   bases:
   - UIGraphicsItem
   line: 15
-  status: partial
+  status: ported
   completion: missing
-  target_presence: some
+  target_presence: all
 - class_name: TargetLabel
   upstream_path: pyqtgraph/graphicsItems/TargetItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TargetItem.hpp
@@ -4640,9 +4640,9 @@ classes:
   bases:
   - TextItem
   line: 350
-  status: partial
+  status: ported
   completion: missing
-  target_presence: some
+  target_presence: all
 - class_name: TextItem
   upstream_path: pyqtgraph/graphicsItems/TextItem.py
   target_header_path: include/pyqtgraph/graphicsItems/TextItem.hpp
@@ -4662,9 +4662,9 @@ classes:
   bases:
   - GraphicsObject
   line: 5
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: VTickGroup
   upstream_path: pyqtgraph/graphicsItems/VTickGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/VTickGroup.hpp
@@ -4717,9 +4717,9 @@ classes:
   bases:
   - QtWidgets.QMenu
   line: 9
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: Ui_Form
   upstream_path: pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.py
   target_header_path: include/pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.hpp
@@ -4728,9 +4728,9 @@ classes:
   bases:
   - object
   line: 12
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: GraphIcon
   upstream_path: pyqtgraph/icons/__init__.py
   target_header_path: include/pyqtgraph/icons/__init__.hpp
