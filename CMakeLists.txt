@@ -166,6 +166,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/PColorMeshItem.cpp
             include/pyqtgraph/graphicsItems/CurvePoint.hpp
             src/pyqtgraph/graphicsItems/CurvePoint.cpp
+            include/pyqtgraph/graphicsItems/ROI.hpp
+            src/pyqtgraph/graphicsItems/ROI.cpp
             include/pyqtgraph/graphicsItems/InfiniteLine.hpp
             src/pyqtgraph/graphicsItems/InfiniteLine.cpp
             include/pyqtgraph/graphicsItems/LinearRegionItem.hpp

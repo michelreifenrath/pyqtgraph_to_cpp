@@ -1,0 +1,50 @@
+{
+    "checks": [
+        "construction-position-size-angle-z-transform",
+        "batched-update-and-finish",
+        "save-restore",
+        "no-op-state-change",
+        "negative-size-snap-translate",
+        "offscreen-scene-render"
+    ],
+    "finalState": {
+        "angle": 45,
+        "pos": [
+            8,
+            8
+        ],
+        "size": [
+            -4,
+            5
+        ]
+    },
+    "issue": "P4.16",
+    "negativeBoundingRect": {
+        "height": 5,
+        "width": 4,
+        "x": -4,
+        "y": 0
+    },
+    "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:41,145-231,254-386,388-445,1010-1079; tests/graphicsItems/test_ROI.py:43-183",
+    "render": {
+        "height": 96,
+        "nonBackgroundPixels": 1602,
+        "width": 96
+    },
+    "savedState": {
+        "angle": 45,
+        "pos": [
+            7,
+            8
+        ],
+        "size": [
+            9,
+            10
+        ]
+    },
+    "signals": {
+        "changed": 3,
+        "finished": 5,
+        "started": 0
+    }
+}
