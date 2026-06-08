@@ -1,0 +1,101 @@
+{
+    "angledState": {
+        "angle": 90,
+        "pos": [
+            25,
+            25
+        ],
+        "size": [
+            10,
+            20
+        ]
+    },
+    "checks": [
+        "scale-normalized-center-anchor",
+        "setAngle-normalized-center-anchor",
+        "rotate-local-center-increment",
+        "translate-rectangular-snap",
+        "affine-slice-params-identity-and-rotated"
+    ],
+    "identityAffine": {
+        "origin": [
+            1,
+            1
+        ],
+        "shape": [
+            27,
+            28
+        ],
+        "vectors": [
+            [
+                1,
+                0
+            ],
+            [
+                0,
+                1
+            ]
+        ]
+    },
+    "issue": "P4.18",
+    "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:300-445 setSize/setAngle/scale/translate/rotate, 1227-1265 getAffineSliceParams; tests/graphicsItems/test_ROI.py:99-105,136-165",
+    "rotatedAffine": {
+        "origin": [
+            3,
+            4
+        ],
+        "shape": [
+            6,
+            8
+        ],
+        "vectors": [
+            [
+                0,
+                1
+            ],
+            [
+                -1,
+                0
+            ]
+        ]
+    },
+    "rotatedState": {
+        "angle": 60,
+        "pos": [
+            18.40169271826452,
+            21.623226469481093
+        ],
+        "size": [
+            10,
+            20
+        ]
+    },
+    "scaledState": {
+        "angle": 0,
+        "pos": [
+            5,
+            10
+        ],
+        "size": [
+            20,
+            40
+        ]
+    },
+    "signals": {
+        "angleChanged": 1,
+        "angleFinished": 0,
+        "scaleChanged": 1,
+        "scaleFinished": 0
+    },
+    "translatedState": {
+        "angle": 0,
+        "pos": [
+            1,
+            4
+        ],
+        "size": [
+            2,
+            2
+        ]
+    }
+}
