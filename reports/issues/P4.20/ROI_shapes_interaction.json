@@ -1,0 +1,134 @@
+{
+    "checks": [
+        "rectroi-default-handle",
+        "rectroi-side-scalers",
+        "ellipseroi-handles-shape",
+        "circleroi-radius-aspect",
+        "lineroi-geometry-handles",
+        "polylineroi-closed-polygon",
+        "rectroi-handle-drag",
+        "polylineroi-free-handle-drag",
+        "visual-artifacts-gpt"
+    ],
+    "classes": [
+        "pyqtgraph::graphicsItems::RectROI",
+        "pyqtgraph::graphicsItems::EllipseROI",
+        "pyqtgraph::graphicsItems::CircleROI",
+        "pyqtgraph::graphicsItems::LineROI",
+        "pyqtgraph::graphicsItems::PolyLineROI"
+    ],
+    "focused_proof": {
+        "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure",
+        "exit_code": 0,
+        "test_executable": "pyqtgraph_cpp_graphicsitems_roi_shapes_p4_20"
+    },
+    "interactiveRect": {
+        "post": {
+            "angle": 0,
+            "pos": [
+                20,
+                20
+            ],
+            "size": [
+                40,
+                35
+            ]
+        },
+        "pre": {
+            "angle": 0,
+            "pos": [
+                20,
+                20
+            ],
+            "size": [
+                30,
+                20
+            ]
+        }
+    },
+    "issue": "P4.20",
+    "lineState": {
+        "angle": 0,
+        "pos": [
+            0,
+            -2
+        ],
+        "size": [
+            10,
+            4
+        ]
+    },
+    "manifest_dashboard": "not_applicable: port_manifest/dashboard updates are outside P4.20 owned paths for this shard",
+    "manifest_targets": [
+        "include/pyqtgraph/graphicsItems/ROI.hpp",
+        "src/pyqtgraph/graphicsItems/ROI.cpp"
+    ],
+    "polygonPoints": 4,
+    "rectState": {
+        "angle": 0,
+        "pos": [
+            10,
+            12
+        ],
+        "size": [
+            30,
+            20
+        ]
+    },
+    "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:1621-2050 RectROI, LineROI, EllipseROI, CircleROI, PolyLineROI",
+    "semantic_pixels": {
+        "actual": 17902
+    },
+    "semantic_review": {
+        "recommendation": "merge_ok",
+        "verdict": "pass"
+    },
+    "shared_wiring": [
+        "tests/CMakeLists.txt"
+    ],
+    "validation_commands": [
+        {
+            "command": "cmake --preset dev",
+            "exit_code": 0
+        },
+        {
+            "command": "cmake --build --preset dev --parallel",
+            "exit_code": 0
+        },
+        {
+            "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure",
+            "exit_code": 0
+        },
+        {
+            "command": "python3 -m pytest -q",
+            "exit_code": 0
+        },
+        {
+            "command": "git diff --check",
+            "exit_code": 0
+        },
+        {
+            "command": "git diff --name-only origin/main...HEAD",
+            "exit_code": 0
+        }
+    ],
+    "visual": {
+        "actualPixels": 17902,
+        "changedPixels": 0,
+        "maxDelta": 0
+    },
+    "visual_artifacts": {
+        "actual": "actual.png",
+        "diff": "diff.png",
+        "gpt5_vision_review": "gpt5_vision_review.md",
+        "metrics": "metrics.json",
+        "reference": "reference.png",
+        "root": "reports/visual-diffs/ROI-shapes"
+    },
+    "visual_metrics": {
+        "changed_pixels": 0,
+        "max_delta": 0,
+        "mean_delta": 0,
+        "passed": true
+    }
+}
