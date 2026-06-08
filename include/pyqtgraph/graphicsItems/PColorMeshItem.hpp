@@ -180,8 +180,8 @@ inline void PColorMeshItem::setData(core::ArrayView<const double, 2> z, bool aut
     y_.assign((rows_ + 1) * (cols_ + 1), 0.0);
     for (std::size_t row = 0; row <= rows_; ++row) {
         for (std::size_t col = 0; col <= cols_; ++col) {
-            x_[offset(row, col, cols_ + 1)] = static_cast<double>(col);
-            y_[offset(row, col, cols_ + 1)] = static_cast<double>(row);
+            x_[offset(row, col, cols_ + 1)] = static_cast<double>(row);
+            y_[offset(row, col, cols_ + 1)] = static_cast<double>(col);
         }
     }
     refreshBounds();

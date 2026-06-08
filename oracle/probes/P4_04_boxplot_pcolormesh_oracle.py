@@ -5,8 +5,8 @@ The local environment for this factory run may not have NumPy/Qt Python wheels.
 This probe therefore computes the pinned PyQtGraph 0.14.0 externally visible
 algorithms directly from the upstream source contract rather than importing Qt:
 - pyqtgraph/graphicsItems/BoxplotItem.py:15-280 (linear percentile/IQR whiskers/bounds)
-- pyqtgraph/graphicsItems/PColorMeshItem.py:167-454 (grid synthesis, bounds, polygon order, LUT index normalization)
-  with the issue contract's z-only row/column axis parity: x spans columns and y spans rows.
+- pyqtgraph/graphicsItems/PColorMeshItem.py:167-454 (grid synthesis, bounds, polygon order, LUT index normalization):
+  z-only uses np.meshgrid(indexing='ij'), so x spans z rows and y spans z columns.
 - pyqtgraph/functions.py:1303-1354 (rescaleData clip-before-int conversion)
 """
 from __future__ import annotations
@@ -24,7 +24,7 @@ REFERENCE = {
         "pyqtgraph/graphicsItems/PColorMeshItem.py:71-454",
         "pyqtgraph/functions.py:1303-1354",
     ],
-    "note": "Fixture values are computed by a standalone oracle probe from the pinned PyQtGraph 0.14.0 algorithms: NumPy linear percentile/IQR whiskers for BoxplotItem and PColorMeshItem bounds, finite-cell skipping, polygon order, and integer LUT-index normalization. The issue contract's z-only mesh parity keeps x on columns and y on rows for non-square arrays.",
+    "note": "Fixture values are computed by a standalone oracle probe from the pinned PyQtGraph 0.14.0 algorithms: NumPy linear percentile/IQR whiskers for BoxplotItem and PColorMeshItem bounds, finite-cell skipping, polygon order, z-only np.meshgrid(indexing='ij') row/column axes, and integer LUT-index normalization.",
 }
 
 
@@ -105,15 +105,15 @@ def build_fixture() -> dict[str, object]:
             "z_only": {
                 "z": [[0, 1, 2], ["nan", 4, 4]],
                 "shape": [2, 3],
-                "bounds": {"x": [0, 3], "y": [0, 2]},
+                "bounds": {"x": [0, 2], "y": [0, 3]},
                 "levels": [0, 4],
                 "lut_rows": 5,
                 "cells": [
-                    {"row": 0, "col": 0, "value": 0, "color_index": pcolor_index(0, 0, 4, 5), "polygon": [[0, 0], [0, 1], [1, 1], [1, 0]]},
-                    {"row": 0, "col": 1, "value": 1, "color_index": pcolor_index(1, 0, 4, 5), "polygon": [[1, 0], [1, 1], [2, 1], [2, 0]]},
-                    {"row": 0, "col": 2, "value": 2, "color_index": pcolor_index(2, 0, 4, 5), "polygon": [[2, 0], [2, 1], [3, 1], [3, 0]]},
-                    {"row": 1, "col": 1, "value": 4, "color_index": pcolor_index(4, 0, 4, 5), "polygon": [[1, 1], [1, 2], [2, 2], [2, 1]]},
-                    {"row": 1, "col": 2, "value": 4, "color_index": pcolor_index(4, 0, 4, 5), "polygon": [[2, 1], [2, 2], [3, 2], [3, 1]]},
+                    {"row": 0, "col": 0, "value": 0, "color_index": pcolor_index(0, 0, 4, 5), "polygon": [[0, 0], [1, 0], [1, 1], [0, 1]]},
+                    {"row": 0, "col": 1, "value": 1, "color_index": pcolor_index(1, 0, 4, 5), "polygon": [[0, 1], [1, 1], [1, 2], [0, 2]]},
+                    {"row": 0, "col": 2, "value": 2, "color_index": pcolor_index(2, 0, 4, 5), "polygon": [[0, 2], [1, 2], [1, 3], [0, 3]]},
+                    {"row": 1, "col": 1, "value": 4, "color_index": pcolor_index(4, 0, 4, 5), "polygon": [[1, 1], [2, 1], [2, 2], [1, 2]]},
+                    {"row": 1, "col": 2, "value": 4, "color_index": pcolor_index(4, 0, 4, 5), "polygon": [[1, 2], [2, 2], [2, 3], [1, 3]]},
                 ],
                 "nan_cell": {"row": 1, "col": 0, "skipped": True},
                 "equal_levels_indices": [pcolor_index(2, 2, 2, 5), pcolor_index(4, 2, 2, 5)],
