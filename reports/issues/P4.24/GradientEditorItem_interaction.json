@@ -1,0 +1,65 @@
+{
+    "checks": [
+        "default state and RGB lookup",
+        "left-click stop add",
+        "drag move with clamp",
+        "right-click remove guard",
+        "save/restore state",
+        "deterministic visual reference-vs-actual pixels"
+    ],
+    "colorMode": "rgb",
+    "focused_proof": {
+        "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.24 --output-on-failure",
+        "exit_code": 0,
+        "test_executable": "pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24"
+    },
+    "issue": "P4.24",
+    "manifest_dashboard": "updated: port_manifest.yaml generated class inventory verified",
+    "manifest_targets": [
+        "include/pyqtgraph/graphicsItems/GradientEditorItem.hpp",
+        "src/pyqtgraph/graphicsItems/GradientEditorItem.cpp"
+    ],
+    "reference": "pyqtgraph-0.14.0 a20028b98294b9cc8770f2015a92eb342224b788 pyqtgraph/graphicsItems/GradientEditorItem.py",
+    "shared_wiring": [
+        "CMakeLists.txt",
+        "tests/CMakeLists.txt"
+    ],
+    "tdd_baseline_failure": {
+        "command": "cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24",
+        "exit_code": 2,
+        "expected": "compile failed before GradientEditorItem implementation was added"
+    },
+    "ticks": [
+        {
+            "alpha": 255,
+            "blue": 0,
+            "fraction": 0,
+            "green": 0,
+            "red": 0
+        },
+        {
+            "alpha": 255,
+            "blue": 0,
+            "fraction": 1,
+            "green": 0,
+            "red": 255
+        }
+    ],
+    "validation_commands": [
+        "cmake --preset dev",
+        "cmake --build --preset dev --parallel",
+        "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.24 --output-on-failure",
+        "python3 -m pytest -q",
+        "git diff --check",
+        "python3 oracle/scripts/generate_class_inventory.py --check",
+        "git diff --name-only origin/main...HEAD"
+    ],
+    "visual_artifacts": {
+        "actual": "actual.png",
+        "diff": "diff.png",
+        "gpt5_vision_review": "gpt5_vision_review.md",
+        "metrics": "metrics.json",
+        "reference": "reference.png",
+        "root": "reports/visual-diffs/GradientEditorItem"
+    }
+}

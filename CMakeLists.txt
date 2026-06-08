@@ -187,6 +187,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/HistogramLUTItem.cpp
             include/pyqtgraph/graphicsItems/ColorBarItem.hpp
             src/pyqtgraph/graphicsItems/ColorBarItem.cpp
+            include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
+            src/pyqtgraph/graphicsItems/GradientEditorItem.cpp
             include/pyqtgraph/graphicsItems/NonUniformImage.hpp
             src/pyqtgraph/graphicsItems/NonUniformImage.cpp
             include/pyqtgraph/graphicsItems/IsocurveItem.hpp

@@ -542,9 +542,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientEditorItem.cpp
   subsystem: graphicsItems
-  status: not_started
-  completion: missing
-  target_presence: none
+  status: partial
+  completion: partial
+  target_presence: both
 - upstream_path: pyqtgraph/graphicsItems/GradientLegend.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientLegend.hpp
   target_source_path: src/pyqtgraph/graphicsItems/GradientLegend.cpp
@@ -3836,9 +3836,9 @@ classes:
   bases:
   - QtWidgets.QGraphicsPathItem
   line: 8
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: AxisItem
   upstream_path: pyqtgraph/graphicsItems/AxisItem.py
   target_header_path: include/pyqtgraph/graphicsItems/AxisItem.hpp
@@ -3977,9 +3977,9 @@ classes:
   bases:
   - GraphicsWidget
   line: 29
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: GradientEditorItem
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -3988,9 +3988,9 @@ classes:
   bases:
   - TickSliderItem
   line: 377
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: Tick
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -3999,9 +3999,9 @@ classes:
   bases:
   - QtWidgets.QGraphicsWidget
   line: 840
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: TickMenu
   upstream_path: pyqtgraph/graphicsItems/GradientEditorItem.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientEditorItem.hpp
@@ -4010,9 +4010,9 @@ classes:
   bases:
   - QtWidgets.QMenu
   line: 927
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: GradientLegend
   upstream_path: pyqtgraph/graphicsItems/GradientLegend.py
   target_header_path: include/pyqtgraph/graphicsItems/GradientLegend.hpp
@@ -4189,9 +4189,9 @@ classes:
   - GraphicsWidgetAnchor
   - GraphicsWidget
   line: 9
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: LegendItem
   upstream_path: pyqtgraph/graphicsItems/LegendItem.py
   target_header_path: include/pyqtgraph/graphicsItems/LegendItem.hpp
@@ -4397,9 +4397,9 @@ classes:
   bases:
   - object
   line: 12
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4408,9 +4408,9 @@ classes:
   bases:
   - GraphicsObject
   line: 41
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: Handle
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4419,9 +4419,9 @@ classes:
   bases:
   - UIGraphicsItem
   line: 1321
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: MouseDragHandler
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4430,9 +4430,9 @@ classes:
   bases:
   - object
   line: 1538
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: TestROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4441,9 +4441,9 @@ classes:
   bases:
   - ROI
   line: 1609
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: RectROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4452,9 +4452,9 @@ classes:
   bases:
   - ROI
   line: 1621
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: LineROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4463,9 +4463,9 @@ classes:
   bases:
   - ROI
   line: 1650
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: MultiRectROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4474,9 +4474,9 @@ classes:
   bases:
   - QtWidgets.QGraphicsObject
   line: 1682
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: MultiLineROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4485,9 +4485,9 @@ classes:
   bases:
   - MultiRectROI
   line: 1824
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: EllipseROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4496,9 +4496,9 @@ classes:
   bases:
   - ROI
   line: 1830
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: CircleROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4507,9 +4507,9 @@ classes:
   bases:
   - EllipseROI
   line: 1935
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: PolyLineROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4518,9 +4518,9 @@ classes:
   bases:
   - ROI
   line: 1959
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: LineSegmentROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4529,9 +4529,9 @@ classes:
   bases:
   - ROI
   line: 2134
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: _PolyLineSegment
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4540,9 +4540,9 @@ classes:
   bases:
   - LineSegmentROI
   line: 2240
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: CrosshairROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4551,9 +4551,9 @@ classes:
   bases:
   - ROI
   line: 2266
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: RulerROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4562,9 +4562,9 @@ classes:
   bases:
   - LineSegmentROI
   line: 2314
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: TriangleROI
   upstream_path: pyqtgraph/graphicsItems/ROI.py
   target_header_path: include/pyqtgraph/graphicsItems/ROI.hpp
@@ -4573,9 +4573,9 @@ classes:
   bases:
   - ROI
   line: 2344
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ScaleBar
   upstream_path: pyqtgraph/graphicsItems/ScaleBar.py
   target_header_path: include/pyqtgraph/graphicsItems/ScaleBar.hpp
@@ -4585,9 +4585,9 @@ classes:
   - GraphicsWidgetAnchor
   - GraphicsObject
   line: 11
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: SymbolAtlas
   upstream_path: pyqtgraph/graphicsItems/ScatterPlotItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ScatterPlotItem.hpp
@@ -4651,9 +4651,9 @@ classes:
   bases:
   - GraphicsObject
   line: 10
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: UIGraphicsItem
   upstream_path: pyqtgraph/graphicsItems/UIGraphicsItem.py
   target_header_path: include/pyqtgraph/graphicsItems/UIGraphicsItem.hpp

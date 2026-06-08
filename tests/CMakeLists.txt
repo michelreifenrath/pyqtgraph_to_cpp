@@ -532,6 +532,20 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ScaleBar.P4_23 PROPERTIES LABELS "visual;P4.23")
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24
+        graphicsItems/test_GradientEditorItem_P4_24.cpp
+        pyqtgraph_cpp.graphicsItems.GradientEditorItem.P4_24
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24
+        PRIVATE
+            PYQTGRAPH_CPP_P4_24_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.24"
+            PYQTGRAPH_CPP_P4_24_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/GradientEditorItem"
+            PYQTGRAPH_CPP_P4_24_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual-diffs/GradientEditorItem/gpt5_vision_review.md"
+            PYQTGRAPH_CPP_P4_24_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.24"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.GradientEditorItem.P4_24 PROPERTIES LABELS "visual;P4.24")
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem
