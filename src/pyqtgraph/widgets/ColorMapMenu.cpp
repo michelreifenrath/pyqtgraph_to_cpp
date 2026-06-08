@@ -190,6 +190,13 @@ void ColorMapMenu::populateLocalSubMenu(QMenu* menu)
             names.push_back(name);
         }
     }
+    if (names.isEmpty()) {
+        for (const QString& name : pyqtgraph::listMaps()) {
+            if (!name.startsWith(QStringLiteral("CET"))) {
+                names.push_back(name);
+            }
+        }
+    }
     populateSubMenu(menu, names, QString(), true);
 }
 

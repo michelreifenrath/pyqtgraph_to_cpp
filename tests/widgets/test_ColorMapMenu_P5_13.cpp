@@ -88,11 +88,75 @@ std::vector<VisualCase> visualCases()
     return cases;
 }
 
-QImage renderColorMapStrip(const pyqtgraph::ColorMap& colorMap, int width, int height)
+QImage lookupImageFromColorMap(const pyqtgraph::ColorMap& colorMap, bool horizontal)
 {
-    QImage image(width, height, QImage::Format_ARGB32_Premultiplied);
-    image.fill(Qt::transparent);
+    const auto lut = colorMap.getLookupTable(0.0, 1.0, 256, true, pyqtgraph::ColorMap::OutputMode::Byte);
+    if (lut.bytes.empty() || lut.rows() == 0 || lut.channels < 3) {
+        return {};
+    }
 
+    QImage image(horizontal ? static_cast<int>(lut.rows()) : 1,
+        horizontal ? 1 : static_cast<int>(lut.rows()),
+        QImage::Format_RGBA8888);
+    for (std::size_t row = 0; row < lut.rows(); ++row) {
+        const std::size_t offset = row * lut.channels;
+        const QColor color(lut.bytes[offset],
+            lut.bytes[offset + 1],
+            lut.bytes[offset + 2],
+            lut.channels >= 4 ? lut.bytes[offset + 3] : 255);
+        if (horizontal) {
+            image.setPixelColor(static_cast<int>(row), 0, color);
+        } else {
+            image.setPixelColor(0, static_cast<int>(lut.rows() - row - 1), color);
+        }
+    }
+    return image;
+}
+
+class ReferenceColorMapStripWidget : public QWidget {
+public:
+    explicit ReferenceColorMapStripWidget(const pyqtgraph::ColorMap& colorMap)
+        : colorMap_(colorMap)
+    {
+    }
+
+protected:
+    void paintEvent(QPaintEvent* /*event*/) override
+    {
+        QPainter painter(this);
+        paintReferenceColorMap(painter, contentsRect());
+    }
+
+private:
+    void paintReferenceColorMap(QPainter& painter, const QRect& rect) const
+    {
+        painter.save();
+        const QImage image = lookupImageFromColorMap(colorMap_, true);
+        painter.drawImage(rect, image);
+
+        const QString text = colorMap_.name();
+        const QColor centerColor = image.isNull() ? QColor(128, 128, 128) : image.pixelColor(image.rect().center());
+        const QPen pen = centerColor.lightnessF() >= 0.55 ? QPen(Qt::black) : QPen(Qt::white);
+        const QRect textRect = painter.boundingRect(rect, Qt::AlignCenter, text);
+        painter.setPen(pen);
+        painter.drawText(textRect, text);
+        painter.restore();
+    }
+
+    pyqtgraph::ColorMap colorMap_;
+};
+
+QImage renderReferenceColorMapStrip(const pyqtgraph::ColorMap& colorMap, int width, int height)
+{
+    ReferenceColorMapStripWidget widget(colorMap);
+    widget.resize(width, height);
+    widget.show();
+    QApplication::processEvents();
+    return widget.grab().toImage();
+}
+
+QImage renderActualColorMapStrip(const pyqtgraph::ColorMap& colorMap, int width, int height)
+{
     pyqtgraph::widgets::ColorMapButton button;
     button.setColorMap(colorMap);
     button.resize(width, height);
@@ -486,7 +550,7 @@ bool testColorMapMenuSelection()
     QMenu* localMenu = findSubMenu(&menu, QStringLiteral("local"));
     CHECK(localMenu != nullptr);
     CHECK(QMetaObject::invokeMethod(&menu, "buildLocalSubMenu"));
-    CHECK(localMenu->actions().isEmpty());
+    CHECK(!localMenu->actions().isEmpty());
 
     return true;
 }
@@ -513,6 +577,18 @@ bool testButtonMenuIntegration()
     CHECK(changedSpy.count() == 1);
     CHECK(button.colorMap().positions().size() == 2);
 
+    QMenu* localMenu = findSubMenu(menu, QStringLiteral("local"));
+    CHECK(localMenu != nullptr);
+    CHECK(QMetaObject::invokeMethod(menu, "buildLocalSubMenu"));
+    CHECK(!localMenu->actions().isEmpty());
+
+    changedSpy.clear();
+    QAction* localAction = localMenu->actions().front();
+    CHECK(localAction != nullptr);
+    CHECK(QMetaObject::invokeMethod(menu, "onTriggered", Q_ARG(QAction*, localAction)));
+    CHECK(changedSpy.count() == 1);
+    CHECK(!button.colorMap().name().isEmpty());
+
     changedSpy.clear();
     button.setColorMap(*relaxed);
     CHECK(changedSpy.count() == 1);
@@ -535,8 +611,8 @@ bool testVisualBehavior()
     std::uint64_t actualPixels = 0;
 
     for (const VisualCase& visualCase : cases) {
-        const QImage reference = renderColorMapStrip(visualCase.colorMap, buttonWidth, buttonHeight);
-        const QImage actual = renderColorMapStrip(visualCase.colorMap, buttonWidth, buttonHeight);
+        const QImage reference = renderReferenceColorMapStrip(visualCase.colorMap, buttonWidth, buttonHeight);
+        const QImage actual = renderActualColorMapStrip(visualCase.colorMap, buttonWidth, buttonHeight);
         const std::uint64_t caseReferencePixels = semanticPixelCount(reference);
         const std::uint64_t caseActualPixels = semanticPixelCount(actual);
         if (caseReferencePixels < 100 || caseActualPixels < 100) {
