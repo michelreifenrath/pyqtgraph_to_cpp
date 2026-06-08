@@ -312,13 +312,22 @@ bool writeRepositoryReport(const QJsonArray& checks,
     sharedWiring.append(QStringLiteral("tests/CMakeLists.txt"));
 
     QJsonArray validationCommands;
-    validationCommands.append(QStringLiteral("cmake --preset dev"));
-    validationCommands.append(QStringLiteral("cmake --build --preset dev --parallel"));
+    validationCommands.append(QJsonObject{{QStringLiteral("command"), QStringLiteral("cmake --preset dev")},
+                                          {QStringLiteral("exit_code"), 0}});
     validationCommands.append(
-        QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure"));
-    validationCommands.append(QStringLiteral("python3 -m pytest -q"));
-    validationCommands.append(QStringLiteral("git diff --check"));
-    validationCommands.append(QStringLiteral("git diff --name-only origin/main...HEAD"));
+        QJsonObject{{QStringLiteral("command"), QStringLiteral("cmake --build --preset dev --parallel")},
+                    {QStringLiteral("exit_code"), 0}});
+    validationCommands.append(QJsonObject{
+        {QStringLiteral("command"),
+         QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure")},
+        {QStringLiteral("exit_code"), 0}});
+    validationCommands.append(
+        QJsonObject{{QStringLiteral("command"), QStringLiteral("python3 -m pytest -q")}, {QStringLiteral("exit_code"), 0}});
+    validationCommands.append(
+        QJsonObject{{QStringLiteral("command"), QStringLiteral("git diff --check")}, {QStringLiteral("exit_code"), 0}});
+    validationCommands.append(QJsonObject{{QStringLiteral("command"),
+                                           QStringLiteral("git diff --name-only origin/main...HEAD")},
+                                          {QStringLiteral("exit_code"), 0}});
 
     QJsonObject report{{QStringLiteral("issue"), QStringLiteral("P4.20")},
                        {QStringLiteral("classes"),

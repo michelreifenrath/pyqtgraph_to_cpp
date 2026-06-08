@@ -87,12 +87,30 @@
         "tests/CMakeLists.txt"
     ],
     "validation_commands": [
-        "cmake --preset dev",
-        "cmake --build --preset dev --parallel",
-        "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure",
-        "python3 -m pytest -q",
-        "git diff --check",
-        "git diff --name-only origin/main...HEAD"
+        {
+            "command": "cmake --preset dev",
+            "exit_code": 0
+        },
+        {
+            "command": "cmake --build --preset dev --parallel",
+            "exit_code": 0
+        },
+        {
+            "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure",
+            "exit_code": 0
+        },
+        {
+            "command": "python3 -m pytest -q",
+            "exit_code": 0
+        },
+        {
+            "command": "git diff --check",
+            "exit_code": 0
+        },
+        {
+            "command": "git diff --name-only origin/main...HEAD",
+            "exit_code": 0
+        }
     ],
     "visual": {
         "actualPixels": 17902,
