@@ -6,9 +6,11 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 #include "GraphicsObject.hpp"
+#include "ImageItem.hpp"
 
 #include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
 #include <pyqtgraph/Point.hpp>
+#include <pyqtgraph/core/ArrayView.hpp>
 
 #include <QtCore/QList>
 #include <QtCore/QPointF>
@@ -17,9 +19,16 @@
 #include <QtCore/QVector>
 #include <QtGui/QPainterPath>
 #include <QtGui/QPen>
+#include <QtGui/QTransform>
 
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstddef>
 #include <optional>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 class QGraphicsItem;
 class QPainter;
@@ -45,6 +54,21 @@ struct ROIAffineSliceParams {
     pyqtgraph::Point shape{0.0, 0.0};
     std::array<pyqtgraph::Point, 2> vectors{pyqtgraph::Point(0.0, 0.0), pyqtgraph::Point(0.0, 0.0)};
     pyqtgraph::Point origin{0.0, 0.0};
+};
+
+struct ROIArraySlice {
+    std::array<std::pair<std::size_t, std::size_t>, 2> bounds{};
+    QTransform transform;
+};
+
+struct ROIArrayRegion {
+    std::array<std::size_t, 2> shape{};
+    std::vector<double> values;
+
+    [[nodiscard]] double operator()(std::size_t axis0, std::size_t axis1) const
+    {
+        return values.at(axis0 * shape[1] + axis1);
+    }
 };
 
 class ROI : public GraphicsObject {
@@ -138,6 +162,16 @@ public:
                 bool finish = true);
 
     [[nodiscard]] ROIAffineSliceParams getAffineSliceParams(const QGraphicsItem* target, bool fromBoundingRect = false) const;
+    [[nodiscard]] ROIAffineSliceParams getAffineSliceParams(std::array<std::size_t, 2> dataShape,
+                                                            const ImageItem& image,
+                                                            bool fromBoundingRect = false) const;
+    [[nodiscard]] std::optional<ROIArraySlice> getArraySlice(std::array<std::size_t, 2> dataShape,
+                                                             const ImageItem& image) const;
+    template <typename T>
+    [[nodiscard]] ROIArrayRegion getArrayRegion(core::ArrayView<const T, 2> data,
+                                                const ImageItem& image,
+                                                bool fromBoundingRect = false,
+                                                int order = 1) const;
 
     [[nodiscard]] QPointF getSnapPosition(const QPointF& pos, bool snap = true) const;
     [[nodiscard]] QPointF getSnapPosition(const QPointF& pos, const QPointF& snap) const;
@@ -209,5 +243,74 @@ private:
     QPen hoverPen_;
     QPen currentPen_;
 };
+
+template <typename T>
+ROIArrayRegion ROI::getArrayRegion(core::ArrayView<const T, 2> data,
+                                   const ImageItem& image,
+                                   bool fromBoundingRect,
+                                   int order) const
+{
+    if (order != 0 && order != 1) {
+        throw std::invalid_argument("ROI::getArrayRegion supports interpolation order 0 or 1");
+    }
+
+    const ROIAffineSliceParams params = getAffineSliceParams(data.shape(), image, fromBoundingRect);
+    const auto out0 = static_cast<std::size_t>(std::max<qreal>(0.0, std::ceil(params.shape.x())));
+    const auto out1 = static_cast<std::size_t>(std::max<qreal>(0.0, std::ceil(params.shape.y())));
+
+    ROIArrayRegion result;
+    result.shape = {out0, out1};
+    result.values.assign(out0 * out1, 0.0);
+    if (data.shape()[0] == 0 || data.shape()[1] == 0) {
+        return result;
+    }
+
+    const auto sampleNearest = [&data](qreal axis0, qreal axis1) -> double {
+        const auto i0 = static_cast<long long>(std::nearbyint(axis0));
+        const auto i1 = static_cast<long long>(std::nearbyint(axis1));
+        if (i0 < 0 || i1 < 0 || i0 >= static_cast<long long>(data.shape()[0]) || i1 >= static_cast<long long>(data.shape()[1])) {
+            return 0.0;
+        }
+        return static_cast<double>(data(static_cast<std::size_t>(i0), static_cast<std::size_t>(i1)));
+    };
+
+    const auto sampleLinear = [&data](qreal axis0, qreal axis1) -> double {
+        if (axis0 < 0.0 || axis1 < 0.0 || axis0 > static_cast<qreal>(data.shape()[0] - 1)
+            || axis1 > static_cast<qreal>(data.shape()[1] - 1)) {
+            return 0.0;
+        }
+
+        const auto i0 = static_cast<long long>(std::floor(axis0));
+        const auto i1 = static_cast<long long>(std::floor(axis1));
+        const qreal d0 = axis0 - static_cast<qreal>(i0);
+        const qreal d1 = axis1 - static_cast<qreal>(i1);
+        double value = 0.0;
+        for (int f0 = 0; f0 <= 1; ++f0) {
+            for (int f1 = 0; f1 <= 1; ++f1) {
+                long long n0 = i0 + f0;
+                long long n1 = i1 + f1;
+                if (n0 < 0 || n1 < 0 || n0 >= static_cast<long long>(data.shape()[0])
+                    || n1 >= static_cast<long long>(data.shape()[1])) {
+                    n0 = 0;
+                    n1 = 0;
+                }
+                const qreal w0 = f0 == 0 ? (1.0 - d0) : d0;
+                const qreal w1 = f1 == 0 ? (1.0 - d1) : d1;
+                value += static_cast<double>(data(static_cast<std::size_t>(n0), static_cast<std::size_t>(n1))) * w0 * w1;
+            }
+        }
+        return value;
+    };
+
+    for (std::size_t axis0 = 0; axis0 < out0; ++axis0) {
+        for (std::size_t axis1 = 0; axis1 < out1; ++axis1) {
+            const pyqtgraph::Point sample = params.origin + params.vectors[0] * static_cast<qreal>(axis0)
+                + params.vectors[1] * static_cast<qreal>(axis1);
+            result.values[axis0 * out1 + axis1] = order == 0 ? sampleNearest(sample.x(), sample.y()) : sampleLinear(sample.x(), sample.y());
+        }
+    }
+
+    return result;
+}
 
 } // namespace pyqtgraph::graphicsItems

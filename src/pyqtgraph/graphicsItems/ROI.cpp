@@ -12,7 +12,9 @@
 #include <QtGui/QTransform>
 #include <QtWidgets/QStyleOptionGraphicsItem>
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace pyqtgraph::graphicsItems {
@@ -24,6 +26,37 @@ qreal snappedCoordinate(qreal value, qreal snap)
         return value;
     }
     return std::round(value / snap) * snap;
+}
+
+pyqtgraph::Point imageLocalToData(const ImageItem& image, const QPointF& local)
+{
+    if (image.axisOrder() == ImageItem::AxisOrder::RowMajor) {
+        return pyqtgraph::Point(local.y(), local.x());
+    }
+    return pyqtgraph::Point(local);
+}
+
+void requireSameScene(const QGraphicsItem& roi, const QGraphicsItem& image)
+{
+    if (roi.scene() != nullptr && image.scene() != nullptr && roi.scene() != image.scene()) {
+        throw std::runtime_error("ROI and target item must be members of the same scene");
+    }
+}
+
+std::pair<std::size_t, std::size_t> clippedBounds(qreal rawMin, qreal rawMax, std::size_t extent)
+{
+    if (extent == 0) {
+        return {0, 0};
+    }
+    const qreal low = std::clamp(std::min(rawMin, rawMax), 0.0, static_cast<qreal>(extent));
+    const qreal high = std::clamp(std::max(rawMin, rawMax), 0.0, static_cast<qreal>(extent));
+    if (high <= low) {
+        const auto point = static_cast<std::size_t>(std::clamp<qreal>(std::trunc(low), 0.0, static_cast<qreal>(extent)));
+        return {point, point};
+    }
+    const auto start = static_cast<std::size_t>(std::clamp<qreal>(std::trunc(low), 0.0, static_cast<qreal>(extent)));
+    const auto stop = static_cast<std::size_t>(std::clamp<qreal>(std::trunc(1.0 + high), 0.0, static_cast<qreal>(extent)));
+    return {start, std::max(start, stop)};
 }
 
 } // namespace
@@ -381,6 +414,86 @@ ROIAffineSliceParams ROI::getAffineSliceParams(const QGraphicsItem* target, bool
     shape.setY(std::abs(shape.y() * ly));
 
     return ROIAffineSliceParams{shape, {vectorX, vectorY}, origin};
+}
+
+ROIAffineSliceParams ROI::getAffineSliceParams(std::array<std::size_t, 2> dataShape,
+                                               const ImageItem& image,
+                                               bool fromBoundingRect) const
+{
+    Q_UNUSED(dataShape);
+    requireSameScene(*this, image);
+
+    const QPointF localOrigin = fromBoundingRect ? boundingRect().topLeft() : QPointF(0.0, 0.0);
+    pyqtgraph::Point origin = imageLocalToData(image, mapToItem(&image, localOrigin));
+    pyqtgraph::Point vx = imageLocalToData(image, mapToItem(&image, localOrigin + QPointF(1.0, 0.0))) - origin;
+    pyqtgraph::Point vy = imageLocalToData(image, mapToItem(&image, localOrigin + QPointF(0.0, 1.0))) - origin;
+
+    const qreal lx = std::hypot(vx.x(), vx.y());
+    const qreal ly = std::hypot(vy.x(), vy.y());
+    pyqtgraph::Point vectorX = lx == 0.0 ? pyqtgraph::Point(0.0, 0.0) : vx / lx;
+    pyqtgraph::Point vectorY = ly == 0.0 ? pyqtgraph::Point(0.0, 0.0) : vy / ly;
+
+    pyqtgraph::Point shape = fromBoundingRect ? pyqtgraph::Point(boundingRect().size()) : state_.size;
+    shape.setX(std::abs(shape.x() * lx));
+    shape.setY(std::abs(shape.y() * ly));
+
+    if (image.axisOrder() == ImageItem::AxisOrder::RowMajor) {
+        std::swap(vectorX, vectorY);
+        shape = pyqtgraph::Point(shape.y(), shape.x());
+    }
+
+    return ROIAffineSliceParams{shape, {vectorX, vectorY}, origin};
+}
+
+std::optional<ROIArraySlice> ROI::getArraySlice(std::array<std::size_t, 2> dataShape, const ImageItem& image) const
+{
+    requireSameScene(*this, image);
+    if (!image.hasImage() || image.width() == 0 || image.height() == 0 || dataShape[0] == 0 || dataShape[1] == 0) {
+        return std::nullopt;
+    }
+
+    bool invertible = false;
+    const QTransform inverseImageScene = image.sceneTransform().inverted(&invertible);
+    if (!invertible) {
+        return std::nullopt;
+    }
+    QTransform transform = sceneTransform() * inverseImageScene;
+    if (image.axisOrder() == ImageItem::AxisOrder::RowMajor) {
+        transform.scale(static_cast<qreal>(dataShape[1]) / static_cast<qreal>(image.width()),
+                        static_cast<qreal>(dataShape[0]) / static_cast<qreal>(image.height()));
+    } else {
+        transform.scale(static_cast<qreal>(dataShape[0]) / static_cast<qreal>(image.width()),
+                        static_cast<qreal>(dataShape[1]) / static_cast<qreal>(image.height()));
+    }
+
+    const QRectF bounds = boundingRect();
+    const std::array<QPointF, 4> corners{bounds.topLeft(), bounds.topRight(), bounds.bottomLeft(), bounds.bottomRight()};
+    qreal minX = std::numeric_limits<qreal>::infinity();
+    qreal maxX = -std::numeric_limits<qreal>::infinity();
+    qreal minY = std::numeric_limits<qreal>::infinity();
+    qreal maxY = -std::numeric_limits<qreal>::infinity();
+    for (const QPointF& corner : corners) {
+        const QPointF mapped = mapToItem(&image, corner);
+        minX = std::min(minX, mapped.x());
+        maxX = std::max(maxX, mapped.x());
+        minY = std::min(minY, mapped.y());
+        maxY = std::max(maxY, mapped.y());
+    }
+
+    ROIArraySlice result;
+    result.transform = transform;
+    if (image.axisOrder() == ImageItem::AxisOrder::RowMajor) {
+        const qreal scaleX = static_cast<qreal>(dataShape[1]) / static_cast<qreal>(image.width());
+        const qreal scaleY = static_cast<qreal>(dataShape[0]) / static_cast<qreal>(image.height());
+        result.bounds = {clippedBounds(minY * scaleY, maxY * scaleY, dataShape[0]),
+                         clippedBounds(minX * scaleX, maxX * scaleX, dataShape[1])};
+    } else {
+        const qreal scaleX = static_cast<qreal>(dataShape[0]) / static_cast<qreal>(image.width());
+        const qreal scaleY = static_cast<qreal>(dataShape[1]) / static_cast<qreal>(image.height());
+        result.bounds = {clippedBounds(minX * scaleX, maxX * scaleX, dataShape[0]),
+                         clippedBounds(minY * scaleY, maxY * scaleY, dataShape[1])};
+    }
+    return result;
 }
 
 QPointF ROI::getSnapPosition(const QPointF& pos, bool snap) const
