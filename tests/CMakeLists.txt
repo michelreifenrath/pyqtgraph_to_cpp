@@ -453,6 +453,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.handles.P4_17 PROPERTIES LABELS P4.17)
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_roi_transform_p4_18
+        graphicsItems/test_ROI_transform_P4_18.cpp
+        pyqtgraph_cpp.graphicsItems.ROI.transform.P4_18
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_roi_transform_p4_18
+        PRIVATE
+            PYQTGRAPH_CPP_P4_18_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.18"
+            PYQTGRAPH_CPP_P4_18_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.18"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.transform.P4_18 PROPERTIES LABELS P4.18)
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem

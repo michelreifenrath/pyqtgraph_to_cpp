@@ -18,6 +18,10 @@
 #include <QtGui/QPainterPath>
 #include <QtGui/QPen>
 
+#include <array>
+#include <optional>
+
+class QGraphicsItem;
 class QPainter;
 class QStyleOptionGraphicsItem;
 class QWidget;
@@ -35,6 +39,12 @@ struct ROIState {
     }
 
     friend bool operator!=(const ROIState& lhs, const ROIState& rhs) noexcept { return !(lhs == rhs); }
+};
+
+struct ROIAffineSliceParams {
+    pyqtgraph::Point shape{0.0, 0.0};
+    std::array<pyqtgraph::Point, 2> vectors{pyqtgraph::Point(0.0, 0.0), pyqtgraph::Point(0.0, 0.0)};
+    pyqtgraph::Point origin{0.0, 0.0};
 };
 
 class ROI : public GraphicsObject {
@@ -84,6 +94,8 @@ public:
     explicit ROI(const QPointF& pos, const QPointF& size = QPointF(1.0, 1.0), qreal angle = 0.0, QGraphicsItem* parent = nullptr);
     ~ROI() override;
 
+    using GraphicsObject::scale;
+
     [[nodiscard]] ROIState getState() const;
     [[nodiscard]] ROIState stateCopy() const;
     [[nodiscard]] ROIState saveState() const;
@@ -98,8 +110,34 @@ public:
     void setPos(const QPointF& pos, bool update = true, bool finish = true);
     void setPos(qreal x, qreal y, bool update = true, bool finish = true);
     void setSize(const QPointF& size, bool update = true, bool finish = true);
+    void setSize(const QPointF& size,
+                 const std::optional<QPointF>& center,
+                 const std::optional<QPointF>& centerLocal = std::nullopt,
+                 bool snap = false,
+                 bool update = true,
+                 bool finish = true);
     void setAngle(qreal angle, bool update = true, bool finish = true);
+    void setAngle(qreal angle,
+                  const std::optional<QPointF>& center,
+                  const std::optional<QPointF>& centerLocal = std::nullopt,
+                  bool snap = false,
+                  bool update = true,
+                  bool finish = true);
+    void scale(const QPointF& factors,
+               const std::optional<QPointF>& center = std::nullopt,
+               const std::optional<QPointF>& centerLocal = std::nullopt,
+               bool snap = false,
+               bool update = true,
+               bool finish = true);
     void translate(const QPointF& delta, bool snap = false, bool finish = true, bool update = true);
+    void translate(const QPointF& delta, const QPointF& snap, bool finish = true, bool update = true);
+    void rotate(qreal angle,
+                const std::optional<QPointF>& centerLocal = std::nullopt,
+                bool snap = false,
+                bool update = true,
+                bool finish = true);
+
+    [[nodiscard]] ROIAffineSliceParams getAffineSliceParams(const QGraphicsItem* target, bool fromBoundingRect = false) const;
 
     [[nodiscard]] QPointF getSnapPosition(const QPointF& pos, bool snap = true) const;
     [[nodiscard]] QPointF getSnapPosition(const QPointF& pos, const QPointF& snap) const;
@@ -163,6 +201,7 @@ private:
     qreal snapSize_ = 1.0;
     bool scaleSnap_ = false;
     qreal scaleSnapSize_ = 1.0;
+    qreal rotateSnapAngle_ = 15.0;
     bool invertible_ = true;
     bool aspectLocked_ = false;
     QVector<HandleInfo> handles_;

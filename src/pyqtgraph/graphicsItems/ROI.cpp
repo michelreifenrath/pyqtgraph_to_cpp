@@ -13,6 +13,7 @@
 #include <QtWidgets/QStyleOptionGraphicsItem>
 
 #include <cmath>
+#include <stdexcept>
 
 namespace pyqtgraph::graphicsItems {
 namespace {
@@ -244,6 +245,44 @@ void ROI::setSize(const QPointF& size, bool update, bool finish)
     }
 }
 
+void ROI::setSize(const QPointF& size,
+                  const std::optional<QPointF>& center,
+                  const std::optional<QPointF>& centerLocal,
+                  bool snap,
+                  bool update,
+                  bool finish)
+{
+    pyqtgraph::Point newSize(size);
+    if (snap) {
+        newSize.setX(snappedCoordinate(newSize.x(), scaleSnapSize_));
+        newSize.setY(snappedCoordinate(newSize.y(), scaleSnapSize_));
+    }
+
+    std::optional<pyqtgraph::Point> normalizedCenter;
+    if (centerLocal.has_value()) {
+        pyqtgraph::Point oldSize(state_.size);
+        if (oldSize.x() == 0.0) {
+            oldSize.setX(1.0);
+        }
+        if (oldSize.y() == 0.0) {
+            oldSize.setY(1.0);
+        }
+        normalizedCenter = pyqtgraph::Point(centerLocal.value()) / oldSize;
+    } else if (center.has_value()) {
+        normalizedCenter = pyqtgraph::Point(center.value());
+    }
+
+    if (normalizedCenter.has_value()) {
+        const pyqtgraph::Point oldLocal = normalizedCenter.value() * state_.size;
+        const pyqtgraph::Point newLocal = normalizedCenter.value() * newSize;
+        const pyqtgraph::Point oldParent = pyqtgraph::Point(mapToParent(oldLocal));
+        const pyqtgraph::Point newParent = pyqtgraph::Point(mapToParent(newLocal));
+        setPos(state_.pos + oldParent - newParent, false, false);
+    }
+
+    setSize(newSize, update, finish);
+}
+
 void ROI::setAngle(qreal angle, bool update, bool finish)
 {
     state_.angle = angle;
@@ -255,6 +294,50 @@ void ROI::setAngle(qreal angle, bool update, bool finish)
     }
 }
 
+void ROI::setAngle(qreal angle,
+                   const std::optional<QPointF>& center,
+                   const std::optional<QPointF>& centerLocal,
+                   bool snap,
+                   bool update,
+                   bool finish)
+{
+    if (snap) {
+        angle = snappedCoordinate(angle, rotateSnapAngle_);
+    }
+
+    QTransform nextTransform;
+    nextTransform.rotate(angle);
+
+    std::optional<pyqtgraph::Point> localCenter;
+    if (center.has_value()) {
+        localCenter = pyqtgraph::Point(center.value()) * state_.size;
+    } else if (centerLocal.has_value()) {
+        localCenter = pyqtgraph::Point(centerLocal.value());
+    }
+
+    if (localCenter.has_value()) {
+        const pyqtgraph::Point oldParent = pyqtgraph::Point(mapToParent(localCenter.value()));
+        const pyqtgraph::Point nextParentAtCurrentPos = pyqtgraph::Point(nextTransform.map(localCenter.value())) + state_.pos;
+        setPos(state_.pos + oldParent - nextParentAtCurrentPos, false, false);
+    }
+
+    state_.angle = angle;
+    setTransform(nextTransform);
+    if (update) {
+        stateChanged(finish);
+    }
+}
+
+void ROI::scale(const QPointF& factors,
+                const std::optional<QPointF>& center,
+                const std::optional<QPointF>& centerLocal,
+                bool snap,
+                bool update,
+                bool finish)
+{
+    setSize(state_.size * factors, center, centerLocal, snap, update, finish);
+}
+
 void ROI::translate(const QPointF& delta, bool snap, bool finish, bool update)
 {
     QPointF next = state_.pos + delta;
@@ -262,6 +345,42 @@ void ROI::translate(const QPointF& delta, bool snap, bool finish, bool update)
         next = getSnapPosition(next, true);
     }
     setPos(next, update, finish);
+}
+
+void ROI::translate(const QPointF& delta, const QPointF& snap, bool finish, bool update)
+{
+    setPos(getSnapPosition(state_.pos + delta, snap), update, finish);
+}
+
+void ROI::rotate(qreal angle, const std::optional<QPointF>& centerLocal, bool snap, bool update, bool finish)
+{
+    setAngle(state_.angle + angle, std::nullopt, centerLocal, snap, update, finish);
+}
+
+ROIAffineSliceParams ROI::getAffineSliceParams(const QGraphicsItem* target, bool fromBoundingRect) const
+{
+    if (target == nullptr) {
+        throw std::invalid_argument("ROI::getAffineSliceParams target must not be null");
+    }
+    if (scene() != nullptr && target->scene() != nullptr && scene() != target->scene()) {
+        throw std::runtime_error("ROI and target item must be members of the same scene");
+    }
+
+    const QPointF localOrigin = fromBoundingRect ? boundingRect().topLeft() : QPointF(0.0, 0.0);
+    const pyqtgraph::Point origin(mapToItem(target, localOrigin));
+    const pyqtgraph::Point vx = pyqtgraph::Point(mapToItem(target, localOrigin + QPointF(1.0, 0.0))) - origin;
+    const pyqtgraph::Point vy = pyqtgraph::Point(mapToItem(target, localOrigin + QPointF(0.0, 1.0))) - origin;
+
+    const qreal lx = std::hypot(vx.x(), vx.y());
+    const qreal ly = std::hypot(vy.x(), vy.y());
+    const pyqtgraph::Point vectorX = lx == 0.0 ? pyqtgraph::Point(0.0, 0.0) : vx / lx;
+    const pyqtgraph::Point vectorY = ly == 0.0 ? pyqtgraph::Point(0.0, 0.0) : vy / ly;
+
+    pyqtgraph::Point shape = fromBoundingRect ? pyqtgraph::Point(boundingRect().size()) : state_.size;
+    shape.setX(std::abs(shape.x() * lx));
+    shape.setY(std::abs(shape.y() * ly));
+
+    return ROIAffineSliceParams{shape, {vectorX, vectorY}, origin};
 }
 
 QPointF ROI::getSnapPosition(const QPointF& pos, bool snap) const
