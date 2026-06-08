@@ -1,0 +1,19 @@
+{
+  "case": "ColorButton",
+  "issue": "P5.12",
+  "compared_paths": {"reference": "reference.png", "actual": "actual.png", "diff": "diff.png"},
+  "reference_source": "pyqtgraph-0.14.0 pyqtgraph/widgets/ColorButton.py paintEvent swatch overlay",
+  "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+  "dimensions": [240, 48],
+  "fixture_hash": "P5.12:ColorButton:default-alpha-opaque:v1",
+  "thresholds": {"max_changed_pixels": 0, "max_pixel_delta": 0},
+  "changed_pixels": 0,
+  "changed_percent": 0.000000,
+  "max_delta": 0,
+  "mean_delta": 0.000000,
+  "gpt5_vision_review": {"required_for_pr": true, "path": "gpt5_vision_review.md", "source": "/home/michel/code/pyqtgraph_to_cpp_archon/reports/visual-diffs/ColorButton/gpt5_vision_review.md", "available": true, "accepted": true},
+  "semantic_review": {"verdict": "pass", "recommendation": "merge_ok"},
+  "passed": true,
+  "blank_placeholder_guard": "passed",
+  "reproducibility": {"qt_qpa_platform": "offscreen", "background": "#08080a", "antialias": true}
+}

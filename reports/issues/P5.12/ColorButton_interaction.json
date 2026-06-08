@@ -1,0 +1,13 @@
+{
+  "issue": "P5.12",
+  "class": "pyqtgraph::widgets::ColorButton",
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/ColorButton.py",
+  "manifest_targets": ["include/pyqtgraph/widgets/ColorButton.hpp", "src/pyqtgraph/widgets/ColorButton.cpp"],
+  "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_colorbutton_p5_12"},
+  "checks": ["QPushButton subclass with default gray swatch", "setColor finished/changing signals", "saveState/restoreState RGBA bytes", "dialog slot rollback and accept behavior", "deterministic visual reference-vs-actual pixels"],
+  "visual_artifacts": {"root": "reports/visual-diffs/ColorButton", "reference": "reference.png", "actual": "actual.png", "diff": "diff.png", "metrics": "metrics.json", "gpt5_vision_review": "gpt5_vision_review.md"},
+  "semantic_pixels": {"reference": 7272, "actual": 7272},
+  "visual_metrics": {"changed_pixels": 0, "max_delta": 0, "mean_delta": 0.000000, "passed": true},
+  "validation_commands": ["cmake --preset dev", "cmake --build --preset dev --parallel", "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure", "python3 -m pytest -q", "git diff --check", "git diff --name-only origin/main...HEAD"]
+}
