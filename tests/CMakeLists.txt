@@ -113,6 +113,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME pyqtgraph_cpp.oracle.P4_07.IsocurveItem
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P4_07_isocurve_oracle.py" --check
+)
+set_tests_properties(
+    pyqtgraph_cpp.oracle.P4_07.IsocurveItem
+    PROPERTIES
+        LABELS P4.07
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME pyqtgraph_cpp.oracle.P2_03
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P2_03_plotdata_oracle.py" --check
 )
@@ -498,6 +509,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             PYQTGRAPH_CPP_P4_06_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.06"
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.HistogramLUT_ColorBar.P4_06 PROPERTIES LABELS P4.06)
+
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_isocurveitem_p4_07
+        graphicsItems/test_IsocurveItem_P4_07.cpp
+        pyqtgraph_cpp.graphicsItems.IsocurveItem.P4_07
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_isocurveitem_p4_07
+        PRIVATE
+            PYQTGRAPH_CPP_P4_07_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P4_07/isocurve_oracle.json"
+            PYQTGRAPH_CPP_P4_07_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.07"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.IsocurveItem.P4_07 PROPERTIES LABELS P4.07)
 
     add_executable(pyqtgraph_cpp_examples_simpleplot "${PROJECT_SOURCE_DIR}/examples/SimplePlot.cpp")
     pyqtgraph_cpp_configure_cpp_test_target(pyqtgraph_cpp_examples_simpleplot)

@@ -177,6 +177,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/ColorBarItem.cpp
             include/pyqtgraph/graphicsItems/NonUniformImage.hpp
             src/pyqtgraph/graphicsItems/NonUniformImage.cpp
+            include/pyqtgraph/graphicsItems/IsocurveItem.hpp
+            src/pyqtgraph/graphicsItems/IsocurveItem.cpp
             src/pyqtgraph/graphicsItems/PlotCurveItem.cpp
     )
     set_target_properties(pyqtgraph_cpp PROPERTIES AUTOMOC ON)
