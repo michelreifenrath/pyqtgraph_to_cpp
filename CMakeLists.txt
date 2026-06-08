@@ -145,6 +145,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/LegendItem.cpp
             include/pyqtgraph/graphicsItems/TextItem.hpp
             src/pyqtgraph/graphicsItems/TextItem.cpp
+            include/pyqtgraph/graphicsItems/ScaleBar.hpp
+            src/pyqtgraph/graphicsItems/ScaleBar.cpp
             include/pyqtgraph/graphicsItems/LabelItem.hpp
             src/pyqtgraph/graphicsItems/LabelItem.cpp
             include/pyqtgraph/graphicsItems/VTickGroup.hpp
