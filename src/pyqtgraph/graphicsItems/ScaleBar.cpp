@@ -78,7 +78,7 @@ QString siFormat(qreal value, int precision = 3, const QString& suffix = QString
 {
     const auto [scale, prefix] = siScale(static_cast<double>(value));
     QString spacedPrefix = prefix;
-    if (!prefix.isEmpty() && !prefix.startsWith(QLatin1Char('e'))) {
+    if (!(prefix.length() > 0 && prefix.startsWith(QLatin1Char('e')))) {
         spacedPrefix = (space ? QStringLiteral(" ") : QString{}) + prefix;
     }
     return QString::number(value * scale, 'g', precision) + spacedPrefix + suffix;
@@ -109,6 +109,12 @@ ScaleBar::ScaleBar(qreal size,
     bar_->setBrush(brush_);
 
     text_ = new TextItem(siFormat(size_, 3, suffix_), QColor(200, 200, 200), QPointF(0.5, 1.0), this);
+
+    if (parent != nullptr) {
+        connectParentView();
+        applyAnchor();
+        updateBar();
+    }
 }
 
 ScaleBar::~ScaleBar()
@@ -230,6 +236,10 @@ void ScaleBar::connectParentView()
     rangeChangedConnection_ = QObject::connect(view, &ViewBox::sigRangeChanged, view, [this](ViewBox*, ViewBox::Range2D, std::array<bool, 2>) {
         updateBar();
     });
+    resizedConnection_ = QObject::connect(view, &ViewBox::sigResized, view, [this](ViewBox*) {
+        applyAnchor();
+        updateBar();
+    });
 }
 
 void ScaleBar::disconnectParentView()
@@ -237,6 +247,10 @@ void ScaleBar::disconnectParentView()
     if (rangeChangedConnection_) {
         QObject::disconnect(rangeChangedConnection_);
         rangeChangedConnection_ = {};
+    }
+    if (resizedConnection_) {
+        QObject::disconnect(resizedConnection_);
+        resizedConnection_ = {};
     }
 }
 

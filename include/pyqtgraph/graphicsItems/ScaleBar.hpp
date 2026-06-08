@@ -80,6 +80,7 @@ private:
     QPointF parentAnchor_;
     bool hasAnchor_ = false;
     QMetaObject::Connection rangeChangedConnection_;
+    QMetaObject::Connection resizedConnection_;
 };
 
 } // namespace pyqtgraph::graphicsItems

@@ -156,7 +156,7 @@ QString siFormat(qreal value, int precision = 3, const QString& suffix = QString
 {
     const auto [scale, prefix] = siScale(static_cast<double>(value));
     QString spacedPrefix = prefix;
-    if (!prefix.isEmpty() && !prefix.startsWith(QLatin1Char('e'))) {
+    if (!(prefix.length() > 0 && prefix.startsWith(QLatin1Char('e')))) {
         spacedPrefix = QStringLiteral(" ") + prefix;
     }
     return QString::number(value * scale, 'g', precision) + spacedPrefix + suffix;
@@ -580,6 +580,88 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
     return true;
 }
 
+bool testSiFormatSuffixSpacing()
+{
+    CHECK(siFormat(2.0, 3, QStringLiteral("m")) == QStringLiteral("2 m"));
+    CHECK(siFormat(5.0, 3, QStringLiteral("V")) == QStringLiteral("5 V"));
+    CHECK(siFormat(0.002, 3, QStringLiteral("m")) == QStringLiteral("2 mm"));
+    return true;
+}
+
+bool testConstructorWithParentInitializesLayout()
+{
+    ViewBox viewBox;
+    viewBox.setGeometry(QRectF(0.0, 0.0, 200.0, 100.0));
+    viewBox.setXRange(0.0, 10.0);
+    viewBox.setYRange(0.0, 5.0);
+
+    ScaleBar scaleBar(2.0, 6.0, QBrush(QColor(220, 220, 220)), QPen(QColor(40, 40, 40), 1.0), QStringLiteral("m"), QPointF(0.0, 0.0), &viewBox);
+
+    CHECK(scaleBar.parentItem() == &viewBox);
+
+    const QPointF p1 = scaleBar.mapFromParent(viewBox.mapFromView(QPointF(0.0, 0.0)));
+    const QPointF p2 = scaleBar.mapFromParent(viewBox.mapFromView(QPointF(2.0, 0.0)));
+    const qreal expectedWidth = p2.x() - p1.x();
+    CHECK(expectedWidth > 0.0);
+
+    QGraphicsRectItem* bar = nullptr;
+    for (QGraphicsItem* child : scaleBar.childItems()) {
+        if (child->type() == QGraphicsRectItem::Type) {
+            bar = static_cast<QGraphicsRectItem*>(child);
+            break;
+        }
+    }
+    CHECK(bar != nullptr);
+    CHECK_CLOSE(bar->rect().width(), expectedWidth, 1.0e-6);
+
+    const QRectF parentRect = viewBox.boundingRect();
+    CHECK_CLOSE(scaleBar.pos().x(), parentRect.right(), 1.0e-6);
+    CHECK_CLOSE(scaleBar.pos().y(), parentRect.bottom(), 1.0e-6);
+
+    return true;
+}
+
+bool testResizeUpdatesBarAndAnchor()
+{
+    ViewBox viewBox;
+    viewBox.setGeometry(QRectF(0.0, 0.0, 200.0, 100.0));
+    viewBox.setXRange(0.0, 10.0);
+    viewBox.setYRange(0.0, 5.0);
+
+    ScaleBar scaleBar(2.0, 6.0, QBrush(QColor(220, 220, 220)), QPen(QColor(40, 40, 40), 1.0), QStringLiteral("m"), QPointF(0.0, 0.0));
+    scaleBar.setParentItem(&viewBox);
+
+    QGraphicsRectItem* bar = nullptr;
+    for (QGraphicsItem* child : scaleBar.childItems()) {
+        if (child->type() == QGraphicsRectItem::Type) {
+            bar = static_cast<QGraphicsRectItem*>(child);
+            break;
+        }
+    }
+    CHECK(bar != nullptr);
+
+    const QPointF p1Before = scaleBar.mapFromParent(viewBox.mapFromView(QPointF(0.0, 0.0)));
+    const QPointF p2Before = scaleBar.mapFromParent(viewBox.mapFromView(QPointF(2.0, 0.0)));
+    const qreal widthBefore = p2Before.x() - p1Before.x();
+    const QPointF posBefore = scaleBar.pos();
+    CHECK_CLOSE(bar->rect().width(), widthBefore, 1.0e-6);
+
+    viewBox.resize(400.0, 200.0);
+
+    const QPointF p1After = scaleBar.mapFromParent(viewBox.mapFromView(QPointF(0.0, 0.0)));
+    const QPointF p2After = scaleBar.mapFromParent(viewBox.mapFromView(QPointF(2.0, 0.0)));
+    const qreal widthAfter = p2After.x() - p1After.x();
+    CHECK(widthAfter > widthBefore);
+    CHECK_CLOSE(bar->rect().width(), widthAfter, 1.0e-6);
+
+    const QRectF parentRect = viewBox.boundingRect();
+    CHECK_CLOSE(scaleBar.pos().x(), parentRect.right(), 1.0e-6);
+    CHECK_CLOSE(scaleBar.pos().y(), parentRect.bottom(), 1.0e-6);
+    CHECK(scaleBar.pos() != posBefore);
+
+    return true;
+}
+
 bool testConstructionAndBehavior()
 {
     static_assert(std::is_constructible_v<ScaleBar, qreal>);
@@ -683,6 +765,15 @@ int main(int argc, char** argv)
     qputenv("QT_QPA_PLATFORM", "offscreen");
     ApplicationGuard application(argc, argv);
 
+    if (!testSiFormatSuffixSpacing()) {
+        return 1;
+    }
+    if (!testConstructorWithParentInitializesLayout()) {
+        return 1;
+    }
+    if (!testResizeUpdatesBarAndAnchor()) {
+        return 1;
+    }
     if (!testConstructionAndBehavior()) {
         return 1;
     }
