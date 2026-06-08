@@ -1,0 +1,15 @@
+{
+  "issue": "P4.23",
+  "class": "pyqtgraph::graphicsItems::ScaleBar",
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ScaleBar.py; ViewBox mapFromViewToItem anchoring",
+  "manifest_targets": ["include/pyqtgraph/graphicsItems/ScaleBar.hpp", "src/pyqtgraph/graphicsItems/ScaleBar.cpp"],
+  "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
+  "tdd_baseline_failure": {"command": "cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_scalebar_p4_23", "exit_code": 2, "expected": "compile failed before ScaleBar implementation was added"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.23 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_graphicsitems_scalebar_p4_23"},
+  "checks": ["view-coordinate bar width mapping", "offset anchor bottom-right and top-left", "pen/brush style on QGraphicsRectItem bar", "TextItem SI label centered above bar", "deterministic visual reference-vs-actual pixels"],
+  "visual_artifacts": {"root": "reports/visual-diffs/ScaleBar", "reference": "reference.png", "actual": "actual.png", "diff": "diff.png", "metrics": "metrics.json", "gpt5_vision_review": "gpt5_vision_review.md"},
+  "semantic_pixels": {"reference": 3590, "actual": 3590},
+  "visual_metrics": {"changed_pixels": 0, "max_delta": 0, "mean_delta": 0.000000, "passed": true},
+  "validation_commands": ["cmake --preset dev", "cmake --build --preset dev --parallel", "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.23 --output-on-failure", "python3 -m pytest -q", "git diff --check", "git diff --name-only origin/main...HEAD"],
+  "manifest_dashboard": "not_applicable: port_manifest/dashboard updates are outside P4.23 owned paths for this shard"
+}

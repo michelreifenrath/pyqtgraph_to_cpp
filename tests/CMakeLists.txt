@@ -505,6 +505,19 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.TextLabelItem.P4_22 PROPERTIES LABELS "visual;P4.22")
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_scalebar_p4_23
+        graphicsItems/test_ScaleBar_P4_23.cpp
+        pyqtgraph_cpp.graphicsItems.ScaleBar.P4_23
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_scalebar_p4_23
+        PRIVATE
+            PYQTGRAPH_CPP_P4_23_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ScaleBar"
+            PYQTGRAPH_CPP_P4_23_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ScaleBar/gpt5_vision_review.md"
+            PYQTGRAPH_CPP_P4_23_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.23"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ScaleBar.P4_23 PROPERTIES LABELS "visual;P4.23")
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem
