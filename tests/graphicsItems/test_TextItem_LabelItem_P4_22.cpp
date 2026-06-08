@@ -711,6 +711,30 @@ bool testConstructionAndBehavior()
     return true;
 }
 
+bool testSetAttrRefreshesLayoutAndSize()
+{
+    using pyqtgraph::graphicsItems::LabelItem;
+
+    LabelItem::TextStyleOptions style;
+    style.justify = QStringLiteral("center");
+    style.size = QStringLiteral("9pt");
+    LabelItem label(QStringLiteral("Resize me"), style);
+    label.setGeometry(QRectF(0.0, 0.0, 120.0, 40.0));
+
+    const QSizeF sizeBefore = label.sizeHint(Qt::MinimumSize);
+
+    label.setAttr(QStringLiteral("size"), QStringLiteral("18pt"));
+    const QSizeF sizeAfter = label.sizeHint(Qt::MinimumSize);
+    CHECK(sizeAfter.height() > sizeBefore.height());
+
+    label.setAttr(QStringLiteral("justify"), QStringLiteral("left"));
+    CHECK(label.justify() == QStringLiteral("left"));
+    CHECK(label.sizeHint(Qt::MinimumSize).width() > 0.0);
+    CHECK(!label.itemRect().isEmpty());
+
+    return true;
+}
+
 bool testVisualBehavior()
 {
     const QImage reference = renderReference();
@@ -743,6 +767,9 @@ int main(int argc, char** argv)
     ApplicationGuard application(argc, argv);
 
     if (!testConstructionAndBehavior()) {
+        return 1;
+    }
+    if (!testSetAttrRefreshesLayoutAndSize()) {
         return 1;
     }
     if (!testVisualBehavior()) {

@@ -63,6 +63,9 @@ void LabelItem::setAttr(const QString& attr, const QVariant& value)
         style_.italic = value.toBool();
     }
     applyStyledHtml(text_);
+    updateMin();
+    layoutText();
+    updateGeometry();
 }
 
 void LabelItem::setText(const QString& text)
