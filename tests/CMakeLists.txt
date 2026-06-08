@@ -479,6 +479,20 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.image.P4_19 PROPERTIES LABELS "visual;P4.19")
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_roi_shapes_p4_20
+        graphicsItems/test_ROI_shapes_P4_20.cpp
+        pyqtgraph_cpp.graphicsItems.ROI.shapes.P4_20
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_roi_shapes_p4_20
+        PRIVATE
+            PYQTGRAPH_CPP_P4_20_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.20"
+            PYQTGRAPH_CPP_P4_20_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ROI-shapes"
+            PYQTGRAPH_CPP_P4_20_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ROI-shapes/gpt5_vision_review.md"
+            PYQTGRAPH_CPP_P4_20_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.20"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.shapes.P4_20 PROPERTIES LABELS "visual;P4.20")
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_arrowitem_p4_21
         graphicsItems/test_ArrowItem_P4_21.cpp
         pyqtgraph_cpp.graphicsItems.ArrowItem.P4_21

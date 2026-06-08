@@ -1,0 +1,67 @@
+{
+    "checks": [
+        "rectroi-default-handle",
+        "rectroi-side-scalers",
+        "ellipseroi-handles-shape",
+        "circleroi-radius-aspect",
+        "lineroi-geometry-handles",
+        "polylineroi-closed-polygon",
+        "rectroi-handle-drag",
+        "polylineroi-free-handle-drag",
+        "visual-artifacts-gpt"
+    ],
+    "interactiveRect": {
+        "post": {
+            "angle": 0,
+            "pos": [
+                20,
+                20
+            ],
+            "size": [
+                40,
+                35
+            ]
+        },
+        "pre": {
+            "angle": 0,
+            "pos": [
+                20,
+                20
+            ],
+            "size": [
+                30,
+                20
+            ]
+        }
+    },
+    "issue": "P4.20",
+    "lineState": {
+        "angle": 0,
+        "pos": [
+            0,
+            -2
+        ],
+        "size": [
+            10,
+            4
+        ]
+    },
+    "polygonPoints": 4,
+    "rectState": {
+        "angle": 0,
+        "pos": [
+            10,
+            12
+        ],
+        "size": [
+            30,
+            20
+        ]
+    },
+    "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:1621-2050 RectROI, LineROI, EllipseROI, CircleROI, PolyLineROI",
+    "visual": {
+        "actualPixels": 17902,
+        "changedPixels": 0,
+        "maxDelta": 0
+    }
+}

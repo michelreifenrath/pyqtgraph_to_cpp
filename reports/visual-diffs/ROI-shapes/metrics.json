@@ -1,0 +1,20 @@
+{
+    "actual": "actual.png",
+    "case": "ROI-shapes",
+    "changed_pixels": 0,
+    "diff": "diff.png",
+    "gpt5_vision_review": {
+        "generated_by_test": false,
+        "path": "gpt5_vision_review.md",
+        "required_for_pr": true
+    },
+    "height": 240,
+    "issue": "P4.20",
+    "max_delta": 0,
+    "mean_delta": 0,
+    "nonBackgroundPixels": 17902,
+    "passed": true,
+    "reference": "reference.png",
+    "reference_source": "deterministic C++ ROI shape render; PyQtGraph behavior reference pyqtgraph/graphicsItems/ROI.py RectROI, EllipseROI, CircleROI, LineROI, PolyLineROI",
+    "width": 320
+}

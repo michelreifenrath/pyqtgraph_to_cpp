@@ -77,7 +77,7 @@ class ROI : public GraphicsObject {
 public:
     class Handle : public GraphicsObject, public pyqtgraph::GraphicsScene::GraphicsSceneEventHandler {
     public:
-        enum class Type { Scale };
+        enum class Type { Scale, Free, Rotate, ScaleRotate };
 
         explicit Handle(qreal radius = 5.0,
                         Type type = Type::Scale,
@@ -183,6 +183,17 @@ public:
                            Handle* item = nullptr,
                            const QString& name = QString(),
                            bool lockAspect = false);
+    Handle* addFreeHandle(const QPointF& pos,
+                          Handle* item = nullptr,
+                          const QString& name = QString());
+    Handle* addRotateHandle(const QPointF& pos,
+                            const QPointF& center,
+                            Handle* item = nullptr,
+                            const QString& name = QString());
+    Handle* addScaleRotateHandle(const QPointF& pos,
+                                 const QPointF& center,
+                                 Handle* item = nullptr,
+                                 const QString& name = QString());
     [[nodiscard]] QList<Handle*> getHandles() const;
     void handleMoveStarted();
     [[nodiscard]] bool checkPointMove(const Handle* handle,
@@ -207,6 +218,9 @@ public:
     void setHoverPen(const QPen& pen);
     [[nodiscard]] QPen hoverPen() const;
 
+    void setAspectLocked(bool locked) noexcept;
+    [[nodiscard]] bool aspectLocked() const noexcept;
+
 signals:
     void sigRegionChangeFinished(pyqtgraph::graphicsItems::ROI* roi);
     void sigRegionChangeStarted(pyqtgraph::graphicsItems::ROI* roi);
@@ -224,8 +238,12 @@ private:
         bool yOff = false;
     };
 
-    Handle* addHandle(HandleInfo info);
+    Handle* addHandle(HandleInfo info, int index = -1);
     [[nodiscard]] int indexOfHandle(const Handle* handle) const;
+    [[nodiscard]] bool handleUsesAbsolutePosition(Handle::Type type) const noexcept;
+
+protected:
+    void clearHandles();
 
     ROIState state_;
     ROIState lastState_;
@@ -242,6 +260,68 @@ private:
     QPen pen_;
     QPen hoverPen_;
     QPen currentPen_;
+};
+
+class RectROI : public ROI {
+public:
+    explicit RectROI(const QPointF& pos,
+                     const QPointF& size,
+                     bool centered = false,
+                     bool sideScalers = false,
+                     QGraphicsItem* parent = nullptr);
+};
+
+class EllipseROI : public ROI {
+public:
+    explicit EllipseROI(const QPointF& pos, const QPointF& size, QGraphicsItem* parent = nullptr);
+
+    [[nodiscard]] QPainterPath shape() const override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
+
+protected:
+    virtual void addShapeHandles();
+    void invalidateShapePath() noexcept;
+
+private:
+    mutable QPainterPath shapePath_;
+    mutable bool shapePathValid_ = false;
+};
+
+class CircleROI : public EllipseROI {
+public:
+    explicit CircleROI(const QPointF& pos,
+                       const QPointF& size,
+                       QGraphicsItem* parent = nullptr);
+    explicit CircleROI(const QPointF& pos,
+                       qreal radius,
+                       QGraphicsItem* parent = nullptr);
+
+protected:
+    void addShapeHandles() override;
+};
+
+class LineROI : public ROI {
+public:
+    explicit LineROI(const QPointF& pos1, const QPointF& pos2, qreal width, QGraphicsItem* parent = nullptr);
+};
+
+class PolyLineROI : public ROI {
+public:
+    explicit PolyLineROI(const QVector<QPointF>& positions,
+                         bool closed = false,
+                         const QPointF& pos = QPointF(0.0, 0.0),
+                         QGraphicsItem* parent = nullptr);
+
+    void setPoints(const QVector<QPointF>& points, std::optional<bool> closed = std::nullopt);
+    [[nodiscard]] bool closed() const noexcept;
+    [[nodiscard]] QVector<QPointF> pointPositions() const;
+
+    [[nodiscard]] QPainterPath shape() const override;
+    [[nodiscard]] QRectF boundingRect() const override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
+
+private:
+    bool closed_ = false;
 };
 
 template <typename T>
