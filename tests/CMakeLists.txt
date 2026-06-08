@@ -600,7 +600,6 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     target_compile_definitions(pyqtgraph_cpp_widgets_colorbutton_p5_12
         PRIVATE
             PYQTGRAPH_CPP_P5_12_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ColorButton"
-            PYQTGRAPH_CPP_P5_12_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ColorButton/gpt5_vision_review.md"
             PYQTGRAPH_CPP_P5_12_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.12"
     )
     set_tests_properties(pyqtgraph_cpp.widgets.ColorButton.P5_12 PROPERTIES LABELS "visual;P5.12")

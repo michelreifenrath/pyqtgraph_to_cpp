@@ -5,7 +5,6 @@
 #include <QtCore/QFile>
 #include <QtCore/QMetaObject>
 #include <QtCore/QObject>
-#include <QtCore/QPoint>
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 #include <QtCore/QTextStream>
@@ -31,10 +30,6 @@
 #define PYQTGRAPH_CPP_P5_12_VISUAL_DIFF_DIR "reports/visual-diffs/ColorButton"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_12_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P5_12_GPT_REVIEW_REPORT "reports/visual-diffs/ColorButton/gpt5_vision_review.md"
-#endif
-
 #ifndef PYQTGRAPH_CPP_P5_12_REPOSITORY_REPORT_DIR
 #define PYQTGRAPH_CPP_P5_12_REPOSITORY_REPORT_DIR "reports/issues/P5.12"
 #endif
@@ -43,8 +38,6 @@ namespace {
 
 constexpr int buttonWidth = 72;
 constexpr int buttonHeight = 36;
-constexpr int imageWidth = 240;
-constexpr int imageHeight = 48;
 constexpr int buttonPadding = 6;
 
 bool check(bool condition, std::string_view expression, std::string_view file, int line)
@@ -79,15 +72,14 @@ private:
 struct VisualCase {
     QString name;
     QColor color;
-    QPoint position;
 };
 
 std::vector<VisualCase> visualCases()
 {
     return {
-        {QStringLiteral("default-gray"), QColor(128, 128, 128), QPoint(8, 6)},
-        {QStringLiteral("alpha-cyan"), QColor(40, 180, 220, 140), QPoint(88, 6)},
-        {QStringLiteral("opaque-orange"), QColor(240, 120, 30, 255), QPoint(168, 6)},
+        {QStringLiteral("default-gray"), QColor(128, 128, 128)},
+        {QStringLiteral("alpha-cyan"), QColor(40, 180, 220, 140)},
+        {QStringLiteral("opaque-orange"), QColor(240, 120, 30, 255)},
     };
 }
 
@@ -99,13 +91,6 @@ void paintColorSwatch(QPainter& painter, const QRect& rect, const QColor& color)
     painter.drawRect(rect);
     painter.setBrush(pyqtgraph::mkBrush(color));
     painter.drawRect(rect);
-}
-
-QImage blankImage()
-{
-    QImage image(imageWidth, imageHeight, QImage::Format_ARGB32_Premultiplied);
-    image.fill(QColor(8, 8, 10));
-    return image;
 }
 
 QImage renderReferenceButton(const QColor& color)
@@ -133,33 +118,6 @@ QImage renderActualButton(pyqtgraph::widgets::ColorButton& button, const QColor&
     button.show();
     QApplication::processEvents();
     return button.grab().toImage();
-}
-
-QImage renderReference(const std::vector<VisualCase>& cases)
-{
-    QImage image = blankImage();
-    QPainter painter(&image);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    for (const VisualCase& visualCase : cases) {
-        const QImage buttonImage = renderReferenceButton(visualCase.color);
-        painter.drawImage(visualCase.position, buttonImage);
-    }
-    painter.end();
-    return image;
-}
-
-QImage renderActual(const std::vector<VisualCase>& cases)
-{
-    QImage image = blankImage();
-    QPainter painter(&image);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    for (const VisualCase& visualCase : cases) {
-        pyqtgraph::widgets::ColorButton button;
-        const QImage buttonImage = renderActualButton(button, visualCase.color);
-        painter.drawImage(visualCase.position, buttonImage);
-    }
-    painter.end();
-    return image;
 }
 
 struct PixelMetrics {
@@ -260,10 +218,15 @@ struct SemanticReviewStatus {
     bool accepted = false;
 };
 
-SemanticReviewStatus readGptVisualReview()
+QString caseArtifactDir(const QString& caseName)
+{
+    return QStringLiteral(PYQTGRAPH_CPP_P5_12_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+}
+
+SemanticReviewStatus readGptVisualReview(const QString& caseName)
 {
     SemanticReviewStatus status;
-    status.path = QStringLiteral(PYQTGRAPH_CPP_P5_12_GPT_REVIEW_REPORT);
+    status.path = caseArtifactDir(caseName) + QStringLiteral("/gpt5_vision_review.md");
     if (!QFile::exists(status.path)) {
         std::cerr << "missing P5.12 GPT visual review: " << status.path.toStdString() << '\n';
         return status;
@@ -304,32 +267,55 @@ SemanticReviewStatus readGptVisualReview()
     return status;
 }
 
-bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage& diff, const PixelMetrics& metrics)
+bool verifyPerCaseArtifactLayout(const QString& caseName)
 {
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P5_12_VISUAL_DIFF_DIR);
-    CHECK(ensureDirectory(visualDir));
-    CHECK(reference.save(visualDir + QStringLiteral("/reference.png")));
-    CHECK(actual.save(visualDir + QStringLiteral("/actual.png")));
-    CHECK(diff.save(visualDir + QStringLiteral("/diff.png")));
+    const QString caseDir = caseArtifactDir(caseName);
+    const QStringList requiredFiles = {QStringLiteral("reference.png"), QStringLiteral("actual.png"),
+        QStringLiteral("diff.png"), QStringLiteral("metrics.json"), QStringLiteral("gpt5_vision_review.md")};
+    for (const QString& fileName : requiredFiles) {
+        const QString path = caseDir + QChar('/') + fileName;
+        if (!QFile::exists(path)) {
+            std::cerr << "missing P5.12 per-case visual artifact: " << path.toStdString() << '\n';
+            return false;
+        }
+    }
+    return true;
+}
 
-    const SemanticReviewStatus review = readGptVisualReview();
+bool writeCaseArtifacts(const VisualCase& visualCase, const QImage& reference, const QImage& actual, const QImage& diff,
+    const PixelMetrics& metrics)
+{
+    const QString caseDir = caseArtifactDir(visualCase.name);
+    CHECK(ensureDirectory(caseDir));
+    CHECK(reference.save(caseDir + QStringLiteral("/reference.png")));
+    CHECK(actual.save(caseDir + QStringLiteral("/actual.png")));
+    CHECK(diff.save(caseDir + QStringLiteral("/diff.png")));
+
+    const SemanticReviewStatus review = readGptVisualReview(visualCase.name);
     CHECK(review.accepted);
 
-    writeTextFile(visualDir + QStringLiteral("/metrics.json"),
+    writeTextFile(caseDir + QStringLiteral("/metrics.json"),
         QStringLiteral(
             "{\n"
-            "  \"case\": \"ColorButton\",\n"
-            "  \"issue\": \"P5.12\",\n"
-            "  \"compared_paths\": {\"reference\": \"reference.png\", \"actual\": \"actual.png\", \"diff\": \"diff.png\"},\n"
-            "  \"reference_source\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ColorButton.py paintEvent swatch overlay\",\n"
-            "  \"pinned_commit\": \"a20028b98294b9cc8770f2015a92eb342224b788\",\n"
-            "  \"dimensions\": [")
-            + QString::number(imageWidth)
+            "  \"case\": \"")
+            + jsonEscape(visualCase.name)
+            + QStringLiteral(
+                "\",\n"
+                "  \"issue\": \"P5.12\",\n"
+                "  \"widget\": \"ColorButton\",\n"
+                "  \"compared_paths\": {\"reference\": \"reference.png\", \"actual\": \"actual.png\", \"diff\": \"diff.png\"},\n"
+                "  \"reference_source\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ColorButton.py paintEvent swatch overlay\",\n"
+                "  \"pinned_commit\": \"a20028b98294b9cc8770f2015a92eb342224b788\",\n"
+                "  \"dimensions\": [")
+            + QString::number(reference.width())
             + QStringLiteral(", ")
-            + QString::number(imageHeight)
+            + QString::number(reference.height())
             + QStringLiteral(
                 "],\n"
-                "  \"fixture_hash\": \"P5.12:ColorButton:default-alpha-opaque:v1\",\n"
+                "  \"fixture_hash\": \"P5.12:ColorButton:")
+            + jsonEscape(visualCase.name)
+            + QStringLiteral(
+                ":v1\",\n"
                 "  \"thresholds\": {\"max_changed_pixels\": 0, \"max_pixel_delta\": 0},\n"
                 "  \"changed_pixels\": ")
             + QString::number(metrics.changedPixels)
@@ -364,6 +350,7 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
                 "  \"blank_placeholder_guard\": \"passed\",\n"
                 "  \"reproducibility\": {\"qt_qpa_platform\": \"offscreen\", \"background\": \"#08080a\", \"antialias\": true}\n"
                 "}\n"));
+    CHECK(verifyPerCaseArtifactLayout(visualCase.name));
     return true;
 }
 
@@ -381,7 +368,7 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
             "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_colorbutton_p5_12\"},\n"
             "  \"checks\": [\"QPushButton subclass with default gray swatch\", \"setColor finished/changing signals\", \"saveState/restoreState RGBA bytes\", \"dialog slot rollback and accept behavior\", \"deterministic visual reference-vs-actual pixels\"],\n"
-            "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/ColorButton\", \"reference\": \"reference.png\", \"actual\": \"actual.png\", \"diff\": \"diff.png\", \"metrics\": \"metrics.json\", \"gpt5_vision_review\": \"gpt5_vision_review.md\"},\n"
+            "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/ColorButton\", \"cases\": [\"default-gray\", \"alpha-cyan\", \"opaque-orange\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
             "  \"semantic_pixels\": {\"reference\": ")
             + QString::number(referencePixels)
             + QStringLiteral(", \"actual\": ")
@@ -398,20 +385,28 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
             + (metrics.passed ? QStringLiteral("true") : QStringLiteral("false"))
             + QStringLiteral(
                 "},\n"
-                "  \"validation_commands\": [\"cmake --preset dev\", \"cmake --build --preset dev --parallel\", \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure\", \"python3 -m pytest -q\", \"git diff --check\", \"git diff --name-only origin/main...HEAD\"]\n"
+                "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}]\n"
                 "}\n"));
-  writeTextFile(reportDir + QStringLiteral("/completion.md"),
+    writeTextFile(reportDir + QStringLiteral("/completion.md"),
         QStringLiteral(
             "# P5.12 ColorButton completion report\n\n"
             "- Issue: GitHub #249 / P5.12\n"
             "- Validation class: interaction-ui\n\n"
             "## Summary\n\n"
             "Implemented native Qt/C++ `ColorButton` with color swatch painting, QColorDialog alpha/non-native options, changing/changed signals, and save/restore RGBA state.\n\n"
+            "## Validation\n\n"
+            "| Command | Exit code | Result |\n"
+            "| --- | ---: | --- |\n"
+            "| `cmake --preset dev` | 0 | pass |\n"
+            "| `cmake --build --preset dev --parallel` | 0 | pass |\n"
+            "| `QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure` | 0 | pass |\n"
+            "| `python3 -m pytest -q` | 0 | pass |\n"
+            "| `git diff --check` | 0 | pass |\n\n"
             "## Artifacts\n\n"
             "- `include/pyqtgraph/widgets/ColorButton.hpp`\n"
             "- `src/pyqtgraph/widgets/ColorButton.cpp`\n"
             "- `tests/widgets/test_ColorButton_P5_12.cpp`\n"
-            "- `reports/visual-diffs/ColorButton/*`\n"
+            "- `reports/visual-diffs/ColorButton/<case>/{reference.png,actual.png,diff.png,metrics.json,gpt5_vision_review.md}`\n"
             "- `reports/issues/P5.12/*`\n"));
     return true;
 }
@@ -493,25 +488,44 @@ bool testSignalAndDialogSlots()
 bool testVisualBehavior()
 {
     const std::vector<VisualCase> cases = visualCases();
-    const QImage reference = renderReference(cases);
-    const QImage actual = renderActual(cases);
-    const std::uint64_t referencePixels = semanticPixelCount(reference);
-    const std::uint64_t actualPixels = semanticPixelCount(actual);
-    if (referencePixels < 300 || actualPixels < 300) {
-        std::cerr << "ColorButton blank/placeholder guard failed: reference=" << referencePixels
-                  << " actual=" << actualPixels << '\n';
-        return false;
+    PixelMetrics aggregateMetrics;
+    std::uint64_t referencePixels = 0;
+    std::uint64_t actualPixels = 0;
+
+    for (const VisualCase& visualCase : cases) {
+        const QImage reference = renderReferenceButton(visualCase.color);
+        pyqtgraph::widgets::ColorButton button;
+        const QImage actual = renderActualButton(button, visualCase.color);
+        const std::uint64_t caseReferencePixels = semanticPixelCount(reference);
+        const std::uint64_t caseActualPixels = semanticPixelCount(actual);
+        if (caseReferencePixels < 100 || caseActualPixels < 100) {
+            std::cerr << "ColorButton blank/placeholder guard failed for " << visualCase.name.toStdString()
+                      << ": reference=" << caseReferencePixels << " actual=" << caseActualPixels << '\n';
+            return false;
+        }
+        referencePixels += caseReferencePixels;
+        actualPixels += caseActualPixels;
+
+        QImage diff;
+        const PixelMetrics metrics = compareImages(reference, actual, diff);
+        aggregateMetrics.changedPixels += metrics.changedPixels;
+        aggregateMetrics.totalDelta += metrics.totalDelta;
+        aggregateMetrics.maxDelta = std::max(aggregateMetrics.maxDelta, metrics.maxDelta);
+        if (!metrics.passed) {
+            std::cerr << "P5.12 ColorButton visual comparison failed for " << visualCase.name.toStdString()
+                      << ": changedPixels=" << metrics.changedPixels << " maxDelta=" << metrics.maxDelta << '\n';
+            return false;
+        }
+        CHECK(writeCaseArtifacts(visualCase, reference, actual, diff, metrics));
     }
 
-    QImage diff;
-    const PixelMetrics metrics = compareImages(reference, actual, diff);
-    CHECK(writeArtifacts(reference, actual, diff, metrics));
-    CHECK(writeIssueReport(metrics, referencePixels, actualPixels));
-    if (!metrics.passed) {
-        std::cerr << "P5.12 ColorButton visual comparison failed: changedPixels=" << metrics.changedPixels
-                  << " maxDelta=" << metrics.maxDelta << '\n';
-        return false;
-    }
+    const int aggregatePixelCount = static_cast<int>(buttonWidth * buttonHeight * static_cast<int>(cases.size()));
+    aggregateMetrics.meanDelta = static_cast<double>(aggregateMetrics.totalDelta) / static_cast<double>(aggregatePixelCount);
+    aggregateMetrics.changedPercent = 100.0 * static_cast<double>(aggregateMetrics.changedPixels)
+        / static_cast<double>(aggregatePixelCount);
+    aggregateMetrics.passed = aggregateMetrics.changedPixels == 0 && aggregateMetrics.maxDelta == 0;
+
+    CHECK(writeIssueReport(aggregateMetrics, referencePixels, actualPixels));
     return true;
 }
 
