@@ -147,6 +147,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/VTickGroup.cpp
             include/pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp
             src/pyqtgraph/graphicsItems/ViewBox/ViewBox.cpp
+            include/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.hpp
+            src/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.cpp
             src/pyqtgraph/graphicsItems/PlotItem/PlotItem.cpp
             include/pyqtgraph/widgets/GraphicsView.hpp
             src/pyqtgraph/widgets/GraphicsView.cpp
