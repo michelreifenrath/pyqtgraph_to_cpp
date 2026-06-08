@@ -21,6 +21,8 @@
 
 class QGraphicsGridLayout;
 class QGraphicsSceneResizeEvent;
+class QMenu;
+class QObject;
 class QPainter;
 class QStyleOptionGraphicsItem;
 class QVariant;
@@ -29,13 +31,36 @@ class QWidget;
 namespace pyqtgraph::graphicsItems {
 
 class AxisItem;
+class ButtonItem;
 class LegendItem;
 class PlotCurveItem;
 class TitleLabel;
 
+namespace PlotItemConfig {
+class Ui_Form;
+}
+
 class PlotItem : public GraphicsWidget {
 public:
-    explicit PlotItem(QGraphicsItem* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags{});
+    struct DownsampleState {
+        int factor = 1;
+        bool automatic = false;
+        QString method = QStringLiteral("peak");
+    };
+
+    struct GridState {
+        bool x = false;
+        bool y = false;
+        double alpha = 128.0 / 255.0;
+        int alphaSliderValue = 128;
+    };
+
+    struct AlphaState {
+        double alpha = 1.0;
+        bool automatic = false;
+    };
+
+    explicit PlotItem(QGraphicsItem* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags{}, bool enableMenu = true);
     ~PlotItem() override;
 
     PlotItem(const PlotItem&) = delete;
@@ -67,6 +92,32 @@ public:
     void showAxis(const QString& axis, bool show = true);
     void hideAxis(const QString& axis);
 
+    [[nodiscard]] QMenu* getMenu() noexcept;
+    [[nodiscard]] const QMenu* getMenu() const noexcept;
+    [[nodiscard]] QMenu* getContextMenus(const QObject* event = nullptr) noexcept;
+    void setMenuEnabled(bool enableMenu = true, std::optional<bool> enableViewBoxMenu = std::nullopt);
+    [[nodiscard]] bool menuEnabled() const noexcept;
+    void setContextMenuActionVisible(const QString& name, bool visible);
+
+    void setLogMode(std::optional<bool> x = std::nullopt, std::optional<bool> y = std::nullopt);
+    [[nodiscard]] std::array<bool, 2> logMode() const noexcept;
+    void showGrid(std::optional<bool> x = std::nullopt,
+                  std::optional<bool> y = std::nullopt,
+                  std::optional<double> alpha = std::nullopt);
+    [[nodiscard]] GridState gridState() const noexcept;
+    void setDownsampling(std::optional<int> factor = std::nullopt,
+                         std::optional<bool> automatic = std::nullopt,
+                         std::optional<QString> mode = std::nullopt);
+    void setDownsampling(int factor, bool automatic, const QString& mode);
+    [[nodiscard]] DownsampleState downsampleMode() const;
+    void setClipToView(bool clip);
+    [[nodiscard]] bool clipToViewMode() const noexcept;
+    [[nodiscard]] AlphaState alphaState() const;
+    [[nodiscard]] std::optional<bool> pointMode() const;
+    void hideButtons();
+    void showButtons();
+    [[nodiscard]] bool buttonsHidden() const noexcept;
+
     void setRange(const QRectF& rect, qreal padding = 0.02, bool update = true, bool disableAutoRange = true);
     void setXRange(qreal minimum, qreal maximum, qreal padding = 0.02, bool update = true);
     void setYRange(qreal minimum, qreal maximum, qreal padding = 0.02, bool update = true);
@@ -94,16 +145,29 @@ private:
     void syncAxisRanges();
     void updateCurveTransforms();
     void detachDirectChild(QGraphicsItem* item);
+    void setupConfigMenu(bool enableMenu);
+    void updateLogMode();
+    void updateGrid();
+    void updateDownsampling();
+    void updateAlpha();
 
     QGraphicsGridLayout* layout_ = nullptr;
     ViewBox* vb_ = nullptr;
     std::array<AxisItem*, 4> axes_{{nullptr, nullptr, nullptr, nullptr}};
     TitleLabel* titleLabel_ = nullptr;
+    ButtonItem* autoBtn_ = nullptr;
     LegendItem* legend_ = nullptr;
+    std::unique_ptr<PlotItemConfig::Ui_Form> ctrl_;
+    std::unique_ptr<QWidget> ctrlWidget_;
+    std::unique_ptr<QMenu> ctrlMenu_;
     std::vector<QGraphicsItem*> items_;
     std::vector<std::unique_ptr<PlotCurveItem>> ownedCurves_;
+    GridState gridState_;
+    std::array<bool, 2> logMode_{{false, false}};
     bool initialized_ = false;
     bool forwardingChild_ = false;
+    bool menuEnabled_ = true;
+    bool buttonsHidden_ = false;
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;

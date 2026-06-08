@@ -432,6 +432,16 @@ if(_pyqtgraph_cpp_has_graphicsitem)
         pyqtgraph_cpp.graphicsItems.PlotItem
     )
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_plotitem_menu_config_p4_14
+        graphicsItems/test_PlotItem_menu_config_P4_14.cpp
+        pyqtgraph_cpp.graphicsItems.PlotItem.menu_config.P4_14
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_plotitem_menu_config_p4_14
+        PRIVATE
+            PYQTGRAPH_CPP_P4_14_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.14"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.PlotItem.menu_config.P4_14 PROPERTIES LABELS P4.14)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_widgets_plotwidget
         widgets/test_PlotWidget.cpp
         pyqtgraph_cpp.widgets.PlotWidget

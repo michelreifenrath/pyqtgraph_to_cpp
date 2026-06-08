@@ -6,8 +6,10 @@
 #include "../../../../include/pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp"
 
 #include "../../../../include/pyqtgraph/graphicsItems/AxisItem.hpp"
+#include "../../../../include/pyqtgraph/graphicsItems/ButtonItem.hpp"
 #include "../../../../include/pyqtgraph/graphicsItems/LegendItem.hpp"
 #include "../../../../include/pyqtgraph/graphicsItems/PlotCurveItem.hpp"
+#include "../../../../include/pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.hpp"
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -18,12 +20,20 @@
 #include <QtGui/QFontMetricsF>
 #include <QtGui/QPainter>
 #include <QtGui/QPen>
+#include <QtGui/QPixmap>
 #include <QtGui/QTransform>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QGraphicsGridLayout>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSceneResizeEvent>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QMenu>
+#include <QtWidgets/QRadioButton>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStyleOptionGraphicsItem>
 #include <QtWidgets/QWidget>
+#include <QtWidgets/QWidgetAction>
 
 #include <algorithm>
 #include <cmath>
@@ -326,7 +336,7 @@ private:
     QString text_;
 };
 
-PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags)
+PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu)
     : GraphicsWidget(parent, flags)
 {
     layout_ = new QGraphicsGridLayout;
@@ -340,6 +350,13 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags)
 
     titleLabel_ = new TitleLabel(this);
     layout_->addItem(titleLabel_, 0, 1);
+
+    QPixmap autoPixmap(14, 14);
+    autoPixmap.fill(QColor(60, 60, 60, 200));
+    autoBtn_ = new ButtonItem(autoPixmap, 14.0, this);
+    autoBtn_->hide();
+
+    setupConfigMenu(enableMenu);
 
     axes_[topIndex] = new AxisItem(AxisItem::Orientation::Top, this);
     axes_[bottomIndex] = new AxisItem(AxisItem::Orientation::Bottom, this);
@@ -525,6 +542,210 @@ void PlotItem::hideAxis(const QString& axisName)
     showAxis(axisName, false);
 }
 
+QMenu* PlotItem::getMenu() noexcept
+{
+    return ctrlMenu_.get();
+}
+
+const QMenu* PlotItem::getMenu() const noexcept
+{
+    return ctrlMenu_.get();
+}
+
+QMenu* PlotItem::getContextMenus(const QObject* event) noexcept
+{
+    Q_UNUSED(event);
+    return menuEnabled() ? ctrlMenu_.get() : nullptr;
+}
+
+void PlotItem::setMenuEnabled(bool enableMenu, std::optional<bool> enableViewBoxMenu)
+{
+    Q_UNUSED(enableViewBoxMenu);
+    menuEnabled_ = enableMenu;
+}
+
+bool PlotItem::menuEnabled() const noexcept
+{
+    return menuEnabled_;
+}
+
+void PlotItem::setContextMenuActionVisible(const QString& name, bool visible)
+{
+    if (ctrlMenu_ == nullptr) {
+        return;
+    }
+    for (QAction* action : ctrlMenu_->actions()) {
+        if (action != nullptr && action->text() == name) {
+            action->setVisible(visible);
+            return;
+        }
+    }
+}
+
+void PlotItem::setLogMode(std::optional<bool> x, std::optional<bool> y)
+{
+    if (ctrl_ == nullptr) {
+        return;
+    }
+    if (x.has_value()) {
+        ctrl_->logXCheck->setChecked(*x);
+    }
+    if (y.has_value()) {
+        ctrl_->logYCheck->setChecked(*y);
+    }
+    updateLogMode();
+}
+
+std::array<bool, 2> PlotItem::logMode() const noexcept
+{
+    return logMode_;
+}
+
+void PlotItem::showGrid(std::optional<bool> x, std::optional<bool> y, std::optional<double> alpha)
+{
+    if (!x.has_value() && !y.has_value() && !alpha.has_value()) {
+        throw std::invalid_argument("Must specify at least one of x, y, or alpha.");
+    }
+    if (ctrl_ == nullptr) {
+        return;
+    }
+    if (x.has_value()) {
+        ctrl_->xGridCheck->setChecked(*x);
+    }
+    if (y.has_value()) {
+        ctrl_->yGridCheck->setChecked(*y);
+    }
+    if (alpha.has_value()) {
+        const double clipped = std::clamp(*alpha, 0.0, 1.0);
+        ctrl_->gridAlphaSlider->setValue(static_cast<int>(clipped * ctrl_->gridAlphaSlider->maximum()));
+    }
+    updateGrid();
+}
+
+PlotItem::GridState PlotItem::gridState() const noexcept
+{
+    return gridState_;
+}
+
+void PlotItem::setDownsampling(std::optional<int> factor, std::optional<bool> automatic, std::optional<QString> mode)
+{
+    if (ctrl_ == nullptr) {
+        return;
+    }
+    if (factor.has_value()) {
+        ctrl_->downsampleCheck->setChecked(true);
+        ctrl_->downsampleSpin->setValue(std::max(1, *factor));
+    }
+    if (automatic.has_value()) {
+        if (*automatic && (!factor.has_value() || *factor > 0)) {
+            ctrl_->downsampleCheck->setChecked(true);
+        }
+        ctrl_->autoDownsampleCheck->setChecked(*automatic);
+    }
+    if (mode.has_value()) {
+        if (*mode == QStringLiteral("subsample")) {
+            ctrl_->subsampleRadio->setChecked(true);
+        } else if (*mode == QStringLiteral("mean")) {
+            ctrl_->meanRadio->setChecked(true);
+        } else if (*mode == QStringLiteral("peak")) {
+            ctrl_->peakRadio->setChecked(true);
+        } else {
+            throw std::invalid_argument("mode argument must be 'subsample', 'mean', or 'peak'.");
+        }
+    }
+    updateDownsampling();
+}
+
+void PlotItem::setDownsampling(int factor, bool automatic, const QString& mode)
+{
+    setDownsampling(std::optional<int>{factor}, std::optional<bool>{automatic}, std::optional<QString>{mode});
+}
+
+PlotItem::DownsampleState PlotItem::downsampleMode() const
+{
+    DownsampleState state;
+    if (ctrl_ == nullptr) {
+        return state;
+    }
+    state.factor = ctrl_->downsampleCheck->isChecked() ? ctrl_->downsampleSpin->value() : 1;
+    state.automatic = ctrl_->downsampleCheck->isChecked() && ctrl_->autoDownsampleCheck->isChecked();
+    if (ctrl_->subsampleRadio->isChecked()) {
+        state.method = QStringLiteral("subsample");
+    } else if (ctrl_->meanRadio->isChecked()) {
+        state.method = QStringLiteral("mean");
+    } else if (ctrl_->peakRadio->isChecked()) {
+        state.method = QStringLiteral("peak");
+    } else {
+        throw std::invalid_argument("One downsample method radio must be selected.");
+    }
+    return state;
+}
+
+void PlotItem::setClipToView(bool clip)
+{
+    if (ctrl_ == nullptr) {
+        return;
+    }
+    ctrl_->clipToViewCheck->setChecked(clip);
+    updateDownsampling();
+}
+
+bool PlotItem::clipToViewMode() const noexcept
+{
+    return ctrl_ != nullptr && ctrl_->clipToViewCheck->isChecked();
+}
+
+PlotItem::AlphaState PlotItem::alphaState() const
+{
+    AlphaState state;
+    if (ctrl_ == nullptr) {
+        return state;
+    }
+    const bool enabled = ctrl_->alphaGroup->isChecked();
+    const bool automatic = ctrl_->autoAlphaCheck->isChecked();
+    double alpha = static_cast<double>(ctrl_->alphaSlider->value()) / static_cast<double>(ctrl_->alphaSlider->maximum());
+    if (automatic) {
+        alpha = 1.0;
+    }
+    if (!enabled) {
+        state.alpha = 1.0;
+        state.automatic = false;
+        return state;
+    }
+    state.alpha = alpha;
+    state.automatic = automatic;
+    return state;
+}
+
+std::optional<bool> PlotItem::pointMode() const
+{
+    if (ctrl_ == nullptr || !ctrl_->pointsGroup->isChecked()) {
+        return false;
+    }
+    if (ctrl_->autoPointsCheck->isChecked()) {
+        return std::nullopt;
+    }
+    return true;
+}
+
+void PlotItem::hideButtons()
+{
+    buttonsHidden_ = true;
+    if (autoBtn_ != nullptr) {
+        autoBtn_->hide();
+    }
+}
+
+void PlotItem::showButtons()
+{
+    buttonsHidden_ = false;
+}
+
+bool PlotItem::buttonsHidden() const noexcept
+{
+    return buttonsHidden_;
+}
+
 void PlotItem::setRange(const QRectF& rect, qreal padding, bool update, bool disableAutoRange)
 {
     vb_->setRange(rect, padding, update, disableAutoRange);
@@ -615,7 +836,7 @@ const AxisItem* PlotItem::axis(AxisSlot slot) const noexcept
 
 bool PlotItem::isInternalChild(const QGraphicsItem* item) const noexcept
 {
-    if (item == nullptr || item == vb_ || item == titleLabel_ || item == legend_) {
+    if (item == nullptr || item == vb_ || item == titleLabel_ || item == autoBtn_ || item == legend_) {
         return true;
     }
     return std::any_of(axes_.begin(), axes_.end(), [item](const AxisItem* axisItem) {
@@ -677,6 +898,89 @@ void PlotItem::detachDirectChild(QGraphicsItem* item)
     if (auto* itemScene = item->scene(); itemScene != nullptr && itemScene == scene()) {
         itemScene->removeItem(item);
     }
+}
+
+void PlotItem::setupConfigMenu(bool enableMenu)
+{
+    ctrlWidget_ = std::make_unique<QWidget>();
+    ctrl_ = std::make_unique<PlotItemConfig::Ui_Form>();
+    ctrl_->setupUi(ctrlWidget_.get());
+    ctrlMenu_ = std::make_unique<QMenu>(QStringLiteral("Plot Options"));
+
+    const std::array<std::pair<QString, QWidget*>, 6> menuItems{{
+        {QStringLiteral("Transforms"), ctrl_->transformGroup},
+        {QStringLiteral("Downsample"), ctrl_->decimateGroup},
+        {QStringLiteral("Average"), ctrl_->averageGroup},
+        {QStringLiteral("Alpha"), ctrl_->alphaGroup},
+        {QStringLiteral("Grid"), ctrl_->gridGroup},
+        {QStringLiteral("Points"), ctrl_->pointsGroup},
+    }};
+
+    for (const auto& [name, widget] : menuItems) {
+        QMenu* submenu = ctrlMenu_->addMenu(name);
+        auto* action = new QWidgetAction(submenu);
+        action->setDefaultWidget(widget);
+        submenu->addAction(action);
+    }
+
+    QObject::connect(ctrl_->logXCheck, &QCheckBox::toggled, [this](bool) { updateLogMode(); });
+    QObject::connect(ctrl_->logYCheck, &QCheckBox::toggled, [this](bool) { updateLogMode(); });
+    QObject::connect(ctrl_->xGridCheck, &QCheckBox::toggled, [this](bool) { updateGrid(); });
+    QObject::connect(ctrl_->yGridCheck, &QCheckBox::toggled, [this](bool) { updateGrid(); });
+    QObject::connect(ctrl_->gridAlphaSlider, &QSlider::valueChanged, [this](int) { updateGrid(); });
+    QObject::connect(ctrl_->downsampleCheck, &QCheckBox::toggled, [this](bool) { updateDownsampling(); });
+    QObject::connect(ctrl_->autoDownsampleCheck, &QCheckBox::toggled, [this](bool) { updateDownsampling(); });
+    QObject::connect(ctrl_->subsampleRadio, &QRadioButton::toggled, [this](bool) { updateDownsampling(); });
+    QObject::connect(ctrl_->meanRadio, &QRadioButton::toggled, [this](bool) { updateDownsampling(); });
+    QObject::connect(ctrl_->peakRadio, &QRadioButton::toggled, [this](bool) { updateDownsampling(); });
+    QObject::connect(ctrl_->clipToViewCheck, &QCheckBox::toggled, [this](bool) { updateDownsampling(); });
+    QObject::connect(ctrl_->downsampleSpin, qOverload<int>(&QSpinBox::valueChanged), [this](int) { updateDownsampling(); });
+    QObject::connect(ctrl_->alphaGroup, &QGroupBox::toggled, [this](bool) { updateAlpha(); });
+    QObject::connect(ctrl_->autoAlphaCheck, &QCheckBox::toggled, [this](bool) { updateAlpha(); });
+    QObject::connect(ctrl_->alphaSlider, &QSlider::valueChanged, [this](int) { updateAlpha(); });
+
+    updateLogMode();
+    updateGrid();
+    updateDownsampling();
+    updateAlpha();
+    setMenuEnabled(enableMenu, std::nullopt);
+}
+
+void PlotItem::updateLogMode()
+{
+    if (ctrl_ == nullptr) {
+        return;
+    }
+    logMode_ = {ctrl_->logXCheck->isChecked(), ctrl_->logYCheck->isChecked()};
+    for (AxisItem* axisItem : axes_) {
+        if (axisItem != nullptr) {
+            axisItem->setLogMode(logMode_[0], logMode_[1]);
+        }
+    }
+    update();
+}
+
+void PlotItem::updateGrid()
+{
+    if (ctrl_ == nullptr) {
+        return;
+    }
+    gridState_.x = ctrl_->xGridCheck->isChecked();
+    gridState_.y = ctrl_->yGridCheck->isChecked();
+    gridState_.alphaSliderValue = ctrl_->gridAlphaSlider->value();
+    const int maximum = std::max(1, ctrl_->gridAlphaSlider->maximum());
+    gridState_.alpha = static_cast<double>(gridState_.alphaSliderValue) / static_cast<double>(maximum);
+    update();
+}
+
+void PlotItem::updateDownsampling()
+{
+    update();
+}
+
+void PlotItem::updateAlpha()
+{
+    update();
 }
 
 QVariant PlotItem::itemChange(GraphicsItemChange change, const QVariant& value)
