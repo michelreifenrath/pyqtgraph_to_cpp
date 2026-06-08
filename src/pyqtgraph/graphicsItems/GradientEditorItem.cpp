@@ -5,6 +5,7 @@
 
 #include "../../../include/pyqtgraph/graphicsItems/GradientEditorItem.hpp"
 
+#include <QtCore/QMetaObject>
 #include <QtCore/QRectF>
 #include <QtGui/QBrush>
 #include <QtGui/QPainter>
@@ -66,6 +67,11 @@ void Tick::setColor(const QColor& color)
 QRectF Tick::boundingRect() const
 {
     return path_.boundingRect();
+}
+
+QPainterPath Tick::shape() const
+{
+    return path_;
 }
 
 void Tick::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -181,13 +187,38 @@ void TickSliderItem::removeTick(Tick* tick, bool finish)
         return;
     }
 
-    iterator->first->setParentItem(nullptr);
+    std::unique_ptr<Tick> removed = std::move(iterator->first);
     ticks_.erase(iterator);
+
+    removed->setParentItem(nullptr);
+    removed->hide();
+    pendingRemovedTicks_.push_back(std::move(removed));
+    schedulePendingRemovalFlush();
 
     emit sigTicksChanged(this);
     if (finish) {
         emit sigTicksChangeFinished(this);
     }
+}
+
+void TickSliderItem::schedulePendingRemovalFlush()
+{
+    if (pendingRemovalFlushScheduled_) {
+        return;
+    }
+    pendingRemovalFlushScheduled_ = true;
+    QMetaObject::invokeMethod(
+        this,
+        [this]() {
+            pendingRemovalFlushScheduled_ = false;
+            flushPendingRemovedTicks();
+        },
+        Qt::QueuedConnection);
+}
+
+void TickSliderItem::flushPendingRemovedTicks()
+{
+    pendingRemovedTicks_.clear();
 }
 
 std::vector<std::pair<Tick*, double>> TickSliderItem::listTicks() const

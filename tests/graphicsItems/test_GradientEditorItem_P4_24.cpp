@@ -1,7 +1,9 @@
+#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
 #include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
 #include <pyqtgraph/graphicsItems/GradientEditorItem.hpp>
 
 #include <QtCore/QByteArray>
+#include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QJsonArray>
@@ -14,6 +16,7 @@
 #include <QtWidgets/QGraphicsRectItem>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
+#include <QtWidgets/QGraphicsView>
 
 #include <cmath>
 #include <cstdint>
@@ -41,6 +44,7 @@
 using pyqtgraph::graphicsItems::GradientEditorItem;
 using pyqtgraph::graphicsItems::GradientEditorState;
 using pyqtgraph::graphicsItems::Tick;
+using pyqtgraph::GraphicsScene::GraphicsScene;
 using pyqtgraph::GraphicsScene::MouseClickEvent;
 using pyqtgraph::GraphicsScene::MouseDragEvent;
 
@@ -95,6 +99,14 @@ private:
     std::unique_ptr<QApplication> application_;
 };
 
+class ScriptableGraphicsScene : public GraphicsScene {
+public:
+    using GraphicsScene::GraphicsScene;
+    using GraphicsScene::mouseMoveEvent;
+    using GraphicsScene::mousePressEvent;
+    using GraphicsScene::mouseReleaseEvent;
+};
+
 std::unique_ptr<QGraphicsSceneMouseEvent> mouseEvent(QEvent::Type type,
                                                      const QPointF& pos,
                                                      const QPointF& lastPos,
@@ -138,6 +150,29 @@ MouseClickEvent clickEvent(const QPointF& pos, Qt::MouseButton button)
     qtEvent.setButtons(button == Qt::NoButton ? Qt::MouseButtons(Qt::NoButton) : Qt::MouseButtons(button));
     qtEvent.ignore();
     return MouseClickEvent(&qtEvent);
+}
+
+std::unique_ptr<QGraphicsSceneMouseEvent> sceneMouseEvent(QEvent::Type type,
+                                                          const QPointF& scenePos,
+                                                          const QPointF& lastScenePos,
+                                                          Qt::MouseButton button,
+                                                          Qt::MouseButtons buttons,
+                                                          const QPointF& buttonDownScenePos)
+{
+    auto event = std::make_unique<QGraphicsSceneMouseEvent>(type);
+    event->setPos(scenePos);
+    event->setScenePos(scenePos);
+    event->setLastPos(lastScenePos);
+    event->setLastScenePos(lastScenePos);
+    event->setScreenPos(scenePos.toPoint());
+    event->setLastScreenPos(lastScenePos.toPoint());
+    event->setButton(button);
+    event->setButtons(buttons);
+    event->setButtonDownPos(button, buttonDownScenePos);
+    event->setButtonDownScenePos(button, buttonDownScenePos);
+    event->setButtonDownScreenPos(button, buttonDownScenePos.toPoint());
+    event->ignore();
+    return event;
 }
 
 QJsonArray tickListJson(const GradientEditorItem& editor)
@@ -388,6 +423,56 @@ bool testDefaultStateAndLookup()
     return true;
 }
 
+bool testGraphicsSceneRightClickRemoval()
+{
+    ScriptableGraphicsScene scene(4, 5.0);
+    QGraphicsView view(&scene);
+    view.resize(220, 80);
+    view.show();
+
+    GradientEditorItem editor;
+    editor.setLength(100.0);
+    editor.addTick(0.5, QColor(128, 0, 0), true, true);
+    scene.addItem(&editor);
+    editor.setPos(10.0, 20.0);
+
+    const std::size_t countBefore = editor.tickCount();
+    CHECK(countBefore >= 3);
+
+    Tick* removable = editor.tickAt(1);
+    CHECK(removable != nullptr);
+    const QPointF tickScenePos = removable->mapToScene(removable->boundingRect().center());
+
+    auto hoverMove = sceneMouseEvent(QEvent::GraphicsSceneMouseMove,
+                                     tickScenePos,
+                                     QPointF(0.0, 0.0),
+                                     Qt::NoButton,
+                                     Qt::NoButton,
+                                     tickScenePos);
+    scene.mouseMoveEvent(hoverMove.get());
+
+    auto press = sceneMouseEvent(QEvent::GraphicsSceneMousePress,
+                                 tickScenePos,
+                                 tickScenePos,
+                                 Qt::RightButton,
+                                 Qt::RightButton,
+                                 tickScenePos);
+    scene.mousePressEvent(press.get());
+
+    auto release = sceneMouseEvent(QEvent::GraphicsSceneMouseRelease,
+                                   tickScenePos,
+                                   tickScenePos,
+                                   Qt::RightButton,
+                                   Qt::NoButton,
+                                   tickScenePos);
+    scene.mouseReleaseEvent(release.get());
+
+    CHECK(editor.tickCount() == countBefore - 1);
+    QCoreApplication::processEvents();
+    CHECK(editor.tickCount() == countBefore - 1);
+    return true;
+}
+
 bool testAddMoveClampRemoveAndSignals()
 {
     GradientEditorItem editor;
@@ -547,6 +632,9 @@ int main(int argc, char** argv)
     reportEditor.setLength(120.0);
 
     if (!testDefaultStateAndLookup()) {
+        return 1;
+    }
+    if (!testGraphicsSceneRightClickRemoval()) {
         return 1;
     }
     if (!testAddMoveClampRemoveAndSignals()) {

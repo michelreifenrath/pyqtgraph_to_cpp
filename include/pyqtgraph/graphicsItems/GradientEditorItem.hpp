@@ -52,6 +52,7 @@ public:
     [[nodiscard]] bool removeAllowed() const noexcept { return removeAllowed_; }
 
     [[nodiscard]] QRectF boundingRect() const override;
+    [[nodiscard]] QPainterPath shape() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
     void hoverEvent(pyqtgraph::GraphicsScene::HoverEvent* event) override;
@@ -136,8 +137,12 @@ protected:
 private:
     void connectTick(Tick* tick);
     void setTickFraction(Tick* tick, double fraction) noexcept;
+    void schedulePendingRemovalFlush();
+    void flushPendingRemovedTicks();
 
     std::vector<std::pair<std::unique_ptr<Tick>, double>> ticks_;
+    std::vector<std::unique_ptr<Tick>> pendingRemovedTicks_;
+    bool pendingRemovalFlushScheduled_ = false;
 };
 
 struct GradientEditorState final {
