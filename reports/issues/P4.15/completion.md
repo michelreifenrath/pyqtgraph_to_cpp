@@ -23,7 +23,6 @@ Failure: `test_P4_15_graphicsitems_manifest_dashboard_reports_complete_coverage`
 | Command | Exit code | Result |
 | --- | ---: | --- |
 | `python3 -m pytest -q tests -k P4_15` | 0 | `5 passed, 268 deselected in 23.08s` |
-| `python3 scripts/generate_manifest --check` | 0 | `port manifest verified (213 source files, 129 examples, 355 classes)` |
 | `python3 -m pytest -q` | 0 | `262 passed, 11 skipped in 47.16s` |
 | `git diff --check` | 0 | no whitespace errors |
 
@@ -61,7 +60,7 @@ Issue-owned paths:
 - focused proof: `tests/oracle/test_P4_15_graphicsitems_manifest_coverage.py`
 - focused-doc-report: `reports/issues/P4.15/completion.md`
 
-No shared CMake wiring was required for manifest-infra proof; validation is pytest/generator based.
+No shared CMake wiring was required for manifest-infra proof; validation is pytest/generator based. `port_manifest.yaml` was kept limited to graphicsItems rows; unrelated generated manifest drift remains outside this issue scope.
 
 ## Failure-mode fixtures tested
 

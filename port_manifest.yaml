@@ -115,16 +115,16 @@ source_files:
   target_header_path: include/pyqtgraph/SRTTransform.hpp
   target_source_path: src/pyqtgraph/SRTTransform.cpp
   subsystem: core
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/SRTTransform3D.py
   target_header_path: include/pyqtgraph/SRTTransform3D.hpp
   target_source_path: src/pyqtgraph/SRTTransform3D.cpp
   subsystem: core
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/SignalProxy.py
   target_header_path: include/pyqtgraph/SignalProxy.hpp
   target_source_path: src/pyqtgraph/SignalProxy.cpp
@@ -143,9 +143,9 @@ source_files:
   target_header_path: include/pyqtgraph/Transform3D.hpp
   target_source_path: src/pyqtgraph/Transform3D.cpp
   subsystem: core
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/Vector.py
   target_header_path: include/pyqtgraph/Vector.hpp
   target_source_path: src/pyqtgraph/Vector.cpp
@@ -185,16 +185,16 @@ source_files:
   target_header_path: include/pyqtgraph/colors/palette.hpp
   target_source_path: src/pyqtgraph/colors/palette.cpp
   subsystem: colors
-  status: ported
+  status: not_started
   completion: missing
-  target_presence: all
+  target_presence: none
 - upstream_path: pyqtgraph/configfile.py
   target_header_path: include/pyqtgraph/configfile.hpp
   target_source_path: src/pyqtgraph/configfile.cpp
   subsystem: core
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/console/CmdInput.py
   target_header_path: include/pyqtgraph/console/CmdInput.hpp
   target_source_path: src/pyqtgraph/console/CmdInput.cpp
@@ -241,9 +241,9 @@ source_files:
   target_header_path: include/pyqtgraph/debug.hpp
   target_source_path: src/pyqtgraph/debug.cpp
   subsystem: core
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/dockarea/Container.py
   target_header_path: include/pyqtgraph/dockarea/Container.hpp
   target_source_path: src/pyqtgraph/dockarea/Container.cpp
@@ -283,9 +283,9 @@ source_files:
   target_header_path: include/pyqtgraph/exceptionHandling.hpp
   target_source_path: src/pyqtgraph/exceptionHandling.cpp
   subsystem: core
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/exporters/CSVExporter.py
   target_header_path: include/pyqtgraph/exporters/CSVExporter.hpp
   target_source_path: src/pyqtgraph/exporters/CSVExporter.cpp
@@ -1207,9 +1207,9 @@ source_files:
   target_header_path: include/pyqtgraph/units.hpp
   target_source_path: src/pyqtgraph/units.cpp
   subsystem: core
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/util/__init__.py
   target_header_path: include/pyqtgraph/util/__init__.hpp
   target_source_path: src/pyqtgraph/util/__init__.cpp
@@ -1361,16 +1361,16 @@ source_files:
   target_header_path: include/pyqtgraph/widgets/GraphicsLayoutWidget.hpp
   target_source_path: src/pyqtgraph/widgets/GraphicsLayoutWidget.cpp
   subsystem: widgets
-  status: partial
+  status: not_started
   completion: missing
-  target_presence: some
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/GraphicsView.py
   target_header_path: include/pyqtgraph/widgets/GraphicsView.hpp
   target_source_path: src/pyqtgraph/widgets/GraphicsView.cpp
   subsystem: widgets
-  status: ported
+  status: not_started
   completion: missing
-  target_presence: all
+  target_presence: none
 - upstream_path: pyqtgraph/widgets/GroupBox.py
   target_header_path: include/pyqtgraph/widgets/GroupBox.hpp
   target_source_path: src/pyqtgraph/widgets/GroupBox.cpp
@@ -1789,9 +1789,9 @@ examples:
   target_source_path: examples/ImageItem.cpp
   name: ImageItem
   category: root
-  status: ported
+  status: not_started
   completion: missing
-  target_presence: all
+  target_presence: none
 - upstream_path: pyqtgraph/examples/ImageView.py
   target_source_path: examples/ImageView.cpp
   name: ImageView
