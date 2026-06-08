@@ -465,6 +465,20 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.transform.P4_18 PROPERTIES LABELS P4.18)
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_roi_image_p4_19
+        graphicsItems/test_ROI_image_P4_19.cpp
+        pyqtgraph_cpp.graphicsItems.ROI.image.P4_19
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_roi_image_p4_19
+        PRIVATE
+            PYQTGRAPH_CPP_P4_19_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.19"
+            PYQTGRAPH_CPP_P4_19_VISUAL_DIFF_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/ROI-image-extraction"
+            PYQTGRAPH_CPP_P4_19_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/issues/P4.19/gpt5_vision_review.md"
+            PYQTGRAPH_CPP_P4_19_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.19"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.image.P4_19 PROPERTIES LABELS "visual;P4.19")
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem

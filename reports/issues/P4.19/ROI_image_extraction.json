@@ -1,0 +1,161 @@
+{
+    "checks": [
+        "identity-col-major-affine-slice-region",
+        "half-pixel-bilinear-interpolation",
+        "rotated-roi-affine-region",
+        "row-major-axis-order-transposed-shape-bounds",
+        "transformed-image-affine-region"
+    ],
+    "halfPixelRegion": {
+        "shape": [
+            2,
+            2
+        ],
+        "values": [
+            [
+                32.5,
+                33.5
+            ],
+            [
+                52.5,
+                53.5
+            ]
+        ]
+    },
+    "identityAffine": {
+        "origin": [
+            1,
+            2
+        ],
+        "shape": [
+            3,
+            2
+        ],
+        "vectors": [
+            [
+                1,
+                0
+            ],
+            [
+                0,
+                1
+            ]
+        ]
+    },
+    "identityRegion": {
+        "shape": [
+            3,
+            2
+        ],
+        "values": [
+            [
+                22,
+                23
+            ],
+            [
+                42,
+                43
+            ],
+            [
+                62,
+                63
+            ]
+        ]
+    },
+    "identitySliceBounds": [
+        [
+            1,
+            5
+        ],
+        [
+            2,
+            5
+        ]
+    ],
+    "issue": "P4.19",
+    "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:1079-1265 getArraySlice/getArrayRegion/getAffineSliceParams; pyqtgraph/functions.py:789-904 affineSlice and 925-1084 interpolateArray; tests/graphicsItems/test_ROI.py:14-176",
+    "rotatedAffine": {
+        "origin": [
+            3,
+            1
+        ],
+        "shape": [
+            2,
+            3
+        ],
+        "vectors": [
+            [
+                0,
+                1
+            ],
+            [
+                -1,
+                0
+            ]
+        ]
+    },
+    "rowMajorAffine": {
+        "origin": [
+            2,
+            1
+        ],
+        "shape": [
+            2,
+            3
+        ],
+        "vectors": [
+            [
+                1,
+                0
+            ],
+            [
+                0,
+                1
+            ]
+        ]
+    },
+    "rowMajorSliceBounds": [
+        [
+            2,
+            5
+        ],
+        [
+            1,
+            5
+        ]
+    ],
+    "scaledImageAffine": {
+        "origin": [
+            1,
+            2
+        ],
+        "shape": [
+            2,
+            2
+        ],
+        "vectors": [
+            [
+                1,
+                0
+            ],
+            [
+                0,
+                1
+            ]
+        ]
+    },
+    "visualMetrics": {
+        "actual": "actual.png",
+        "changed_pixels": 0,
+        "diff": "diff.png",
+        "gpt5_vision_review": {
+            "generated_by_test": false,
+            "path": "gpt5_vision_review.md",
+            "required_for_pr": true
+        },
+        "max_delta": 0,
+        "mean_delta": 0,
+        "passed": true,
+        "reference": "reference.png"
+    }
+}
