@@ -479,6 +479,19 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.image.P4_19 PROPERTIES LABELS "visual;P4.19")
 
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_arrowitem_p4_21
+        graphicsItems/test_ArrowItem_P4_21.cpp
+        pyqtgraph_cpp.graphicsItems.ArrowItem.P4_21
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_arrowitem_p4_21
+        PRIVATE
+            PYQTGRAPH_CPP_P4_21_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ArrowItem"
+            PYQTGRAPH_CPP_P4_21_GPT_REVIEW_REPORT="${PROJECT_SOURCE_DIR}/reports/visual-diffs/ArrowItem/gpt5_vision_review.md"
+            PYQTGRAPH_CPP_P4_21_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.21"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ArrowItem.P4_21 PROPERTIES LABELS "visual;P4.21")
+
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotItem
