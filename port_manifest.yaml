@@ -500,9 +500,9 @@ source_files:
   target_header_path: include/pyqtgraph/graphicsItems/ButtonItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ButtonItem.cpp
   subsystem: graphicsItems
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - upstream_path: pyqtgraph/graphicsItems/ColorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ColorBarItem.hpp
   target_source_path: src/pyqtgraph/graphicsItems/ColorBarItem.cpp
@@ -3869,9 +3869,9 @@ classes:
   bases:
   - GraphicsObject
   line: 44
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ButtonItem
   upstream_path: pyqtgraph/graphicsItems/ButtonItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ButtonItem.hpp
@@ -3880,9 +3880,9 @@ classes:
   bases:
   - GraphicsObject
   line: 5
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ColorBarItem
   upstream_path: pyqtgraph/graphicsItems/ColorBarItem.py
   target_header_path: include/pyqtgraph/graphicsItems/ColorBarItem.hpp
@@ -3913,7 +3913,7 @@ classes:
   bases:
   - CurvePoint
   line: 107
-  status: not_started
+  status: ported
   completion: missing
   target_presence: all
 - class_name: TickSpec
@@ -4166,9 +4166,9 @@ classes:
   bases:
   - GraphicsObject
   line: 8
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ItemGroup
   upstream_path: pyqtgraph/graphicsItems/ItemGroup.py
   target_header_path: include/pyqtgraph/graphicsItems/ItemGroup.hpp
@@ -4245,9 +4245,9 @@ classes:
   bases:
   - enum.Flag
   line: 23
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: QuadInstances
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
@@ -4255,9 +4255,9 @@ classes:
   subsystem: graphicsItems
   bases: []
   line: 30
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: PColorMeshItem
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
@@ -4266,9 +4266,9 @@ classes:
   bases:
   - GraphicsObject
   line: 71
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: OpenGLState
   upstream_path: pyqtgraph/graphicsItems/PColorMeshItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
@@ -4277,9 +4277,9 @@ classes:
   bases:
   - QtCore.QObject
   line: 620
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: OpenGLState
   upstream_path: pyqtgraph/graphicsItems/PlotCurveItem.py
   target_header_path: include/pyqtgraph/graphicsItems/PlotCurveItem.hpp

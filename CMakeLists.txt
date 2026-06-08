@@ -133,6 +133,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/GraphicsObject.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidget.cpp
             src/pyqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
+            include/pyqtgraph/graphicsItems/ButtonItem.hpp
+            src/pyqtgraph/graphicsItems/ButtonItem.cpp
             include/pyqtgraph/graphicsItems/GraphicsLayout.hpp
             src/pyqtgraph/graphicsItems/AxisItem.cpp
             include/pyqtgraph/graphicsItems/DateAxisItem.hpp
