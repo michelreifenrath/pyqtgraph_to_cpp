@@ -426,6 +426,19 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             PYQTGRAPH_CPP_P4_09_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.09"
     )
     set_tests_properties(pyqtgraph_cpp.graphicsItems.LinearRegion_InfiniteLine_TargetItem.P4_09 PROPERTIES LABELS P4.09)
+
+    pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_graphicsitems_roi_geometry_p4_16
+        graphicsItems/test_ROI_geometry_P4_16.cpp
+        pyqtgraph_cpp.graphicsItems.ROI.geometry.P4_16
+    )
+    target_compile_definitions(pyqtgraph_cpp_graphicsitems_roi_geometry_p4_16
+        PRIVATE
+            PYQTGRAPH_CPP_P4_16_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.16"
+            PYQTGRAPH_CPP_P4_16_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P4.16"
+    )
+    set_tests_properties(pyqtgraph_cpp.graphicsItems.ROI.geometry.P4_16 PROPERTIES LABELS P4.16)
+
     pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotitem
         graphicsItems/test_PlotItem.cpp
