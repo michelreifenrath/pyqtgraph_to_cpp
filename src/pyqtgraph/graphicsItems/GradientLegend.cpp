@@ -67,7 +67,7 @@ void GradientLegend::setIntColorScale(int minVal,
     for (int i = 0; i < count; ++i) {
         const qreal position = count == 0 ? 0.0 : static_cast<qreal>(i) / static_cast<qreal>(count);
         gradient.setColorAt(position,
-                            pyqtgraph::intColor(i, span, values, maxValue, minValue, maxHue, minHue, sat, alpha));
+                            pyqtgraph::intColor(minVal + i, span, values, maxValue, minValue, maxHue, minHue, sat, alpha));
     }
     setGradient(gradient);
 

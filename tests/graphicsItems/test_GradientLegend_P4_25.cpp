@@ -1,4 +1,5 @@
 #include <pyqtgraph/colormap.hpp>
+#include <pyqtgraph/functions.hpp>
 #include <pyqtgraph/graphicsItems/GradientLegend.hpp>
 #include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
@@ -394,6 +395,35 @@ bool testSetLabelsAndColorMap()
     return true;
 }
 
+bool testSetIntColorScaleNonzeroMin()
+{
+    GradientLegend legend(QPointF(legendBarWidth, legendBarHeight), legendOffset);
+    constexpr int minVal = 5;
+    constexpr int maxVal = 8;
+    constexpr int values = 1;
+    constexpr int maxValue = 255;
+    constexpr int minValue = 150;
+    constexpr int maxHue = 360;
+    constexpr int minHue = 0;
+    constexpr int sat = 255;
+    constexpr int alpha = 255;
+    legend.setIntColorScale(minVal, maxVal, values, maxValue, minValue, maxHue, minHue, sat, alpha);
+
+    CHECK(legend.labels().value(QStringLiteral("5")) == 0.0);
+    CHECK(legend.labels().value(QStringLiteral("8")) == 1.0);
+
+    const int span = maxVal - minVal;
+    const auto stops = legend.gradient().stops();
+    CHECK(stops.size() == static_cast<qsizetype>(span));
+    for (int i = 0; i < span; ++i) {
+        const qreal position = static_cast<qreal>(i) / static_cast<qreal>(span);
+        const QColor expected = pyqtgraph::intColor(minVal + i, span, values, maxValue, minValue, maxHue, minHue, sat, alpha);
+        CHECK(stops.at(i).first == position);
+        CHECK(stops.at(i).second == expected);
+    }
+    return true;
+}
+
 bool testVisualArtifacts()
 {
     const QImage reference = renderReference();
@@ -466,6 +496,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testSetLabelsAndColorMap()) {
+        return 1;
+    }
+    if (!testSetIntColorScaleNonzeroMin()) {
         return 1;
     }
     if (!testVisualArtifacts()) {
