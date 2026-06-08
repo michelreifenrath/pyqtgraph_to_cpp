@@ -4,9 +4,11 @@
     "changed_pixels": 0,
     "diff": "diff.png",
     "gpt5_vision_review": {
-        "generated_by_test": false,
+        "accepted": true,
+        "available": true,
         "path": "gpt5_vision_review.md",
-        "required_for_pr": true
+        "required_for_pr": true,
+        "source": "/home/michel/code/pyqtgraph_to_cpp_archon/reports/visual-diffs/ROI-shapes/gpt5_vision_review.md"
     },
     "height": 240,
     "issue": "P4.20",
@@ -16,5 +18,9 @@
     "passed": true,
     "reference": "reference.png",
     "reference_source": "deterministic C++ ROI shape render; PyQtGraph behavior reference pyqtgraph/graphicsItems/ROI.py RectROI, EllipseROI, CircleROI, LineROI, PolyLineROI",
+    "semantic_review": {
+        "recommendation": "merge_ok",
+        "verdict": "pass"
+    },
     "width": 320
 }

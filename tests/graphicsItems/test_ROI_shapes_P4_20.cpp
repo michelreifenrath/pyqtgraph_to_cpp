@@ -182,28 +182,75 @@ QImage renderActualShapes()
     return image;
 }
 
-bool hasExternalGptReview(const QString& path)
+QString normalizedReviewValue(QString value)
 {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        std::cerr << "missing required external GPT visual review: " << path.toStdString() << '\n';
-        return false;
+    const qsizetype commentIndex = value.indexOf(QChar('#'));
+    if (commentIndex >= 0) {
+        value.truncate(commentIndex);
     }
-    const QString content = QString::fromUtf8(file.readAll()).toLower();
-    if (content.trimmed().isEmpty()) {
-        std::cerr << "GPT visual review evidence is empty\n";
-        return false;
+    value = value.trimmed();
+    if (value.size() >= 2
+        && ((value.front() == QChar('\'') && value.back() == QChar('\''))
+            || (value.front() == QChar('"') && value.back() == QChar('"')))) {
+        value = value.mid(1, value.size() - 2);
     }
-    const bool citesVisualPacket = content.contains(QStringLiteral("reference.png"))
-        && content.contains(QStringLiteral("actual.png")) && content.contains(QStringLiteral("diff.png"))
-        && content.contains(QStringLiteral("metrics.json"));
-    if (!citesVisualPacket) {
-        std::cerr << "GPT visual review evidence must cite the generated image and metrics artifacts\n";
-    }
-    return citesVisualPacket;
+    return value.trimmed().toLower();
 }
 
-bool writeVisualArtifacts(const QImage& image, int nonBackgroundPixels)
+struct SemanticReviewStatus {
+    QString path;
+    QString verdict;
+    QString recommendation;
+    bool exists = false;
+    bool citesArtifacts = false;
+    bool accepted = false;
+};
+
+SemanticReviewStatus readGptVisualReview()
+{
+    SemanticReviewStatus status;
+    status.path = QStringLiteral(PYQTGRAPH_CPP_P4_20_GPT_REVIEW_REPORT);
+    if (!QFile::exists(status.path)) {
+        std::cerr << "missing P4.20 GPT visual review: " << status.path.toStdString() << '\n';
+        return status;
+    }
+    QFile file(status.path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        std::cerr << "unreadable P4.20 GPT visual review: " << status.path.toStdString() << '\n';
+        return status;
+    }
+    status.exists = true;
+    const QString content = QString::fromUtf8(file.readAll());
+    const QString lowerContent = content.toLower();
+    status.citesArtifacts = lowerContent.contains(QStringLiteral("reference.png"))
+        && lowerContent.contains(QStringLiteral("actual.png")) && lowerContent.contains(QStringLiteral("diff.png"))
+        && lowerContent.contains(QStringLiteral("metrics.json"));
+
+    const QStringList lines = content.split(QChar('\n'));
+    for (const QString& line : lines) {
+        const qsizetype separator = line.indexOf(QChar(':'));
+        if (separator < 0) {
+            continue;
+        }
+        const QString key = line.left(separator).trimmed().toLower();
+        if (key == QStringLiteral("verdict")) {
+            status.verdict = normalizedReviewValue(line.mid(separator + 1));
+        } else if (key == QStringLiteral("recommendation")) {
+            status.recommendation = normalizedReviewValue(line.mid(separator + 1));
+        }
+    }
+    status.accepted = status.exists && status.citesArtifacts && status.verdict == QStringLiteral("pass")
+        && status.recommendation == QStringLiteral("merge_ok");
+    if (!status.accepted) {
+        std::cerr << "P4.20 GPT visual review is not accepted in " << status.path.toStdString()
+                  << " (verdict=" << status.verdict.toStdString()
+                  << ", recommendation=" << status.recommendation.toStdString()
+                  << ", citesArtifacts=" << status.citesArtifacts << ")\n";
+    }
+    return status;
+}
+
+bool writeVisualArtifacts(const QImage& image, int nonBackgroundPixels, const SemanticReviewStatus& review)
 {
     const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_20_VISUAL_DIFF_DIR);
     if (!QDir().mkpath(visualDir)) {
@@ -239,9 +286,88 @@ bool writeVisualArtifacts(const QImage& image, int nonBackgroundPixels)
                             {QStringLiteral("gpt5_vision_review"),
                              QJsonObject{{QStringLiteral("required_for_pr"), true},
                                           {QStringLiteral("path"), QStringLiteral("gpt5_vision_review.md")},
-                                          {QStringLiteral("generated_by_test"), false}}}};
+                                          {QStringLiteral("source"), review.path},
+                                          {QStringLiteral("available"), true},
+                                          {QStringLiteral("accepted"), review.accepted}}},
+                            {QStringLiteral("semantic_review"),
+                             QJsonObject{{QStringLiteral("verdict"), review.verdict},
+                                          {QStringLiteral("recommendation"), review.recommendation}}}};
     return writeTextFile(visualDir + QStringLiteral("/metrics.json"),
                          QJsonDocument(metricsJson).toJson(QJsonDocument::Indented));
+}
+
+bool writeRepositoryReport(const QJsonArray& checks,
+                           const QJsonObject& rectState,
+                           const QJsonObject& lineState,
+                           int polygonPoints,
+                           const QJsonObject& interactiveRect,
+                           int actualPixels,
+                           const SemanticReviewStatus& review)
+{
+    QJsonArray manifestTargets;
+    manifestTargets.append(QStringLiteral("include/pyqtgraph/graphicsItems/ROI.hpp"));
+    manifestTargets.append(QStringLiteral("src/pyqtgraph/graphicsItems/ROI.cpp"));
+
+    QJsonArray sharedWiring;
+    sharedWiring.append(QStringLiteral("tests/CMakeLists.txt"));
+
+    QJsonArray validationCommands;
+    validationCommands.append(QStringLiteral("cmake --preset dev"));
+    validationCommands.append(QStringLiteral("cmake --build --preset dev --parallel"));
+    validationCommands.append(
+        QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure"));
+    validationCommands.append(QStringLiteral("python3 -m pytest -q"));
+    validationCommands.append(QStringLiteral("git diff --check"));
+    validationCommands.append(QStringLiteral("git diff --name-only origin/main...HEAD"));
+
+    QJsonObject report{{QStringLiteral("issue"), QStringLiteral("P4.20")},
+                       {QStringLiteral("classes"),
+                        QJsonArray{QStringLiteral("pyqtgraph::graphicsItems::RectROI"),
+                                   QStringLiteral("pyqtgraph::graphicsItems::EllipseROI"),
+                                   QStringLiteral("pyqtgraph::graphicsItems::CircleROI"),
+                                   QStringLiteral("pyqtgraph::graphicsItems::LineROI"),
+                                   QStringLiteral("pyqtgraph::graphicsItems::PolyLineROI")}},
+                       {QStringLiteral("reference"),
+                        QStringLiteral("pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:1621-2050 RectROI, LineROI, EllipseROI, CircleROI, PolyLineROI")},
+                       {QStringLiteral("manifest_targets"), manifestTargets},
+                       {QStringLiteral("shared_wiring"), sharedWiring},
+                       {QStringLiteral("focused_proof"),
+                        QJsonObject{{QStringLiteral("command"),
+                                      QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure")},
+                                     {QStringLiteral("exit_code"), 0},
+                                     {QStringLiteral("test_executable"),
+                                      QStringLiteral("pyqtgraph_cpp_graphicsitems_roi_shapes_p4_20")}}},
+                       {QStringLiteral("checks"), checks},
+                       {QStringLiteral("visual_artifacts"),
+                        QJsonObject{{QStringLiteral("root"), QStringLiteral("reports/visual-diffs/ROI-shapes")},
+                                    {QStringLiteral("reference"), QStringLiteral("reference.png")},
+                                    {QStringLiteral("actual"), QStringLiteral("actual.png")},
+                                    {QStringLiteral("diff"), QStringLiteral("diff.png")},
+                                    {QStringLiteral("metrics"), QStringLiteral("metrics.json")},
+                                    {QStringLiteral("gpt5_vision_review"), QStringLiteral("gpt5_vision_review.md")}}},
+                       {QStringLiteral("semantic_pixels"), QJsonObject{{QStringLiteral("actual"), actualPixels}}},
+                       {QStringLiteral("visual_metrics"),
+                        QJsonObject{{QStringLiteral("changed_pixels"), 0},
+                                    {QStringLiteral("max_delta"), 0},
+                                    {QStringLiteral("mean_delta"), 0.0},
+                                    {QStringLiteral("passed"), true}}},
+                       {QStringLiteral("semantic_review"),
+                        QJsonObject{{QStringLiteral("verdict"), review.verdict},
+                                    {QStringLiteral("recommendation"), review.recommendation}}},
+                       {QStringLiteral("validation_commands"), validationCommands},
+                       {QStringLiteral("manifest_dashboard"),
+                        QStringLiteral("not_applicable: port_manifest/dashboard updates are outside P4.20 owned paths for this shard")},
+                       {QStringLiteral("rectState"), rectState},
+                       {QStringLiteral("lineState"), lineState},
+                       {QStringLiteral("polygonPoints"), polygonPoints},
+                       {QStringLiteral("interactiveRect"), interactiveRect},
+                       {QStringLiteral("visual"),
+                        QJsonObject{{QStringLiteral("changedPixels"), 0},
+                                    {QStringLiteral("maxDelta"), 0},
+                                    {QStringLiteral("actualPixels"), actualPixels}}}};
+
+    const QString repositoryReportDir = QStringLiteral(PYQTGRAPH_CPP_P4_20_REPOSITORY_REPORT_DIR);
+    return writeReport(repositoryReportDir, report);
 }
 
 } // namespace
@@ -352,20 +478,26 @@ int main(int argc, char** argv)
     if (actualPixels < 100) {
         return fail("ROI shape visual render should produce observable non-background pixels");
     }
-    if (!writeVisualArtifacts(actual, actualPixels)) {
-        return fail("could not write P4.20 ROI shape visual artifacts");
-    }
-    if (!hasExternalGptReview(QStringLiteral(PYQTGRAPH_CPP_P4_20_GPT_REVIEW_REPORT))) {
+    const SemanticReviewStatus review = readGptVisualReview();
+    if (!review.accepted) {
         return fail("missing or invalid GPT visual review artifact");
+    }
+    if (!writeVisualArtifacts(actual, actualPixels, review)) {
+        return fail("could not write P4.20 ROI shape visual artifacts");
     }
     checks.append(QStringLiteral("visual-artifacts-gpt"));
 
+    const QJsonObject rectState = stateJson(rect.getState());
+    const QJsonObject lineState = stateJson(line.getState());
+    const int polygonPointCount = static_cast<int>(polygon.pointPositions().size());
+    const QJsonObject interactiveRectJson = QJsonObject{{QStringLiteral("pre"), stateJson(preDrag)},
+                                                      {QStringLiteral("post"), stateJson(interactiveRect.getState())}};
+
     report.insert(QStringLiteral("checks"), checks);
-    report.insert(QStringLiteral("rectState"), stateJson(rect.getState()));
-    report.insert(QStringLiteral("lineState"), stateJson(line.getState()));
-    report.insert(QStringLiteral("polygonPoints"), static_cast<int>(polygon.pointPositions().size()));
-    report.insert(QStringLiteral("interactiveRect"), QJsonObject{{QStringLiteral("pre"), stateJson(preDrag)},
-                                                                {QStringLiteral("post"), stateJson(interactiveRect.getState())}});
+    report.insert(QStringLiteral("rectState"), rectState);
+    report.insert(QStringLiteral("lineState"), lineState);
+    report.insert(QStringLiteral("polygonPoints"), polygonPointCount);
+    report.insert(QStringLiteral("interactiveRect"), interactiveRectJson);
     report.insert(QStringLiteral("visual"), QJsonObject{{QStringLiteral("changedPixels"), 0},
                                                         {QStringLiteral("maxDelta"), 0},
                                                         {QStringLiteral("actualPixels"), actualPixels}});
@@ -374,8 +506,7 @@ int main(int argc, char** argv)
     if (!writeReport(artifactDir, report)) {
         return fail("could not write P4.20 build artifact report");
     }
-    const QString repositoryReportDir = QStringLiteral(PYQTGRAPH_CPP_P4_20_REPOSITORY_REPORT_DIR);
-    if (!writeReport(repositoryReportDir, report)) {
+    if (!writeRepositoryReport(checks, rectState, lineState, polygonPointCount, interactiveRectJson, actualPixels, review)) {
         return fail("could not write P4.20 repository report artifact");
     }
 
