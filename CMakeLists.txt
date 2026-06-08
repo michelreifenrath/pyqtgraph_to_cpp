@@ -156,6 +156,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/graphicsItems/ScatterPlotItem.cpp
             include/pyqtgraph/graphicsItems/GraphItem.hpp
             src/pyqtgraph/graphicsItems/GraphItem.cpp
+            include/pyqtgraph/graphicsItems/BoxplotItem.hpp
+            src/pyqtgraph/graphicsItems/BoxplotItem.cpp
+            include/pyqtgraph/graphicsItems/PColorMeshItem.hpp
+            src/pyqtgraph/graphicsItems/PColorMeshItem.cpp
             include/pyqtgraph/graphicsItems/CurvePoint.hpp
             src/pyqtgraph/graphicsItems/CurvePoint.cpp
             include/pyqtgraph/graphicsItems/InfiniteLine.hpp
