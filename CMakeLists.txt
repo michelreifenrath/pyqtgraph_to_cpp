@@ -187,6 +187,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/JoystickButton.cpp
             include/pyqtgraph/widgets/VerticalLabel.hpp
             src/pyqtgraph/widgets/VerticalLabel.cpp
+            include/pyqtgraph/widgets/LayoutWidget.hpp
+            src/pyqtgraph/widgets/LayoutWidget.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
