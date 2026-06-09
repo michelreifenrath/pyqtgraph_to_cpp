@@ -5,6 +5,7 @@
 
 #include "../../../include/pyqtgraph/widgets/GradientWidget.hpp"
 
+#include <QtCore/QRectF>
 #include <QtGui/QPainter>
 #include <QtWidgets/QFrame>
 
@@ -46,6 +47,7 @@ void GradientWidget::installEditor(graphicsItems::GradientEditorItem* editor)
         this,
         &GradientWidget::sigGradientChangeFinished);
     setCentralItem(item_);
+    updateViewRange();
 }
 
 void GradientWidget::setOrientation(const QString& orientation)
@@ -84,6 +86,20 @@ void GradientWidget::applyOrientationSizing()
         setFixedWidth(maxDim_);
         setMaximumHeight(QWIDGETSIZE_MAX);
     }
+    updateViewRange();
+}
+
+void GradientWidget::updateViewRange()
+{
+    if (item_ == nullptr) {
+        return;
+    }
+
+    QRectF viewRect = item_->childrenBoundingRect();
+    if (viewRect.isEmpty()) {
+        viewRect = QRectF(0.0, -static_cast<qreal>(maxDim_), item_->length(), static_cast<qreal>(maxDim_));
+    }
+    setRange(viewRect.adjusted(-1.0, -1.0, 1.0, 1.0), 0.0);
 }
 
 pyqtgraph::ColorMap GradientWidget::colorMap() const
@@ -100,6 +116,7 @@ void GradientWidget::restoreState(const graphicsItems::GradientEditorState& stat
 {
     if (item_ != nullptr) {
         item_->restoreState(state);
+        updateViewRange();
     }
 }
 
@@ -107,6 +124,7 @@ void GradientWidget::setLength(qreal length)
 {
     if (item_ != nullptr) {
         item_->setLength(length);
+        updateViewRange();
     }
 }
 

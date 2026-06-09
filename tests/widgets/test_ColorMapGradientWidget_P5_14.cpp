@@ -11,9 +11,7 @@
 #include <QtGui/QPainter>
 #include <QtTest/QSignalSpy>
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QGraphicsPathItem>
-#include <QtWidgets/QGraphicsRectItem>
-#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QFrame>
 
 #include <algorithm>
 #include <cmath>
@@ -271,40 +269,24 @@ bool writeCaseArtifacts(const QString& caseName,
     return computed.passed;
 }
 
-QImage blankGradientImage()
-{
-    QImage image(gradientWidth, gradientHeight, QImage::Format_ARGB32_Premultiplied);
-    image.fill(QColor(8, 8, 10));
-    return image;
-}
-
-QImage renderEditorInScene(const pyqtgraph::graphicsItems::GradientEditorState& state)
-{
-    using pyqtgraph::graphicsItems::GradientEditorItem;
-
-    QGraphicsScene scene;
-    scene.setSceneRect(QRectF(0.0, 0.0, static_cast<qreal>(gradientWidth), static_cast<qreal>(gradientHeight)));
-    auto renderedEditor = std::make_unique<GradientEditorItem>();
-    renderedEditor->setLength(176.0);
-    renderedEditor->restoreState(state);
-    renderedEditor->setPos(QPointF(12.0, 33.0));
-    scene.addItem(renderedEditor.release());
-
-    QImage image = blankGradientImage();
-    QPainter painter(&image);
-    scene.render(&painter);
-    painter.end();
-    return image;
-}
-
 QImage renderGradientReference()
 {
     using pyqtgraph::graphicsItems::GradientEditorItem;
+    using pyqtgraph::widgets::GraphicsView;
 
-    GradientEditorItem editor;
-    editor.setLength(176.0);
-    editor.addTick(0.5, QColor(128, 0, 0), true, true);
-    return renderEditorInScene(editor.saveState());
+    GraphicsView view;
+    view.setCacheMode(QGraphicsView::CacheNone);
+    view.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+    view.setFrameShape(QFrame::NoFrame);
+    auto* editor = new GradientEditorItem();
+    editor->setLength(176.0);
+    editor->addTick(0.5, QColor(128, 0, 0), true, true);
+    view.setCentralItem(editor);
+    view.setRange(editor->childrenBoundingRect().adjusted(-1.0, -1.0, 1.0, 1.0), 0.0);
+    view.resize(gradientWidth, gradientHeight);
+    view.show();
+    QApplication::processEvents();
+    return view.grab().toImage();
 }
 
 QImage renderGradientWidgetActual()
@@ -318,7 +300,10 @@ QImage renderGradientWidgetActual()
         return {};
     }
     widget.item()->addTick(0.5, QColor(128, 0, 0), true, true);
-    return renderEditorInScene(widget.saveState());
+    widget.resize(gradientWidth, gradientHeight);
+    widget.show();
+    QApplication::processEvents();
+    return widget.grab().toImage();
 }
 
 QImage lookupStripImage(const pyqtgraph::ColorMap& colorMap, int width, int height)

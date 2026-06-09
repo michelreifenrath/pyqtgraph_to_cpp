@@ -37,6 +37,7 @@ signals:
 private:
     void installEditor(graphicsItems::GradientEditorItem* editor);
     void applyOrientationSizing();
+    void updateViewRange();
 
     graphicsItems::GradientEditorItem* item_ = nullptr;
     QString orientation_{QStringLiteral("bottom")};
