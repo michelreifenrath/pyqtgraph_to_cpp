@@ -778,6 +778,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.ImageView_RawImageWidget.P5_07 PROPERTIES LABELS P5.07)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_scatterplotwidget_p5_08
+        widgets/test_ScatterPlotWidget_P5_08.cpp
+        pyqtgraph_cpp.widgets.ScatterPlotWidget.P5_08
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_scatterplotwidget_p5_08 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_scatterplotwidget_p5_08 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_scatterplotwidget_p5_08
+        PRIVATE
+            PYQTGRAPH_CPP_P5_08_REPOSITORY_REPORT_DIR="${PROJECT_BINARY_DIR}/reports/issues/P5.08"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.ScatterPlotWidget.P5_08 PROPERTIES LABELS P5.08)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
