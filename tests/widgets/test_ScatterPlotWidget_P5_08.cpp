@@ -9,6 +9,7 @@
 #include <QtWidgets/QListWidget>
 
 #include <array>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -172,6 +173,51 @@ bool testSingleFieldPseudoScatterAndFilter()
     return true;
 }
 
+bool testSingleFieldPseudoScatterNonFiniteValues()
+{
+    using pyqtgraph::widgets::ScatterPlotWidget;
+
+    ScatterPlotWidget widget;
+    widget.setFields({
+        {QStringLiteral("x"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("y"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
+    });
+
+    pyqtgraph::widgets::ScatterPlotRecordArray records;
+    records.push_back({{QStringLiteral("x"), 1.0}, {QStringLiteral("y"), 10.0}});
+    records.push_back({{QStringLiteral("x"), 1.0}, {QStringLiteral("y"), 20.0}});
+    records.push_back({{QStringLiteral("x"), 2.0}, {QStringLiteral("y"), 30.0}});
+    records.push_back({{QStringLiteral("x"), std::numeric_limits<double>::quiet_NaN()}, {QStringLiteral("y"), 40.0}});
+    records.push_back(
+        {{QStringLiteral("x"), std::numeric_limits<double>::infinity()}, {QStringLiteral("y"), 50.0}});
+    records.push_back({{QStringLiteral("x"), 3.0}, {QStringLiteral("y"), 60.0}});
+
+    widget.setData(records);
+    widget.setSelectedFields({QStringLiteral("x")});
+    QApplication::processEvents();
+
+    CHECK(widget.hasVisiblePlot());
+    CHECK(widget.visibleIndices().size() == 4);
+    CHECK(widget.visibleIndices().at(0) == 0);
+    CHECK(widget.visibleIndices().at(1) == 1);
+    CHECK(widget.visibleIndices().at(2) == 2);
+    CHECK(widget.visibleIndices().at(3) == 5);
+
+    const auto visibleData = widget.visibleData();
+    CHECK(visibleData.size() == 4);
+    for (const auto& record : visibleData) {
+        CHECK(std::isfinite(record.value(QStringLiteral("x")).toDouble()));
+    }
+
+    const std::array<double, 4> finiteInput = {1.0, 1.0, 2.0, 3.0};
+    const auto pseudoY = pyqtgraph::widgets::pseudoScatter(finiteInput);
+    CHECK(pseudoY.size() == 4);
+    CHECK(std::isfinite(pseudoY[0]));
+    CHECK(std::isfinite(pseudoY[1]));
+    CHECK(pseudoY[0] != pseudoY[1]);
+    return true;
+}
+
 bool testTwoFieldScatterSelectionAndSignals()
 {
     using pyqtgraph::widgets::ScatterPlotWidget;
@@ -290,6 +336,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testSingleFieldPseudoScatterAndFilter()) {
+        return 1;
+    }
+    if (!testSingleFieldPseudoScatterNonFiniteValues()) {
         return 1;
     }
     if (!testTwoFieldScatterSelectionAndSignals()) {

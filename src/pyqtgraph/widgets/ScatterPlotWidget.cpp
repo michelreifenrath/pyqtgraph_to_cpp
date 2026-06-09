@@ -374,7 +374,26 @@ void ScatterPlotWidget::updatePlot()
         plot_->getPlotItem()->setLabel(QStringLiteral("bottom"), xField, selectedUnits.at(0));
         plot_->getPlotItem()->setLabel(QStringLiteral("left"), QStringLiteral("N"));
         plot_->getPlotItem()->setTitle({});
-        yValues = pseudoScatter(std::span<const double>(xValues.data(), xValues.size()));
+
+        std::vector<double> finiteX;
+        finiteX.reserve(xValues.size());
+        for (double value : xValues) {
+            if (std::isfinite(value)) {
+                finiteX.push_back(value);
+            }
+        }
+
+        yValues.assign(xValues.size(), 0.0);
+        if (!finiteX.empty()) {
+            const std::vector<double> pseudoY =
+                pseudoScatter(std::span<const double>(finiteX.data(), finiteX.size()));
+            std::size_t pseudoIndex = 0;
+            for (std::size_t index = 0; index < xValues.size(); ++index) {
+                if (std::isfinite(xValues[index])) {
+                    yValues[index] = pseudoY[pseudoIndex++];
+                }
+            }
+        }
     } else {
         const QString yField = selectedFields.at(1);
         plot_->getPlotItem()->setLabel(QStringLiteral("bottom"), xField, selectedUnits.at(0));
