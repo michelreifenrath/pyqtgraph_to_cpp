@@ -1,2 +1,28 @@
 version: 1
 claims: []
+manifest_ownership:
+  - issue: P0.04
+    section: source_files
+    path_key: upstream_path
+    patterns:
+      - pyqtgraph/**
+  - issue: P0.04
+    section: examples
+    path_key: upstream_path
+    patterns:
+      - pyqtgraph/examples/**
+  - issue: P0.04
+    section: example_assets
+    path_key: upstream_path
+    patterns:
+      - pyqtgraph/examples/**
+  - issue: P0.04
+    section: classes
+    path_key: upstream_path
+    patterns:
+      - pyqtgraph/**
+  - issue: P0.04
+    section: example_validation_levels
+    path_key: upstream_path
+    patterns:
+      - pyqtgraph/examples/**
