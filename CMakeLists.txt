@@ -189,6 +189,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/VerticalLabel.cpp
             include/pyqtgraph/widgets/LayoutWidget.hpp
             src/pyqtgraph/widgets/LayoutWidget.cpp
+            include/pyqtgraph/widgets/GroupBox.hpp
+            src/pyqtgraph/widgets/GroupBox.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp

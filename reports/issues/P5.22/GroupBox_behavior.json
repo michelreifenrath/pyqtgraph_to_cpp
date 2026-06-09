@@ -1,0 +1,12 @@
+{
+  "issue": "P5.22",
+  "classes": ["pyqtgraph::widgets::GroupBox"],
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/GroupBox.py",
+  "manifest_targets": ["include/pyqtgraph/widgets/GroupBox.hpp", "src/pyqtgraph/widgets/GroupBox.cpp"],
+  "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.22 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_groupbox_p5_22"},
+  "checks": ["GroupBox API shape and title padding", "initial expanded state", "collapse/expand signal and child visibility", "collapse handle remains visible", "deterministic visual reference-vs-actual pixels"],
+  "visual_artifacts": {"root": "reports/visual-diffs/GroupBox", "cases": ["GroupBox-expanded", "GroupBox-collapsed"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
+  "visual_metrics": {"expanded": {"changed_pixels": 0, "max_delta": 0, "passed": true}, "collapsed": {"changed_pixels": 0, "max_delta": 0, "passed": true}},
+  "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.22 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
+}

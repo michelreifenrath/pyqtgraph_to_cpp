@@ -716,6 +716,19 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.LayoutWidget.P5_21 PROPERTIES LABELS "visual;P5.21")
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_groupbox_p5_22
+        widgets/test_GroupBox_P5_22.cpp
+        pyqtgraph_cpp.widgets.GroupBox.P5_22
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_groupbox_p5_22 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_groupbox_p5_22 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_groupbox_p5_22
+        PRIVATE
+            PYQTGRAPH_CPP_P5_22_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/GroupBox"
+            PYQTGRAPH_CPP_P5_22_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.22"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.GroupBox.P5_22 PROPERTIES LABELS "visual;P5.22")
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
