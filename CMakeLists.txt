@@ -169,6 +169,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/ColorMapWidget.cpp
             include/pyqtgraph/widgets/GradientWidget.hpp
             src/pyqtgraph/widgets/GradientWidget.cpp
+            include/pyqtgraph/widgets/TreeWidget.hpp
+            src/pyqtgraph/widgets/TreeWidget.cpp
+            include/pyqtgraph/widgets/CheckTable.hpp
+            src/pyqtgraph/widgets/CheckTable.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
