@@ -5,6 +5,7 @@
 
 #include "../../../include/pyqtgraph/widgets/GroupBox.hpp"
 
+#include <QtCore/QRectF>
 #include <QtGui/QPainter>
 #include <QtGui/QPainterPath>
 #include <QtGui/QPaintEvent>
@@ -12,7 +13,27 @@
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QWidget>
 
+#include <algorithm>
+
 namespace {
+
+void paintPathButtonIndicator(QPainter& painter, const QRectF& geom, const QPainterPath& path)
+{
+    if (path.isEmpty()) {
+        return;
+    }
+    const QRectF pathBounds = path.boundingRect();
+    if (pathBounds.width() <= 0.0 || pathBounds.height() <= 0.0) {
+        return;
+    }
+    const qreal scale = std::min(geom.width() / pathBounds.width(), geom.height() / pathBounds.height());
+    painter.save();
+    painter.translate(geom.center());
+    painter.scale(scale, scale);
+    painter.translate(-pathBounds.center());
+    painter.drawPath(path);
+    painter.restore();
+}
 
 class CollapseHandle : public QPushButton {
 public:
@@ -38,12 +59,8 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.setPen(Qt::black);
         painter.setBrush(Qt::white);
-        const QRectF bounds = rect().adjusted(1, 1, -1, -1);
-        painter.save();
-        painter.translate(bounds.center());
-        painter.scale(bounds.width() / 2.0, bounds.height() / 2.0);
-        painter.drawPath(indicatorPath_);
-        painter.restore();
+        const QRectF geom(0.0, 0.0, static_cast<qreal>(width()), static_cast<qreal>(height()));
+        paintPathButtonIndicator(painter, geom, indicatorPath_);
     }
 
 private:
