@@ -105,6 +105,23 @@ bool checkGray8(const QImage& image, int x, int y, int gray)
     return true;
 }
 
+bool checkGray16(const QImage& image, int x, int y, std::uint16_t gray)
+{
+    if (QImage::Format_Grayscale16 == QImage::Format_Invalid) {
+        return true;
+    }
+    if (image.format() != QImage::Format_Grayscale16) {
+        std::cerr << "expected Format_Grayscale16 got " << static_cast<int>(image.format()) << '\n';
+        return false;
+    }
+    const auto* row = reinterpret_cast<const std::uint16_t*>(image.constScanLine(y));
+    if (row[x] != gray) {
+        std::cerr << "gray16(" << x << ',' << y << ") expected " << gray << " got " << row[x] << '\n';
+        return false;
+    }
+    return true;
+}
+
 bool checkRgb888(const QImage& image, int x, int y, int red, int green, int blue)
 {
     if (image.format() != QImage::Format_RGB888) {
@@ -162,20 +179,54 @@ bool testRawImageWidgetGrayscaleCopyAndFormat()
 
 bool testRawImageWidgetStrideView()
 {
-    const std::array<std::uint8_t, 8> storage{1, 2, 3, 4, 5, 6, 7, 8};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(storage.data(), {2, 4}, {4, 1});
+    std::array<std::uint8_t, 9> padded{{0, 10, 99, 20, 30, 99, 40, 50, 99}};
+    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(padded.data(), {3, 2}, {3, 1});
 
     pyqtgraph::widgets::RawImageWidget widget;
     widget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
     widget.setImage(view);
 
     const QImage& image = widget.cachedImage();
-    CHECK(image.width() == 4);
-    CHECK(image.height() == 2);
-    CHECK(checkGray8(image, 0, 0, 1));
-    CHECK(checkGray8(image, 1, 0, 2));
-    CHECK(checkGray8(image, 0, 1, 5));
-    CHECK(checkGray8(image, 3, 1, 8));
+    CHECK(image.width() == 2);
+    CHECK(image.height() == 3);
+    CHECK(checkGray8(image, 0, 0, 0));
+    CHECK(checkGray8(image, 1, 0, 10));
+    CHECK(checkGray8(image, 0, 1, 20));
+    CHECK(checkGray8(image, 1, 1, 30));
+    CHECK(checkGray8(image, 0, 2, 40));
+    CHECK(checkGray8(image, 1, 2, 50));
+
+    padded[0] = 200;
+    const QImage& afterMutation = widget.cachedImage();
+    CHECK(checkGray8(afterMutation, 0, 0, 0));
+
+    return true;
+}
+
+bool testRawImageWidgetUint16Grayscale()
+{
+    if (QImage::Format_Grayscale16 == QImage::Format_Invalid) {
+        return true;
+    }
+
+    const std::array<std::uint16_t, 4> data{1000, 2000, 3000, 4000};
+    pyqtgraph::core::ArrayView<const std::uint16_t, 2> view(data.data(), {2, 2});
+
+    pyqtgraph::widgets::RawImageWidget widget;
+    widget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
+    widget.setImage(view);
+
+    CHECK(widget.hasImage());
+    CHECK(widget.width() == 2);
+    CHECK(widget.height() == 2);
+
+    const QImage& image = widget.cachedImage();
+    CHECK(!image.isNull());
+    CHECK(image.format() == QImage::Format_Grayscale16);
+    CHECK(checkGray16(image, 0, 0, 1000));
+    CHECK(checkGray16(image, 1, 0, 2000));
+    CHECK(checkGray16(image, 0, 1, 3000));
+    CHECK(checkGray16(image, 1, 1, 4000));
 
     return true;
 }
@@ -363,7 +414,8 @@ int main(int argc, char** argv)
     ApplicationGuard guard(argc, argv);
 
     const bool passed = testRawImageWidgetGrayscaleCopyAndFormat() && testRawImageWidgetStrideView()
-        && testRawImageWidgetRgbColorOrder() && testRawImageWidgetLevelsAndLut()
+        && testRawImageWidgetUint16Grayscale() && testRawImageWidgetRgbColorOrder()
+        && testRawImageWidgetLevelsAndLut()
         && testRawImageWidgetAxisTranspose() && testImageViewTwoDimensionalBuffer()
         && testImageViewFrameStack() && testImageViewCopyOnSet() && writeCompletionArtifact(true);
 

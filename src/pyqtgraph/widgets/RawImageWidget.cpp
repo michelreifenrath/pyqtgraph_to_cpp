@@ -140,16 +140,13 @@ void RawImageWidget::setImageImpl(core::ArrayView<const T, Rank> image, DataKind
         shape_[2] = 1;
     }
 
-    uint16Data_.clear();
-    floatData_.clear();
-    if constexpr (std::is_same_v<T, std::uint16_t>) {
+    if constexpr (!std::is_same_v<T, std::uint8_t>) {
         uint8Data_.clear();
-        floatData_.clear();
-    } else if constexpr (std::is_same_v<T, float>) {
-        uint8Data_.clear();
+    }
+    if constexpr (!std::is_same_v<T, std::uint16_t>) {
         uint16Data_.clear();
-    } else {
-        uint16Data_.clear();
+    }
+    if constexpr (!std::is_same_v<T, float>) {
         floatData_.clear();
     }
 
