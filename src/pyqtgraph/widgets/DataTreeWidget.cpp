@@ -16,9 +16,13 @@ QString pathKey(const QVariantList& path)
 {
     QStringList parts;
     for (const QVariant& segment : path) {
-        parts.append(segment.toString());
+        const QString text = segment.toString();
+        parts.append(QStringLiteral("%1:%2:%3")
+                         .arg(segment.metaType().id())
+                         .arg(text.size())
+                         .arg(text));
     }
-    return parts.join(QLatin1Char('/'));
+    return parts.join(QChar(0x1E));
 }
 
 bool isArrayMap(const QVariantMap& map)
@@ -78,8 +82,11 @@ DataTreeWidget::DataTreeWidget(QWidget* parent, const QVariant& data)
 
 void DataTreeWidget::setData(const QVariant& data, bool hideRoot)
 {
-    clear();
+    for (const QPointer<QWidget>& widget : widgets_) {
+        delete widget.data();
+    }
     widgets_.clear();
+    clear();
     nodes_.clear();
     buildTree(data, invisibleRootItem(), QString(), hideRoot, {});
     expandToDepth(3);
@@ -101,7 +108,7 @@ void DataTreeWidget::buildTree(
 
     nodes_.insert(pathKey(path), node);
 
-    const ParseResult parsed = parse(data);
+    const ParseResult parsed = parse(data, this);
 
     QString desc = parsed.desc;
     if (desc.size() > 100) {
@@ -131,7 +138,7 @@ void DataTreeWidget::buildTree(
     }
 }
 
-DataTreeWidget::ParseResult DataTreeWidget::parse(const QVariant& data) const
+DataTreeWidget::ParseResult DataTreeWidget::parse(const QVariant& data, QWidget* widgetParent) const
 {
     ParseResult result;
     result.typeStr = QString::fromLatin1(data.typeName());
@@ -147,8 +154,9 @@ DataTreeWidget::ParseResult DataTreeWidget::parse(const QVariant& data) const
             result.typeStr = QStringLiteral("ndarray");
             result.desc = QStringLiteral("shape=%1 dtype=%2")
                               .arg(shapeParts.join(QLatin1Char('x')), arrayDtype(map));
-            auto* widget = makeReadOnlyTextWidget(formatArrayValues(arrayValues(map)), nullptr);
-            result.widget = widget;
+            if (widgetParent != nullptr) {
+                result.widget = makeReadOnlyTextWidget(formatArrayValues(arrayValues(map)), widgetParent);
+            }
             return result;
         }
 

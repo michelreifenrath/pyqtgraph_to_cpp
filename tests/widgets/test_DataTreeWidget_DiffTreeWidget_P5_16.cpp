@@ -223,6 +223,67 @@ bool testDiffTreeWidgetCompare()
     return true;
 }
 
+bool testDataTreeWidgetPathKeyCollision()
+{
+    using pyqtgraph::widgets::DataTreeWidget;
+
+    const QVariantMap data = {
+        {QStringLiteral("a/b"), 1},
+        {QStringLiteral("a"), QVariantMap{{QStringLiteral("b"), 2}}},
+        {QStringLiteral(""), 3},
+        {QStringLiteral("x"), QVariantMap{{QStringLiteral(""), 4}}},
+    };
+
+    DataTreeWidget tree;
+    tree.setData(data);
+
+    QTreeWidgetItem* slashKey = tree.nodeAtPath({QStringLiteral("a/b")});
+    QTreeWidgetItem* nestedB = tree.nodeAtPath({QStringLiteral("a"), QStringLiteral("b")});
+    CHECK(slashKey != nullptr);
+    CHECK(nestedB != nullptr);
+    CHECK(slashKey != nestedB);
+    CHECK(slashKey->text(2) == QStringLiteral("1"));
+    CHECK(nestedB->text(2) == QStringLiteral("2"));
+
+    QTreeWidgetItem* emptyKey = tree.nodeAtPath({QString()});
+    QTreeWidgetItem* nestedEmpty = tree.nodeAtPath({QStringLiteral("x"), QString()});
+    CHECK(emptyKey != nullptr);
+    CHECK(nestedEmpty != nullptr);
+    CHECK(emptyKey != nestedEmpty);
+    CHECK(emptyKey->text(2) == QStringLiteral("3"));
+    CHECK(nestedEmpty->text(2) == QStringLiteral("4"));
+    return true;
+}
+
+int countPlainTextEdits(const QWidget* root)
+{
+    return root->findChildren<QPlainTextEdit*>().size();
+}
+
+bool testDiffTreeWidgetRepeatedArrayDiff()
+{
+    using pyqtgraph::widgets::DiffTreeWidget;
+
+    const QVariantMap left = makeArray({2}, QStringLiteral("float64"), {1.0, 2.0});
+    const QVariantMap right = makeArray({2}, QStringLiteral("float64"), {1.0, 3.0});
+
+    DiffTreeWidget diff;
+    diff.setData(left, right);
+    const int initialEdits = countPlainTextEdits(&diff);
+    CHECK(initialEdits == 2);
+    CHECK(diff.tree(0)->topLevelItemCount() == 1);
+    CHECK(diff.tree(1)->topLevelItemCount() == 1);
+
+    for (int iteration = 0; iteration < 5; ++iteration) {
+        diff.setData(left, right);
+    }
+
+    CHECK(countPlainTextEdits(&diff) == initialEdits);
+    CHECK(diff.tree(0)->topLevelItemCount() == 1);
+    CHECK(diff.tree(1)->topLevelItemCount() == 1);
+    return true;
+}
+
 bool testDiffTreeWidgetArrayCompare()
 {
     using pyqtgraph::widgets::DiffTreeWidget;
@@ -297,6 +358,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testDiffTreeWidgetCompare()) {
+        return 1;
+    }
+    if (!testDataTreeWidgetPathKeyCollision()) {
+        return 1;
+    }
+    if (!testDiffTreeWidgetRepeatedArrayDiff()) {
         return 1;
     }
     if (!testDiffTreeWidgetArrayCompare()) {

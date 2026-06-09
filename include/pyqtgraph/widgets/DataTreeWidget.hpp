@@ -40,7 +40,7 @@ public:
 
     void setData(const QVariant& data, bool hideRoot = false);
 
-    [[nodiscard]] ParseResult parse(const QVariant& data) const;
+    [[nodiscard]] ParseResult parse(const QVariant& data, QWidget* widgetParent = nullptr) const;
     [[nodiscard]] QTreeWidgetItem* nodeAtPath(const QVariantList& path) const;
 
 private:
