@@ -203,6 +203,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/BusyCursor.cpp
             include/pyqtgraph/widgets/RawImageWidget.hpp
             src/pyqtgraph/widgets/RawImageWidget.cpp
+            include/pyqtgraph/widgets/ScatterPlotWidget.hpp
+            src/pyqtgraph/widgets/ScatterPlotWidget.cpp
             include/pyqtgraph/imageview/ImageView.hpp
             src/pyqtgraph/imageview/ImageView.cpp
             include/pyqtgraph/imageview/ImageViewTemplate_generic.hpp
