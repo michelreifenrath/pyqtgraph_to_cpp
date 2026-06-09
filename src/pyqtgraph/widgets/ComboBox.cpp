@@ -159,7 +159,11 @@ void ComboBox::addItem(const QString& text, const QVariant& value)
 
     const QVariant itemValue = value.isValid() ? value : QVariant(text);
     items_.insert(text, itemValue);
-    QComboBox::addItem(text, itemValue);
+    if (value.isValid()) {
+        QComboBox::addItem(text, value);
+    } else {
+        QComboBox::addItem(text);
+    }
     itemsChanged();
 }
 

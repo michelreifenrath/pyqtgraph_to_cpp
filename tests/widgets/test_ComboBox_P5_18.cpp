@@ -231,6 +231,17 @@ bool testSaveRestoreState()
     numericTextCombo.setItems(QVariantList{QStringLiteral("42")});
     CHECK(numericTextCombo.saveState().metaType().id() == QMetaType::QString);
     CHECK(numericTextCombo.saveState().toString() == QStringLiteral("42"));
+
+    ComboBox directTextCombo;
+    directTextCombo.addItem(QStringLiteral("1"));
+    directTextCombo.addItem(QStringLiteral("01"));
+    directTextCombo.setText(QStringLiteral("01"));
+    const QVariant directState = directTextCombo.saveState();
+    CHECK(directState.metaType().id() == QMetaType::QString);
+    CHECK(directState.toString() == QStringLiteral("01"));
+    directTextCombo.setText(QStringLiteral("1"));
+    directTextCombo.restoreState(directState);
+    CHECK(directTextCombo.currentText() == QStringLiteral("01"));
     return true;
 }
 
@@ -281,7 +292,7 @@ bool writeIssueReport()
             "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ComboBox.hpp\", \"src/pyqtgraph/widgets/ComboBox.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
             "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_combobox_p5_18\"},\n"
-            "  \"checks\": [\"ComboBox API shape and empty value\", \"unique item text enforcement\", \"ordered list and text-to-value mapping\", \"dict/pair text-to-value mapping\", \"setValue selects first matching UI item\", \"value/setValue/setText selection\", \"empty chosen text restores on repopulate\", \"saveState/restoreState for text and item data\", \"bulk-added item state falls back to text\", \"appended item data stays aligned\", \"bulk updates emit currentIndexChanged only for final logical changes\"],\n"
+            "  \"checks\": [\"ComboBox API shape and empty value\", \"unique item text enforcement\", \"ordered list and text-to-value mapping\", \"dict/pair text-to-value mapping\", \"setValue selects first matching UI item\", \"value/setValue/setText selection\", \"empty chosen text restores on repopulate\", \"saveState/restoreState for text and item data\", \"bulk/direct text item state falls back to text\", \"appended item data stays aligned\", \"bulk updates emit currentIndexChanged only for final logical changes\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));
     writeTextFile(reportDir + QStringLiteral("/completion.md"),
@@ -290,7 +301,7 @@ bool writeIssueReport()
             "- Issue: GitHub #258 / P5.18\n"
             "- Validation class: interaction-ui\n\n"
             "## Summary\n\n"
-            "Implemented native Qt/C++ `ComboBox` with ordered text-to-value mapping, first-match value selection, empty-text restore, state save/restore, appended item data preservation, and bulk-update signal blocking.\n\n"
+            "Implemented native Qt/C++ `ComboBox` with ordered text-to-value mapping, first-match value selection, empty-text restore, PyQtGraph-style text/data state save/restore, appended item data preservation, and bulk-update signal blocking.\n\n"
             "## Validation commands\n\n"
             "| Command | Exit code |\n"
             "| --- | ---: |\n"
