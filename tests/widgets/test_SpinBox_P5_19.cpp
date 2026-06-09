@@ -149,6 +149,61 @@ bool testIntegerMode()
     return true;
 }
 
+bool testIntegerModeDefaultStepping()
+{
+    using pyqtgraph::widgets::SpinBox;
+    using pyqtgraph::widgets::SpinBoxOptions;
+
+    SpinBox box;
+    SpinBoxOptions opts;
+    opts.integerMode = true;
+    opts.value = 5.0;
+    box.setOpts(opts);
+
+    box.stepBy(1);
+    CHECK_CLOSE(box.value(), 6.0, 1.0e-12);
+    box.stepBy(-1);
+    CHECK_CLOSE(box.value(), 5.0, 1.0e-12);
+    return true;
+}
+
+bool testSetRangeClearsBounds()
+{
+    using pyqtgraph::widgets::SpinBox;
+    using pyqtgraph::widgets::SpinBoxOptions;
+
+    SpinBox box;
+    SpinBoxOptions opts;
+    opts.minBound = 0.0;
+    opts.maxBound = 10.0;
+    opts.value = 5.0;
+    box.setOpts(opts);
+
+    box.setRange(std::nullopt, std::nullopt);
+    box.setValue(25.0);
+    CHECK_CLOSE(box.value(), 25.0, 1.0e-12);
+    return true;
+}
+
+bool testCustomFormatPlaceholders()
+{
+    using pyqtgraph::widgets::SpinBox;
+    using pyqtgraph::widgets::SpinBoxOptions;
+
+    SpinBox box;
+    SpinBoxOptions opts;
+    opts.format = QStringLiteral("v={value} sv={scaledValue} d={decimals}");
+    opts.value = 1.23;
+    opts.decimals = 2;
+    box.setOpts(opts);
+
+    const QString text = box.editorText();
+    CHECK(text.contains(QStringLiteral("v=1.23")));
+    CHECK(text.contains(QStringLiteral("sv=1.23")));
+    CHECK(text.contains(QStringLiteral("d=2")));
+    return true;
+}
+
 bool testLinearStepping()
 {
     using pyqtgraph::widgets::SpinBox;
@@ -337,7 +392,7 @@ bool writeIssueReport()
             "  \"manifest_targets\": [\"include/pyqtgraph/widgets/SpinBox.hpp\", \"src/pyqtgraph/widgets/SpinBox.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
             "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_spinbox_p5_19\"},\n"
-            "  \"checks\": [\"SpinBox API shape and default value\", \"bounds clipping and wrapping\", \"integer mode\", \"linear and decimal stepping with minStep\", \"SI prefix formatting and parsing\", \"custom prefix/suffix formatting\", \"editingFinished commit\", \"immediate and delayed signal behavior\"],\n"
+            "  \"checks\": [\"SpinBox API shape and default value\", \"bounds clipping and wrapping\", \"integer mode\", \"integer mode default stepping\", \"setRange clears bounds\", \"custom format placeholders\", \"linear and decimal stepping with minStep\", \"SI prefix formatting and parsing\", \"custom prefix/suffix formatting\", \"editingFinished commit\", \"immediate and delayed signal behavior\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));
     writeTextFile(reportDir + QStringLiteral("/completion.md"),
@@ -346,7 +401,7 @@ bool writeIssueReport()
             "- Issue: GitHub #259 / P5.19\n"
             "- Validation class: interaction-ui\n\n"
             "## Summary\n\n"
-            "Implemented native Qt/C++ `SpinBox` with SI prefix formatting/parsing, bounds clipping/wrapping, integer mode, linear/decimal stepping, prefix/suffix display, editingFinished commit, and immediate/delayed value change signals.\n\n"
+            "Implemented native Qt/C++ `SpinBox` with SI prefix formatting/parsing, bounds clipping/wrapping, integer mode (including default step=1), setRange bound clearing, format placeholders ({value}, {scaledValue}, {decimals}), linear/decimal stepping, prefix/suffix display, editingFinished commit, and immediate/delayed value change signals.\n\n"
             "## Validation commands\n\n"
             "| Command | Exit code |\n"
             "| --- | ---: |\n"
@@ -379,6 +434,15 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testIntegerMode()) {
+        return 1;
+    }
+    if (!testIntegerModeDefaultStepping()) {
+        return 1;
+    }
+    if (!testSetRangeClearsBounds()) {
+        return 1;
+    }
+    if (!testCustomFormatPlaceholders()) {
         return 1;
     }
     if (!testLinearStepping()) {

@@ -191,16 +191,18 @@ double parseNumber(const QString& text)
     return value;
 }
 
-QString applyFormat(const QString& formatTemplate, const QString& prefix, const QString& scaledValueString,
-    const QString& siPrefix, const QString& suffix)
+QString applyFormat(const QString& formatTemplate, const QString& prefix, const QString& prefixGap,
+    const QString& scaledValueString, double value, const QString& scaledValue, int decimals,
+    const QString& suffixGap, const QString& siPrefix, const QString& suffix)
 {
     QString result = formatTemplate;
-    const QString prefixGap = prefix.isEmpty() ? QString{} : QStringLiteral(" ");
-    const QString suffixGap = (suffix.isEmpty() && siPrefix.isEmpty()) ? QString{} : QStringLiteral(" ");
 
     result.replace(QStringLiteral("{prefix}"), prefix);
     result.replace(QStringLiteral("{prefixGap}"), prefixGap);
     result.replace(QStringLiteral("{scaledValueString}"), scaledValueString);
+    result.replace(QStringLiteral("{value}"), QString::number(value, 'g', 12));
+    result.replace(QStringLiteral("{scaledValue}"), scaledValue);
+    result.replace(QStringLiteral("{decimals}"), QString::number(decimals));
     result.replace(QStringLiteral("{suffixGap}"), suffixGap);
     result.replace(QStringLiteral("{siPrefix}"), siPrefix);
     result.replace(QStringLiteral("{suffix}"), suffix);
@@ -393,6 +395,9 @@ void SpinBox::applyOpts(const SpinBoxOptions& opts)
 
     if (opts_.integerMode) {
         opts_.step = std::round(opts_.step);
+        if (opts_.step < 1.0) {
+            opts_.step = 1.0;
+        }
         if (opts_.minStep < 1.0) {
             opts_.minStep = 1.0;
         }
@@ -434,10 +439,10 @@ void SpinBox::setMaximum(std::optional<double> maximum, bool update)
 
 void SpinBox::setRange(std::optional<double> minimum, std::optional<double> maximum)
 {
-    SpinBoxOptions opts;
-    opts.minBound = minimum;
-    opts.maxBound = maximum;
-    applyOpts(opts);
+    opts_.minBound = minimum;
+    opts_.maxBound = maximum;
+    setValue();
+    updateHeight();
 }
 
 bool SpinBox::wrapping() const
@@ -502,14 +507,22 @@ QString SpinBox::formatText() const
     }
 
     QString scaledValueString;
+    QString scaledValue;
     if (opts_.integerMode) {
-        scaledValueString = QString::number(static_cast<int>(std::lround(displayValue)));
+        const int roundedValue = static_cast<int>(std::lround(displayValue));
+        scaledValue = QString::number(roundedValue);
+        scaledValueString = scaledValue;
     } else {
+        scaledValue = QString::number(displayValue, 'g', 12);
         scaledValueString = locale().toString(displayValue, 'g', decimals);
         scaledValueString.remove(locale().groupSeparator());
     }
 
-    return applyFormat(opts_.format, prefix, scaledValueString, siPrefixString, suffix);
+    const QString prefixGap = prefix.isEmpty() ? QString{} : QStringLiteral(" ");
+    const QString suffixGap = (suffix.isEmpty() && siPrefixString.isEmpty()) ? QString{} : QStringLiteral(" ");
+
+    return applyFormat(opts_.format, prefix, prefixGap, scaledValueString, value(), scaledValue, decimals, suffixGap,
+        siPrefixString, suffix);
 }
 
 QString SpinBox::editorText() const
