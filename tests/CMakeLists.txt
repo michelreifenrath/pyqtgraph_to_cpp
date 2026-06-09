@@ -591,6 +591,19 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.GraphicsLayoutWidget.P3_12 PROPERTIES LABELS P3.12)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_plotting_widgets_p5_01
+        widgets/test_plotting_widgets_P5_01.cpp
+        pyqtgraph_cpp.widgets.plotting_widgets.P5_01
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_plotting_widgets_p5_01 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_plotting_widgets_p5_01 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_plotting_widgets_p5_01
+        PRIVATE
+            PYQTGRAPH_CPP_P5_01_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/P5.01"
+            PYQTGRAPH_CPP_P5_01_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.01"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.plotting_widgets.P5_01 PROPERTIES LABELS "visual;P5.01")
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_widgets_colorbutton_p5_12
         widgets/test_ColorButton_P5_12.cpp
         pyqtgraph_cpp.widgets.ColorButton.P5_12

@@ -1,4 +1,5 @@
 #include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <pyqtgraph/widgets/GraphicsView.hpp>
 #include <pyqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QPointer>
@@ -62,6 +63,7 @@ QRectF sceneRectForViewport(const pyqtgraph::widgets::PlotWidget& widget)
 bool testConstructionAndApiShape()
 {
     using pyqtgraph::graphicsItems::PlotItem;
+    using pyqtgraph::widgets::GraphicsView;
     using pyqtgraph::widgets::PlotWidget;
 
     static_assert(std::is_constructible_v<PlotWidget>);
@@ -71,6 +73,7 @@ bool testConstructionAndApiShape()
     static_assert(!std::is_copy_assignable_v<PlotWidget>);
     static_assert(!std::is_move_constructible_v<PlotWidget>);
     static_assert(!std::is_move_assignable_v<PlotWidget>);
+    static_assert(std::is_base_of_v<GraphicsView, PlotWidget>);
     static_assert(std::is_base_of_v<QGraphicsView, PlotWidget>);
     static_assert(std::is_base_of_v<QWidget, PlotWidget>);
     static_assert(!std::is_final_v<PlotWidget>);
