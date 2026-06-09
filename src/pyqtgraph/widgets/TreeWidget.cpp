@@ -102,6 +102,56 @@ void TreeWidgetItem::removeWidget(int column)
     }
 }
 
+void TreeWidgetItem::addChild(QTreeWidgetItem* child)
+{
+    QTreeWidgetItem::addChild(child);
+    TreeWidget::informTreeWidgetChange(child);
+}
+
+void TreeWidgetItem::addChildren(const QList<QTreeWidgetItem*>& children)
+{
+    QTreeWidgetItem::addChildren(children);
+    for (QTreeWidgetItem* child : children) {
+        TreeWidget::informTreeWidgetChange(child);
+    }
+}
+
+void TreeWidgetItem::insertChild(int index, QTreeWidgetItem* child)
+{
+    QTreeWidgetItem::insertChild(index, child);
+    TreeWidget::informTreeWidgetChange(child);
+}
+
+void TreeWidgetItem::insertChildren(int index, const QList<QTreeWidgetItem*>& children)
+{
+    QTreeWidgetItem::insertChildren(index, children);
+    for (QTreeWidgetItem* child : children) {
+        TreeWidget::informTreeWidgetChange(child);
+    }
+}
+
+void TreeWidgetItem::removeChild(QTreeWidgetItem* child)
+{
+    QTreeWidgetItem::removeChild(child);
+    TreeWidget::informTreeWidgetChange(child);
+}
+
+QTreeWidgetItem* TreeWidgetItem::takeChild(int index)
+{
+    QTreeWidgetItem* child = QTreeWidgetItem::takeChild(index);
+    TreeWidget::informTreeWidgetChange(child);
+    return child;
+}
+
+QList<QTreeWidgetItem*> TreeWidgetItem::takeChildren()
+{
+    QList<QTreeWidgetItem*> children = QTreeWidgetItem::takeChildren();
+    for (QTreeWidgetItem* child : children) {
+        TreeWidget::informTreeWidgetChange(child);
+    }
+    return children;
+}
+
 void TreeWidgetItem::treeWidgetChanged()
 {
     auto* tree = treeWidget();
@@ -171,10 +221,26 @@ void TreeWidget::addTopLevelItem(QTreeWidgetItem* item)
     informTreeWidgetChange(item);
 }
 
+void TreeWidget::addTopLevelItems(const QList<QTreeWidgetItem*>& items)
+{
+    QTreeWidget::addTopLevelItems(items);
+    for (QTreeWidgetItem* item : items) {
+        informTreeWidgetChange(item);
+    }
+}
+
 void TreeWidget::insertTopLevelItem(int index, QTreeWidgetItem* item)
 {
     QTreeWidget::insertTopLevelItem(index, item);
     informTreeWidgetChange(item);
+}
+
+void TreeWidget::insertTopLevelItems(int index, const QList<QTreeWidgetItem*>& items)
+{
+    QTreeWidget::insertTopLevelItems(index, items);
+    for (QTreeWidgetItem* item : items) {
+        informTreeWidgetChange(item);
+    }
 }
 
 void TreeWidget::setColumnCount(int columns)

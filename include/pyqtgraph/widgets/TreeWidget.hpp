@@ -32,6 +32,14 @@ public:
     void setWidget(int column, QWidget* widget);
     void removeWidget(int column);
 
+    void addChild(QTreeWidgetItem* child);
+    void addChildren(const QList<QTreeWidgetItem*>& children);
+    void insertChild(int index, QTreeWidgetItem* child);
+    void insertChildren(int index, const QList<QTreeWidgetItem*>& children);
+    void removeChild(QTreeWidgetItem* child);
+    QTreeWidgetItem* takeChild(int index);
+    QList<QTreeWidgetItem*> takeChildren();
+
     void treeWidgetChanged();
 
     void setData(int column, int role, const QVariant& value) override;
@@ -56,7 +64,9 @@ public:
     [[nodiscard]] QWidget* itemWidget(QTreeWidgetItem* item, int column) const;
 
     void addTopLevelItem(QTreeWidgetItem* item);
+    void addTopLevelItems(const QList<QTreeWidgetItem*>& items);
     void insertTopLevelItem(int index, QTreeWidgetItem* item);
+    void insertTopLevelItems(int index, const QList<QTreeWidgetItem*>& items);
 
     void setColumnCount(int columns);
 

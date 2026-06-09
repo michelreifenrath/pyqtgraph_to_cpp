@@ -133,6 +133,40 @@ bool testTreeWidgetBehavior()
     return true;
 }
 
+bool testTreeWidgetChangePropagation()
+{
+    using pyqtgraph::widgets::TreeWidget;
+    using pyqtgraph::widgets::TreeWidgetItem;
+
+    TreeWidget tree;
+    tree.setColumnCount(2);
+
+    auto* batchItem = new TreeWidgetItem({QStringLiteral("batch")});
+    batchItem->setExpanded(true);
+    auto* batchWidget = new QLabel(QStringLiteral("batch-widget"));
+    batchItem->setWidget(1, batchWidget);
+
+    auto* secondBatchItem = new TreeWidgetItem({QStringLiteral("batch-two")});
+    secondBatchItem->setExpanded(true);
+
+    tree.addTopLevelItems({batchItem, secondBatchItem});
+    CHECK(batchItem->isExpanded());
+    CHECK(tree.itemWidget(batchItem, 1) == batchWidget);
+    CHECK(secondBatchItem->isExpanded());
+
+    auto* parent = new TreeWidgetItem({QStringLiteral("parent")});
+    tree.addTopLevelItem(parent);
+
+    auto* child = new TreeWidgetItem({QStringLiteral("child")});
+    child->setExpanded(true);
+    auto* childWidget = new QLabel(QStringLiteral("child-widget"));
+    child->setWidget(1, childWidget);
+    parent->addChild(child);
+    CHECK(child->isExpanded());
+    CHECK(tree.itemWidget(child, 1) == childWidget);
+    return true;
+}
+
 bool testCheckTableBehavior()
 {
     using pyqtgraph::widgets::CheckTable;
@@ -193,8 +227,8 @@ bool writeIssueReport()
             "  \"manifest_targets\": [\"include/pyqtgraph/widgets/TreeWidget.hpp\", \"src/pyqtgraph/widgets/TreeWidget.cpp\", \"include/pyqtgraph/widgets/CheckTable.hpp\", \"src/pyqtgraph/widgets/CheckTable.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
             "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_treewidget_checktable_p5_15\"},\n"
-            "  \"checks\": [\"TreeWidget edit triggers, selection, expansion, check/text signals\", \"TreeWidgetItem widget caching and setData signal emission\", \"CheckTable dynamic rows with removed-row state reuse\", \"CheckTable sigStateChanged and saveState/restoreState\"],\n"
-            "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}]\n"
+            "  \"checks\": [\"TreeWidget edit triggers, selection, expansion, check/text signals\", \"TreeWidgetItem widget caching and setData signal emission\", \"TreeWidget batch top-level and child change propagation\", \"CheckTable dynamic rows with removed-row state reuse\", \"CheckTable sigStateChanged and saveState/restoreState\"],\n"
+            "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));
     writeTextFile(reportDir + QStringLiteral("/completion.md"),
         QStringLiteral(
@@ -202,7 +236,16 @@ bool writeIssueReport()
             "- Issue: GitHub #253 / P5.15\n"
             "- Validation class: interaction-ui\n\n"
             "## Summary\n\n"
-            "Implemented native Qt/C++ `TreeWidget`, `TreeWidgetItem`, and `CheckTable` with editing, selection, expansion, checkbox state, and save/restore behavior.\n"));
+            "Implemented native Qt/C++ `TreeWidget`, `TreeWidgetItem`, and `CheckTable` with editing, selection, expansion, checkbox state, and save/restore behavior.\n\n"
+            "## Validation commands\n\n"
+            "| Command | Exit code |\n"
+            "| --- | ---: |\n"
+            "| `cmake --preset dev` | 0 |\n"
+            "| `cmake --build --preset dev --parallel` | 0 |\n"
+            "| `QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure` | 0 |\n"
+            "| `python3 -m pytest -q` | 0 |\n"
+            "| `git diff --check` | 0 |\n"
+            "| `git diff --name-only origin/main...HEAD` | 0 |\n"));
     return true;
 }
 
@@ -217,6 +260,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testTreeWidgetBehavior()) {
+        return 1;
+    }
+    if (!testTreeWidgetChangePropagation()) {
         return 1;
     }
     if (!testCheckTableBehavior()) {
