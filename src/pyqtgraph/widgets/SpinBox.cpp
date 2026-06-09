@@ -82,7 +82,7 @@ int siPrefixExponent(const QString& prefix)
         return 0;
     }
     if (prefix == QStringLiteral("u")) {
-        return -6;
+        return -2;
     }
 
     static const std::array<QString, 17> prefixes = {
