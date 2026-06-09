@@ -5,6 +5,1097 @@ reference:
   docs_url: https://pyqtgraph.readthedocs.io/
 manifest_schema:
   status_metadata: evidence_backed
+proposed_issue_ownership:
+  version: 1
+  rules:
+  - issue: P5.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/imageview/**
+  - issue: P7.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Qt/OpenGLConstants.py
+    - pyqtgraph/Qt/OpenGLHelpers.py
+  - issue: P1.03
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Qt/__init__.py
+    - pyqtgraph/Qt/QtCore/**
+    - pyqtgraph/Qt/QtGui/**
+    - pyqtgraph/Qt/QtWidgets/**
+    - pyqtgraph/Qt/compat/**
+    - pyqtgraph/Qt/internals.py
+  - issue: P3.03
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/GraphicsScene/GraphicsScene.py
+    - pyqtgraph/GraphicsScene/__init__.py
+  - issue: P3.04
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/GraphicsScene/mouseEvents.py
+  - issue: P8.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/GraphicsScene/exportDialog.py
+    - pyqtgraph/GraphicsScene/exportDialogTemplate_generic.py
+  - issue: P6.01
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/Parameter.py
+    - pyqtgraph/parametertree/__init__.py
+  - issue: P6.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/ParameterItem.py
+    - pyqtgraph/parametertree/ParameterTree.py
+  - issue: P6.03
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/basetypes.py
+  - issue: P6.04
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/action.py
+    - pyqtgraph/parametertree/parameterTypes/actiongroup.py
+    - pyqtgraph/parametertree/parameterTypes/bool.py
+    - pyqtgraph/parametertree/parameterTypes/list.py
+    - pyqtgraph/parametertree/parameterTypes/numeric.py
+    - pyqtgraph/parametertree/parameterTypes/str.py
+    - pyqtgraph/parametertree/parameterTypes/text.py
+  - issue: P6.05
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/color.py
+    - pyqtgraph/parametertree/parameterTypes/colormap.py
+    - pyqtgraph/parametertree/parameterTypes/colormaplut.py
+    - pyqtgraph/parametertree/parameterTypes/file.py
+    - pyqtgraph/parametertree/parameterTypes/font.py
+    - pyqtgraph/parametertree/parameterTypes/pen.py
+  - issue: P6.06
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/calendar.py
+    - pyqtgraph/parametertree/parameterTypes/checklist.py
+    - pyqtgraph/parametertree/parameterTypes/progress.py
+    - pyqtgraph/parametertree/parameterTypes/qtenum.py
+    - pyqtgraph/parametertree/parameterTypes/slider.py
+    - pyqtgraph/parametertree/parameterTypes/__init__.py
+  - issue: P6.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/ParameterSystem.py
+    - pyqtgraph/parametertree/SystemSolver.py
+    - pyqtgraph/parametertree/interactive.py
+  - issue: P6.08
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/dockarea/**
+  - issue: P6.09
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/flowchart/Flowchart.py
+    - pyqtgraph/flowchart/Node.py
+    - pyqtgraph/flowchart/Terminal.py
+    - pyqtgraph/flowchart/__init__.py
+  - issue: P6.10
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/flowchart/FlowchartCtrlTemplate_generic.py
+    - pyqtgraph/flowchart/FlowchartGraphicsView.py
+    - pyqtgraph/flowchart/NodeLibrary.py
+    - pyqtgraph/flowchart/library/**
+  - issue: P7.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/__init__.py
+    - pyqtgraph/opengl/shaders.py
+  - issue: P7.03
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/GLGraphicsItem.py
+  - issue: P7.04
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/GLViewWidget.py
+  - issue: P7.05
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/MeshData.py
+  - issue: P7.06
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLAxisItem.py
+    - pyqtgraph/opengl/items/GLBoxItem.py
+    - pyqtgraph/opengl/items/GLGridItem.py
+    - pyqtgraph/opengl/items/GLTextItem.py
+    - pyqtgraph/opengl/items/__init__.py
+  - issue: P7.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLLinePlotItem.py
+    - pyqtgraph/opengl/items/GLScatterPlotItem.py
+    - pyqtgraph/opengl/items/GLGraphItem.py
+  - issue: P7.08
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLMeshItem.py
+    - pyqtgraph/opengl/items/GLSurfacePlotItem.py
+    - pyqtgraph/opengl/items/GLBarGraphItem.py
+  - issue: P7.09
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLImageItem.py
+    - pyqtgraph/opengl/items/GLVolumeItem.py
+    - pyqtgraph/opengl/items/GLGradientLegendItem.py
+  - issue: P8.01
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/Exporter.py
+    - pyqtgraph/exporters/__init__.py
+  - issue: P8.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/ImageExporter.py
+    - pyqtgraph/exporters/SVGExporter.py
+    - pyqtgraph/exporters/PrintExporter.py
+  - issue: P8.03
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/CSVExporter.py
+    - pyqtgraph/exporters/HDF5Exporter.py
+  - issue: P8.04
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/Matplotlib.py
+  - issue: P8.06
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/console/**
+  - issue: P8.09
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/icons/**
+    - pyqtgraph/colors/**
+  - issue: P8.11
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/util/__init__.py
+    - pyqtgraph/util/cprint.py
+    - pyqtgraph/util/garbage_collector.py
+    - pyqtgraph/util/mutex.py
+  - issue: P8.12
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/util/cupy_helper.py
+    - pyqtgraph/util/get_resolution.py
+    - pyqtgraph/util/glinfo.py
+    - pyqtgraph/util/numba_helper.py
+  - issue: P8.05
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/multiprocess/**
+  - issue: P8.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/jupyter/**
+  - issue: P2.01
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Point.py
+    - pyqtgraph/Vector.py
+  - issue: P2.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Transform3D.py
+    - pyqtgraph/SRTTransform.py
+    - pyqtgraph/SRTTransform3D.py
+  - issue: P2.03
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/PlotData.py
+  - issue: P2.04
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/functions.py
+  - issue: P2.06
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/colormap.py
+  - issue: P2.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/__init__.py
+    - pyqtgraph/configfile.py
+    - pyqtgraph/debug.py
+    - pyqtgraph/exceptionHandling.py
+    - pyqtgraph/units.py
+  - issue: P2.08
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/SignalProxy.py
+    - pyqtgraph/ThreadsafeTimer.py
+  - issue: P2.09
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/WidgetGroup.py
+  - issue: P2.10
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/frozenSupport.py
+    - pyqtgraph/reload.py
+    - pyqtgraph/functions_numba.py
+  - issue: P2.11
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/functions_qimage.py
+  - issue: P5.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/imageview/**
+  - issue: P7.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Qt/OpenGLConstants.py
+    - pyqtgraph/Qt/OpenGLHelpers.py
+  - issue: P1.03
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Qt/__init__.py
+    - pyqtgraph/Qt/QtCore/**
+    - pyqtgraph/Qt/QtGui/**
+    - pyqtgraph/Qt/QtWidgets/**
+    - pyqtgraph/Qt/compat/**
+    - pyqtgraph/Qt/internals.py
+  - issue: P3.03
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/GraphicsScene/GraphicsScene.py
+    - pyqtgraph/GraphicsScene/__init__.py
+  - issue: P3.04
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/GraphicsScene/mouseEvents.py
+  - issue: P8.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/GraphicsScene/exportDialog.py
+    - pyqtgraph/GraphicsScene/exportDialogTemplate_generic.py
+  - issue: P6.01
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/Parameter.py
+    - pyqtgraph/parametertree/__init__.py
+  - issue: P6.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/ParameterItem.py
+    - pyqtgraph/parametertree/ParameterTree.py
+  - issue: P6.03
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/basetypes.py
+  - issue: P6.04
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/action.py
+    - pyqtgraph/parametertree/parameterTypes/actiongroup.py
+    - pyqtgraph/parametertree/parameterTypes/bool.py
+    - pyqtgraph/parametertree/parameterTypes/list.py
+    - pyqtgraph/parametertree/parameterTypes/numeric.py
+    - pyqtgraph/parametertree/parameterTypes/str.py
+    - pyqtgraph/parametertree/parameterTypes/text.py
+  - issue: P6.05
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/color.py
+    - pyqtgraph/parametertree/parameterTypes/colormap.py
+    - pyqtgraph/parametertree/parameterTypes/colormaplut.py
+    - pyqtgraph/parametertree/parameterTypes/file.py
+    - pyqtgraph/parametertree/parameterTypes/font.py
+    - pyqtgraph/parametertree/parameterTypes/pen.py
+  - issue: P6.06
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/parameterTypes/calendar.py
+    - pyqtgraph/parametertree/parameterTypes/checklist.py
+    - pyqtgraph/parametertree/parameterTypes/progress.py
+    - pyqtgraph/parametertree/parameterTypes/qtenum.py
+    - pyqtgraph/parametertree/parameterTypes/slider.py
+    - pyqtgraph/parametertree/parameterTypes/__init__.py
+  - issue: P6.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/parametertree/ParameterSystem.py
+    - pyqtgraph/parametertree/SystemSolver.py
+    - pyqtgraph/parametertree/interactive.py
+  - issue: P6.08
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/dockarea/**
+  - issue: P6.09
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/flowchart/Flowchart.py
+    - pyqtgraph/flowchart/Node.py
+    - pyqtgraph/flowchart/Terminal.py
+    - pyqtgraph/flowchart/__init__.py
+  - issue: P6.10
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/flowchart/FlowchartCtrlTemplate_generic.py
+    - pyqtgraph/flowchart/FlowchartGraphicsView.py
+    - pyqtgraph/flowchart/NodeLibrary.py
+    - pyqtgraph/flowchart/library/**
+  - issue: P7.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/__init__.py
+    - pyqtgraph/opengl/shaders.py
+  - issue: P7.03
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/GLGraphicsItem.py
+  - issue: P7.04
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/GLViewWidget.py
+  - issue: P7.05
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/MeshData.py
+  - issue: P7.06
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLAxisItem.py
+    - pyqtgraph/opengl/items/GLBoxItem.py
+    - pyqtgraph/opengl/items/GLGridItem.py
+    - pyqtgraph/opengl/items/GLTextItem.py
+    - pyqtgraph/opengl/items/__init__.py
+  - issue: P7.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLLinePlotItem.py
+    - pyqtgraph/opengl/items/GLScatterPlotItem.py
+    - pyqtgraph/opengl/items/GLGraphItem.py
+  - issue: P7.08
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLMeshItem.py
+    - pyqtgraph/opengl/items/GLSurfacePlotItem.py
+    - pyqtgraph/opengl/items/GLBarGraphItem.py
+  - issue: P7.09
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/opengl/items/GLImageItem.py
+    - pyqtgraph/opengl/items/GLVolumeItem.py
+    - pyqtgraph/opengl/items/GLGradientLegendItem.py
+  - issue: P8.01
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/Exporter.py
+    - pyqtgraph/exporters/__init__.py
+  - issue: P8.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/ImageExporter.py
+    - pyqtgraph/exporters/SVGExporter.py
+    - pyqtgraph/exporters/PrintExporter.py
+  - issue: P8.03
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/CSVExporter.py
+    - pyqtgraph/exporters/HDF5Exporter.py
+  - issue: P8.04
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/exporters/Matplotlib.py
+  - issue: P8.06
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/console/**
+  - issue: P8.09
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/icons/**
+    - pyqtgraph/colors/**
+  - issue: P8.11
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/util/__init__.py
+    - pyqtgraph/util/cprint.py
+    - pyqtgraph/util/garbage_collector.py
+    - pyqtgraph/util/mutex.py
+  - issue: P8.05
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/multiprocess/**
+  - issue: P8.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/jupyter/**
+  - issue: P2.01
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Point.py
+    - pyqtgraph/Vector.py
+  - issue: P2.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/Transform3D.py
+    - pyqtgraph/SRTTransform.py
+    - pyqtgraph/SRTTransform3D.py
+  - issue: P2.03
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/PlotData.py
+  - issue: P2.04
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/functions.py
+  - issue: P2.06
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/colormap.py
+  - issue: P2.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/__init__.py
+    - pyqtgraph/configfile.py
+    - pyqtgraph/debug.py
+    - pyqtgraph/exceptionHandling.py
+    - pyqtgraph/units.py
+  - issue: P2.08
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/SignalProxy.py
+    - pyqtgraph/ThreadsafeTimer.py
+  - issue: P2.09
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/WidgetGroup.py
+  - issue: P9.08
+    section: examples
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/examples/**
+  - issue: P9.01
+    section: example_assets
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/examples/**
+  - issue: P3.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GraphicsItem.py
+    - pyqtgraph/graphicsItems/GraphicsObject.py
+    - pyqtgraph/graphicsItems/GraphicsWidget.py
+    - pyqtgraph/graphicsItems/GraphicsWidgetAnchor.py
+    - pyqtgraph/graphicsItems/ItemGroup.py
+    - pyqtgraph/graphicsItems/__init__.py
+  - issue: P3.05
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ViewBox/ViewBox.py
+    - pyqtgraph/graphicsItems/ViewBox/__init__.py
+  - issue: P3.06
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.py
+    - pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.py
+  - issue: P3.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/AxisItem.py
+  - issue: P3.08
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/DateAxisItem.py
+  - issue: P3.09
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotCurveItem.py
+  - issue: P3.10
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotDataItem.py
+  - issue: P3.11
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotItem/PlotItem.py
+    - pyqtgraph/graphicsItems/PlotItem/__init__.py
+  - issue: P4.14
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.py
+  - issue: P3.12
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/GraphicsView.py
+    - pyqtgraph/widgets/GraphicsLayoutWidget.py
+  - issue: P4.01
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ScatterPlotItem.py
+  - issue: P4.02
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/BarGraphItem.py
+    - pyqtgraph/graphicsItems/ErrorBarItem.py
+    - pyqtgraph/graphicsItems/FillBetweenItem.py
+  - issue: P4.03
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GraphItem.py
+    - pyqtgraph/graphicsItems/CurvePoint.py
+  - issue: P4.04
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/BoxplotItem.py
+    - pyqtgraph/graphicsItems/PColorMeshItem.py
+  - issue: P4.05
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ImageItem.py
+    - pyqtgraph/graphicsItems/NonUniformImage.py
+  - issue: P4.06
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/HistogramLUTItem.py
+    - pyqtgraph/graphicsItems/ColorBarItem.py
+  - issue: P4.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/IsocurveItem.py
+  - issue: P4.09
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/LinearRegionItem.py
+    - pyqtgraph/graphicsItems/InfiniteLine.py
+    - pyqtgraph/graphicsItems/TargetItem.py
+  - issue: P4.11
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/LegendItem.py
+    - pyqtgraph/graphicsItems/GridItem.py
+    - pyqtgraph/graphicsItems/VTickGroup.py
+  - issue: P4.13
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/UIGraphicsItem.py
+    - pyqtgraph/graphicsItems/ButtonItem.py
+  - issue: P4.16
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ROI.py
+  - issue: P4.21
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ArrowItem.py
+  - issue: P4.22
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/TextItem.py
+    - pyqtgraph/graphicsItems/LabelItem.py
+  - issue: P4.23
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ScaleBar.py
+  - issue: P4.24
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GradientEditorItem.py
+    - pyqtgraph/graphicsItems/GradientPresets.py
+  - issue: P4.25
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GradientLegend.py
+  - issue: P3.01
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/PlotWidget.py
+  - issue: P5.01
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/HistogramLUTWidget.py
+    - pyqtgraph/widgets/MatplotlibWidget.py
+    - pyqtgraph/widgets/DataFilterWidget.py
+    - pyqtgraph/widgets/ValueLabel.py
+    - pyqtgraph/widgets/PenPreviewLabel.py
+  - issue: P5.07
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/RawImageWidget.py
+  - issue: P5.08
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ScatterPlotWidget.py
+  - issue: P5.10
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/RemoteGraphicsView.py
+  - issue: P5.11
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/__init__.py
+  - issue: P5.12
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ColorButton.py
+  - issue: P5.13
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ColorMapButton.py
+    - pyqtgraph/widgets/ColorMapMenu.py
+  - issue: P5.14
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ColorMapWidget.py
+    - pyqtgraph/widgets/GradientWidget.py
+  - issue: P5.15
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/TreeWidget.py
+    - pyqtgraph/widgets/CheckTable.py
+  - issue: P5.16
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/DataTreeWidget.py
+    - pyqtgraph/widgets/DiffTreeWidget.py
+  - issue: P5.17
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/TableWidget.py
+  - issue: P5.18
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ComboBox.py
+  - issue: P5.19
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/SpinBox.py
+  - issue: P5.20
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/JoystickButton.py
+    - pyqtgraph/widgets/VerticalLabel.py
+  - issue: P5.21
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/LayoutWidget.py
+  - issue: P5.22
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/GroupBox.py
+  - issue: P5.23
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/FileDialog.py
+    - pyqtgraph/widgets/PathButton.py
+  - issue: P5.24
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ProgressDialog.py
+  - issue: P5.25
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/FeedbackButton.py
+    - pyqtgraph/widgets/BusyCursor.py
+  - issue: P3.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GraphicsItem.py
+    - pyqtgraph/graphicsItems/GraphicsObject.py
+    - pyqtgraph/graphicsItems/GraphicsWidget.py
+    - pyqtgraph/graphicsItems/GraphicsWidgetAnchor.py
+    - pyqtgraph/graphicsItems/ItemGroup.py
+  - issue: P3.05
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ViewBox/ViewBox.py
+  - issue: P3.06
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ViewBox/ViewBoxMenu.py
+    - pyqtgraph/graphicsItems/ViewBox/axisCtrlTemplate_generic.py
+  - issue: P3.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/AxisItem.py
+  - issue: P3.08
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/DateAxisItem.py
+  - issue: P3.09
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotCurveItem.py
+  - issue: P3.10
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotDataItem.py
+  - issue: P3.11
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotItem/PlotItem.py
+  - issue: P4.14
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.py
+  - issue: P3.12
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/GraphicsView.py
+    - pyqtgraph/widgets/GraphicsLayoutWidget.py
+  - issue: P4.01
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ScatterPlotItem.py
+  - issue: P4.02
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/BarGraphItem.py
+    - pyqtgraph/graphicsItems/ErrorBarItem.py
+    - pyqtgraph/graphicsItems/FillBetweenItem.py
+  - issue: P4.03
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GraphItem.py
+    - pyqtgraph/graphicsItems/CurvePoint.py
+  - issue: P4.04
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/BoxplotItem.py
+    - pyqtgraph/graphicsItems/PColorMeshItem.py
+  - issue: P4.05
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ImageItem.py
+    - pyqtgraph/graphicsItems/NonUniformImage.py
+  - issue: P4.06
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/HistogramLUTItem.py
+    - pyqtgraph/graphicsItems/ColorBarItem.py
+  - issue: P4.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/IsocurveItem.py
+  - issue: P4.09
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/LinearRegionItem.py
+    - pyqtgraph/graphicsItems/InfiniteLine.py
+    - pyqtgraph/graphicsItems/TargetItem.py
+  - issue: P4.11
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/LegendItem.py
+    - pyqtgraph/graphicsItems/GridItem.py
+    - pyqtgraph/graphicsItems/VTickGroup.py
+  - issue: P4.13
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/UIGraphicsItem.py
+    - pyqtgraph/graphicsItems/ButtonItem.py
+  - issue: P4.16
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ROI.py
+  - issue: P4.21
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ArrowItem.py
+  - issue: P4.22
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/TextItem.py
+    - pyqtgraph/graphicsItems/LabelItem.py
+  - issue: P4.23
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/ScaleBar.py
+  - issue: P4.24
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GradientEditorItem.py
+  - issue: P4.25
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GradientLegend.py
+  - issue: P3.01
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/PlotWidget.py
+  - issue: P5.01
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/HistogramLUTWidget.py
+    - pyqtgraph/widgets/MatplotlibWidget.py
+    - pyqtgraph/widgets/DataFilterWidget.py
+    - pyqtgraph/widgets/ValueLabel.py
+    - pyqtgraph/widgets/PenPreviewLabel.py
+  - issue: P5.07
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/RawImageWidget.py
+  - issue: P5.08
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ScatterPlotWidget.py
+  - issue: P5.10
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/RemoteGraphicsView.py
+  - issue: P5.12
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ColorButton.py
+  - issue: P5.13
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ColorMapButton.py
+    - pyqtgraph/widgets/ColorMapMenu.py
+  - issue: P5.14
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ColorMapWidget.py
+    - pyqtgraph/widgets/GradientWidget.py
+  - issue: P5.15
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/TreeWidget.py
+    - pyqtgraph/widgets/CheckTable.py
+  - issue: P5.16
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/DataTreeWidget.py
+    - pyqtgraph/widgets/DiffTreeWidget.py
+  - issue: P5.17
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/TableWidget.py
+  - issue: P5.18
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ComboBox.py
+  - issue: P5.19
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/SpinBox.py
+  - issue: P5.20
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/JoystickButton.py
+    - pyqtgraph/widgets/VerticalLabel.py
+  - issue: P5.21
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/LayoutWidget.py
+  - issue: P5.22
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/GroupBox.py
+  - issue: P5.23
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/FileDialog.py
+    - pyqtgraph/widgets/PathButton.py
+  - issue: P5.24
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/ProgressDialog.py
+  - issue: P5.25
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/widgets/FeedbackButton.py
+  - issue: P3.12
+    section: source_files
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GraphicsLayout.py
+  - issue: P3.12
+    section: classes
+    path_key: upstream_path
+    patterns:
+    - pyqtgraph/graphicsItems/GraphicsLayout.py
 source_files:
 - upstream_path: pyqtgraph/GraphicsScene/GraphicsScene.py
   target_header_path: include/pyqtgraph/GraphicsScene/GraphicsScene.hpp

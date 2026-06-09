@@ -1,40 +1,50 @@
 version: 1
 claims:
-  - issue: P0.05
-    branch: ai/issue-99
-    status: active
-    owned_files:
-      - ownership.yaml
-      - scripts/**claim*
-      - scripts/**ownership*
-      - scripts/gate
-      - tests/test_claim_ticket.py
-      - tests/test_board_policy.py
-    adjuncts:
-      - focused-doc-report
+- issue: P0.05
+  branch: ai/issue-99
+  status: done
+  owned_files:
+  - ownership.yaml
+  - scripts/**claim*
+  - scripts/**ownership*
+  - scripts/gate
+  - tests/test_claim_ticket.py
+  - tests/test_board_policy.py
+  adjuncts:
+  - focused-doc-report
+- issue: P0.10
+  branch: ai/issue-104
+  status: active
+  owned_files:
+  - ownership.yaml
+  - port_manifest.yaml
+  - scripts/check_manifest_ownership
+  - tests/test_proposed_issue_audit_P0_10.py
+  adjuncts:
+  - focused-doc-report
 manifest_ownership:
-  - issue: P0.04
-    section: source_files
-    path_key: upstream_path
-    patterns:
-      - pyqtgraph/**
-  - issue: P0.04
-    section: examples
-    path_key: upstream_path
-    patterns:
-      - pyqtgraph/examples/**
-  - issue: P0.04
-    section: example_assets
-    path_key: upstream_path
-    patterns:
-      - pyqtgraph/examples/**
-  - issue: P0.04
-    section: classes
-    path_key: upstream_path
-    patterns:
-      - pyqtgraph/**
-  - issue: P0.04
-    section: example_validation_levels
-    path_key: upstream_path
-    patterns:
-      - pyqtgraph/examples/**
+- issue: P0.04
+  section: source_files
+  path_key: upstream_path
+  patterns:
+  - pyqtgraph/**
+- issue: P0.04
+  section: examples
+  path_key: upstream_path
+  patterns:
+  - pyqtgraph/examples/**
+- issue: P0.04
+  section: example_assets
+  path_key: upstream_path
+  patterns:
+  - pyqtgraph/examples/**
+- issue: P0.04
+  section: classes
+  path_key: upstream_path
+  patterns:
+  - pyqtgraph/**
+- issue: P0.04
+  section: example_validation_levels
+  path_key: upstream_path
+  patterns:
+  - pyqtgraph/examples/**

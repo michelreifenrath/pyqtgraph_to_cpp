@@ -18,6 +18,12 @@ TRACKED_SECTIONS = (
     "classes",
     "example_validation_levels",
 )
+PROPOSED_ISSUE_SECTIONS = (
+    "source_files",
+    "examples",
+    "example_assets",
+    "classes",
+)
 DEFAULT_PATH_KEYS = {
     "source_files": "upstream_path",
     "examples": "upstream_path",
@@ -96,6 +102,146 @@ def row_identifier(section: str, row: dict[str, Any], index: int) -> str:
     return f"{section}[{index}]"
 
 
+def matches_pattern(value: str, pattern: str) -> bool:
+    if pattern.endswith("/*.py") and "/**" not in pattern:
+        prefix = pattern[: -len("*.py")]
+        if not value.startswith(prefix):
+            return False
+        rest = value[len(prefix) :]
+        return rest.endswith(".py") and "/" not in rest
+    return fnmatch.fnmatchcase(value, pattern)
+
+
+def matching_proposed_issues(
+    section: str, value: str, rules: list[dict[str, Any]]
+) -> list[str]:
+    issues: list[str] = []
+    for rule in rules:
+        if rule["section"] != section:
+            continue
+        if any(matches_pattern(value, pattern) for pattern in rule["patterns"]):
+            issues.append(rule["issue"])
+    return issues
+
+
+def validate_proposed_issue_rule(
+    rule: Any, index: int, manifest_sections: set[str]
+) -> dict[str, Any]:
+    prefix = f"proposed_issue_ownership.rules[{index}]"
+    if not isinstance(rule, dict):
+        raise OwnershipError(f"{prefix} must be a mapping")
+    issue = rule.get("issue")
+    if not isinstance(issue, str) or not issue.strip():
+        raise OwnershipError(f"{prefix}.issue must be a non-empty local issue id")
+    section = rule.get("section")
+    if not isinstance(section, str) or section not in PROPOSED_ISSUE_SECTIONS:
+        raise OwnershipError(
+            f"{prefix}.section must be one of {', '.join(PROPOSED_ISSUE_SECTIONS)}"
+        )
+    if section not in manifest_sections:
+        raise OwnershipError(f"{prefix}.section={section} is stale: missing from manifest")
+    path_key = rule.get("path_key", DEFAULT_PATH_KEYS[section])
+    if not isinstance(path_key, str) or not path_key.strip():
+        raise OwnershipError(f"{prefix}.path_key must be a non-empty string")
+    patterns = rule.get("patterns")
+    if not isinstance(patterns, list) or not patterns:
+        raise OwnershipError(f"{prefix}.patterns must be a non-empty list")
+    for pattern in patterns:
+        if not isinstance(pattern, str) or not pattern.strip():
+            raise OwnershipError(f"{prefix}.patterns entries must be non-empty strings")
+    return {
+        "issue": issue.strip(),
+        "section": section,
+        "path_key": path_key,
+        "patterns": patterns,
+    }
+
+
+def load_proposed_issue_rules(
+    manifest: dict[str, Any], manifest_sections: set[str]
+) -> list[dict[str, Any]] | None:
+    metadata = manifest.get("proposed_issue_ownership")
+    if metadata is None:
+        return None
+    if not isinstance(metadata, dict):
+        raise OwnershipError("proposed_issue_ownership must be a mapping")
+    rules = metadata.get("rules")
+    if not isinstance(rules, list) or not rules:
+        raise OwnershipError("proposed_issue_ownership.rules must be a non-empty list")
+    return [
+        validate_proposed_issue_rule(rule, index, manifest_sections)
+        for index, rule in enumerate(rules)
+    ]
+
+
+def check_proposed_issue_ownership(
+    manifest: dict[str, Any], rules: list[dict[str, Any]]
+) -> tuple[list[str], dict[str, dict[str, int]]]:
+    errors: list[str] = []
+    summary: dict[str, dict[str, int]] = {}
+    matched_rule_counts = [0] * len(rules)
+
+    for section in PROPOSED_ISSUE_SECTIONS:
+        rows = manifest.get(section)
+        if rows is None:
+            continue
+        if not isinstance(rows, list):
+            errors.append(f"{section} must be a list")
+            continue
+
+        section_summary = {"entries": 0, "issues": 0}
+        section_issues: set[str] = set()
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                errors.append(f"{section}[{index}] must be a mapping")
+                continue
+            path_key = DEFAULT_PATH_KEYS[section]
+            value = row.get(path_key)
+            if not isinstance(value, str) or not value:
+                errors.append(
+                    f"unmapped manifest entry: {section}[{index}] "
+                    f"{row_identifier(section, row, index)}"
+                )
+                continue
+
+            matched_issues: list[str] = []
+            for rule_index, rule in enumerate(rules):
+                if rule["section"] != section:
+                    continue
+                if any(matches_pattern(value, pattern) for pattern in rule["patterns"]):
+                    matched_issues.append(rule["issue"])
+                    matched_rule_counts[rule_index] += 1
+
+            unique_issues = sorted(set(matched_issues))
+            if not unique_issues:
+                errors.append(
+                    f"unmapped manifest entry: {section}[{index}] {value}"
+                )
+                continue
+            if len(unique_issues) > 1:
+                errors.append(
+                    "inconsistent proposed issue mapping: "
+                    f"{section}[{index}] {value} -> {', '.join(unique_issues)}"
+                )
+                continue
+
+            section_summary["entries"] += 1
+            section_issues.add(unique_issues[0])
+
+        section_summary["issues"] = len(section_issues)
+        summary[section] = section_summary
+
+    for rule_index, rule in enumerate(rules):
+        if matched_rule_counts[rule_index] == 0:
+            errors.append(
+                "stale proposed issue rule: "
+                f"{rule['section']} patterns match no manifest entries "
+                f"(issue={rule['issue']}, patterns={rule['patterns']})"
+            )
+
+    return errors, summary
+
+
 def row_is_owned(section: str, row: dict[str, Any], rules: list[dict[str, Any]]) -> bool:
     for rule in rules:
         if rule["section"] != section:
@@ -136,6 +282,13 @@ def main(argv: list[str] | None = None) -> int:
         manifest_sections = {key for key, value in manifest.items() if isinstance(value, list)}
         rules = load_rules(ownership, manifest_sections)
         errors = check_manifest_ownership(manifest, rules)
+        proposed_rules = load_proposed_issue_rules(manifest, manifest_sections)
+        proposed_summary: dict[str, dict[str, int]] = {}
+        if proposed_rules is not None:
+            proposed_errors, proposed_summary = check_proposed_issue_ownership(
+                manifest, proposed_rules
+            )
+            errors.extend(proposed_errors)
     except OwnershipError as exc:
         print(f"manifest ownership check failed: {exc}", file=sys.stderr)
         return 1
@@ -147,6 +300,17 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print("manifest ownership check passed")
+    if proposed_summary:
+        total_entries = sum(section["entries"] for section in proposed_summary.values())
+        print(f"proposed issue audit passed ({total_entries} entries)")
+        for section in PROPOSED_ISSUE_SECTIONS:
+            if section not in proposed_summary:
+                continue
+            section_summary = proposed_summary[section]
+            print(
+                f"  {section}: entries={section_summary['entries']} "
+                f"issues={section_summary['issues']}"
+            )
     return 0
 
 
