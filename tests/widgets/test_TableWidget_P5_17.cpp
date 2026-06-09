@@ -168,6 +168,12 @@ bool testSortingModes()
     CHECK(dynamic_cast<const pyqtgraph::widgets::TableWidgetItem*>(table.item(0, 1))->value().toInt() == 1);
     CHECK(dynamic_cast<const pyqtgraph::widgets::TableWidgetItem*>(table.item(2, 1))->value().toInt() == 10);
 
+    table.setSortMode(0, TableSortMode::Value);
+    table.sortByColumn(0, Qt::AscendingOrder);
+    CHECK(table.item(0, 0)->text() == QStringLiteral("a"));
+    CHECK(table.item(1, 0)->text() == QStringLiteral("b"));
+    CHECK(table.item(2, 0)->text() == QStringLiteral("c"));
+
     table.setSortMode(0, TableSortMode::Index);
     table.sortByColumn(0, Qt::AscendingOrder);
     CHECK(table.item(0, 0)->text() == QStringLiteral("b"));

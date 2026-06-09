@@ -29,6 +29,27 @@ QString formatValue(const QVariant& value)
     return value.toString();
 }
 
+bool tryAsDouble(const QVariant& value, double* out)
+{
+    if (value.metaType().id() == QMetaType::Double || value.metaType().id() == QMetaType::Float) {
+        *out = value.toDouble();
+        return true;
+    }
+    if (value.metaType().id() == QMetaType::Int) {
+        *out = static_cast<double>(value.toInt());
+        return true;
+    }
+    if (value.metaType().id() == QMetaType::QString) {
+        bool ok = false;
+        const double converted = value.toString().toDouble(&ok);
+        if (ok) {
+            *out = converted;
+            return true;
+        }
+    }
+    return false;
+}
+
 QVariant convertTextToValue(const QVariant& currentValue, const QString& text)
 {
     if (currentValue.metaType().id() == QMetaType::Int) {
@@ -102,8 +123,10 @@ bool TableWidgetItem::operator<(const QTableWidgetItem& other) const
     if (sortMode_ == TableSortMode::Value && otherItem != nullptr) {
         const QVariant left = value_;
         const QVariant right = otherItem->value_;
-        if (left.canConvert<double>() && right.canConvert<double>()) {
-            return left.toDouble() < right.toDouble();
+        double leftValue = 0.0;
+        double rightValue = 0.0;
+        if (tryAsDouble(left, &leftValue) && tryAsDouble(right, &rightValue)) {
+            return leftValue < rightValue;
         }
         return left.toString() < right.toString();
     }
