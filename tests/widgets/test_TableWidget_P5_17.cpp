@@ -174,6 +174,19 @@ bool testSortingModes()
     CHECK(table.item(1, 0)->text() == QStringLiteral("b"));
     CHECK(table.item(2, 0)->text() == QStringLiteral("c"));
 
+    TableWidget stringValueTable;
+    const QVariantList stringRows = {
+        QVariant::fromValue(QVariantList{QStringLiteral("2")}),
+        QVariant::fromValue(QVariantList{QStringLiteral("10")}),
+        QVariant::fromValue(QVariantList{QStringLiteral("1")}),
+    };
+    stringValueTable.setData(stringRows);
+    stringValueTable.setSortMode(0, TableSortMode::Value);
+    stringValueTable.sortByColumn(0, Qt::AscendingOrder);
+    CHECK(stringValueTable.item(0, 0)->text() == QStringLiteral("1"));
+    CHECK(stringValueTable.item(1, 0)->text() == QStringLiteral("10"));
+    CHECK(stringValueTable.item(2, 0)->text() == QStringLiteral("2"));
+
     table.setSortMode(0, TableSortMode::Index);
     table.sortByColumn(0, Qt::AscendingOrder);
     CHECK(table.item(0, 0)->text() == QStringLiteral("b"));

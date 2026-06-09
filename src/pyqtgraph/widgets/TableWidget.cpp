@@ -39,14 +39,6 @@ bool tryAsDouble(const QVariant& value, double* out)
         *out = static_cast<double>(value.toInt());
         return true;
     }
-    if (value.metaType().id() == QMetaType::QString) {
-        bool ok = false;
-        const double converted = value.toString().toDouble(&ok);
-        if (ok) {
-            *out = converted;
-            return true;
-        }
-    }
     return false;
 }
 
