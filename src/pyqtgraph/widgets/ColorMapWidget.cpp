@@ -28,10 +28,30 @@ std::array<double, 4> colorToFloat(const QColor& color)
 
 std::array<std::uint8_t, 4> floatToByte(const std::array<double, 4>& color)
 {
-    return {static_cast<std::uint8_t>(std::lround(clip01(color[0]) * 255.0)),
-        static_cast<std::uint8_t>(std::lround(clip01(color[1]) * 255.0)),
-        static_cast<std::uint8_t>(std::lround(clip01(color[2]) * 255.0)),
-        static_cast<std::uint8_t>(std::lround(clip01(color[3]) * 255.0))};
+    return {static_cast<std::uint8_t>(clip01(color[0]) * 255.0),
+        static_cast<std::uint8_t>(clip01(color[1]) * 255.0),
+        static_cast<std::uint8_t>(clip01(color[2]) * 255.0),
+        static_cast<std::uint8_t>(clip01(color[3]) * 255.0)};
+}
+
+QVariantMap channelsToVariant(const ColorMapChannels& channels)
+{
+    QVariantMap channelState;
+    channelState.insert(QStringLiteral("Red"), channels.red);
+    channelState.insert(QStringLiteral("Green"), channels.green);
+    channelState.insert(QStringLiteral("Blue"), channels.blue);
+    channelState.insert(QStringLiteral("Alpha"), channels.alpha);
+    return channelState;
+}
+
+ColorMapChannels channelsFromVariant(const QVariantMap& channelState)
+{
+    ColorMapChannels channels;
+    channels.red = channelState.value(QStringLiteral("Red"), true).toBool();
+    channels.green = channelState.value(QStringLiteral("Green"), true).toBool();
+    channels.blue = channelState.value(QStringLiteral("Blue"), true).toBool();
+    channels.alpha = channelState.value(QStringLiteral("Alpha"), true).toBool();
+    return channels;
 }
 
 QImage lookupStripImage(const pyqtgraph::ColorMap& colorMap, int width)
@@ -134,6 +154,10 @@ void ColorMapWidget::applyDefaults(RangeColorMapMapping& mapping, const ColorMap
             mapping.minValue = value.toDouble();
         } else if (key == QStringLiteral("Max")) {
             mapping.maxValue = value.toDouble();
+        } else if (key == QStringLiteral("NaN")) {
+            mapping.nanColor = value.value<QColor>();
+        } else if (key == QStringLiteral("Channels") && value.typeId() == QMetaType::QVariantMap) {
+            mapping.channels = channelsFromVariant(value.toMap());
         }
     }
 }
@@ -154,6 +178,8 @@ void ColorMapWidget::applyDefaults(EnumColorMapMapping& mapping, const ColorMapF
             mapping.enabled = value.toBool();
         } else if (key == QStringLiteral("Default")) {
             mapping.defaultColor = value.value<QColor>();
+        } else if (key == QStringLiteral("Channels") && value.typeId() == QMetaType::QVariantMap) {
+            mapping.channels = channelsFromVariant(value.toMap());
         }
     }
 }
@@ -320,6 +346,8 @@ QVariantMap ColorMapWidget::saveState() const
         itemState.insert(QStringLiteral("Max"), mapping.maxValue);
         itemState.insert(QStringLiteral("Operation"), operationToString(mapping.operation));
         itemState.insert(QStringLiteral("Enabled"), mapping.enabled);
+        itemState.insert(QStringLiteral("NaN"), mapping.nanColor);
+        itemState.insert(QStringLiteral("Channels"), channelsToVariant(mapping.channels));
         QVariantList positions;
         QVariantList colors;
         for (double position : mapping.colorMap.positions()) {
@@ -342,6 +370,7 @@ QVariantMap ColorMapWidget::saveState() const
         itemState.insert(QStringLiteral("Operation"), operationToString(mapping.operation));
         itemState.insert(QStringLiteral("Enabled"), mapping.enabled);
         itemState.insert(QStringLiteral("Default"), mapping.defaultColor);
+        itemState.insert(QStringLiteral("Channels"), channelsToVariant(mapping.channels));
         QVariantList values;
         for (const auto& [maskValue, color] : mapping.valueColors) {
             QVariantMap entry;
@@ -404,6 +433,9 @@ void ColorMapWidget::restoreState(const QVariantMap& state)
             mapping->operation = operationFromString(itemState.value(QStringLiteral("Operation")).toString());
             mapping->enabled = itemState.value(QStringLiteral("Enabled"), true).toBool();
             mapping->defaultColor = itemState.value(QStringLiteral("Default")).value<QColor>();
+            if (itemState.contains(QStringLiteral("Channels"))) {
+                mapping->channels = channelsFromVariant(itemState.value(QStringLiteral("Channels")).toMap());
+            }
             mapping->valueColors.clear();
             for (const QVariant& entryVariant : itemState.value(QStringLiteral("values")).toList()) {
                 const QVariantMap entry = entryVariant.toMap();
@@ -419,6 +451,12 @@ void ColorMapWidget::restoreState(const QVariantMap& state)
             mapping->maxValue = itemState.value(QStringLiteral("Max")).toDouble();
             mapping->operation = operationFromString(itemState.value(QStringLiteral("Operation")).toString());
             mapping->enabled = itemState.value(QStringLiteral("Enabled"), true).toBool();
+            if (itemState.contains(QStringLiteral("NaN"))) {
+                mapping->nanColor = itemState.value(QStringLiteral("NaN")).value<QColor>();
+            }
+            if (itemState.contains(QStringLiteral("Channels"))) {
+                mapping->channels = channelsFromVariant(itemState.value(QStringLiteral("Channels")).toMap());
+            }
             if (itemState.contains(QStringLiteral("colormap"))) {
                 const QVariantMap colorMapState = itemState.value(QStringLiteral("colormap")).toMap();
                 std::vector<double> positions;

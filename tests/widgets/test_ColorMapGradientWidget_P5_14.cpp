@@ -342,32 +342,36 @@ QImage lookupStripImage(const pyqtgraph::ColorMap& colorMap, int width, int heig
     return image;
 }
 
+QImage cropColorMapStrip(const QImage& image)
+{
+    constexpr int stripHeight = 16;
+    constexpr int labelSkip = 72;
+    const int stripWidth = std::max(32, colorMapWidgetWidth - 8);
+    const int compareWidth = stripWidth - labelSkip;
+    return image.copy(4 + labelSkip, 4, compareWidth, stripHeight);
+}
+
 QImage renderColorMapWidgetReference(const pyqtgraph::ColorMap& colorMap)
 {
-    using pyqtgraph::widgets::ColorMapFieldOptions;
     using pyqtgraph::widgets::ColorMapWidget;
 
-    ColorMapWidget widget;
-    ColorMapFieldOptions options;
-    options.mode = QStringLiteral("range");
-    QVariantMap colorMapState;
-    QVariantList positions;
-    QVariantList colors;
-    for (double position : colorMap.positions()) {
-        positions.push_back(position);
+    constexpr int stripHeight = 16;
+    const int stripWidth = std::max(32, colorMapWidgetWidth - 8);
+
+    ColorMapWidget paletteWidget;
+    QImage image(colorMapWidgetWidth, colorMapWidgetHeight, QImage::Format_ARGB32_Premultiplied);
+    image.fill(paletteWidget.palette().color(QPalette::Window));
+
+    const QImage strip = lookupStripImage(colorMap, stripWidth, 1);
+    QPainter painter(&image);
+    const QRect stripRect(4, 4, stripWidth, stripHeight);
+    if (!strip.isNull()) {
+        painter.drawImage(stripRect, strip.scaled(stripRect.size(), Qt::IgnoreAspectRatio, Qt::FastTransformation));
+    } else {
+        painter.fillRect(stripRect, Qt::darkGray);
     }
-    for (const QColor& color : colorMap.colors()) {
-        colors.push_back(color);
-    }
-    colorMapState.insert(QStringLiteral("positions"), positions);
-    colorMapState.insert(QStringLiteral("colors"), colors);
-    options.defaults.insert(QStringLiteral("colormap"), colorMapState);
-    widget.setFields({{QStringLiteral("intensity"), options}});
-    widget.addColorMap(QStringLiteral("intensity"));
-    widget.resize(colorMapWidgetWidth, colorMapWidgetHeight);
-    widget.show();
-    QApplication::processEvents();
-    return widget.grab().toImage();
+    painter.end();
+    return cropColorMapStrip(image);
 }
 
 QImage renderColorMapWidgetActual(const pyqtgraph::ColorMap& colorMap)
@@ -395,7 +399,7 @@ QImage renderColorMapWidgetActual(const pyqtgraph::ColorMap& colorMap)
     widget.resize(colorMapWidgetWidth, colorMapWidgetHeight);
     widget.show();
     QApplication::processEvents();
-    return widget.grab().toImage();
+    return cropColorMapStrip(widget.grab().toImage());
 }
 
 bool writeIssueReport()
@@ -532,6 +536,46 @@ bool testColorMapWidgetMapping()
     CHECK(restoredBytes.size() == rangeBytes.size());
     CHECK(restoredBytes[0] == rangeBytes[0]);
     CHECK(restoredBytes[1] == rangeBytes[1]);
+    CHECK(restoredBytes[2] == rangeBytes[2]);
+
+    rangeMapping->channels.red = true;
+    rangeMapping->channels.green = false;
+    rangeMapping->channels.blue = false;
+    rangeMapping->channels.alpha = false;
+    rangeMapping->nanColor = QColor(10, 20, 30);
+    const QVariantMap savedWithChannels = widget.saveState();
+    ColorMapWidget restoredChannels;
+    restoredChannels.restoreState(savedWithChannels);
+    CHECK(restoredChannels.rangeMappings().size() == 1);
+    CHECK(restoredChannels.rangeMappings()[0].channels.red);
+    CHECK(!restoredChannels.rangeMappings()[0].channels.green);
+    CHECK(!restoredChannels.rangeMappings()[0].channels.blue);
+    CHECK(!restoredChannels.rangeMappings()[0].channels.alpha);
+    CHECK(restoredChannels.rangeMappings()[0].nanColor == QColor(10, 20, 30));
+    const auto channelBytes = restoredChannels.mapBytes(rangeData);
+    CHECK(channelBytes[0][0] >= 120 && channelBytes[0][0] <= 140);
+    CHECK(channelBytes[0][1] == 0);
+    CHECK(channelBytes[0][2] == 0);
+    CHECK(channelBytes[2][0] == 10);
+    CHECK(channelBytes[2][1] == 0);
+    CHECK(channelBytes[2][2] == 0);
+
+    ColorMapWidget byteWidget;
+    ColorMapFieldOptions byteField;
+    byteField.mode = QStringLiteral("range");
+    byteField.defaults.insert(QStringLiteral("Min"), 0.0);
+    byteField.defaults.insert(QStringLiteral("Max"), 1.0);
+    QVariantMap byteColorMapState;
+    byteColorMapState.insert(QStringLiteral("positions"), QVariantList{0.0, 1.0});
+    byteColorMapState.insert(QStringLiteral("colors"), QVariantList{QColor(0, 0, 0), QColor(255, 255, 255)});
+    byteField.defaults.insert(QStringLiteral("colormap"), byteColorMapState);
+    byteWidget.setFields({{QStringLiteral("value"), byteField}});
+    byteWidget.addColorMap(QStringLiteral("value"));
+    pyqtgraph::widgets::ColorMapRecordArray byteData;
+    byteData.push_back({{QStringLiteral("value"), 0.5}});
+    const auto byteResult = byteWidget.map(byteData, pyqtgraph::widgets::ColorMapOutputMode::Byte);
+    CHECK(byteResult.size() == 1);
+    CHECK(byteResult[0][0] == static_cast<double>(127) / 255.0);
 
     ColorMapWidget enumWidget;
     enumWidget.setFields({{QStringLiteral("category"), enumField}});
