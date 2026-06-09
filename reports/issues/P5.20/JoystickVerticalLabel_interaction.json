@@ -1,0 +1,13 @@
+{
+  "issue": "P5.20",
+  "classes": ["pyqtgraph::widgets::JoystickButton", "pyqtgraph::widgets::VerticalLabel"],
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/JoystickButton.py and VerticalLabel.py",
+  "manifest_targets": ["include/pyqtgraph/widgets/JoystickButton.hpp", "src/pyqtgraph/widgets/JoystickButton.cpp", "include/pyqtgraph/widgets/VerticalLabel.hpp", "src/pyqtgraph/widgets/VerticalLabel.cpp"],
+  "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.20 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_joystickbutton_verticallabel_p5_20"},
+  "checks": ["JoystickButton API shape and fixed 50x50 checkable button", "JoystickButton normalized squared-radius setState", "JoystickButton press/drag/release interaction", "VerticalLabel API shape and default sizeHint", "VerticalLabel orientation switch", "deterministic visual reference-vs-actual pixels"],
+  "visual_artifacts": {"root": "reports/visual-diffs/JoystickVerticalLabel", "cases": ["JoystickButton-center", "JoystickButton-dragged", "VerticalLabel-vertical", "VerticalLabel-horizontal"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
+  "semantic_pixels": {"reference": 6088, "actual": 6088},
+  "visual_metrics": {"changed_pixels": 0, "max_delta": 0, "mean_delta": 0.000000, "passed": true},
+  "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.20 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
+}
