@@ -7,6 +7,7 @@
 #include <QtCore/QTextStream>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
+#include <QtGui/QPaintEvent>
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
@@ -372,29 +373,169 @@ bool testVerticalLabelOrientationSwitch()
     return true;
 }
 
-QImage renderVerticalLabelWidget(const QString& text, const QString& orientation)
+// Upstream-derived reference oracle for pyqtgraph/widgets/JoystickButton.py (a20028b).
+class ReferenceJoystickButton : public QPushButton {
+public:
+    ReferenceJoystickButton()
+    {
+        setCheckable(true);
+        setFixedWidth(50);
+        setFixedHeight(50);
+        setState(0.0, 0.0);
+    }
+
+    void setState(double x, double y)
+    {
+        const double length = std::hypot(x, y);
+        double normalizedX = 0.0;
+        double normalizedY = 0.0;
+        if (x != 0.0) {
+            normalizedX = x / length;
+        }
+        if (y != 0.0) {
+            normalizedY = y / length;
+        }
+
+        double clampedLength = length;
+        if (clampedLength > radius_) {
+            clampedLength = radius_;
+        }
+        const double scaledLength = std::pow(clampedLength / radius_, 2.0);
+        const double stateX = normalizedX * scaledLength;
+        const double stateY = normalizedY * scaledLength;
+
+        const double halfWidth = static_cast<double>(width()) / 2.0;
+        const double halfHeight = static_cast<double>(height()) / 2.0;
+        spotPos_ = QPoint(static_cast<int>(halfWidth * (1.0 + stateX)), static_cast<int>(halfHeight * (1.0 - stateY)));
+        update();
+
+        if (state_.size() == 2 && state_[0] == stateX && state_[1] == stateY) {
+            return;
+        }
+        state_ = {stateX, stateY};
+    }
+
+protected:
+    void paintEvent(QPaintEvent* event) override
+    {
+        QPushButton::paintEvent(event);
+        QPainter painter(this);
+        painter.setBrush(QBrush(QColor(0, 0, 0)));
+        painter.drawEllipse(spotPos_.x() - 3, spotPos_.y() - 3, 6, 6);
+    }
+
+private:
+    double radius_ = 200.0;
+    QPoint spotPos_{25, 25};
+    QVector<double> state_{0.0, 0.0};
+};
+
+// Upstream-derived reference oracle for pyqtgraph/widgets/VerticalLabel.py (a20028b).
+class ReferenceVerticalLabel : public QLabel {
+public:
+    ReferenceVerticalLabel(const QString& text, const QString& orientation, bool forceWidth)
+        : QLabel(text)
+        , forceWidth_(forceWidth)
+    {
+        setOrientation(orientation);
+    }
+
+    void setOrientation(const QString& orientation)
+    {
+        if (orientation_ == orientation) {
+            return;
+        }
+        orientation_ = orientation;
+        update();
+        updateGeometry();
+    }
+
+    QSize sizeHint() const override
+    {
+        if (orientation_ == QStringLiteral("vertical")) {
+            if (hasTextHint_) {
+                return QSize(textHint_.height(), textHint_.width());
+            }
+            return QSize(19, 50);
+        }
+        if (hasTextHint_) {
+            return QSize(textHint_.width(), textHint_.height());
+        }
+        return QSize(50, 19);
+    }
+
+protected:
+    void paintEvent(QPaintEvent* /*event*/) override
+    {
+        QPainter painter(this);
+
+        QRect region;
+        if (orientation_ == QStringLiteral("vertical")) {
+            painter.rotate(-90.0);
+            region = QRect(-height(), 0, height(), width());
+        } else {
+            region = contentsRect();
+        }
+
+        const Qt::Alignment textAlignment = QLabel::alignment();
+        textHint_ = painter.boundingRect(region, static_cast<int>(textAlignment), text());
+        painter.drawText(region, static_cast<int>(textAlignment), text());
+        hasTextHint_ = true;
+        painter.end();
+
+        if (orientation_ == QStringLiteral("vertical")) {
+            setMaximumWidth(textHint_.height());
+            setMinimumWidth(0);
+            setMaximumHeight(16777215);
+            if (forceWidth_) {
+                setMinimumHeight(textHint_.width());
+            } else {
+                setMinimumHeight(0);
+            }
+        } else {
+            setMaximumHeight(textHint_.height());
+            setMinimumHeight(0);
+            setMaximumWidth(16777215);
+            if (forceWidth_) {
+                setMinimumWidth(textHint_.width());
+            } else {
+                setMinimumWidth(0);
+            }
+        }
+    }
+
+private:
+    bool forceWidth_ = true;
+    QString orientation_;
+    QRect textHint_;
+    bool hasTextHint_ = false;
+};
+
+QImage grabWidget(QWidget& widget)
 {
-    pyqtgraph::widgets::VerticalLabel label(text, orientation, true);
-    label.setAlignment(Qt::AlignCenter);
-    label.show();
+    widget.show();
     QApplication::processEvents();
-    label.repaint();
+    widget.repaint();
     QApplication::processEvents();
-    label.resize(label.sizeHint());
+    widget.resize(widget.sizeHint());
     QApplication::processEvents();
-    label.repaint();
+    widget.repaint();
     QApplication::processEvents();
-    return label.grab().toImage();
+    return widget.grab().toImage();
 }
 
 QImage renderVerticalLabelReference(const QString& text, const QString& orientation)
 {
-    return renderVerticalLabelWidget(text, orientation);
+    ReferenceVerticalLabel label(text, orientation, true);
+    label.setAlignment(Qt::AlignCenter);
+    return grabWidget(label);
 }
 
 QImage renderVerticalLabelActual(const QString& text, const QString& orientation)
 {
-    return renderVerticalLabelWidget(text, orientation);
+    pyqtgraph::widgets::VerticalLabel label(text, orientation, true);
+    label.setAlignment(Qt::AlignCenter);
+    return grabWidget(label);
 }
 
 QImage renderJoystickButtonActual(double rawX, double rawY)
@@ -409,7 +550,7 @@ QImage renderJoystickButtonActual(double rawX, double rawY)
 
 QImage renderJoystickButtonReference(double rawX, double rawY)
 {
-    pyqtgraph::widgets::JoystickButton reference;
+    ReferenceJoystickButton reference;
     reference.show();
     QApplication::processEvents();
     reference.setState(rawX, rawY);
@@ -459,7 +600,7 @@ bool writeCaseArtifacts(const QString& caseName, const QString& widget, const QI
             + QStringLiteral(
                 "\",\n"
                 "  \"compared_paths\": {\"reference\": \"reference.png\", \"actual\": \"actual.png\", \"diff\": \"diff.png\"},\n"
-                "  \"reference_source\": \"pyqtgraph-0.14.0 pinned commit a20028b\",\n"
+                "  \"reference_source\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/JoystickButton.py and VerticalLabel.py upstream-derived test oracle\",\n"
                 "  \"pinned_commit\": \"a20028b98294b9cc8770f2015a92eb342224b788\",\n"
                 "  \"dimensions\": [")
             + QString::number(reference.width())

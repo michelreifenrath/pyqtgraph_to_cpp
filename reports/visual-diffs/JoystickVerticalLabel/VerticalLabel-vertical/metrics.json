@@ -3,7 +3,7 @@
   "issue": "P5.20",
   "widget": "VerticalLabel",
   "compared_paths": {"reference": "reference.png", "actual": "actual.png", "diff": "diff.png"},
-  "reference_source": "pyqtgraph-0.14.0 pinned commit a20028b",
+  "reference_source": "pyqtgraph-0.14.0 pyqtgraph/widgets/JoystickButton.py and VerticalLabel.py upstream-derived test oracle",
   "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
   "dimensions": [15, 50],
   "fixture_hash": "P5.20:VerticalLabel-vertical:v1",
