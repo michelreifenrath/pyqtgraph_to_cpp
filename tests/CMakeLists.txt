@@ -654,6 +654,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.DataTreeWidget_DiffTreeWidget.P5_16 PROPERTIES LABELS P5.16)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_tablewidget_p5_17
+        widgets/test_TableWidget_P5_17.cpp
+        pyqtgraph_cpp.widgets.TableWidget.P5_17
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_tablewidget_p5_17 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_tablewidget_p5_17 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_tablewidget_p5_17
+        PRIVATE
+            PYQTGRAPH_CPP_P5_17_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.17"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.TableWidget.P5_17 PROPERTIES LABELS P5.17)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
