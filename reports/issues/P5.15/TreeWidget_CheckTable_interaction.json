@@ -1,0 +1,10 @@
+{
+  "issue": "P5.15",
+  "classes": ["pyqtgraph::widgets::TreeWidget", "pyqtgraph::widgets::CheckTable"],
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/TreeWidget.py; CheckTable.py",
+  "manifest_targets": ["include/pyqtgraph/widgets/TreeWidget.hpp", "src/pyqtgraph/widgets/TreeWidget.cpp", "include/pyqtgraph/widgets/CheckTable.hpp", "src/pyqtgraph/widgets/CheckTable.cpp"],
+  "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_treewidget_checktable_p5_15"},
+  "checks": ["TreeWidget edit triggers, selection, expansion, check/text signals", "TreeWidgetItem widget caching and setData signal emission", "CheckTable dynamic rows with removed-row state reuse", "CheckTable sigStateChanged and saveState/restoreState"],
+  "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}]
+}
