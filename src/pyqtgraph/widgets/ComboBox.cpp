@@ -5,7 +5,9 @@
 
 #include "../../../include/pyqtgraph/widgets/ComboBox.hpp"
 
+#include <QtCore/QList>
 #include <QtCore/QMetaType>
+#include <QtCore/QSet>
 #include <QtCore/QVariantList>
 #include <QtCore/QVariantMap>
 
@@ -17,29 +19,34 @@ namespace pyqtgraph::widgets {
 
 namespace {
 
-QMap<QString, QVariant> normalizeItems(const QVariant& items)
+struct NormalizedItem {
+    QString text;
+    QVariant value;
+};
+
+QList<NormalizedItem> normalizeItems(const QVariant& items)
 {
     if (items.metaType().id() == QMetaType::QStringList) {
-        QMap<QString, QVariant> mapped;
+        QList<NormalizedItem> mapped;
         for (const QString& text : items.toStringList()) {
-            mapped.insert(text, text);
+            mapped.append({text, text});
         }
         return mapped;
     }
 
     if (items.canConvert<QVariantList>()) {
         const QVariantList list = items.toList();
-        QMap<QString, QVariant> mapped;
+        QList<NormalizedItem> mapped;
         for (const QVariant& entry : list) {
             if (entry.metaType().id() == QMetaType::QString) {
                 const QString text = entry.toString();
-                mapped.insert(text, text);
+                mapped.append({text, text});
             } else if (entry.canConvert<QVariantList>()) {
                 const QVariantList pair = entry.toList();
                 if (pair.size() < 2) {
                     throw std::invalid_argument("item pair must contain text and value");
                 }
-                mapped.insert(pair.at(0).toString(), pair.at(1));
+                mapped.append({pair.at(0).toString(), pair.at(1)});
             } else {
                 throw std::invalid_argument("items argument must be list or dict or tuple");
             }
@@ -48,10 +55,10 @@ QMap<QString, QVariant> normalizeItems(const QVariant& items)
     }
 
     if (items.canConvert<QVariantMap>()) {
-        QMap<QString, QVariant> mapped;
+        QList<NormalizedItem> mapped;
         const QVariantMap map = items.toMap();
         for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
-            mapped.insert(it.key(), it.value());
+            mapped.append({it.key(), it.value()});
         }
         return mapped;
     }
@@ -59,14 +66,16 @@ QMap<QString, QVariant> normalizeItems(const QVariant& items)
     throw std::invalid_argument("items argument must be list or dict or tuple");
 }
 
-void ensureUniqueTexts(const QMap<QString, QVariant>& incoming, const QMap<QString, QVariant>& existing = {})
+void ensureUniqueTexts(const QList<NormalizedItem>& incoming, const QMap<QString, QVariant>& existing = {})
 {
-    for (auto it = incoming.constBegin(); it != incoming.constEnd(); ++it) {
-        if (existing.contains(it.key())) {
+    QSet<QString> seen;
+    for (const NormalizedItem& item : incoming) {
+        if (existing.contains(item.text) || seen.contains(item.text)) {
             throw std::runtime_error(QStringLiteral("ComboBox already has item named \"%1\".")
-                                         .arg(it.key())
+                                         .arg(item.text)
                                          .toStdString());
         }
+        seen.insert(item.text);
     }
 }
 
@@ -163,18 +172,12 @@ void ComboBox::addItem(const QString& text, const QVariant& value)
 void ComboBox::addItems(const QVariant& items)
 {
     IgnoreIndexChangeGuard guard(*this);
-    const QMap<QString, QVariant> normalized = normalizeItems(items);
+    const QList<NormalizedItem> normalized = normalizeItems(items);
     ensureUniqueTexts(normalized, items_);
 
-    QStringList texts;
-    texts.reserve(normalized.size());
-    for (auto it = normalized.constBegin(); it != normalized.constEnd(); ++it) {
-        items_.insert(it.key(), it.value());
-        texts.append(it.key());
-    }
-    QComboBox::addItems(texts);
-    for (int index = 0; index < texts.size(); ++index) {
-        setItemData(index, items_.value(texts.at(index)));
+    for (const NormalizedItem& item : normalized) {
+        items_.insert(item.text, item.value);
+        QComboBox::addItem(item.text, item.value);
     }
     itemsChanged();
 }

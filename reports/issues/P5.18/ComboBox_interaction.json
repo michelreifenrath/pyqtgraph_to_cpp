@@ -5,6 +5,6 @@
   "manifest_targets": ["include/pyqtgraph/widgets/ComboBox.hpp", "src/pyqtgraph/widgets/ComboBox.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
   "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_combobox_p5_18"},
-  "checks": ["ComboBox API shape and empty value", "unique item text enforcement", "list/dict/pair text-to-value mapping", "value/setValue/setText selection", "chosen-text restore on repopulate", "saveState/restoreState for text and item data", "setItems emits currentIndexChanged only when logical value changes"],
+  "checks": ["ComboBox API shape and empty value", "unique item text enforcement", "ordered list and text-to-value mapping", "dict/pair text-to-value mapping", "value/setValue/setText selection", "chosen-text restore on repopulate", "saveState/restoreState for text and item data", "appended item data stays aligned", "setItems emits currentIndexChanged only when logical value changes"],
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
 }

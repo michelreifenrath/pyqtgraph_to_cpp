@@ -5,7 +5,7 @@
 
 ## Summary
 
-Implemented native Qt/C++ `ComboBox` with text-to-value mapping, selection helpers, chosen-text restore, state save/restore, and bulk-update signal blocking.
+Implemented native Qt/C++ `ComboBox` with ordered text-to-value mapping, selection helpers, chosen-text restore, state save/restore, appended item data preservation, and bulk-update signal blocking.
 
 ## Validation commands
 
