@@ -181,6 +181,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/TableWidget.cpp
             include/pyqtgraph/widgets/ComboBox.hpp
             src/pyqtgraph/widgets/ComboBox.cpp
+            include/pyqtgraph/widgets/SpinBox.hpp
+            src/pyqtgraph/widgets/SpinBox.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
