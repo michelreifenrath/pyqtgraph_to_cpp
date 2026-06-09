@@ -729,6 +729,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.GroupBox.P5_22 PROPERTIES LABELS "visual;P5.22")
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_filedialog_pathbutton_p5_23
+        widgets/test_FileDialog_PathButton_P5_23.cpp
+        pyqtgraph_cpp.widgets.FileDialog_PathButton.P5_23
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_filedialog_pathbutton_p5_23 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_filedialog_pathbutton_p5_23 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_filedialog_pathbutton_p5_23
+        PRIVATE
+            PYQTGRAPH_CPP_P5_23_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.23"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.FileDialog_PathButton.P5_23 PROPERTIES LABELS P5.23)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
