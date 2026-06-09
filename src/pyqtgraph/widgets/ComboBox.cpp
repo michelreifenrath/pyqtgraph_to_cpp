@@ -120,19 +120,13 @@ QVariant ComboBox::value() const
 
 void ComboBox::setValue(const QVariant& value)
 {
-    QString text;
-    bool found = false;
-    for (auto it = items_.constBegin(); it != items_.constEnd(); ++it) {
-        if (it.value() == value) {
-            text = it.key();
-            found = true;
-            break;
+    for (int index = 0; index < count(); ++index) {
+        if (itemData(index) == value) {
+            setCurrentIndex(index);
+            return;
         }
     }
-    if (!found) {
-        throw std::invalid_argument(value.toString().toStdString());
-    }
-    setText(text);
+    throw std::invalid_argument(value.toString().toStdString());
 }
 
 void ComboBox::setText(const QString& text)
@@ -171,15 +165,18 @@ void ComboBox::addItem(const QString& text, const QVariant& value)
 
 void ComboBox::addItems(const QVariant& items)
 {
-    IgnoreIndexChangeGuard guard(*this);
-    const QList<NormalizedItem> normalized = normalizeItems(items);
-    ensureUniqueTexts(normalized, items_);
+    withBlockedSignalsIfUnchanged([&]() {
+        IgnoreIndexChangeGuard guard(*this);
+        const QList<NormalizedItem> normalized = normalizeItems(items);
+        ensureUniqueTexts(normalized, items_);
 
-    for (const NormalizedItem& item : normalized) {
-        items_.insert(item.text, item.value);
-        QComboBox::addItem(item.text, item.value);
-    }
-    itemsChanged();
+        for (const NormalizedItem& item : normalized) {
+            items_.insert(item.text, item.value);
+            QComboBox::addItem(item.text, item.value);
+        }
+        itemsChanged();
+        return true;
+    });
 }
 
 void ComboBox::clear()
@@ -212,6 +209,10 @@ void ComboBox::setItemValue(const QString& name, const QVariant& value)
         return;
     }
     items_.insert(name, value);
+    const int index = findText(name);
+    if (index >= 0) {
+        setItemData(index, value);
+    }
 }
 
 QVariant ComboBox::saveState() const

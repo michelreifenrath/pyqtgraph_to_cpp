@@ -135,6 +135,15 @@ bool testOrderedTextValueMapping()
     CHECK(pairCombo.value().toInt() == 10);
     pairCombo.setValue(20);
     CHECK(pairCombo.currentText() == QStringLiteral("y"));
+
+    ComboBox duplicateValueCombo;
+    duplicateValueCombo.addItems(QVariantList{
+        QVariant::fromValue(QVariantList{QStringLiteral("b"), 1}),
+        QVariant::fromValue(QVariantList{QStringLiteral("a"), 1}),
+    });
+    duplicateValueCombo.setCurrentIndex(1);
+    duplicateValueCombo.setValue(1);
+    CHECK(duplicateValueCombo.currentText() == QStringLiteral("b"));
     return true;
 }
 
@@ -233,6 +242,15 @@ bool testBulkUpdateSignalBehavior()
     combo.setItems(QVariantMap{{QStringLiteral("a"), 1}, {QStringLiteral("c"), 3}});
     CHECK(spy.count() == 1);
     CHECK(combo.value().toInt() == 1);
+
+    ComboBox restoreCombo;
+    restoreCombo.setItems(QVariantList{QStringLiteral("a"), QStringLiteral("b")});
+    restoreCombo.setText(QStringLiteral("b"));
+    restoreCombo.clear();
+    QSignalSpy restoreSpy(&restoreCombo, qOverload<int>(&QComboBox::currentIndexChanged));
+    restoreCombo.addItems(QVariantList{QStringLiteral("x"), QStringLiteral("b"), QStringLiteral("z")});
+    CHECK(restoreCombo.currentText() == QStringLiteral("b"));
+    CHECK(restoreSpy.count() == 1);
     return true;
 }
 
@@ -249,7 +267,7 @@ bool writeIssueReport()
             "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ComboBox.hpp\", \"src/pyqtgraph/widgets/ComboBox.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
             "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_combobox_p5_18\"},\n"
-            "  \"checks\": [\"ComboBox API shape and empty value\", \"unique item text enforcement\", \"ordered list and text-to-value mapping\", \"dict/pair text-to-value mapping\", \"value/setValue/setText selection\", \"chosen-text restore on repopulate\", \"saveState/restoreState for text and item data\", \"appended item data stays aligned\", \"setItems emits currentIndexChanged only when logical value changes\"],\n"
+            "  \"checks\": [\"ComboBox API shape and empty value\", \"unique item text enforcement\", \"ordered list and text-to-value mapping\", \"dict/pair text-to-value mapping\", \"setValue selects first matching UI item\", \"value/setValue/setText selection\", \"chosen-text restore on repopulate\", \"saveState/restoreState for text and item data\", \"appended item data stays aligned\", \"bulk updates emit currentIndexChanged only for final logical changes\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));
     writeTextFile(reportDir + QStringLiteral("/completion.md"),
@@ -258,7 +276,7 @@ bool writeIssueReport()
             "- Issue: GitHub #258 / P5.18\n"
             "- Validation class: interaction-ui\n\n"
             "## Summary\n\n"
-            "Implemented native Qt/C++ `ComboBox` with ordered text-to-value mapping, selection helpers, chosen-text restore, state save/restore, appended item data preservation, and bulk-update signal blocking.\n\n"
+            "Implemented native Qt/C++ `ComboBox` with ordered text-to-value mapping, first-match value selection, chosen-text restore, state save/restore, appended item data preservation, and bulk-update signal blocking.\n\n"
             "## Validation commands\n\n"
             "| Command | Exit code |\n"
             "| --- | ---: |\n"
