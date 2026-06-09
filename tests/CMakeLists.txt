@@ -666,6 +666,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.TableWidget.P5_17 PROPERTIES LABELS P5.17)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_combobox_p5_18
+        widgets/test_ComboBox_P5_18.cpp
+        pyqtgraph_cpp.widgets.ComboBox.P5_18
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_combobox_p5_18 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_combobox_p5_18 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_combobox_p5_18
+        PRIVATE
+            PYQTGRAPH_CPP_P5_18_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.18"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.ComboBox.P5_18 PROPERTIES LABELS P5.18)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
