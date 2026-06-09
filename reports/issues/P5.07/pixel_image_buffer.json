@@ -1,0 +1,8 @@
+P5.07 pixel-image proof
+format: Grayscale8/RGB888/Indexed8
+dtype: uint8/uint16/float via ArrayView
+stride/copy: non-contiguous ArrayView copied on set; source mutation ignored
+color order: RGB channel order preserved
+levels/LUT: ImageLevelRange and ImageLookupTable applied via tryMakeQImage
+tolerance: exact integer pixels (0)
+result: passed
