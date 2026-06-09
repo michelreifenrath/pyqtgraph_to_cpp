@@ -397,9 +397,18 @@ QVariantMap ColorMapWidget::saveState() const
         fields.insert(it.key(), fieldState);
     }
 
+    QVariantList itemOrder;
+    for (const RangeColorMapMapping& mapping : rangeMappings_) {
+        itemOrder.push_back(mapping.name);
+    }
+    for (const EnumColorMapMapping& mapping : enumMappings_) {
+        itemOrder.push_back(mapping.name);
+    }
+
     QVariantMap state;
     state.insert(QStringLiteral("fields"), fields);
     state.insert(QStringLiteral("items"), items);
+    state.insert(QStringLiteral("itemOrder"), itemOrder);
     return state;
 }
 
@@ -423,12 +432,27 @@ void ColorMapWidget::restoreState(const QVariantMap& state)
     setFields(fieldList);
 
     const QVariantMap items = state.value(QStringLiteral("items")).toMap();
-    for (auto it = items.cbegin(); it != items.cend(); ++it) {
-        const QVariantMap itemState = it.value().toMap();
+    QStringList orderedItemNames;
+    const QVariantList itemOrder = state.value(QStringLiteral("itemOrder")).toList();
+    if (!itemOrder.isEmpty()) {
+        for (const QVariant& itemName : itemOrder) {
+            orderedItemNames.push_back(itemName.toString());
+        }
+    } else {
+        for (auto it = items.cbegin(); it != items.cend(); ++it) {
+            orderedItemNames.push_back(it.key());
+        }
+    }
+    for (const QString& itemName : orderedItemNames) {
+        const auto itemIt = items.constFind(itemName);
+        if (itemIt == items.cend()) {
+            continue;
+        }
+        const QVariantMap itemState = itemIt.value().toMap();
         const QString fieldName = itemState.value(QStringLiteral("field")).toString();
-        addColorMap(fieldName, it.key());
+        addColorMap(fieldName, itemName);
         if (itemState.value(QStringLiteral("mode")).toString() == QStringLiteral("enum")) {
-            EnumColorMapMapping* mapping = findEnumMapping(it.key());
+            EnumColorMapMapping* mapping = findEnumMapping(itemName);
             if (mapping == nullptr) {
                 continue;
             }
@@ -445,7 +469,7 @@ void ColorMapWidget::restoreState(const QVariantMap& state)
                     entry.value(QStringLiteral("color")).value<QColor>()});
             }
         } else {
-            RangeColorMapMapping* mapping = findRangeMapping(it.key());
+            RangeColorMapMapping* mapping = findRangeMapping(itemName);
             if (mapping == nullptr) {
                 continue;
             }

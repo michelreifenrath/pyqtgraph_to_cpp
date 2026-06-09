@@ -576,6 +576,32 @@ bool testColorMapWidgetMapping()
     CHECK(duplicateRestored.rangeMappings()[1].minValue == 5.0);
     CHECK(duplicateRestored.rangeMappings()[1].maxValue == 15.0);
 
+    ColorMapWidget orderWidget;
+    orderWidget.setFields({{QStringLiteral("value"), rangeField}});
+    pyqtgraph::widgets::RangeColorMapMapping* firstOrderedMapping =
+        orderWidget.addColorMap(QStringLiteral("value"), QStringLiteral("z_first"));
+    CHECK(firstOrderedMapping != nullptr);
+    firstOrderedMapping->operation = pyqtgraph::widgets::ColorMapOperation::Overlay;
+    firstOrderedMapping->colorMap = pyqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 0, 0)});
+    pyqtgraph::widgets::RangeColorMapMapping* secondOrderedMapping =
+        orderWidget.addColorMap(QStringLiteral("value"), QStringLiteral("a_second"));
+    CHECK(secondOrderedMapping != nullptr);
+    secondOrderedMapping->operation = pyqtgraph::widgets::ColorMapOperation::Set;
+    secondOrderedMapping->colorMap = pyqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 255), QColor(0, 0, 255)});
+    pyqtgraph::widgets::ColorMapRecordArray orderData;
+    orderData.push_back({{QStringLiteral("value"), 5.0}});
+    const auto orderedBytes = orderWidget.mapBytes(orderData);
+    const QVariantMap orderedSaved = orderWidget.saveState();
+    CHECK(orderedSaved.contains(QStringLiteral("itemOrder")));
+    ColorMapWidget orderRestored;
+    orderRestored.restoreState(orderedSaved);
+    CHECK(orderRestored.rangeMappings().size() == 2);
+    CHECK(orderRestored.rangeMappings()[0].name == QStringLiteral("z_first"));
+    CHECK(orderRestored.rangeMappings()[1].name == QStringLiteral("a_second"));
+    const auto orderedRestoredBytes = orderRestored.mapBytes(orderData);
+    CHECK(orderedRestoredBytes.size() == orderedBytes.size());
+    CHECK(orderedRestoredBytes[0] == orderedBytes[0]);
+
     ColorMapWidget byteWidget;
     ColorMapFieldOptions byteField;
     byteField.mode = QStringLiteral("range");
