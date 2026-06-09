@@ -1,0 +1,19 @@
+{
+  "case": "HistogramLUTWidget-vertical",
+  "issue": "P5.01",
+  "compared_paths": {"reference": "reference.png", "actual": "actual.png", "diff": "diff.png"},
+  "reference_source": "PyQtGraph-informed C++ wrapper oracle composed from previously ported GraphicsView/PlotItem/GraphicsLayout/HistogramLUTItem dependencies",
+  "oracle_type": "independent wrapper-composition reference for the thin widget wrappers under P5.01",
+  "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+  "dimensions": [115, 200],
+  "thresholds": {"max_changed_pixels": 0, "max_pixel_delta": 0},
+  "changed_pixels": 0,
+  "changed_percent": 0.000000,
+  "max_delta": 0,
+  "mean_delta": 0.000000,
+  "gpt5_vision_review": {"required_for_pr": true, "path": "gpt5_vision_review.md", "source": "gpt5_vision_review.md", "available": true, "accepted": true},
+  "semantic_review": {"verdict": "pass", "recommendation": "merge_ok"},
+  "passed": true,
+  "blank_placeholder_guard": "passed",
+  "reproducibility": {"qt_qpa_platform": "offscreen"}
+}

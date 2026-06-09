@@ -159,6 +159,9 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             include/pyqtgraph/widgets/GraphicsView.hpp
             src/pyqtgraph/widgets/GraphicsView.cpp
             include/pyqtgraph/widgets/GraphicsLayoutWidget.hpp
+            include/pyqtgraph/widgets/PlotWidget.hpp
+            include/pyqtgraph/widgets/HistogramLUTWidget.hpp
+            src/pyqtgraph/widgets/HistogramLUTWidget.cpp
             include/pyqtgraph/widgets/ColorButton.hpp
             src/pyqtgraph/widgets/ColorButton.cpp
             include/pyqtgraph/widgets/ColorMapButton.hpp
