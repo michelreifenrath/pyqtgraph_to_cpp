@@ -1,0 +1,13 @@
+{
+  "case": "GradientWidget",
+  "issue": "P5.14",
+  "compared_paths": {"reference": "reference.png", "actual": "actual.png", "diff": "diff.png"},
+  "thresholds": {"exact_match": true, "max_changed_pixels": 0, "max_pixel_delta": 0, "max_mean_delta": 0.0},
+  "changed_pixels": 0,
+  "changed_percent": 0.000000,
+  "max_delta": 0,
+  "mean_delta": 0.000000,
+  "gpt5_vision_review": {"required_for_pr": true, "path": "gpt5_vision_review.md", "accepted": true},
+  "semantic_review": {"verdict": "pass", "recommendation": "merge_ok"},
+  "passed": true
+}
