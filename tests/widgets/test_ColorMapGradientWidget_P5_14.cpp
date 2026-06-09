@@ -602,6 +602,42 @@ bool testColorMapWidgetMapping()
     CHECK(orderedRestoredBytes.size() == orderedBytes.size());
     CHECK(orderedRestoredBytes[0] == orderedBytes[0]);
 
+    ColorMapFieldOptions enumFirstField;
+    enumFirstField.mode = QStringLiteral("enum");
+    enumFirstField.values = {1.0};
+    enumFirstField.defaults.insert(QStringLiteral("Operation"), QStringLiteral("Set"));
+    enumFirstField.defaults.insert(QStringLiteral("colormap"), QVariantList{QColor(0, 255, 0)});
+
+    ColorMapFieldOptions rangeSecondField = rangeField;
+    rangeSecondField.defaults.insert(QStringLiteral("Operation"), QStringLiteral("Set"));
+    QVariantMap redColorMapState;
+    redColorMapState.insert(QStringLiteral("positions"), QVariantList{0.0, 1.0});
+    redColorMapState.insert(QStringLiteral("colors"), QVariantList{QColor(255, 0, 0), QColor(255, 0, 0)});
+    rangeSecondField.defaults.insert(QStringLiteral("colormap"), redColorMapState);
+
+    ColorMapWidget mixedOrderWidget;
+    mixedOrderWidget.setFields({{QStringLiteral("value"), rangeSecondField}, {QStringLiteral("category"), enumFirstField}});
+    mixedOrderWidget.addColorMap(QStringLiteral("category"), QStringLiteral("enum_first"));
+    CHECK(mixedOrderWidget.enumMappings().size() == 1);
+    pyqtgraph::widgets::RangeColorMapMapping* rangeSecondMapping =
+        mixedOrderWidget.addColorMap(QStringLiteral("value"), QStringLiteral("range_second"));
+    CHECK(rangeSecondMapping != nullptr);
+    pyqtgraph::widgets::ColorMapRecordArray mixedData;
+    mixedData.push_back({{QStringLiteral("value"), 5.0}, {QStringLiteral("category"), 1.0}});
+    const auto mixedBytes = mixedOrderWidget.mapBytes(mixedData);
+    CHECK(mixedBytes.size() == 1);
+    CHECK(mixedBytes[0][0] >= 250);
+    CHECK(mixedBytes[0][1] <= 5);
+    const QVariantMap mixedSaved = mixedOrderWidget.saveState();
+    const QVariantList mixedItemOrder = mixedSaved.value(QStringLiteral("itemOrder")).toList();
+    CHECK(mixedItemOrder.size() == 2);
+    CHECK(mixedItemOrder[0].toString() == QStringLiteral("enum_first"));
+    CHECK(mixedItemOrder[1].toString() == QStringLiteral("range_second"));
+    ColorMapWidget mixedRestored;
+    mixedRestored.restoreState(mixedSaved);
+    const auto mixedRestoredBytes = mixedRestored.mapBytes(mixedData);
+    CHECK(mixedRestoredBytes[0] == mixedBytes[0]);
+
     ColorMapWidget byteWidget;
     ColorMapFieldOptions byteField;
     byteField.mode = QStringLiteral("range");

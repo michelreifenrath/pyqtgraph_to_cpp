@@ -104,6 +104,8 @@ private:
     void emitMapChanged();
     [[nodiscard]] RangeColorMapMapping* findRangeMapping(const QString& name);
     [[nodiscard]] EnumColorMapMapping* findEnumMapping(const QString& name);
+    [[nodiscard]] const RangeColorMapMapping* findRangeMapping(const QString& name) const;
+    [[nodiscard]] const EnumColorMapMapping* findEnumMapping(const QString& name) const;
     void applyDefaults(RangeColorMapMapping& mapping, const ColorMapFieldOptions& options) const;
     void applyDefaults(EnumColorMapMapping& mapping, const ColorMapFieldOptions& options) const;
     [[nodiscard]] bool mappingNameExists(const QString& name) const;
@@ -118,6 +120,7 @@ private:
     QMap<QString, ColorMapFieldOptions> fields_;
     QVector<RangeColorMapMapping> rangeMappings_;
     QVector<EnumColorMapMapping> enumMappings_;
+    QVector<QString> mappingOrder_;
 };
 
 } // namespace pyqtgraph::widgets

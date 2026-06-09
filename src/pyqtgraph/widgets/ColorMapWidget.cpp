@@ -117,6 +117,7 @@ RangeColorMapMapping* ColorMapWidget::addColorMap(const QString& fieldName, cons
         }
         applyDefaults(mapping, options);
         enumMappings_.push_back(mapping);
+        mappingOrder_.push_back(mappingName);
         update();
         emitMapChanged();
         return nullptr;
@@ -127,6 +128,7 @@ RangeColorMapMapping* ColorMapWidget::addColorMap(const QString& fieldName, cons
     mapping.fieldName = fieldName;
     applyDefaults(mapping, options);
     rangeMappings_.push_back(mapping);
+    mappingOrder_.push_back(mappingName);
     update();
     emitMapChanged();
     return &rangeMappings_.back();
@@ -262,50 +264,54 @@ std::vector<std::array<double, 4>> ColorMapWidget::map(const ColorMapRecordArray
 {
     std::vector<std::array<double, 4>> colors(static_cast<std::size_t>(data.size()), {0.0, 0.0, 0.0, 0.0});
 
-    for (const RangeColorMapMapping& mapping : rangeMappings_) {
-        if (!mapping.enabled) {
+    for (const QString& mappingName : mappingOrder_) {
+        if (const RangeColorMapMapping* rangeMapping = findRangeMapping(mappingName)) {
+            if (!rangeMapping->enabled) {
+                continue;
+            }
+            const RangeColorMapMapping& mapping = *rangeMapping;
+            const double span = mapping.maxValue - mapping.minValue;
+            std::vector<std::array<double, 4>> mapped(colors.size(), {0.0, 0.0, 0.0, 0.0});
+            for (int row = 0; row < data.size(); ++row) {
+                const auto valueIt = data[row].constFind(mapping.fieldName);
+                if (valueIt == data[row].cend()) {
+                    continue;
+                }
+                const double raw = valueIt.value();
+                if (!std::isfinite(raw)) {
+                    mapped[static_cast<std::size_t>(row)] = colorToFloat(mapping.nanColor);
+                    continue;
+                }
+                const double scaled = span == 0.0 ? 0.0 : clip01((raw - mapping.minValue) / span);
+                mapped[static_cast<std::size_t>(row)] = mapping.colorMap.mapToFloat(scaled);
+            }
+            for (std::size_t row = 0; row < colors.size(); ++row) {
+                combineColors(colors[row], mapped[row], mapping.channels, mapping.operation);
+            }
             continue;
         }
-        const double span = mapping.maxValue - mapping.minValue;
-        std::vector<std::array<double, 4>> mapped(colors.size(), {0.0, 0.0, 0.0, 0.0});
-        for (int row = 0; row < data.size(); ++row) {
-            const auto valueIt = data[row].constFind(mapping.fieldName);
-            if (valueIt == data[row].cend()) {
+        if (const EnumColorMapMapping* enumMapping = findEnumMapping(mappingName)) {
+            if (!enumMapping->enabled) {
                 continue;
             }
-            const double raw = valueIt.value();
-            if (!std::isfinite(raw)) {
-                mapped[static_cast<std::size_t>(row)] = colorToFloat(mapping.nanColor);
-                continue;
-            }
-            const double scaled = span == 0.0 ? 0.0 : clip01((raw - mapping.minValue) / span);
-            mapped[static_cast<std::size_t>(row)] = mapping.colorMap.mapToFloat(scaled);
-        }
-        for (std::size_t row = 0; row < colors.size(); ++row) {
-            combineColors(colors[row], mapped[row], mapping.channels, mapping.operation);
-        }
-    }
-
-    for (const EnumColorMapMapping& mapping : enumMappings_) {
-        if (!mapping.enabled) {
-            continue;
-        }
-        std::vector<std::array<double, 4>> mapped(colors.size(), colorToFloat(mapping.defaultColor));
-        for (int row = 0; row < data.size(); ++row) {
-            const auto valueIt = data[row].constFind(mapping.fieldName);
-            if (valueIt == data[row].cend()) {
-                continue;
-            }
-            const double raw = valueIt.value();
-            for (const auto& [maskValue, color] : mapping.valueColors) {
-                if (raw == maskValue) {
-                    mapped[static_cast<std::size_t>(row)] = colorToFloat(color);
-                    break;
+            const EnumColorMapMapping& mapping = *enumMapping;
+            std::vector<std::array<double, 4>> mapped(colors.size(), colorToFloat(mapping.defaultColor));
+            for (int row = 0; row < data.size(); ++row) {
+                const auto valueIt = data[row].constFind(mapping.fieldName);
+                if (valueIt == data[row].cend()) {
+                    continue;
+                }
+                const double raw = valueIt.value();
+                for (const auto& [maskValue, color] : mapping.valueColors) {
+                    if (raw == maskValue) {
+                        mapped[static_cast<std::size_t>(row)] = colorToFloat(color);
+                        break;
+                    }
                 }
             }
-        }
-        for (std::size_t row = 0; row < colors.size(); ++row) {
-            combineColors(colors[row], mapped[row], mapping.channels, mapping.operation);
+            for (std::size_t row = 0; row < colors.size(); ++row) {
+                combineColors(colors[row], mapped[row], mapping.channels, mapping.operation);
+            }
         }
     }
 
@@ -398,11 +404,8 @@ QVariantMap ColorMapWidget::saveState() const
     }
 
     QVariantList itemOrder;
-    for (const RangeColorMapMapping& mapping : rangeMappings_) {
-        itemOrder.push_back(mapping.name);
-    }
-    for (const EnumColorMapMapping& mapping : enumMappings_) {
-        itemOrder.push_back(mapping.name);
+    for (const QString& name : mappingOrder_) {
+        itemOrder.push_back(name);
     }
 
     QVariantMap state;
@@ -416,6 +419,7 @@ void ColorMapWidget::restoreState(const QVariantMap& state)
 {
     rangeMappings_.clear();
     enumMappings_.clear();
+    mappingOrder_.clear();
 
     const QVariantMap fields = state.value(QStringLiteral("fields")).toMap();
     QVector<QPair<QString, ColorMapFieldOptions>> fieldList;
@@ -601,9 +605,29 @@ RangeColorMapMapping* ColorMapWidget::findRangeMapping(const QString& name)
     return nullptr;
 }
 
+const RangeColorMapMapping* ColorMapWidget::findRangeMapping(const QString& name) const
+{
+    for (const RangeColorMapMapping& mapping : rangeMappings_) {
+        if (mapping.name == name) {
+            return &mapping;
+        }
+    }
+    return nullptr;
+}
+
 EnumColorMapMapping* ColorMapWidget::findEnumMapping(const QString& name)
 {
     for (EnumColorMapMapping& mapping : enumMappings_) {
+        if (mapping.name == name) {
+            return &mapping;
+        }
+    }
+    return nullptr;
+}
+
+const EnumColorMapMapping* ColorMapWidget::findEnumMapping(const QString& name) const
+{
+    for (const EnumColorMapMapping& mapping : enumMappings_) {
         if (mapping.name == name) {
             return &mapping;
         }
