@@ -5,7 +5,7 @@
 
 ## Summary
 
-Implemented native Qt/C++ `SpinBox` with SI prefix formatting/parsing, bounds clipping/wrapping, integer mode, linear/decimal stepping, prefix/suffix display, editingFinished commit, and immediate/delayed value change signals.
+Implemented native Qt/C++ `SpinBox` with SI prefix formatting/parsing, bounds clipping/wrapping, integer mode (including default step=1), setRange bound clearing, format placeholders ({value}, {scaledValue}, {decimals}), linear/decimal stepping, prefix/suffix display, editingFinished commit, and immediate/delayed value change signals.
 
 ## Validation commands
 
