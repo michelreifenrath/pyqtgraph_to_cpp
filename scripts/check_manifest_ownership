@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+"""Check that every port manifest row has an owning local issue."""
+
+from __future__ import annotations
+
+import argparse
+import fnmatch
+import sys
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+TRACKED_SECTIONS = (
+    "source_files",
+    "examples",
+    "example_assets",
+    "classes",
+    "example_validation_levels",
+)
+DEFAULT_PATH_KEYS = {
+    "source_files": "upstream_path",
+    "examples": "upstream_path",
+    "example_assets": "upstream_path",
+    "classes": "upstream_path",
+    "example_validation_levels": "upstream_path",
+}
+
+
+class OwnershipError(ValueError):
+    """Raised when manifest ownership metadata is invalid."""
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Verify that tracked port_manifest.yaml rows are owned by local issues."
+    )
+    parser.add_argument("--manifest", type=Path, required=True, help="path to port_manifest.yaml")
+    parser.add_argument("--ownership", type=Path, required=True, help="path to ownership.yaml")
+    return parser
+
+
+def load_yaml_mapping(path: Path, label: str) -> dict[str, Any]:
+    if not path.is_file():
+        raise OwnershipError(f"missing {label}: {path}")
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise OwnershipError(f"failed to parse {label}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise OwnershipError(f"{label} must be a YAML mapping")
+    return data
+
+
+def validate_rule(rule: Any, index: int, manifest_sections: set[str]) -> dict[str, Any]:
+    prefix = f"manifest_ownership[{index}]"
+    if not isinstance(rule, dict):
+        raise OwnershipError(f"{prefix} must be a mapping")
+    issue = rule.get("issue")
+    if not isinstance(issue, str) or not issue.strip():
+        raise OwnershipError(f"{prefix}.issue must be a non-empty local issue id")
+    section = rule.get("section")
+    if not isinstance(section, str) or section not in TRACKED_SECTIONS:
+        raise OwnershipError(f"{prefix}.section must be one of {', '.join(TRACKED_SECTIONS)}")
+    if section not in manifest_sections:
+        raise OwnershipError(f"{prefix}.section={section} is stale: missing from manifest")
+    path_key = rule.get("path_key", DEFAULT_PATH_KEYS[section])
+    if not isinstance(path_key, str) or not path_key.strip():
+        raise OwnershipError(f"{prefix}.path_key must be a non-empty string")
+    patterns = rule.get("patterns")
+    if not isinstance(patterns, list) or not patterns:
+        raise OwnershipError(f"{prefix}.patterns must be a non-empty list")
+    for pattern in patterns:
+        if not isinstance(pattern, str) or not pattern.strip():
+            raise OwnershipError(f"{prefix}.patterns entries must be non-empty strings")
+    return {
+        "issue": issue.strip(),
+        "section": section,
+        "path_key": path_key,
+        "patterns": patterns,
+    }
+
+
+def load_rules(ownership: dict[str, Any], manifest_sections: set[str]) -> list[dict[str, Any]]:
+    rules = ownership.get("manifest_ownership")
+    if not isinstance(rules, list) or not rules:
+        raise OwnershipError("ownership.yaml manifest_ownership must be a non-empty list")
+    return [validate_rule(rule, index, manifest_sections) for index, rule in enumerate(rules)]
+
+
+def row_identifier(section: str, row: dict[str, Any], index: int) -> str:
+    path_key = DEFAULT_PATH_KEYS[section]
+    value = row.get(path_key)
+    if isinstance(value, str) and value:
+        return value
+    return f"{section}[{index}]"
+
+
+def row_is_owned(section: str, row: dict[str, Any], rules: list[dict[str, Any]]) -> bool:
+    for rule in rules:
+        if rule["section"] != section:
+            continue
+        value = row.get(rule["path_key"])
+        if not isinstance(value, str):
+            continue
+        if any(fnmatch.fnmatchcase(value, pattern) for pattern in rule["patterns"]):
+            return True
+    return False
+
+
+def check_manifest_ownership(manifest: dict[str, Any], rules: list[dict[str, Any]]) -> list[str]:
+    errors: list[str] = []
+    for section in TRACKED_SECTIONS:
+        rows = manifest.get(section)
+        if rows is None:
+            continue
+        if not isinstance(rows, list):
+            errors.append(f"{section} must be a list")
+            continue
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                errors.append(f"{section}[{index}] must be a mapping")
+                continue
+            if not row_is_owned(section, row, rules):
+                errors.append(
+                    f"unowned manifest entry: {section}[{index}] {row_identifier(section, row, index)}"
+                )
+    return errors
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    try:
+        manifest = load_yaml_mapping(args.manifest, "manifest")
+        ownership = load_yaml_mapping(args.ownership, "ownership map")
+        manifest_sections = {key for key, value in manifest.items() if isinstance(value, list)}
+        rules = load_rules(ownership, manifest_sections)
+        errors = check_manifest_ownership(manifest, rules)
+    except OwnershipError as exc:
+        print(f"manifest ownership check failed: {exc}", file=sys.stderr)
+        return 1
+
+    if errors:
+        print("manifest ownership check failed:", file=sys.stderr)
+        for error in errors:
+            print(f"- {error}", file=sys.stderr)
+        return 1
+
+    print("manifest ownership check passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
