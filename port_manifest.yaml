@@ -4749,9 +4749,9 @@ classes:
   bases:
   - ROI
   line: 42
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: ImageView
   upstream_path: pyqtgraph/imageview/ImageView.py
   target_header_path: include/pyqtgraph/imageview/ImageView.hpp
@@ -4760,9 +4760,9 @@ classes:
   bases:
   - QtWidgets.QWidget
   line: 49
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: Ui_Form
   upstream_path: pyqtgraph/imageview/ImageViewTemplate_generic.py
   target_header_path: include/pyqtgraph/imageview/ImageViewTemplate_generic.hpp
@@ -4771,9 +4771,9 @@ classes:
   bases:
   - object
   line: 12
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: GraphicsView
   upstream_path: pyqtgraph/jupyter/GraphicsView.py
   target_header_path: include/pyqtgraph/jupyter/GraphicsView.hpp
@@ -6197,9 +6197,9 @@ classes:
   bases:
   - QtWidgets.QWidget
   line: 33
-  status: not_started
+  status: ported
   completion: missing
-  target_presence: none
+  target_presence: all
 - class_name: RawImageGLWidget
   upstream_path: pyqtgraph/widgets/RawImageWidget.py
   target_header_path: include/pyqtgraph/widgets/RawImageWidget.hpp

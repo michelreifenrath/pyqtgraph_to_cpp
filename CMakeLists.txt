@@ -201,6 +201,12 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/FeedbackButton.cpp
             include/pyqtgraph/widgets/BusyCursor.hpp
             src/pyqtgraph/widgets/BusyCursor.cpp
+            include/pyqtgraph/widgets/RawImageWidget.hpp
+            src/pyqtgraph/widgets/RawImageWidget.cpp
+            include/pyqtgraph/imageview/ImageView.hpp
+            src/pyqtgraph/imageview/ImageView.cpp
+            include/pyqtgraph/imageview/ImageViewTemplate_generic.hpp
+            src/pyqtgraph/imageview/ImageViewTemplate_generic.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
