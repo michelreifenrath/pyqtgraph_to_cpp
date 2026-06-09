@@ -177,6 +177,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/DataTreeWidget.cpp
             include/pyqtgraph/widgets/DiffTreeWidget.hpp
             src/pyqtgraph/widgets/DiffTreeWidget.cpp
+            include/pyqtgraph/widgets/TableWidget.hpp
+            src/pyqtgraph/widgets/TableWidget.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
