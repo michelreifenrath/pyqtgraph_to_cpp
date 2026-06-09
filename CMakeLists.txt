@@ -183,6 +183,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/ComboBox.cpp
             include/pyqtgraph/widgets/SpinBox.hpp
             src/pyqtgraph/widgets/SpinBox.cpp
+            include/pyqtgraph/widgets/JoystickButton.hpp
+            src/pyqtgraph/widgets/JoystickButton.cpp
+            include/pyqtgraph/widgets/VerticalLabel.hpp
+            src/pyqtgraph/widgets/VerticalLabel.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp

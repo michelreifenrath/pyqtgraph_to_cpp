@@ -690,6 +690,19 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.SpinBox.P5_19 PROPERTIES LABELS P5.19)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_joystickbutton_verticallabel_p5_20
+        widgets/test_JoystickButton_VerticalLabel_P5_20.cpp
+        pyqtgraph_cpp.widgets.JoystickButton_VerticalLabel.P5_20
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_joystickbutton_verticallabel_p5_20 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_joystickbutton_verticallabel_p5_20 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_joystickbutton_verticallabel_p5_20
+        PRIVATE
+            PYQTGRAPH_CPP_P5_20_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/JoystickVerticalLabel"
+            PYQTGRAPH_CPP_P5_20_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.20"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.JoystickButton_VerticalLabel.P5_20 PROPERTIES LABELS "visual;P5.20")
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
