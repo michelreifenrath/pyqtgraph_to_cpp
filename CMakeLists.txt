@@ -195,6 +195,8 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/FileDialog.cpp
             include/pyqtgraph/widgets/PathButton.hpp
             src/pyqtgraph/widgets/PathButton.cpp
+            include/pyqtgraph/widgets/ProgressDialog.hpp
+            src/pyqtgraph/widgets/ProgressDialog.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp

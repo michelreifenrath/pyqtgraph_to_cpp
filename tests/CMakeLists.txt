@@ -741,6 +741,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.FileDialog_PathButton.P5_23 PROPERTIES LABELS P5.23)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_progressdialog_p5_24
+        widgets/test_ProgressDialog_P5_24.cpp
+        pyqtgraph_cpp.widgets.ProgressDialog.P5_24
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_progressdialog_p5_24 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_progressdialog_p5_24 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_progressdialog_p5_24
+        PRIVATE
+            PYQTGRAPH_CPP_P5_24_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.24"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.ProgressDialog.P5_24 PROPERTIES LABELS P5.24)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
