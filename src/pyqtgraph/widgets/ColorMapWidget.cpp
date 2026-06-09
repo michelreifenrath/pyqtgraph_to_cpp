@@ -400,6 +400,11 @@ QVariantMap ColorMapWidget::saveState() const
             values.push_back(value);
         }
         fieldState.insert(QStringLiteral("values"), values);
+        QVariantMap defaultsState;
+        for (auto defIt = it.value().defaults.cbegin(); defIt != it.value().defaults.cend(); ++defIt) {
+            defaultsState.insert(defIt.key(), defIt.value());
+        }
+        fieldState.insert(QStringLiteral("defaults"), defaultsState);
         fields.insert(it.key(), fieldState);
     }
 
@@ -430,6 +435,10 @@ void ColorMapWidget::restoreState(const QVariantMap& state)
         options.units = fieldState.value(QStringLiteral("units")).toString();
         for (const QVariant& value : fieldState.value(QStringLiteral("values")).toList()) {
             options.values.push_back(value.toDouble());
+        }
+        const QVariantMap defaultsState = fieldState.value(QStringLiteral("defaults")).toMap();
+        for (auto defIt = defaultsState.cbegin(); defIt != defaultsState.cend(); ++defIt) {
+            options.defaults.insert(defIt.key(), defIt.value());
         }
         fieldList.push_back({it.key(), options});
     }
@@ -517,37 +526,39 @@ void ColorMapWidget::paintEvent(QPaintEvent* event)
     int y = 4;
     const int stripWidth = std::max(32, width() - 8);
 
-    for (const RangeColorMapMapping& mapping : rangeMappings_) {
-        if (!mapping.enabled) {
-            continue;
-        }
-        const QRect stripRect(4, y, stripWidth, stripHeight);
-        const QImage image = lookupStripImage(mapping.colorMap, stripWidth);
-        if (!image.isNull()) {
-            painter.drawImage(stripRect, image.scaled(stripRect.size(), Qt::IgnoreAspectRatio, Qt::FastTransformation));
-        } else {
-            painter.fillRect(stripRect, Qt::darkGray);
-        }
-        painter.setPen(Qt::white);
-        painter.drawText(stripRect.adjusted(4, 0, -4, 0), Qt::AlignVCenter | Qt::AlignLeft, mapping.name);
-        y += stripHeight + 4;
-    }
-
-    for (const EnumColorMapMapping& mapping : enumMappings_) {
-        if (!mapping.enabled) {
-            continue;
-        }
-        int x = 4;
-        for (const auto& [maskValue, color] : mapping.valueColors) {
-            Q_UNUSED(maskValue);
-            const QRect swatchRect(x, y, stripHeight, stripHeight);
-            painter.fillRect(swatchRect, color);
+    for (const QString& mappingName : mappingOrder_) {
+        if (const RangeColorMapMapping* rangeMapping = findRangeMapping(mappingName)) {
+            if (!rangeMapping->enabled) {
+                continue;
+            }
+            const QRect stripRect(4, y, stripWidth, stripHeight);
+            const QImage image = lookupStripImage(rangeMapping->colorMap, stripWidth);
+            if (!image.isNull()) {
+                painter.drawImage(stripRect, image.scaled(stripRect.size(), Qt::IgnoreAspectRatio, Qt::FastTransformation));
+            } else {
+                painter.fillRect(stripRect, Qt::darkGray);
+            }
             painter.setPen(Qt::white);
-            painter.drawRect(swatchRect);
-            x += stripHeight + 2;
+            painter.drawText(stripRect.adjusted(4, 0, -4, 0), Qt::AlignVCenter | Qt::AlignLeft, rangeMapping->name);
+            y += stripHeight + 4;
+            continue;
         }
-        painter.drawText(QRect(x + 4, y, stripWidth - x, stripHeight), Qt::AlignVCenter | Qt::AlignLeft, mapping.name);
-        y += stripHeight + 4;
+        if (const EnumColorMapMapping* enumMapping = findEnumMapping(mappingName)) {
+            if (!enumMapping->enabled) {
+                continue;
+            }
+            int x = 4;
+            for (const auto& [maskValue, color] : enumMapping->valueColors) {
+                Q_UNUSED(maskValue);
+                const QRect swatchRect(x, y, stripHeight, stripHeight);
+                painter.fillRect(swatchRect, color);
+                painter.setPen(Qt::white);
+                painter.drawRect(swatchRect);
+                x += stripHeight + 2;
+            }
+            painter.drawText(QRect(x + 4, y, stripWidth - x, stripHeight), Qt::AlignVCenter | Qt::AlignLeft, enumMapping->name);
+            y += stripHeight + 4;
+        }
     }
 }
 

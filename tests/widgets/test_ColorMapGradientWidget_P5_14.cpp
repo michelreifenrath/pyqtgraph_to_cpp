@@ -638,6 +638,33 @@ bool testColorMapWidgetMapping()
     const auto mixedRestoredBytes = mixedRestored.mapBytes(mixedData);
     CHECK(mixedRestoredBytes[0] == mixedBytes[0]);
 
+    mixedOrderWidget.resize(colorMapWidgetWidth, 80);
+    mixedOrderWidget.show();
+    QApplication::processEvents();
+    const QImage mixedPaint = mixedOrderWidget.grab().toImage();
+    const QColor topSwatch = mixedPaint.pixelColor(8, 10);
+    CHECK(topSwatch.green() > 200);
+    CHECK(topSwatch.red() < 50);
+    const QColor lowerStrip = mixedPaint.pixelColor(8, 26);
+    CHECK(lowerStrip.red() > 200);
+    CHECK(lowerStrip.green() < 50);
+
+    ColorMapWidget fieldDefaultsWidget;
+    fieldDefaultsWidget.setFields({{QStringLiteral("value"), rangeField}});
+    const QVariantMap fieldDefaultsSaved = fieldDefaultsWidget.saveState();
+    CHECK(fieldDefaultsSaved.value(QStringLiteral("fields")).toMap().value(QStringLiteral("value")).toMap().contains(QStringLiteral("defaults")));
+    ColorMapWidget fieldDefaultsRestored;
+    fieldDefaultsRestored.restoreState(fieldDefaultsSaved);
+    pyqtgraph::widgets::RangeColorMapMapping* restoredDefaultsMapping =
+        fieldDefaultsRestored.addColorMap(QStringLiteral("value"));
+    CHECK(restoredDefaultsMapping != nullptr);
+    CHECK(restoredDefaultsMapping->minValue == 0.0);
+    CHECK(restoredDefaultsMapping->maxValue == 10.0);
+    pyqtgraph::widgets::ColorMapRecordArray defaultsProbe;
+    defaultsProbe.push_back({{QStringLiteral("value"), 10.0}});
+    const auto defaultsProbeBytes = fieldDefaultsRestored.mapBytes(defaultsProbe);
+    CHECK(defaultsProbeBytes[0][0] >= 250);
+
     ColorMapWidget byteWidget;
     ColorMapFieldOptions byteField;
     byteField.mode = QStringLiteral("range");
