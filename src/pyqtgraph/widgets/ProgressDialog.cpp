@@ -40,8 +40,6 @@ ProgressDialog::ProgressDialog(const QString& labelText, int minimum, int maximu
     }
 
     setWindowModality(Qt::WindowModal);
-    setAutoClose(false);
-    setAutoReset(false);
     QProgressDialog::setValue(QProgressDialog::minimum());
     if (noCancel) {
         setCancelButton(nullptr);

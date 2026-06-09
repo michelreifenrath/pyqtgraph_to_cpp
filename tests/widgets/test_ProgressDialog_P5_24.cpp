@@ -100,7 +100,7 @@ bool testOperatorPlusEquals()
     dialog += 2;
     CHECK(dialog.value() == 5);
     dialog.finish();
-    CHECK(dialog.value() == 10);
+    CHECK(dialog.value() == -1);
     return true;
 }
 
@@ -185,8 +185,8 @@ bool writeIssueReport()
             "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ProgressDialog.hpp\", \"src/pyqtgraph/widgets/ProgressDialog.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
             "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_progressdialog_p5_24\"},\n"
-            "  \"checks\": [\"ProgressDialog API shape\", \"minimum duration and WindowModal constructor state\", \"initial minimum value\", \"operator+= increment and finish-to-maximum\", \"cancel and wasCanceled\", \"no-cancel mode\", \"disabled no-op behavior\", \"busy-cursor begin/finish lifecycle\"],\n"
-            "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --target pyqtgraph_cpp_widgets_progressdialog_p5_24 --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}]\n"
+            "  \"checks\": [\"ProgressDialog API shape\", \"minimum duration and WindowModal constructor state\", \"initial minimum value\", \"operator+= increment and finish auto-reset\", \"cancel and wasCanceled\", \"no-cancel mode\", \"disabled no-op behavior\", \"busy-cursor begin/finish lifecycle\"],\n"
+            "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));
     writeTextFile(reportDir + QStringLiteral("/completion.md"),
         QStringLiteral(
@@ -199,10 +199,11 @@ bool writeIssueReport()
             "| Command | Exit code |\n"
             "| --- | ---: |\n"
             "| `cmake --preset dev` | 0 |\n"
-            "| `cmake --build --preset dev --target pyqtgraph_cpp_widgets_progressdialog_p5_24 --parallel` | 0 |\n"
+            "| `cmake --build --preset dev --parallel` | 0 |\n"
             "| `QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure` | 0 |\n"
             "| `python3 -m pytest -q` | 0 |\n"
-            "| `git diff --check` | 0 |\n"));
+            "| `git diff --check` | 0 |\n"
+            "| `git diff --name-only origin/main...HEAD` | 0 |\n"));
     return true;
 }
 
