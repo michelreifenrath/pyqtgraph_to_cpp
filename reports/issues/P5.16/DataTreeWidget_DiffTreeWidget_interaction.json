@@ -1,0 +1,10 @@
+{
+  "issue": "P5.16",
+  "classes": ["pyqtgraph::widgets::DataTreeWidget", "pyqtgraph::widgets::DiffTreeWidget"],
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/DataTreeWidget.py; DiffTreeWidget.py",
+  "manifest_targets": ["include/pyqtgraph/widgets/DataTreeWidget.hpp", "src/pyqtgraph/widgets/DataTreeWidget.cpp", "include/pyqtgraph/widgets/DiffTreeWidget.hpp", "src/pyqtgraph/widgets/DiffTreeWidget.cpp"],
+  "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.16 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_datatreewidget_difftreewidget_p5_16"},
+  "checks": ["DataTreeWidget 3-column model display, path lookup, hideRoot, ndarray display", "DiffTreeWidget side-by-side trees with type/value/key/list diff coloring", "DiffTreeWidget ndarray mismatch highlighting"],
+  "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.16 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
+}
