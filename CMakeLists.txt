@@ -197,6 +197,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/PathButton.cpp
             include/pyqtgraph/widgets/ProgressDialog.hpp
             src/pyqtgraph/widgets/ProgressDialog.cpp
+            include/pyqtgraph/widgets/FeedbackButton.hpp
+            src/pyqtgraph/widgets/FeedbackButton.cpp
+            include/pyqtgraph/widgets/BusyCursor.hpp
+            src/pyqtgraph/widgets/BusyCursor.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
