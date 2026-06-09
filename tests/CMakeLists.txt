@@ -703,6 +703,19 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.JoystickButton_VerticalLabel.P5_20 PROPERTIES LABELS "visual;P5.20")
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_layoutwidget_p5_21
+        widgets/test_LayoutWidget_P5_21.cpp
+        pyqtgraph_cpp.widgets.LayoutWidget.P5_21
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_layoutwidget_p5_21 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_layoutwidget_p5_21 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_layoutwidget_p5_21
+        PRIVATE
+            PYQTGRAPH_CPP_P5_21_VISUAL_DIFF_DIR="${PROJECT_SOURCE_DIR}/reports/visual-diffs/LayoutWidget"
+            PYQTGRAPH_CPP_P5_21_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.21"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.LayoutWidget.P5_21 PROPERTIES LABELS "visual;P5.21")
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem

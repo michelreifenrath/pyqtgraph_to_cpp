@@ -1,0 +1,13 @@
+{
+  "issue": "P5.21",
+  "classes": ["pyqtgraph::widgets::LayoutWidget"],
+  "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/LayoutWidget.py",
+  "manifest_targets": ["include/pyqtgraph/widgets/LayoutWidget.hpp", "src/pyqtgraph/widgets/LayoutWidget.cpp"],
+  "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.21 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_layoutwidget_p5_21"},
+  "checks": ["LayoutWidget API shape and QGridLayout ownership", "auto/explicit placement and nextRow/nextCol", "nested addLayout and kNextRow", "getWidget missing-cell nullptr", "deterministic visual reference-vs-actual pixels"],
+  "visual_artifacts": {"root": "reports/visual-diffs/LayoutWidget", "cases": ["LayoutWidget-arrangement"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
+  "semantic_pixels": {"reference": 26376, "actual": 26376},
+  "visual_metrics": {"changed_pixels": 0, "max_delta": 0, "mean_delta": 0.000000, "passed": true},
+  "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.21 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
+}
