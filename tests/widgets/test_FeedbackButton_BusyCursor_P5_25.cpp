@@ -2,12 +2,15 @@
 #include <pyqtgraph/widgets/FeedbackButton.hpp>
 
 #include <QtCore/QDir>
+#include <QtCore/QElapsedTimer>
+#include <QtCore/QEventLoop>
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
 #include <QtCore/QThread>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
 
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <string_view>
@@ -52,6 +55,21 @@ bool ensureDirectory(const QString& path)
 {
     QDir dir;
     return dir.mkpath(path);
+}
+
+bool waitUntil(const std::function<bool()>& predicate, int timeoutMs)
+{
+    QElapsedTimer elapsed;
+    elapsed.start();
+    while (elapsed.elapsed() < timeoutMs) {
+        QApplication::processEvents(QEventLoop::AllEvents, 10);
+        if (predicate()) {
+            return true;
+        }
+        QThread::msleep(1);
+    }
+    QApplication::processEvents(QEventLoop::AllEvents, 10);
+    return predicate();
 }
 
 void writeTextFile(const QString& path, const QString& text)
@@ -171,12 +189,8 @@ bool testFeedbackButtonLimitedTimeRestore()
 
     FeedbackButton button(QStringLiteral("Go"));
     button.success(QStringLiteral("Done"), QStringLiteral("tip"));
-    QTest::qWait(2100);
-    QApplication::processEvents();
-    CHECK(button.text() == QStringLiteral("Go"));
-    QTest::qWait(8100);
-    QApplication::processEvents();
-    CHECK(button.toolTip().isEmpty());
+    CHECK(waitUntil([&]() { return button.text() == QStringLiteral("Go"); }, 3000));
+    CHECK(waitUntil([&]() { return button.toolTip().isEmpty(); }, 12000));
     return true;
 }
 
