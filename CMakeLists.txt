@@ -191,6 +191,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/LayoutWidget.cpp
             include/pyqtgraph/widgets/GroupBox.hpp
             src/pyqtgraph/widgets/GroupBox.cpp
+            include/pyqtgraph/widgets/FileDialog.hpp
+            src/pyqtgraph/widgets/FileDialog.cpp
+            include/pyqtgraph/widgets/PathButton.hpp
+            src/pyqtgraph/widgets/PathButton.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
