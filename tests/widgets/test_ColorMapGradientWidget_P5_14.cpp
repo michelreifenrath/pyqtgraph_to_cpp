@@ -537,13 +537,44 @@ bool testColorMapWidgetMapping()
     CHECK(!restoredChannels.rangeMappings()[0].channels.blue);
     CHECK(!restoredChannels.rangeMappings()[0].channels.alpha);
     CHECK(restoredChannels.rangeMappings()[0].nanColor == QColor(10, 20, 30));
-    const auto channelBytes = restoredChannels.mapBytes(rangeData);
-    CHECK(channelBytes[0][0] >= 120 && channelBytes[0][0] <= 140);
-    CHECK(channelBytes[0][1] == 0);
-    CHECK(channelBytes[0][2] == 0);
-    CHECK(channelBytes[2][0] == 10);
-    CHECK(channelBytes[2][1] == 0);
-    CHECK(channelBytes[2][2] == 0);
+
+    rangeMapping->operation = pyqtgraph::widgets::ColorMapOperation::Set;
+    const auto setChannelBytes = widget.mapBytes(rangeData);
+    CHECK(setChannelBytes[0][0] >= 120 && setChannelBytes[0][0] <= 140);
+    CHECK(setChannelBytes[0][1] == 0);
+    CHECK(setChannelBytes[0][2] == 0);
+    CHECK(setChannelBytes[2][0] == 10);
+    CHECK(setChannelBytes[2][1] == 0);
+    CHECK(setChannelBytes[2][2] == 0);
+
+    rangeMapping->operation = pyqtgraph::widgets::ColorMapOperation::Overlay;
+    const auto overlayChannelBytes = widget.mapBytes(rangeData);
+    CHECK(overlayChannelBytes[0][0] >= 120 && overlayChannelBytes[0][0] <= 140);
+    CHECK(overlayChannelBytes[0][1] == 0);
+    CHECK(overlayChannelBytes[0][2] == 0);
+    CHECK(overlayChannelBytes[2][0] == 10);
+    CHECK(overlayChannelBytes[2][1] == 20);
+    CHECK(overlayChannelBytes[2][2] == 30);
+
+    ColorMapWidget duplicateWidget;
+    duplicateWidget.setFields({{QStringLiteral("value"), rangeField}});
+    duplicateWidget.addColorMap(QStringLiteral("value"));
+    pyqtgraph::widgets::RangeColorMapMapping* duplicateMapping = duplicateWidget.addColorMap(QStringLiteral("value"));
+    CHECK(duplicateMapping != nullptr);
+    CHECK(duplicateWidget.rangeMappings().size() == 2);
+    CHECK(duplicateWidget.rangeMappings()[0].name == QStringLiteral("value"));
+    CHECK(duplicateWidget.rangeMappings()[1].name == QStringLiteral("value2"));
+    duplicateMapping->minValue = 5.0;
+    duplicateMapping->maxValue = 15.0;
+    const QVariantMap duplicateSaved = duplicateWidget.saveState();
+    CHECK(duplicateSaved.value(QStringLiteral("items")).toMap().size() == 2);
+    ColorMapWidget duplicateRestored;
+    duplicateRestored.restoreState(duplicateSaved);
+    CHECK(duplicateRestored.rangeMappings().size() == 2);
+    CHECK(duplicateRestored.rangeMappings()[0].name == QStringLiteral("value"));
+    CHECK(duplicateRestored.rangeMappings()[1].name == QStringLiteral("value2"));
+    CHECK(duplicateRestored.rangeMappings()[1].minValue == 5.0);
+    CHECK(duplicateRestored.rangeMappings()[1].maxValue == 15.0);
 
     ColorMapWidget byteWidget;
     ColorMapFieldOptions byteField;

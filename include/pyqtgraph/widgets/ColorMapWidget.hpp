@@ -106,6 +106,8 @@ private:
     [[nodiscard]] EnumColorMapMapping* findEnumMapping(const QString& name);
     void applyDefaults(RangeColorMapMapping& mapping, const ColorMapFieldOptions& options) const;
     void applyDefaults(EnumColorMapMapping& mapping, const ColorMapFieldOptions& options) const;
+    [[nodiscard]] bool mappingNameExists(const QString& name) const;
+    [[nodiscard]] QString incrementMappingName(const QString& name) const;
     static ColorMapOperation operationFromString(const QString& value);
     static QString operationToString(ColorMapOperation operation);
     static void combineColors(std::array<double, 4>& colors,

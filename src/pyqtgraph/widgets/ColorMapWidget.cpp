@@ -5,6 +5,7 @@
 
 #include "../../../include/pyqtgraph/widgets/ColorMapWidget.hpp"
 
+#include <QtCore/QRegularExpression>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtGui/QPaintEvent>
@@ -103,7 +104,10 @@ RangeColorMapMapping* ColorMapWidget::addColorMap(const QString& fieldName, cons
     }
 
     const ColorMapFieldOptions& options = fieldIt.value();
-    const QString mappingName = name.isEmpty() ? fieldName : name;
+    QString mappingName = name.isEmpty() ? fieldName : name;
+    if (mappingNameExists(mappingName)) {
+        mappingName = incrementMappingName(mappingName);
+    }
     if (options.mode == QStringLiteral("enum")) {
         EnumColorMapMapping mapping;
         mapping.name = mappingName;
@@ -245,12 +249,10 @@ void ColorMapWidget::combineColors(std::array<double, 4>& colors,
     default: {
         const double alpha = incoming[3];
         for (int index = 0; index < 3; ++index) {
-            applyChannel(index,
-                colors[static_cast<std::size_t>(index)] * (1.0 - alpha)
-                    + incoming[static_cast<std::size_t>(index)] * alpha);
+            colors[static_cast<std::size_t>(index)] = colors[static_cast<std::size_t>(index)] * (1.0 - alpha)
+                + incoming[static_cast<std::size_t>(index)] * alpha;
         }
-        const double blendedAlpha = colors[3] + (1.0 - colors[3]) * alpha;
-        applyChannel(3, blendedAlpha);
+        colors[3] = colors[3] + (1.0 - colors[3]) * alpha;
         break;
     }
     }
@@ -524,6 +526,45 @@ void ColorMapWidget::paintEvent(QPaintEvent* event)
 void ColorMapWidget::emitMapChanged()
 {
     Q_EMIT sigColorMapChanged(this);
+}
+
+bool ColorMapWidget::mappingNameExists(const QString& name) const
+{
+    for (const RangeColorMapMapping& mapping : rangeMappings_) {
+        if (mapping.name == name) {
+            return true;
+        }
+    }
+    for (const EnumColorMapMapping& mapping : enumMappings_) {
+        if (mapping.name == name) {
+            return true;
+        }
+    }
+    return false;
+}
+
+QString ColorMapWidget::incrementMappingName(const QString& name) const
+{
+    static const QRegularExpression pattern(QStringLiteral("^([^\\d]*)(\\d*)$"));
+    const QRegularExpressionMatch match = pattern.match(name);
+    const QString base = match.captured(1);
+    const QString numString = match.captured(2);
+    int numLength = numString.size();
+    int number = 0;
+    if (numLength == 0) {
+        number = 2;
+        numLength = 1;
+    } else {
+        number = numString.toInt();
+    }
+
+    while (true) {
+        const QString candidate = base + QStringLiteral("%1").arg(number, numLength, 10, QChar('0'));
+        if (!mappingNameExists(candidate)) {
+            return candidate;
+        }
+        ++number;
+    }
 }
 
 RangeColorMapMapping* ColorMapWidget::findRangeMapping(const QString& name)
