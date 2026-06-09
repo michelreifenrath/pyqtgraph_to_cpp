@@ -198,11 +198,21 @@ void RawImageWidget::setLookupTable(ImageLookupTable lut)
         clearLookupTable();
         return;
     }
+    if (lut.rowStride <= 0 || lut.channelStride <= 0) {
+        clearLookupTable();
+        return;
+    }
 
-    const std::size_t bytes = lut.rows * static_cast<std::size_t>(lut.rowStride);
-    lookupTableData_.assign(lut.data, lut.data + bytes);
     lookupTableRows_ = lut.rows;
     lookupTableChannels_ = lut.channels;
+    lookupTableData_.resize(lut.rows * lut.channels);
+    for (std::size_t row = 0; row < lut.rows; ++row) {
+        const auto* sourceRow = lut.data + static_cast<std::ptrdiff_t>(row) * lut.rowStride;
+        for (std::size_t channel = 0; channel < lut.channels; ++channel) {
+            lookupTableData_[row * lut.channels + channel] =
+                sourceRow[static_cast<std::ptrdiff_t>(channel) * lut.channelStride];
+        }
+    }
     invalidateCache();
     update();
 }

@@ -91,6 +91,21 @@ bool checkIndexed8(const QImage& image, int x, int y, int index)
     return true;
 }
 
+bool checkIndexedColor(const QImage& image, int index, int red, int green, int blue)
+{
+    if (image.format() != QImage::Format_Indexed8) {
+        std::cerr << "expected Format_Indexed8 got " << static_cast<int>(image.format()) << '\n';
+        return false;
+    }
+    const QRgb color = image.color(index);
+    if (qRed(color) != red || qGreen(color) != green || qBlue(color) != blue) {
+        std::cerr << "indexed color " << index << " expected (" << red << ',' << green << ',' << blue << ") got ("
+                  << qRed(color) << ',' << qGreen(color) << ',' << qBlue(color) << ")\n";
+        return false;
+    }
+    return true;
+}
+
 bool checkGray8(const QImage& image, int x, int y, int gray)
 {
     if (image.format() != QImage::Format_Grayscale8) {
@@ -247,6 +262,58 @@ bool testRawImageWidgetRgbColorOrder()
     CHECK(checkRgb888(image, 0, 0, 255, 0, 0));
     CHECK(checkRgb888(image, 1, 0, 0, 255, 0));
     CHECK(checkRgb888(image, 0, 1, 0, 0, 255));
+
+    return true;
+}
+
+bool testRawImageWidgetStridedLookupTable()
+{
+    constexpr std::size_t rows = 4;
+    constexpr std::size_t channels = 4;
+    constexpr std::ptrdiff_t rowStride = 10;
+    constexpr std::ptrdiff_t channelStride = 2;
+    std::vector<std::uint8_t> padded(rows * static_cast<std::size_t>(rowStride), 99);
+    for (std::size_t row = 0; row < rows; ++row) {
+        const auto base = static_cast<std::size_t>(row) * static_cast<std::size_t>(rowStride);
+        padded[base + 0 * channelStride] = static_cast<std::uint8_t>(row * 10 + 1);
+        padded[base + 1 * channelStride] = static_cast<std::uint8_t>(row * 10 + 2);
+        padded[base + 2 * channelStride] = static_cast<std::uint8_t>(row * 10 + 3);
+        padded[base + 3 * channelStride] = 255;
+    }
+
+    pyqtgraph::ImageLookupTable stridedLut{
+        padded.data(),
+        rows,
+        channels,
+        rowStride,
+        channelStride,
+    };
+
+    pyqtgraph::widgets::RawImageWidget widget;
+    widget.setLevels(pyqtgraph::ImageLevelRange{0.0, 255.0});
+    widget.setLookupTable(stridedLut);
+
+    const auto stored = widget.lookupTable();
+    CHECK(stored.has_value());
+    CHECK(stored->rowStride == static_cast<std::ptrdiff_t>(channels));
+    CHECK(stored->channelStride == 1);
+    CHECK((pyqtgraph::applyLookupTable(0, *stored) == std::array<std::uint8_t, 4>{1, 2, 3, 255}));
+    CHECK((pyqtgraph::applyLookupTable(1, *stored) == std::array<std::uint8_t, 4>{11, 12, 13, 255}));
+    CHECK((pyqtgraph::applyLookupTable(2, *stored) == std::array<std::uint8_t, 4>{21, 22, 23, 255}));
+    CHECK((pyqtgraph::applyLookupTable(3, *stored) == std::array<std::uint8_t, 4>{31, 32, 33, 255}));
+
+    const std::array<std::uint8_t, 1> data{64};
+    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, 1});
+    widget.setImage(view);
+
+    const QImage& image = widget.cachedImage();
+    CHECK(image.format() == QImage::Format_Indexed8);
+    CHECK(checkIndexedColor(image, 64, 11, 12, 13));
+
+    padded[0] = 200;
+    const auto afterMutation = widget.lookupTable();
+    CHECK(afterMutation.has_value());
+    CHECK((pyqtgraph::applyLookupTable(0, *afterMutation) == std::array<std::uint8_t, 4>{1, 2, 3, 255}));
 
     return true;
 }
@@ -415,7 +482,7 @@ int main(int argc, char** argv)
 
     const bool passed = testRawImageWidgetGrayscaleCopyAndFormat() && testRawImageWidgetStrideView()
         && testRawImageWidgetUint16Grayscale() && testRawImageWidgetRgbColorOrder()
-        && testRawImageWidgetLevelsAndLut()
+        && testRawImageWidgetStridedLookupTable() && testRawImageWidgetLevelsAndLut()
         && testRawImageWidgetAxisTranspose() && testImageViewTwoDimensionalBuffer()
         && testImageViewFrameStack() && testImageViewCopyOnSet() && writeCompletionArtifact(true);
 
