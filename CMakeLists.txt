@@ -173,6 +173,10 @@ if(_pyqtgraph_cpp_has_graphicsitem)
             src/pyqtgraph/widgets/TreeWidget.cpp
             include/pyqtgraph/widgets/CheckTable.hpp
             src/pyqtgraph/widgets/CheckTable.cpp
+            include/pyqtgraph/widgets/DataTreeWidget.hpp
+            src/pyqtgraph/widgets/DataTreeWidget.cpp
+            include/pyqtgraph/widgets/DiffTreeWidget.hpp
+            src/pyqtgraph/widgets/DiffTreeWidget.cpp
             src/pyqtgraph/widgets/PlotWidget.cpp
             include/pyqtgraph/graphicsItems/PlotDataItem.hpp
             src/pyqtgraph/graphicsItems/PlotDataItem.cpp
