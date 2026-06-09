@@ -84,6 +84,14 @@ def validate_claim(claim: Any, index: int) -> None:
         if not isinstance(owned_file, str):
             raise RegistryError(f"claim {index} owned_files entries must be strings")
         normalize_owned_file(owned_file)
+    adjuncts = claim.get("adjuncts", [])
+    if adjuncts is None:
+        adjuncts = []
+    if not isinstance(adjuncts, list):
+        raise RegistryError(f"claim {index} adjuncts must be a list")
+    for adjunct in adjuncts:
+        if not isinstance(adjunct, str) or not adjunct.strip():
+            raise RegistryError(f"claim {index} adjuncts entries must be non-empty strings")
 
 
 def build_parser() -> argparse.ArgumentParser:

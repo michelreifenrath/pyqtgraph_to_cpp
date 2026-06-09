@@ -110,6 +110,7 @@ except ModuleNotFoundError:  # Product checkout fallback; Factory is not vendore
 
 
 DEFAULT_REPORTS_DIR = ".factory/logs/gates"
+OWNERSHIP_CHECK_SCRIPT = REPO_ROOT / "scripts" / "check_changed_file_ownership"
 
 CMAKE_VALIDATION_COMMANDS = [
     "cmake --preset dev",
@@ -172,6 +173,57 @@ def diff_check_commands(base: str) -> list[str]:
         "git diff --cached --check",
         f"git diff --check {base}...HEAD",
     ]
+
+
+def _load_ownership_checker() -> Any:
+    loader = importlib.machinery.SourceFileLoader(
+        "pgcpp_check_changed_file_ownership",
+        str(OWNERSHIP_CHECK_SCRIPT),
+    )
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    if spec is None:
+        raise ValueError("could not load changed-file ownership checker")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[loader.name] = module
+    loader.exec_module(module)
+    return module
+
+
+def should_enforce_ownership(repo_root: Path) -> bool:
+    """Only enforce ownership against the real repository checkout."""
+    if os.environ.get("PGBOOT_SKIP_OWNERSHIP_CHECK", "").strip().lower() in {"1", "true", "yes"}:
+        return False
+    if os.environ.get("PGBOOT_FORCE_OWNERSHIP_CHECK", "").strip().lower() in {"1", "true", "yes"}:
+        return True
+    return repo_root.resolve() == REPO_ROOT.resolve()
+
+
+def run_ownership_boundary_check(
+    *,
+    repo_root: Path,
+    workflow_path: Path,
+    base: str,
+) -> int:
+    """Reject commit/merge gates when branch edits fall outside the active claim."""
+    if not should_enforce_ownership(repo_root):
+        return 0
+    if not OWNERSHIP_CHECK_SCRIPT.is_file():
+        print(
+            f"gate configuration failed: missing ownership checker: {OWNERSHIP_CHECK_SCRIPT}",
+            file=sys.stderr,
+        )
+        return 2
+    registry = Path(os.environ.get("PGBOOT_OWNERSHIP_REGISTRY", REPO_ROOT / "ownership.yaml"))
+    if not registry.is_absolute():
+        registry = REPO_ROOT / registry
+    checker = _load_ownership_checker()
+    check_root = REPO_ROOT if repo_root.resolve() == REPO_ROOT.resolve() else repo_root
+    return checker.run_check(
+        repo_root=check_root,
+        registry_path=registry,
+        workflow_path=workflow_path,
+        base=base,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -281,6 +333,16 @@ def main(argv: list[str] | None = None) -> int:
         for command in commands:
             print(command)
         return 0
+
+    if args.mode in {"commit", "merge"}:
+        print(f"[{args.mode}] changed-file ownership check")
+        ownership_rc = run_ownership_boundary_check(
+            repo_root=workflow.repo_root,
+            workflow_path=workflow.path,
+            base=base,
+        )
+        if ownership_rc != 0:
+            return ownership_rc
 
     reports_dir = Path(args.reports_dir)
     if not reports_dir.is_absolute():

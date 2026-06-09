@@ -1,5 +1,17 @@
 version: 1
-claims: []
+claims:
+  - issue: P0.05
+    branch: ai/issue-99
+    status: active
+    owned_files:
+      - ownership.yaml
+      - scripts/**claim*
+      - scripts/**ownership*
+      - scripts/gate
+      - tests/test_claim_ticket.py
+      - tests/test_board_policy.py
+    adjuncts:
+      - focused-doc-report
 manifest_ownership:
   - issue: P0.04
     section: source_files
