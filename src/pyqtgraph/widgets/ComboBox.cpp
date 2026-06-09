@@ -121,7 +121,7 @@ QVariant ComboBox::value() const
 void ComboBox::setValue(const QVariant& value)
 {
     for (int index = 0; index < count(); ++index) {
-        if (itemData(index) == value) {
+        if (items_.value(itemText(index)) == value) {
             setCurrentIndex(index);
             return;
         }
@@ -170,10 +170,13 @@ void ComboBox::addItems(const QVariant& items)
         const QList<NormalizedItem> normalized = normalizeItems(items);
         ensureUniqueTexts(normalized, items_);
 
+        QStringList texts;
+        texts.reserve(normalized.size());
         for (const NormalizedItem& item : normalized) {
             items_.insert(item.text, item.value);
-            QComboBox::addItem(item.text, item.value);
+            texts.append(item.text);
         }
+        QComboBox::addItems(texts);
         itemsChanged();
         return true;
     });
@@ -209,10 +212,6 @@ void ComboBox::setItemValue(const QString& name, const QVariant& value)
         return;
     }
     items_.insert(name, value);
-    const int index = findText(name);
-    if (index >= 0) {
-        setItemData(index, value);
-    }
 }
 
 QVariant ComboBox::saveState() const
@@ -252,11 +251,12 @@ void ComboBox::indexChanged(int index)
         return;
     }
     chosenText_ = currentText();
+    hasChosenText_ = true;
 }
 
 void ComboBox::itemsChanged()
 {
-    if (chosenText_.isEmpty()) {
+    if (!hasChosenText_) {
         return;
     }
     try {

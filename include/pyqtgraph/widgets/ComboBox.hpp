@@ -83,6 +83,7 @@ private:
     void itemsChanged();
 
     bool ignoreIndexChange_ = false;
+    bool hasChosenText_ = false;
     QString chosenText_;
     QMap<QString, QVariant> items_;
 };
