@@ -678,6 +678,18 @@ if(_pyqtgraph_cpp_has_graphicsitem)
     )
     set_tests_properties(pyqtgraph_cpp.widgets.ComboBox.P5_18 PROPERTIES LABELS P5.18)
     pyqtgraph_cpp_add_cpp_test(
+        pyqtgraph_cpp_widgets_spinbox_p5_19
+        widgets/test_SpinBox_P5_19.cpp
+        pyqtgraph_cpp.widgets.SpinBox.P5_19
+    )
+    set_target_properties(pyqtgraph_cpp_widgets_spinbox_p5_19 PROPERTIES AUTOMOC ON)
+    target_link_libraries(pyqtgraph_cpp_widgets_spinbox_p5_19 PRIVATE Qt6::Test)
+    target_compile_definitions(pyqtgraph_cpp_widgets_spinbox_p5_19
+        PRIVATE
+            PYQTGRAPH_CPP_P5_19_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.19"
+    )
+    set_tests_properties(pyqtgraph_cpp.widgets.SpinBox.P5_19 PROPERTIES LABELS P5.19)
+    pyqtgraph_cpp_add_cpp_test(
         pyqtgraph_cpp_graphicsitems_plotcurveitem
         graphicsItems/test_PlotCurveItem.cpp
         pyqtgraph_cpp.graphicsItems.PlotCurveItem
