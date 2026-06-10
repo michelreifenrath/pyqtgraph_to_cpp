@@ -1,6 +1,6 @@
-#include <pyqtgraph/core/ArrayView.hpp>
-#include <pyqtgraph/graphicsItems/BoxplotItem.hpp>
-#include <pyqtgraph/graphicsItems/PColorMeshItem.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/graphicsItems/BoxplotItem.hpp>
+#include <cppqtgraph/graphicsItems/PColorMeshItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -32,12 +32,12 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_04_FIXTURE
-#define PYQTGRAPH_CPP_P4_04_FIXTURE "oracle/fixtures/P4_04/boxplot_pcolormesh_oracle.json"
+#ifndef CPPQTGRAPH_P4_04_FIXTURE
+#define CPPQTGRAPH_P4_04_FIXTURE "oracle/fixtures/P4_04/boxplot_pcolormesh_oracle.json"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_04_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_04_ARTIFACT_DIR "artifacts/P4.04"
+#ifndef CPPQTGRAPH_P4_04_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_04_ARTIFACT_DIR "artifacts/P4.04"
 #endif
 
 namespace {
@@ -91,7 +91,7 @@ bool throwsInvalidArgument(auto&& callable)
 
 QJsonObject readFixture()
 {
-    QFile file(QStringLiteral(PYQTGRAPH_CPP_P4_04_FIXTURE));
+    QFile file(QStringLiteral(CPPQTGRAPH_P4_04_FIXTURE));
     if (!file.open(QIODevice::ReadOnly)) {
         throw std::runtime_error("could not open P4.04 oracle fixture");
     }
@@ -159,8 +159,8 @@ QJsonObject imageDiffMetrics(const QImage& actual, const QImage& reference, QIma
 
 bool exerciseBoxplot(QJsonObject& report)
 {
-    using pyqtgraph::graphicsItems::BoxplotItem;
-    using pyqtgraph::graphicsItems::BoxplotItemOptions;
+    using cppqtgraph::graphicsItems::BoxplotItem;
+    using cppqtgraph::graphicsItems::BoxplotItemOptions;
 
     const std::vector<std::vector<double>> data{{1.0, 2.0, 3.0, 4.0, 100.0}, {-5.0, 0.0, 5.0}};
     BoxplotItem item;
@@ -248,8 +248,8 @@ std::vector<QColor> fiveColorLut()
 
 bool exercisePColorMesh(QJsonObject& report)
 {
-    using pyqtgraph::core::ArrayView;
-    using pyqtgraph::graphicsItems::PColorMeshItem;
+    using cppqtgraph::core::ArrayView;
+    using cppqtgraph::graphicsItems::PColorMeshItem;
 
     const double nan = std::numeric_limits<double>::quiet_NaN();
     std::array<double, 6> z{{0.0, 1.0, 2.0, nan, 4.0, 4.0}};
@@ -333,9 +333,9 @@ bool exercisePColorMesh(QJsonObject& report)
 
 bool renderVisualArtifacts(const QString& artifactDir, QJsonObject& report)
 {
-    using pyqtgraph::core::ArrayView;
-    using pyqtgraph::graphicsItems::BoxplotItem;
-    using pyqtgraph::graphicsItems::PColorMeshItem;
+    using cppqtgraph::core::ArrayView;
+    using cppqtgraph::graphicsItems::BoxplotItem;
+    using cppqtgraph::graphicsItems::PColorMeshItem;
 
     QDir().mkpath(artifactDir);
 
@@ -410,7 +410,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_04_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_04_ARTIFACT_DIR);
     if (!exerciseBoxplot(report) || !exercisePColorMesh(report) || !renderVisualArtifacts(artifactDir, report) || !writeReport(artifactDir, report)) {
         return 1;
     }

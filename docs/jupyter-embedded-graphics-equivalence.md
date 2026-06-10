@@ -22,22 +22,22 @@ Accepted C++ equivalence is native Qt widgets/views/items, including `QGraphicsV
 
 ### Source entries
 
-- `pyqtgraph/jupyter/GraphicsView.py` -> `include/pyqtgraph/jupyter/GraphicsView.hpp`, `src/pyqtgraph/jupyter/GraphicsView.cpp`
+- `pyqtgraph/jupyter/GraphicsView.py` -> `include/cppqtgraph/jupyter/GraphicsView.hpp`, `src/cppqtgraph/jupyter/GraphicsView.cpp`
   - Decision: explicit non-port for Jupyter remote-framebuffer/notebook wrapper behavior.
   - Equivalence: native Qt view/widget usage and PyQtGraph-native widgets/items where implemented.
-- `pyqtgraph/jupyter/__init__.py` -> `include/pyqtgraph/jupyter/__init__.hpp`, `src/pyqtgraph/jupyter/__init__.cpp`
+- `pyqtgraph/jupyter/__init__.py` -> `include/cppqtgraph/jupyter/__init__.hpp`, `src/cppqtgraph/jupyter/__init__.cpp`
   - Decision: explicit non-port for Python package initializer / Jupyter integration namespace.
   - Equivalence: no C++ package-initializer equivalent is required.
 
 ### Class entries in `pyqtgraph/jupyter/GraphicsView.py`
 
-- `GraphicsView` -> `include/pyqtgraph/jupyter/GraphicsView.hpp`, `src/pyqtgraph/jupyter/GraphicsView.cpp`
+- `GraphicsView` -> `include/cppqtgraph/jupyter/GraphicsView.hpp`, `src/cppqtgraph/jupyter/GraphicsView.cpp`
   - Decision: non-port as a Jupyter wrapper class.
   - Equivalence: native `QGraphicsView` / PyQtGraph-native view usage where implemented.
-- `GraphicsLayoutWidget` -> `include/pyqtgraph/jupyter/GraphicsView.hpp`, `src/pyqtgraph/jupyter/GraphicsView.cpp`
+- `GraphicsLayoutWidget` -> `include/cppqtgraph/jupyter/GraphicsView.hpp`, `src/cppqtgraph/jupyter/GraphicsView.cpp`
   - Decision: non-port as a Jupyter wrapper class.
   - Equivalence: native PyQtGraph `GraphicsLayoutWidget` behavior in C++ where separately implemented, not a notebook wrapper.
-- `PlotWidget` -> `include/pyqtgraph/jupyter/GraphicsView.hpp`, `src/pyqtgraph/jupyter/GraphicsView.cpp`
+- `PlotWidget` -> `include/cppqtgraph/jupyter/GraphicsView.hpp`, `src/cppqtgraph/jupyter/GraphicsView.cpp`
   - Decision: non-port as a Jupyter wrapper class.
   - Equivalence: native PyQtGraph `PlotWidget` behavior in C++ where separately implemented, not a notebook wrapper.
 

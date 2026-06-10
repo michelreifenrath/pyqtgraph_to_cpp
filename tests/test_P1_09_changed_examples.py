@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_CTEST_REGEX = r"^pyqtgraph_cpp\.examples\.SimplePlot$"
+EXPECTED_CTEST_REGEX = r"^cppqtgraph\.examples\.SimplePlot$"
 
 
 def run_changed_examples(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:

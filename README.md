@@ -1,4 +1,4 @@
-# pyqtgraph_to_cpp
+# CppQtGraph
 
 Native C++/Qt port of PyQtGraph-facing APIs. The goal is a C++ library that looks and behaves like PyQtGraph from the outside, while staying a native Qt/C++ implementation rather than a Python wrapper.
 
@@ -24,7 +24,7 @@ This does **not** mean full PyQtGraph parity. The manifest is intentionally evid
 
 | Area | Current coverage |
 | --- | --- |
-| Build and packaging | Native C++20 target `pyqtgraph_cpp`; install/export support for `find_package(pyqtgraph-cpp CONFIG REQUIRED)` and imported target `pyqtgraph_cpp::pyqtgraph_cpp`. |
+| Build and packaging | Native C++20 target `cppqtgraph`; install/export support for `find_package(CppQtGraph CONFIG REQUIRED)` and imported target `CppQtGraph::CppQtGraph`. |
 | Core data/helpers | `ArrayView`, `Point`, `Vector`, `PlotData`, 2D/3D transform helpers, NaN-aware numeric helpers, color helpers, `mkColor`, `glColor`, `mkPen`, `mkBrush`, `ColorMap`, QImage conversion helpers, `SignalProxy`, `ThreadsafeTimer`, and `WidgetGroup` subsets. |
 | Graphics scene foundation | `GraphicsScene`, mouse/hover/drag event wrappers, `GraphicsItem`, `GraphicsObject`, `GraphicsWidget`, `GraphicsWidgetAnchor`, `GraphicsLayout`, `GraphicsView`, and `GraphicsLayoutWidget` subsets. |
 | Plot/view architecture | `PlotWidget`, `PlotItem`, `ViewBox`, and `AxisItem` with layout, ranges, transforms, autorange, axis ticks/labels/units, log/grid/downsampling/menu state, pan/zoom interaction, and linked-view behavior. |
@@ -57,7 +57,7 @@ The pinned PyQtGraph reference is `pyqtgraph-0.14.0` at commit `a20028b98294b9cc
 - CMake 3.26 or newer.
 - A C++20 compiler.
 - Qt 6 with `Core`, `Gui`, and `Widgets` for plotting/widgets. Tests also use `Qt6::Test`.
-- OpenCV 4 for the default configured baseline. Use `-DPYQTGRAPH_CPP_REQUIRE_OPENCV=OFF` only for intentionally reduced environments.
+- OpenCV 4 for the default configured baseline. Use `-DCPPQTGRAPH_REQUIRE_OPENCV=OFF` only for intentionally reduced environments.
 
 ### Build and install this library
 
@@ -66,7 +66,7 @@ From this repository:
 ```bash
 cmake --preset dev
 cmake --build --preset dev --parallel
-cmake --install build/dev --prefix /tmp/pyqtgraph-cpp-install
+cmake --install build/dev --prefix /tmp/CppQtGraph-install
 ```
 
 For a release-style build, use the `release` preset and install from `build/release`.
@@ -77,17 +77,17 @@ For a release-style build, use the `release` preset and install from `build/rele
 cmake_minimum_required(VERSION 3.26)
 project(pgcpp_demo LANGUAGES CXX)
 
-find_package(pyqtgraph-cpp CONFIG REQUIRED)
+find_package(CppQtGraph CONFIG REQUIRED)
 
 add_executable(pgcpp_demo main.cpp)
 target_compile_features(pgcpp_demo PRIVATE cxx_std_20)
-target_link_libraries(pgcpp_demo PRIVATE pyqtgraph_cpp::pyqtgraph_cpp)
+target_link_libraries(pgcpp_demo PRIVATE CppQtGraph::CppQtGraph)
 ```
 
 Configure the consumer with the install prefix on `CMAKE_PREFIX_PATH`:
 
 ```bash
-cmake -S . -B build -DCMAKE_PREFIX_PATH=/tmp/pyqtgraph-cpp-install
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/tmp/CppQtGraph-install
 cmake --build build --parallel
 ./build/pgcpp_demo
 ```
@@ -101,7 +101,7 @@ QT_QPA_PLATFORM=offscreen ./build/pgcpp_demo
 ### Minimal plotting program
 
 ```cpp
-#include <pyqtgraph/widgets/PlotWidget.hpp>
+#include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtWidgets/QApplication>
 
@@ -112,8 +112,8 @@ int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
 
-    pyqtgraph::widgets::PlotWidget plot;
-    plot.setWindowTitle(QStringLiteral("pyqtgraph-cpp demo"));
+    cppqtgraph::widgets::PlotWidget plot;
+    plot.setWindowTitle(QStringLiteral("CppQtGraph demo"));
     plot.setTitle(QStringLiteral("Native C++/Qt plot"));
     plot.setLabel(QStringLiteral("bottom"), QStringLiteral("sample"));
     plot.setLabel(QStringLiteral("left"), QStringLiteral("value"));

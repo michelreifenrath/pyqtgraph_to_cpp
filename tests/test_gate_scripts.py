@@ -508,7 +508,7 @@ def test_gate_visual_dry_run_targets_native_renderer_ctest(tmp_path: Path) -> No
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [
         "cmake --preset visual",
-        "cmake --build --preset visual --target pyqtgraph_cpp_visual_render_example --parallel",
+        "cmake --build --preset visual --target cppqtgraph_visual_render_example --parallel",
         "ctest --preset visual -R '^P1\\.08\\.visual\\.SimplePlot$' --output-on-failure",
     ]
     assert not reports.exists()
@@ -758,7 +758,7 @@ def test_run_autoreview_treats_codex_p1_p2_findings_as_gate_failure(
         f"#!{sys.executable}\n"
         "print('Review comment:')\n"
         "print('')\n"
-        "print('- [P2] Avoid optional<QImage> when Qt is absent — include/pyqtgraph/functions_qimage.hpp:37-40')\n"
+        "print('- [P2] Avoid optional<QImage> when Qt is absent — include/cppqtgraph/functions_qimage.hpp:37-40')\n"
         "print('  QImage may be forward-declared, but std::optional<QImage> requires a complete type.')\n"
         "raise SystemExit(0)\n",
     )
@@ -786,7 +786,7 @@ def test_run_autoreview_treats_codex_p1_p2_findings_as_gate_failure(
         {
             "severity": "P2",
             "title": "Avoid optional<QImage> when Qt is absent",
-            "location": "include/pyqtgraph/functions_qimage.hpp:37-40",
+            "location": "include/cppqtgraph/functions_qimage.hpp:37-40",
             "evidence": "QImage may be forward-declared, but std::optional<QImage> requires a complete type.",
         }
     ]

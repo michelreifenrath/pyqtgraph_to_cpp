@@ -65,7 +65,7 @@ def test_project_license_is_mit() -> None:
     text = (ROOT / "LICENSE").read_text(encoding="utf-8")
     assert "MIT License" in text
     assert "Permission is hereby granted" in text
-    assert "pyqtgraph_to_cpp contributors" in text
+    assert "CppQtGraph contributors" in text
 
 
 def test_third_party_notices_cover_required_dependencies() -> None:
@@ -140,14 +140,14 @@ def test_check_attribution_passes_on_repository() -> None:
 
 def test_translated_cpp_without_source_note_fails(tmp_path: Path) -> None:
     write(
-        tmp_path / "include" / "pyqtgraph" / "PlotWidget.cpp",
+        tmp_path / "include" / "cppqtgraph" / "PlotWidget.cpp",
         "int missing_note() { return 0; }\n",
     )
 
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "include/pyqtgraph/PlotWidget.cpp" in result.stderr
+    assert "include/cppqtgraph/PlotWidget.cpp" in result.stderr
     assert "missing source attribution note" in result.stderr
     assert len(result.stderr.strip().splitlines()) == 1
 
@@ -156,20 +156,20 @@ def test_symlinked_source_under_required_tree_still_requires_note(
     tmp_path: Path,
 ) -> None:
     target = write(tmp_path / "tests" / "smoke" / "missing_note.cpp", "int missing() { return 0; }\n")
-    link = tmp_path / "include" / "pyqtgraph" / "Symlinked.cpp"
+    link = tmp_path / "include" / "cppqtgraph" / "Symlinked.cpp"
     link.parent.mkdir(parents=True, exist_ok=True)
     link.symlink_to(target)
 
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "include/pyqtgraph/Symlinked.cpp" in result.stderr
+    assert "include/cppqtgraph/Symlinked.cpp" in result.stderr
     assert "missing source attribution note" in result.stderr
 
 
 def test_translated_cpp_with_valid_source_note_passes(tmp_path: Path) -> None:
     write(
-        tmp_path / "include" / "pyqtgraph" / "PlotWidget.cpp", valid_translated_source()
+        tmp_path / "include" / "cppqtgraph" / "PlotWidget.cpp", valid_translated_source()
     )
 
     result = run_check(tmp_path)
@@ -180,7 +180,7 @@ def test_translated_cpp_with_valid_source_note_passes(tmp_path: Path) -> None:
 
 def test_documented_source_note_form_passes(tmp_path: Path) -> None:
     write(
-        tmp_path / "include" / "pyqtgraph" / "PlotWidget.cpp",
+        tmp_path / "include" / "cppqtgraph" / "PlotWidget.cpp",
         documented_translated_source(),
     )
 
@@ -194,7 +194,7 @@ def test_documented_translated_adapted_template_source_note_form_passes(
     tmp_path: Path,
 ) -> None:
     write(
-        tmp_path / "include" / "pyqtgraph" / "Template.cpp",
+        tmp_path / "include" / "cppqtgraph" / "Template.cpp",
         documented_template_source(),
     )
 
@@ -223,7 +223,7 @@ int translated_symbol() {{ return 0; }}
 
 def test_multiline_c_block_source_note_passes(tmp_path: Path) -> None:
     write(
-        tmp_path / "include" / "pyqtgraph" / "BlockComment.cpp",
+        tmp_path / "include" / "cppqtgraph" / "BlockComment.cpp",
         f"""/*
 Source note: translated from PyQtGraph pyqtgraph/widgets/PlotWidget.py
 PyQtGraph ref: pyqtgraph-0.14.0
@@ -242,7 +242,7 @@ int translated_symbol() {{ return 0; }}
 
 def test_multiline_python_docstring_source_note_passes(tmp_path: Path) -> None:
     write(
-        tmp_path / "src" / "pyqtgraph" / "plot_widget.py",
+        tmp_path / "src" / "cppqtgraph" / "plot_widget.py",
         f'''"""
 Source note: translated from PyQtGraph pyqtgraph/widgets/PlotWidget.py
 PyQtGraph ref: pyqtgraph-0.14.0
@@ -265,13 +265,13 @@ def test_source_note_without_upstream_path_after_pyqtgraph_fails(
     tmp_path: Path,
 ) -> None:
     write(
-        tmp_path / "include" / "pyqtgraph" / "LineComment.cpp",
+        tmp_path / "include" / "cppqtgraph" / "LineComment.cpp",
         translated_source_without_upstream_path(
             "// Source note: translated from PyQtGraph"
         ),
     )
     write(
-        tmp_path / "include" / "pyqtgraph" / "BlockComment.cpp",
+        tmp_path / "include" / "cppqtgraph" / "BlockComment.cpp",
         translated_source_without_upstream_path(
             "/* Source note: translated from PyQtGraph */"
         ),
@@ -280,8 +280,8 @@ def test_source_note_without_upstream_path_after_pyqtgraph_fails(
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "include/pyqtgraph/LineComment.cpp: missing upstream path" in result.stderr
-    assert "include/pyqtgraph/BlockComment.cpp: missing upstream path" in result.stderr
+    assert "include/cppqtgraph/LineComment.cpp: missing upstream path" in result.stderr
+    assert "include/cppqtgraph/BlockComment.cpp: missing upstream path" in result.stderr
 
 
 def test_source_note_with_placeholder_upstream_path_fails(tmp_path: Path) -> None:
@@ -291,21 +291,21 @@ def test_source_note_with_placeholder_upstream_path_fails(tmp_path: Path) -> Non
         "Placeholder.cpp": "// Source note: translated from PyQtGraph <upstream-path>",
     }.items():
         write(
-            tmp_path / "include" / "pyqtgraph" / name,
+            tmp_path / "include" / "cppqtgraph" / name,
             translated_source_without_upstream_path(note),
         )
 
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "include/pyqtgraph/SlashOnly.cpp: missing upstream path" in result.stderr
-    assert "include/pyqtgraph/ExtensionOnly.cpp: missing upstream path" in result.stderr
-    assert "include/pyqtgraph/Placeholder.cpp: missing upstream path" in result.stderr
+    assert "include/cppqtgraph/SlashOnly.cpp: missing upstream path" in result.stderr
+    assert "include/cppqtgraph/ExtensionOnly.cpp: missing upstream path" in result.stderr
+    assert "include/cppqtgraph/Placeholder.cpp: missing upstream path" in result.stderr
 
 
 def test_generated_source_without_generation_inputs_fails(tmp_path: Path) -> None:
     write(
-        tmp_path / "src" / "pyqtgraph" / "generated.cpp",
+        tmp_path / "src" / "cppqtgraph" / "generated.cpp",
         "// Generated by scripts/generate_manifest\n"
         "// Do not edit manually\n"
         "int generated_symbol() { return 0; }\n",
@@ -314,13 +314,13 @@ def test_generated_source_without_generation_inputs_fails(tmp_path: Path) -> Non
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "src/pyqtgraph/generated.cpp" in result.stderr
+    assert "src/cppqtgraph/generated.cpp" in result.stderr
     assert "missing generation inputs" in result.stderr
 
 
 def test_generated_source_with_placeholder_generator_fails(tmp_path: Path) -> None:
     write(
-        tmp_path / "src" / "pyqtgraph" / "generated.cpp",
+        tmp_path / "src" / "cppqtgraph" / "generated.cpp",
         "// Generated by <tool/script>\n"
         "// Inputs: port_manifest.yaml\n"
         "// Do not edit manually\n"
@@ -330,13 +330,13 @@ def test_generated_source_with_placeholder_generator_fails(tmp_path: Path) -> No
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "src/pyqtgraph/generated.cpp" in result.stderr
+    assert "src/cppqtgraph/generated.cpp" in result.stderr
     assert "placeholder generator" in result.stderr
 
 
 def test_generated_source_with_placeholder_inputs_fails(tmp_path: Path) -> None:
     write(
-        tmp_path / "src" / "pyqtgraph" / "generated.cpp",
+        tmp_path / "src" / "cppqtgraph" / "generated.cpp",
         "// Generated by scripts/generate_manifest\n"
         "// Inputs: <source manifest/upstream path>\n"
         "// Do not edit manually\n"
@@ -346,7 +346,7 @@ def test_generated_source_with_placeholder_inputs_fails(tmp_path: Path) -> None:
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "src/pyqtgraph/generated.cpp" in result.stderr
+    assert "src/cppqtgraph/generated.cpp" in result.stderr
     assert "placeholder generation inputs" in result.stderr
 
 
@@ -354,7 +354,7 @@ def test_generated_source_with_source_field_still_requires_inputs(
     tmp_path: Path,
 ) -> None:
     write(
-        tmp_path / "src" / "pyqtgraph" / "generated.cpp",
+        tmp_path / "src" / "cppqtgraph" / "generated.cpp",
         "// Generated by scripts/generate_manifest\n"
         "// Source: port_manifest.yaml\n"
         "// Do not edit manually\n"
@@ -364,13 +364,13 @@ def test_generated_source_with_source_field_still_requires_inputs(
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "src/pyqtgraph/generated.cpp" in result.stderr
+    assert "src/cppqtgraph/generated.cpp" in result.stderr
     assert "missing generation inputs" in result.stderr
 
 
 def test_generated_source_without_manual_edit_notice_fails(tmp_path: Path) -> None:
     write(
-        tmp_path / "src" / "pyqtgraph" / "generated.cpp",
+        tmp_path / "src" / "cppqtgraph" / "generated.cpp",
         "// Generated by scripts/generate_manifest\n"
         "// Inputs: port_manifest.yaml\n"
         "int generated_symbol() { return 0; }\n",
@@ -379,12 +379,12 @@ def test_generated_source_without_manual_edit_notice_fails(tmp_path: Path) -> No
     result = run_check(tmp_path)
 
     assert result.returncode != 0
-    assert "src/pyqtgraph/generated.cpp" in result.stderr
+    assert "src/cppqtgraph/generated.cpp" in result.stderr
     assert "missing manual edit notice" in result.stderr
 
 
 def test_gitkeep_placeholders_are_ignored(tmp_path: Path) -> None:
-    write(tmp_path / "include" / "pyqtgraph" / ".gitkeep", "")
+    write(tmp_path / "include" / "cppqtgraph" / ".gitkeep", "")
 
     result = run_check(tmp_path)
 

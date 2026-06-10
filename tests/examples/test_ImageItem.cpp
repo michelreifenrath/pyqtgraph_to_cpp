@@ -1,4 +1,4 @@
-#define PYQTGRAPH_CPP_IMAGEITEM_NO_MAIN
+#define CPPQTGRAPH_IMAGEITEM_NO_MAIN
 #include "../../examples/ImageItem.cpp"
 
 #include <QtCore/QDir>
@@ -20,8 +20,8 @@
 #include <string>
 #include <string_view>
 
-#ifndef PYQTGRAPH_CPP_P2_14_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P2_14_VISUAL_DIFF_DIR "reports/visual-diffs/ImageItem-example"
+#ifndef CPPQTGRAPH_P2_14_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P2_14_VISUAL_DIFF_DIR "reports/visual-diffs/ImageItem-example"
 #endif
 
 namespace {
@@ -69,16 +69,16 @@ std::string quote(std::string_view value)
     return result;
 }
 
-QImage expectedReferenceImage(const pyqtgraph::examples::ImageItemExample& example)
+QImage expectedReferenceImage(const cppqtgraph::examples::ImageItemExample& example)
 {
-    QImage image(static_cast<int>(pyqtgraph::examples::imageItemExampleWidth()),
-                 static_cast<int>(pyqtgraph::examples::imageItemExampleHeight()),
+    QImage image(static_cast<int>(cppqtgraph::examples::imageItemExampleWidth()),
+                 static_cast<int>(cppqtgraph::examples::imageItemExampleHeight()),
                  QImage::Format_ARGB32);
     const auto& frame = example.state->frames.front();
     for (int y = 0; y < image.height(); ++y) {
         auto* line = reinterpret_cast<QRgb*>(image.scanLine(y));
         for (int x = 0; x < image.width(); ++x) {
-            const auto value = frame[static_cast<std::size_t>(x) * pyqtgraph::examples::imageItemExampleHeight()
+            const auto value = frame[static_cast<std::size_t>(x) * cppqtgraph::examples::imageItemExampleHeight()
                                      + static_cast<std::size_t>(y)];
             line[x] = qRgb(value, value, value);
         }
@@ -161,9 +161,9 @@ DiffMetrics writeDiffImage(const QImage& reference, const QImage& actual, const 
     return metrics;
 }
 
-bool writeVisualArtifacts(pyqtgraph::examples::ImageItemExample& example)
+bool writeVisualArtifacts(cppqtgraph::examples::ImageItemExample& example)
 {
-    const QString artifactDir = QString::fromUtf8(PYQTGRAPH_CPP_P2_14_VISUAL_DIFF_DIR);
+    const QString artifactDir = QString::fromUtf8(CPPQTGRAPH_P2_14_VISUAL_DIFF_DIR);
     CHECK(QDir().mkpath(artifactDir));
 
     example.timer->stop();
@@ -215,7 +215,7 @@ bool writeVisualArtifacts(pyqtgraph::examples::ImageItemExample& example)
 
 bool testImageItemFactory()
 {
-    auto example = pyqtgraph::examples::createImageItemExample();
+    auto example = cppqtgraph::examples::createImageItemExample();
 
     CHECK(example.scene != nullptr);
     CHECK(example.widget != nullptr);
@@ -229,12 +229,12 @@ bool testImageItemFactory()
     CHECK(example.viewBox->targetRect() == QRectF(0.0, 0.0, 600.0, 600.0));
     CHECK(example.viewBox->viewRect() == QRectF(0.0, 0.0, 600.0, 600.0));
     CHECK(example.image->hasImage());
-    CHECK(example.image->width() == pyqtgraph::examples::imageItemExampleWidth());
-    CHECK(example.image->height() == pyqtgraph::examples::imageItemExampleHeight());
+    CHECK(example.image->width() == cppqtgraph::examples::imageItemExampleWidth());
+    CHECK(example.image->height() == cppqtgraph::examples::imageItemExampleHeight());
     CHECK(example.image->channels() == 1);
-    CHECK(example.state->frames.size() == pyqtgraph::examples::imageItemExampleFrameCount());
+    CHECK(example.state->frames.size() == cppqtgraph::examples::imageItemExampleFrameCount());
     CHECK(example.state->frames.front().size()
-          == pyqtgraph::examples::imageItemExampleWidth() * pyqtgraph::examples::imageItemExampleHeight());
+          == cppqtgraph::examples::imageItemExampleWidth() * cppqtgraph::examples::imageItemExampleHeight());
     CHECK(example.state->nextFrame == 1);
     CHECK(example.timer->isSingleShot());
     CHECK(example.timer->interval() == 1);

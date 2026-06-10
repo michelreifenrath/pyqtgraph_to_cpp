@@ -42,8 +42,8 @@ summary:
   class_count: 1
 source_files:
 - upstream_path: pyqtgraph/Foo.py
-  target_header_path: include/pyqtgraph/Foo.hpp
-  target_source_path: src/pyqtgraph/Foo.cpp{status_lines}
+  target_header_path: include/cppqtgraph/Foo.hpp
+  target_source_path: src/cppqtgraph/Foo.cpp{status_lines}
 examples:
 - upstream_path: pyqtgraph/examples/Foo.py
   target_source_path: examples/Foo.cpp
@@ -59,8 +59,8 @@ example_assets:
 classes:
 - class_name: Foo
   upstream_path: pyqtgraph/Foo.py
-  target_header_path: include/pyqtgraph/Foo.hpp
-  target_source_path: src/pyqtgraph/Foo.cpp
+  target_header_path: include/cppqtgraph/Foo.hpp
+  target_source_path: src/cppqtgraph/Foo.cpp
   status: ported
   completion: complete{evidence_lines("tests/evidence/class.txt")}
 example_validation_levels:
@@ -135,8 +135,8 @@ def test_P11_02_final_example_proofs_ignore_incomplete_examples(
 
 def create_complete_target_files(root: Path) -> None:
     for relative_path in (
-        "include/pyqtgraph/Foo.hpp",
-        "src/pyqtgraph/Foo.cpp",
+        "include/cppqtgraph/Foo.hpp",
+        "src/cppqtgraph/Foo.cpp",
         "examples/Foo.cpp",
         "examples/Foo.ui",
         "tests/evidence/source.txt",
@@ -365,7 +365,7 @@ def test_P0_09_require_complete_fails_on_stale_complete_metadata(
     assert "source_files: 1 incomplete" in result.stderr
     assert (
         "source_files[0] complete metadata points to missing target file: "
-        "target_header_path=include/pyqtgraph/Foo.hpp" in result.stderr
+        "target_header_path=include/cppqtgraph/Foo.hpp" in result.stderr
     )
 
 
@@ -376,7 +376,7 @@ def test_P0_09_require_complete_rejects_absolute_target_path(tmp_path: Path) -> 
     outside_target.write_text("// outside repository fixture\n", encoding="utf-8")
     replace_manifest_once(
         tmp_path,
-        "target_header_path: include/pyqtgraph/Foo.hpp",
+        "target_header_path: include/cppqtgraph/Foo.hpp",
         f"target_header_path: {outside_target}",
     )
 
@@ -404,7 +404,7 @@ def test_P0_09_require_complete_rejects_parent_traversal_target_path(
     traversal_path = f"../{outside_dir.name}/Foo.hpp"
     replace_manifest_once(
         tmp_path,
-        "target_source_path: src/pyqtgraph/Foo.cpp",
+        "target_source_path: src/cppqtgraph/Foo.cpp",
         f"target_source_path: {traversal_path}",
     )
 

@@ -1,6 +1,6 @@
-#include <pyqtgraph/graphicsItems/LabelItem.hpp>
-#include <pyqtgraph/graphicsItems/TextItem.hpp>
-#include <pyqtgraph/functions.hpp>
+#include <cppqtgraph/graphicsItems/LabelItem.hpp>
+#include <cppqtgraph/graphicsItems/TextItem.hpp>
+#include <cppqtgraph/functions.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -32,16 +32,16 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_22_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_22_VISUAL_DIFF_DIR "reports/visual-diffs/TextLabelItem"
+#ifndef CPPQTGRAPH_P4_22_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_22_VISUAL_DIFF_DIR "reports/visual-diffs/TextLabelItem"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_22_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P4_22_GPT_REVIEW_REPORT "reports/visual-diffs/TextLabelItem/gpt5_vision_review.md"
+#ifndef CPPQTGRAPH_P4_22_GPT_REVIEW_REPORT
+#define CPPQTGRAPH_P4_22_GPT_REVIEW_REPORT "reports/visual-diffs/TextLabelItem/gpt5_vision_review.md"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_22_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_22_REPOSITORY_REPORT_DIR "reports/issues/P4.22"
+#ifndef CPPQTGRAPH_P4_22_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_22_REPOSITORY_REPORT_DIR "reports/issues/P4.22"
 #endif
 
 namespace {
@@ -365,8 +365,8 @@ QImage renderReference()
 
 QImage renderActual()
 {
-    using pyqtgraph::graphicsItems::LabelItem;
-    using pyqtgraph::graphicsItems::TextItem;
+    using cppqtgraph::graphicsItems::LabelItem;
+    using cppqtgraph::graphicsItems::TextItem;
 
     QGraphicsScene scene(QRectF(0.0, 0.0, imageWidth, imageHeight));
 
@@ -541,7 +541,7 @@ struct SemanticReviewStatus {
 SemanticReviewStatus readGptVisualReview()
 {
     SemanticReviewStatus status;
-    status.path = QStringLiteral(PYQTGRAPH_CPP_P4_22_GPT_REVIEW_REPORT);
+    status.path = QStringLiteral(CPPQTGRAPH_P4_22_GPT_REVIEW_REPORT);
     if (!QFile::exists(status.path)) {
         std::cerr << "missing P4.22 GPT visual review: " << status.path.toStdString() << '\n';
         return status;
@@ -584,7 +584,7 @@ SemanticReviewStatus readGptVisualReview()
 
 bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage& diff, const PixelMetrics& metrics)
 {
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_22_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_22_VISUAL_DIFF_DIR);
     CHECK(ensureDirectory(visualDir));
     CHECK(reference.save(visualDir + QStringLiteral("/reference.png")));
     CHECK(actual.save(visualDir + QStringLiteral("/actual.png")));
@@ -642,17 +642,17 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
 
 bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels, std::uint64_t actualPixels)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P4_22_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P4_22_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/TextLabelItem_visual_behavior.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P4.22\",\n"
-            "  \"classes\": [\"pyqtgraph::graphicsItems::TextItem\", \"pyqtgraph::graphicsItems::LabelItem\"],\n"
+            "  \"classes\": [\"cppqtgraph::graphicsItems::TextItem\", \"cppqtgraph::graphicsItems::LabelItem\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/graphicsItems/TextItem.py and LabelItem.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/graphicsItems/TextItem.hpp\", \"src/pyqtgraph/graphicsItems/TextItem.cpp\", \"include/pyqtgraph/graphicsItems/LabelItem.hpp\", \"src/pyqtgraph/graphicsItems/LabelItem.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/graphicsItems/TextItem.hpp\", \"src/cppqtgraph/graphicsItems/TextItem.cpp\", \"include/cppqtgraph/graphicsItems/LabelItem.hpp\", \"src/cppqtgraph/graphicsItems/LabelItem.cpp\"],\n"
             "  \"shared_wiring\": [\"tests/CMakeLists.txt\", \"CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.22 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_graphicsitems_textlabelitem_p4_22\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.22 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_graphicsitems_textlabelitem_p4_22\"},\n"
             "  \"checks\": [\"TextItem child QGraphicsTextItem anchor placement\", \"TextItem transform compensation under scaled parent\", \"TextItem border/fill rendering\", \"LabelItem styled HTML and justify layout\", \"LabelItem angle rotation\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/TextLabelItem\", \"reference\": \"reference.png\", \"actual\": \"actual.png\", \"diff\": \"diff.png\", \"metrics\": \"metrics.json\", \"gpt5_vision_review\": \"gpt5_vision_review.md\"},\n"
             "  \"semantic_pixels\": {\"reference\": ")
@@ -679,14 +679,14 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
 
 bool testConstructionAndBehavior()
 {
-    using pyqtgraph::graphicsItems::LabelItem;
-    using pyqtgraph::graphicsItems::TextItem;
+    using cppqtgraph::graphicsItems::LabelItem;
+    using cppqtgraph::graphicsItems::TextItem;
 
     static_assert(std::is_constructible_v<TextItem>);
     static_assert(std::is_constructible_v<TextItem, QString, QColor, QPointF, QGraphicsItem*>);
-    static_assert(std::is_base_of_v<pyqtgraph::graphicsItems::GraphicsObject, TextItem>);
+    static_assert(std::is_base_of_v<cppqtgraph::graphicsItems::GraphicsObject, TextItem>);
     static_assert(std::is_constructible_v<LabelItem>);
-    static_assert(std::is_base_of_v<pyqtgraph::graphicsItems::GraphicsWidget, LabelItem>);
+    static_assert(std::is_base_of_v<cppqtgraph::graphicsItems::GraphicsWidget, LabelItem>);
 
     TextItem text(QStringLiteral("Probe"), QColor(255, 0, 0), QPointF(0.5, 0.5));
     text.setFont(proofFont());
@@ -713,7 +713,7 @@ bool testConstructionAndBehavior()
 
 bool testSetAttrRefreshesLayoutAndSize()
 {
-    using pyqtgraph::graphicsItems::LabelItem;
+    using cppqtgraph::graphicsItems::LabelItem;
 
     LabelItem::TextStyleOptions style;
     style.justify = QStringLiteral("center");

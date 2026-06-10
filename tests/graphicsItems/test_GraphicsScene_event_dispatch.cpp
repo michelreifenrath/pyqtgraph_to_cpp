@@ -1,5 +1,5 @@
-#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -16,11 +16,11 @@
 #include <iostream>
 #include <memory>
 
-using pyqtgraph::GraphicsScene::GraphicsScene;
-using pyqtgraph::GraphicsScene::GraphicsSceneEventHandler;
-using pyqtgraph::GraphicsScene::HoverEvent;
-using pyqtgraph::GraphicsScene::MouseClickEvent;
-using pyqtgraph::GraphicsScene::MouseDragEvent;
+using cppqtgraph::GraphicsScene::GraphicsScene;
+using cppqtgraph::GraphicsScene::GraphicsSceneEventHandler;
+using cppqtgraph::GraphicsScene::HoverEvent;
+using cppqtgraph::GraphicsScene::MouseClickEvent;
+using cppqtgraph::GraphicsScene::MouseDragEvent;
 
 namespace {
 
@@ -188,8 +188,8 @@ int fail(const char* message)
 
 bool writeReport(const QJsonObject& report)
 {
-#ifdef PYQTGRAPH_CPP_P3_03_ARTIFACT_DIR
-    const QString artifactDir = QString::fromUtf8(PYQTGRAPH_CPP_P3_03_ARTIFACT_DIR);
+#ifdef CPPQTGRAPH_P3_03_ARTIFACT_DIR
+    const QString artifactDir = QString::fromUtf8(CPPQTGRAPH_P3_03_ARTIFACT_DIR);
 #else
     const QString artifactDir = QStringLiteral("artifacts/P3.03");
 #endif

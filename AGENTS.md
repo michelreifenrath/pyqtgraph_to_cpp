@@ -19,7 +19,7 @@ If these conflict, obey the narrower issue-owned scope and stop for human direct
 - Build a native C++ library, not a Python wrapper.
 - Use Qt/C++ for GUI and rendering work.
 - Use OpenCV/C++ math and data structures instead of NumPy-style Python dependencies.
-- Keep PyQtGraph class names, object names, file names, folder hierarchy, and example names aligned with upstream unless the issue explicitly says otherwise.
+- Keep PyQtGraph class names, object names, and example names aligned with upstream unless the issue explicitly says otherwise; the C++ library branding, include root, and namespace are CppQtGraph/`cppqtgraph`.
 - Read the pinned upstream PyQtGraph source when behavior or naming matters.
 - If behavior is unclear, write or request a PyQtGraph oracle probe before guessing.
 
@@ -33,10 +33,3 @@ If these conflict, obey the narrower issue-owned scope and stop for human direct
 ## Visual validation
 
 For pixel-affecting work, follow the visual-validation level in the issue and `FACTORY_RULES.md`. Generate required artifacts and request GPT-5.5 semantic visual review when required. If required visual evidence cannot be produced inside owned files, stop and escalate.
-
-## Safety
-
-- Do not push to `main`.
-- Do not merge.
-- Do not commit manually unless explicitly instructed.
-- Keep changes narrow, issue-scoped, and reviewable.

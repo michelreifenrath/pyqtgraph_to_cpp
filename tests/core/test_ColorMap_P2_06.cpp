@@ -1,5 +1,5 @@
-#include "../../include/pyqtgraph/colormap.hpp"
-#include "../../include/pyqtgraph/colors/palette.hpp"
+#include "../../include/cppqtgraph/colormap.hpp"
+#include "../../include/cppqtgraph/colors/palette.hpp"
 
 #include <QColor>
 #include <QGradient>
@@ -21,10 +21,10 @@
 
 namespace {
 
-using MappingMode = pyqtgraph::ColorMap::MappingMode;
-using OutputMode = pyqtgraph::ColorMap::OutputMode;
-using LookupTable = pyqtgraph::ColorMap::LookupTable;
-using Stops = pyqtgraph::ColorMap::Stops;
+using MappingMode = cppqtgraph::ColorMap::MappingMode;
+using OutputMode = cppqtgraph::ColorMap::OutputMode;
+using LookupTable = cppqtgraph::ColorMap::LookupTable;
+using Stops = cppqtgraph::ColorMap::Stops;
 
 bool check(bool condition, std::string_view expression, std::string_view file, int line)
 {
@@ -107,8 +107,8 @@ int stopByteAt(const Stops& stops, std::size_t row, std::size_t channel)
 
 bool fixtureMentionsPinnedReference()
 {
-#ifdef PYQTGRAPH_CPP_P2_06_FIXTURE
-    std::ifstream input(PYQTGRAPH_CPP_P2_06_FIXTURE);
+#ifdef CPPQTGRAPH_P2_06_FIXTURE
+    std::ifstream input(CPPQTGRAPH_P2_06_FIXTURE);
     CHECK(input.good());
     const std::string text((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
     CHECK(text.find("pyqtgraph-0.14.0") != std::string::npos);
@@ -119,7 +119,7 @@ bool fixtureMentionsPinnedReference()
 
 bool testEqualSpacingStopsAndLutMatchOracle()
 {
-    const pyqtgraph::ColorMap map = pyqtgraph::ColorMap::fromEqualSpacing(
+    const cppqtgraph::ColorMap map = cppqtgraph::ColorMap::fromEqualSpacing(
         {QColor(0, 0, 0), QColor(128, 64, 32), QColor(255, 255, 255)},
         QStringLiteral("equal-spacing"));
 
@@ -161,7 +161,7 @@ bool testEqualSpacingStopsAndLutMatchOracle()
 
 bool testMapConveniencesAndMappingModes()
 {
-    pyqtgraph::ColorMap ramp = pyqtgraph::ColorMap::fromEqualSpacing({QColor(0, 0, 0), QColor(255, 255, 255)});
+    cppqtgraph::ColorMap ramp = cppqtgraph::ColorMap::fromEqualSpacing({QColor(0, 0, 0), QColor(255, 255, 255)});
 
     const auto byte = ramp.mapToByte(0.5);
     CHECK_INT(byte[0], 127);
@@ -189,7 +189,7 @@ bool testMapConveniencesAndMappingModes()
 
 bool testGradientStopsAndSpreadMatchOracle()
 {
-    pyqtgraph::ColorMap map = pyqtgraph::ColorMap::fromEqualSpacing({QColor(0, 0, 0), QColor(255, 255, 255)});
+    cppqtgraph::ColorMap map = cppqtgraph::ColorMap::fromEqualSpacing({QColor(0, 0, 0), QColor(255, 255, 255)});
     const QLinearGradient normal = map.getGradient();
     CHECK_SIZE(static_cast<std::size_t>(normal.stops().size()), std::size_t{2});
     CHECK_NEAR(normal.stops()[0].first, 0.0, 0.0);
@@ -215,11 +215,11 @@ bool testGradientStopsAndSpreadMatchOracle()
 
 bool testPaletteLookupAndQPalettes()
 {
-    const std::vector<QString> names = pyqtgraph::listMaps();
+    const std::vector<QString> names = cppqtgraph::listMaps();
     CHECK(std::find(names.begin(), names.end(), QStringLiteral("PAL-relaxed")) != names.end());
     CHECK(std::find(names.begin(), names.end(), QStringLiteral("PAL-relaxed_bright")) != names.end());
 
-    const auto relaxed = pyqtgraph::get(QStringLiteral("PAL-relaxed"));
+    const auto relaxed = cppqtgraph::get(QStringLiteral("PAL-relaxed"));
     CHECK(relaxed.has_value());
     CHECK(relaxed->name() == QStringLiteral("PAL-relaxed"));
     CHECK_SIZE(relaxed->size(), std::size_t{10});
@@ -230,20 +230,20 @@ bool testPaletteLookupAndQPalettes()
     CHECK(relaxed->getByIndex(7) == QColor(QStringLiteral("#c01188")));
     CHECK(relaxed->getByIndex(9) == QColor(QStringLiteral("#f97f10")));
 
-    const auto relaxedBright = pyqtgraph::get(QStringLiteral("PAL-relaxed_bright"));
+    const auto relaxedBright = cppqtgraph::get(QStringLiteral("PAL-relaxed_bright"));
     CHECK(relaxedBright.has_value());
     CHECK(relaxedBright->getByIndex(5) == QColor(QStringLiteral("#1f78ff")));
     CHECK(relaxedBright->getByIndex(6) == QColor(QStringLiteral("#a54dff")));
 
-    CHECK(!pyqtgraph::get(QStringLiteral("missing-map")).has_value());
-    CHECK(pyqtgraph::listMaps(QStringLiteral("matplotlib")).empty());
+    CHECK(!cppqtgraph::get(QStringLiteral("missing-map")).has_value());
+    CHECK(cppqtgraph::listMaps(QStringLiteral("matplotlib")).empty());
 
-    const QPalette dark = pyqtgraph::colors::getQDarkStyleDarkQPalette();
+    const QPalette dark = cppqtgraph::colors::getQDarkStyleDarkQPalette();
     CHECK(dark.color(QPalette::Active, QPalette::Base) == QColor(QStringLiteral("#19232D")));
     CHECK(dark.color(QPalette::Active, QPalette::ButtonText) == QColor(QStringLiteral("#F0F0F0")));
     CHECK(dark.color(QPalette::Disabled, QPalette::Text) == QColor(QStringLiteral("#9DA9B5")));
 
-    const QPalette light = pyqtgraph::colors::getQDarkStyleLightQPalette();
+    const QPalette light = cppqtgraph::colors::getQDarkStyleLightQPalette();
     CHECK(light.color(QPalette::Active, QPalette::Base) == QColor(QStringLiteral("#FAFAFA")));
     CHECK(light.color(QPalette::Active, QPalette::Highlight) == QColor(QStringLiteral("#9FCBFF")));
     CHECK(light.color(QPalette::Disabled, QPalette::HighlightedText) == QColor(QStringLiteral("#293544")));
@@ -253,12 +253,12 @@ bool testPaletteLookupAndQPalettes()
 
 bool writeSwatchArtifact()
 {
-#ifdef PYQTGRAPH_CPP_P2_06_ARTIFACT_DIR
-    const auto relaxed = pyqtgraph::get(QStringLiteral("PAL-relaxed"));
+#ifdef CPPQTGRAPH_P2_06_ARTIFACT_DIR
+    const auto relaxed = cppqtgraph::get(QStringLiteral("PAL-relaxed"));
     CHECK(relaxed.has_value());
     const LookupTable lut = relaxed->getLookupTable(0.0, 1.0, 90);
 
-    const std::filesystem::path dir = PYQTGRAPH_CPP_P2_06_ARTIFACT_DIR;
+    const std::filesystem::path dir = CPPQTGRAPH_P2_06_ARTIFACT_DIR;
     std::filesystem::create_directories(dir);
     const std::filesystem::path ppm = dir / "PAL-relaxed-swatch.ppm";
     std::ofstream out(ppm);

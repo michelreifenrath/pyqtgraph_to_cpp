@@ -10,8 +10,8 @@ def write_manifest(root: Path, *, source_count: int = 2, class_count: int = 3) -
     source_rows = "\n".join(
         f"""
 - upstream_path: pyqtgraph/Source{index}.py
-  target_header_path: include/pyqtgraph/Source{index}.hpp
-  target_source_path: src/pyqtgraph/Source{index}.cpp
+  target_header_path: include/cppqtgraph/Source{index}.hpp
+  target_source_path: src/cppqtgraph/Source{index}.cpp
   status: ported
   completion: complete
   completion_evidence:
@@ -23,8 +23,8 @@ def write_manifest(root: Path, *, source_count: int = 2, class_count: int = 3) -
         f"""
 - class_name: Class{index}
   upstream_path: pyqtgraph/Source{index % max(source_count, 1)}.py
-  target_header_path: include/pyqtgraph/Class{index}.hpp
-  target_source_path: src/pyqtgraph/Class{index}.cpp
+  target_header_path: include/cppqtgraph/Class{index}.hpp
+  target_source_path: src/cppqtgraph/Class{index}.cpp
   status: ported
   completion: complete
   completion_evidence:
@@ -86,16 +86,16 @@ def create_targets_and_evidence(root: Path, *, source_count: int = 2, class_coun
     for index in range(source_count):
         paths.extend(
             [
-                f"include/pyqtgraph/Source{index}.hpp",
-                f"src/pyqtgraph/Source{index}.cpp",
+                f"include/cppqtgraph/Source{index}.hpp",
+                f"src/cppqtgraph/Source{index}.cpp",
                 f"reports/issues/P0.03/source-{index}.txt",
             ]
         )
     for index in range(class_count):
         paths.extend(
             [
-                f"include/pyqtgraph/Class{index}.hpp",
-                f"src/pyqtgraph/Class{index}.cpp",
+                f"include/cppqtgraph/Class{index}.hpp",
+                f"src/cppqtgraph/Class{index}.cpp",
                 f"reports/issues/P0.03/class-{index}.txt",
             ]
         )
@@ -146,7 +146,7 @@ def test_P0_03_dashboard_rejects_inconsistent_summary_metadata(tmp_path: Path) -
 def test_P0_03_dashboard_rejects_stale_complete_target_metadata(tmp_path: Path) -> None:
     write_manifest(tmp_path, source_count=1, class_count=1)
     create_targets_and_evidence(tmp_path, source_count=1, class_count=1)
-    (tmp_path / "include/pyqtgraph/Source0.hpp").unlink()
+    (tmp_path / "include/cppqtgraph/Source0.hpp").unlink()
 
     result = run_summary(tmp_path, "--require-complete")
 
@@ -155,5 +155,5 @@ def test_P0_03_dashboard_rejects_stale_complete_target_metadata(tmp_path: Path) 
     assert "source_files: 1 incomplete" in result.stderr
     assert (
         "source_files[0] complete metadata points to missing target file: "
-        "target_header_path=include/pyqtgraph/Source0.hpp"
+        "target_header_path=include/cppqtgraph/Source0.hpp"
     ) in result.stderr

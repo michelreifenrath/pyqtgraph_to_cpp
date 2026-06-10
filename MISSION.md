@@ -7,7 +7,7 @@ Build a native C++/Qt library that functions and looks like PyQtGraph from the o
 A C++ user should be able to:
 
 - Use PyQtGraph-like public classes, names, examples, and visual behavior.
-- Build, install, and consume the library from CMake with `find_package(pyqtgraph-cpp)`.
+- Build, install, and consume the library from CMake with `find_package(CppQtGraph)`.
 - Compare behavior against a pinned PyQtGraph reference through deterministic tests, oracles, examples, screenshots, and interaction checks.
 - Treat the implementation as a native C++ library, not as Python embedded behind a C++ facade.
 
@@ -15,7 +15,7 @@ A C++ user should be able to:
 
 - Externally observable PyQtGraph behavior: plotting, axes, curves, images, colors, interactions, layouts, widgets, and examples.
 - Qt 6 GUI/rendering code and OpenCV/C++ math/data structures where they replace Python/NumPy behavior.
-- PyQtGraph-aligned class names, object names, file names, folder hierarchy, and example names unless an issue explicitly authorizes divergence.
+- PyQtGraph-aligned class names, object names, and example names unless an issue explicitly authorizes divergence; C++ branding, include root, package name, and namespace use CppQtGraph/`cppqtgraph`.
 - Incremental, issue-scoped ports backed by C++ tests, PyQtGraph oracle probes, and visual evidence when pixels are part of correctness.
 - Clean downstream C++ package usage and narrowly required build/test integration.
 

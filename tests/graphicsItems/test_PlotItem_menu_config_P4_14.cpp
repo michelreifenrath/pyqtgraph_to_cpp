@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -21,8 +21,8 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_14_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_14_ARTIFACT_DIR "artifacts/P4.14"
+#ifndef CPPQTGRAPH_P4_14_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_14_ARTIFACT_DIR "artifacts/P4.14"
 #endif
 
 namespace {
@@ -122,17 +122,17 @@ bool actionVisible(QMenu* menu, const QString& actionText)
 
 void writeReport(const std::vector<QString>& actionTexts,
                  const std::vector<QString>& events,
-                 const pyqtgraph::graphicsItems::PlotItem::DownsampleState& downsample,
-                 const pyqtgraph::graphicsItems::PlotItem::GridState& grid,
-                 const pyqtgraph::graphicsItems::PlotItem::AlphaState& alpha,
+                 const cppqtgraph::graphicsItems::PlotItem::DownsampleState& downsample,
+                 const cppqtgraph::graphicsItems::PlotItem::GridState& grid,
+                 const cppqtgraph::graphicsItems::PlotItem::AlphaState& alpha,
                  const std::array<bool, 2>& logMode,
                  int callbackCount,
                  bool showGridNoArgsThrows,
                  bool invalidModeThrows,
                  bool disabledMenuNoop)
 {
-    QDir().mkpath(QString::fromUtf8(PYQTGRAPH_CPP_P4_14_ARTIFACT_DIR));
-    QFile file(QString::fromUtf8(PYQTGRAPH_CPP_P4_14_ARTIFACT_DIR) + QStringLiteral("/plotitem_menu_config_interaction_report.json"));
+    QDir().mkpath(QString::fromUtf8(CPPQTGRAPH_P4_14_ARTIFACT_DIR));
+    QFile file(QString::fromUtf8(CPPQTGRAPH_P4_14_ARTIFACT_DIR) + QStringLiteral("/plotitem_menu_config_interaction_report.json"));
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         throw std::runtime_error("unable to write P4.14 interaction report");
     }
@@ -185,7 +185,7 @@ void writeReport(const std::vector<QString>& actionTexts,
 
 bool testMenuConfigInteraction()
 {
-    using pyqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::graphicsItems::PlotItem;
 
     PlotItem plot;
     QMenu* menu = plot.getMenu();

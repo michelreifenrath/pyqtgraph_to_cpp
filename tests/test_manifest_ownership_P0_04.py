@@ -37,8 +37,8 @@ def write_manifest(root: Path) -> None:
             "source_files": [
                 {
                     "upstream_path": "pyqtgraph/Foo.py",
-                    "target_header_path": "include/pyqtgraph/Foo.hpp",
-                    "target_source_path": "src/pyqtgraph/Foo.cpp",
+                    "target_header_path": "include/cppqtgraph/Foo.hpp",
+                    "target_source_path": "src/cppqtgraph/Foo.cpp",
                     "status": "not_started",
                     "completion": "missing",
                 }
@@ -65,8 +65,8 @@ def write_manifest(root: Path) -> None:
                 {
                     "class_name": "Foo",
                     "upstream_path": "pyqtgraph/Foo.py",
-                    "target_header_path": "include/pyqtgraph/Foo.hpp",
-                    "target_source_path": "src/pyqtgraph/Foo.cpp",
+                    "target_header_path": "include/cppqtgraph/Foo.hpp",
+                    "target_source_path": "src/cppqtgraph/Foo.cpp",
                     "status": "not_started",
                     "completion": "missing",
                 }

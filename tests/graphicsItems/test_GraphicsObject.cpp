@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsObject.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -49,9 +49,9 @@ private:
     std::unique_ptr<QApplication> application_;
 };
 
-class ConcreteGraphicsObject final : public pyqtgraph::graphicsItems::GraphicsObject {
+class ConcreteGraphicsObject final : public cppqtgraph::graphicsItems::GraphicsObject {
 public:
-    using pyqtgraph::graphicsItems::GraphicsObject::GraphicsObject;
+    using cppqtgraph::graphicsItems::GraphicsObject::GraphicsObject;
 
     [[nodiscard]] QRectF boundingRect() const override
     {
@@ -63,8 +63,8 @@ public:
 
 bool testGraphicsObjectTypeShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsObject;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsObject;
 
     static_assert(std::is_base_of_v<QGraphicsObject, GraphicsObject>);
     static_assert(std::is_base_of_v<GraphicsItem, GraphicsObject>);

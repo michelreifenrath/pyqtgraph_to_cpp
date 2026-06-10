@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QRectF>
 #include <QtCore/QtGlobal>
@@ -54,13 +54,13 @@ bool nearlyRelative(qreal lhs, qreal rhs)
     return std::abs(lhs - rhs) <= scale * 1.0e-12;
 }
 
-qreal stableAxisCenter(const pyqtgraph::graphicsItems::ViewBox::AxisRange& range)
+qreal stableAxisCenter(const cppqtgraph::graphicsItems::ViewBox::AxisRange& range)
 {
     const qreal span = range[1] - range[0];
     return std::isfinite(span) ? range[0] + span / 2.0 : range[0] / 2.0 + range[1] / 2.0;
 }
 
-bool checkFiniteIncreasingAxis(const pyqtgraph::graphicsItems::ViewBox::AxisRange& range)
+bool checkFiniteIncreasingAxis(const cppqtgraph::graphicsItems::ViewBox::AxisRange& range)
 {
     CHECK(std::isfinite(range[0]));
     CHECK(std::isfinite(range[1]));
@@ -68,7 +68,7 @@ bool checkFiniteIncreasingAxis(const pyqtgraph::graphicsItems::ViewBox::AxisRang
     return true;
 }
 
-bool checkRange(const pyqtgraph::graphicsItems::ViewBox::Range2D& range,
+bool checkRange(const cppqtgraph::graphicsItems::ViewBox::Range2D& range,
                 qreal xMin,
                 qreal xMax,
                 qreal yMin,
@@ -92,7 +92,7 @@ bool checkRect(const QRectF& rect, qreal x, qreal y, qreal width, qreal height)
 
 bool testDefaultRangesAndCopies()
 {
-    pyqtgraph::graphicsItems::ViewBox viewBox;
+    cppqtgraph::graphicsItems::ViewBox viewBox;
 
     CHECK(checkRange(viewBox.viewRange(), 0.0, 1.0, 0.0, 1.0));
     CHECK(checkRange(viewBox.targetRange(), 0.0, 1.0, 0.0, 1.0));
@@ -112,7 +112,7 @@ bool testDefaultRangesAndCopies()
 
 bool testAxisAndRectSetters()
 {
-    pyqtgraph::graphicsItems::ViewBox viewBox;
+    cppqtgraph::graphicsItems::ViewBox viewBox;
 
     viewBox.setXRange(2.0, 4.0, 0.0);
     CHECK(checkRange(viewBox.viewRange(), 2.0, 4.0, 0.0, 1.0));
@@ -128,7 +128,7 @@ bool testAxisAndRectSetters()
     CHECK(checkRect(viewBox.viewRect(), -1.0, 2.0, 4.0, 6.0));
     CHECK(checkRect(viewBox.targetRect(), -1.0, 2.0, 4.0, 6.0));
 
-    viewBox.setRange(pyqtgraph::graphicsItems::ViewBox::AxisRange{10.0, 12.0}, std::nullopt, 0.0, false);
+    viewBox.setRange(cppqtgraph::graphicsItems::ViewBox::AxisRange{10.0, 12.0}, std::nullopt, 0.0, false);
     CHECK(checkRange(viewBox.targetRange(), 10.0, 12.0, 2.0, 8.0));
     CHECK(checkRange(viewBox.viewRange(), -1.0, 3.0, 2.0, 8.0));
 
@@ -137,21 +137,21 @@ bool testAxisAndRectSetters()
 
 bool testNormalizationAndValidation()
 {
-    pyqtgraph::graphicsItems::ViewBox viewBox;
+    cppqtgraph::graphicsItems::ViewBox viewBox;
 
     viewBox.setXRange(5.0, 1.0, 0.0);
     CHECK(checkRange(viewBox.viewRange(), 1.0, 5.0, 0.0, 1.0));
 
-    pyqtgraph::graphicsItems::ViewBox zeroSpanViewBox;
+    cppqtgraph::graphicsItems::ViewBox zeroSpanViewBox;
     zeroSpanViewBox.setXRange(5.0, 5.0, 0.0);
     CHECK(checkRange(zeroSpanViewBox.viewRange(), 4.5, 5.5, 0.0, 1.0));
 
-    pyqtgraph::graphicsItems::ViewBox zeroSpanDefaultPaddingX;
+    cppqtgraph::graphicsItems::ViewBox zeroSpanDefaultPaddingX;
     zeroSpanDefaultPaddingX.setXRange(5.0, 5.0);
     CHECK(checkRange(zeroSpanDefaultPaddingX.viewRange(), 4.5, 5.5, 0.0, 1.0));
     CHECK(checkRange(zeroSpanDefaultPaddingX.targetRange(), 4.5, 5.5, 0.0, 1.0));
 
-    pyqtgraph::graphicsItems::ViewBox zeroSpanDefaultPaddingY;
+    cppqtgraph::graphicsItems::ViewBox zeroSpanDefaultPaddingY;
     zeroSpanDefaultPaddingY.setYRange(-2.0, -2.0);
     CHECK(checkRange(zeroSpanDefaultPaddingY.viewRange(), 0.0, 1.0, -2.5, -1.5));
     CHECK(checkRange(zeroSpanDefaultPaddingY.targetRange(), 0.0, 1.0, -2.5, -1.5));
@@ -181,20 +181,20 @@ bool testNormalizationAndValidation()
 
 bool testLargeFiniteRangeNormalization()
 {
-    pyqtgraph::graphicsItems::ViewBox largeZeroSpan;
+    cppqtgraph::graphicsItems::ViewBox largeZeroSpan;
     largeZeroSpan.setXRange(1.0e308, 1.0e308, 0.0);
     const auto largeXRange = largeZeroSpan.viewRange();
     CHECK(checkFiniteIncreasingAxis(largeXRange[0]));
     CHECK(nearlyRelative(stableAxisCenter(largeXRange[0]), 1.0e308));
 
-    pyqtgraph::graphicsItems::ViewBox collapsedAtLargeOffset;
+    cppqtgraph::graphicsItems::ViewBox collapsedAtLargeOffset;
     const qreal largeOffset = 1.0e20;
     collapsedAtLargeOffset.setYRange(largeOffset, largeOffset + 1.0, 0.0);
     const auto largeYRange = collapsedAtLargeOffset.viewRange();
     CHECK(checkFiniteIncreasingAxis(largeYRange[1]));
     CHECK(nearlyRelative(stableAxisCenter(largeYRange[1]), largeOffset));
 
-    pyqtgraph::graphicsItems::ViewBox rejectsOverflow;
+    cppqtgraph::graphicsItems::ViewBox rejectsOverflow;
     const auto beforeViewRange = rejectsOverflow.viewRange();
     const auto beforeTargetRange = rejectsOverflow.targetRange();
     bool threw = false;
@@ -212,7 +212,7 @@ bool testLargeFiniteRangeNormalization()
 
 bool testEmptyOptionalRangeThrowsAndPreservesState()
 {
-    pyqtgraph::graphicsItems::ViewBox viewBox;
+    cppqtgraph::graphicsItems::ViewBox viewBox;
     viewBox.setXRange(10.0, 12.0, 0.0, false);
     const auto beforeViewRange = viewBox.viewRange();
     const auto beforeTargetRange = viewBox.targetRange();
@@ -232,7 +232,7 @@ bool testEmptyOptionalRangeThrowsAndPreservesState()
 
 bool testLimitsClampPanningAndSpan()
 {
-    using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+    using ViewBox = cppqtgraph::graphicsItems::ViewBox;
 
     ViewBox bounded;
     ViewBox::Limits bounds;
@@ -266,7 +266,7 @@ bool testLimitsClampPanningAndSpan()
 
 bool testLargeFiniteHardLimitsCannotCollapseRanges()
 {
-    using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+    using ViewBox = cppqtgraph::graphicsItems::ViewBox;
 
     ViewBox lowerLimited;
     const auto beforeLimits = lowerLimited.limits();
@@ -292,7 +292,7 @@ bool testLargeFiniteHardLimitsCannotCollapseRanges()
 
 bool testInvalidLimitsThrowAndPreserveState()
 {
-    using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+    using ViewBox = cppqtgraph::graphicsItems::ViewBox;
     ViewBox viewBox;
 
     ViewBox::Limits valid;

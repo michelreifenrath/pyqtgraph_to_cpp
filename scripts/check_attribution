@@ -13,15 +13,15 @@ from pathlib import Path
 PINNED_REF = "pyqtgraph-0.14.0"
 PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
 AUDIT_DIRS = (
-    Path("include/pyqtgraph"),
-    Path("src/pyqtgraph"),
+    Path("include/cppqtgraph"),
+    Path("src/cppqtgraph"),
     Path("examples"),
     Path("tests"),
     Path("benchmarks"),
 )
 REQUIRED_NOTE_DIRS = (
-    Path("include/pyqtgraph"),
-    Path("src/pyqtgraph"),
+    Path("include/cppqtgraph"),
+    Path("src/cppqtgraph"),
     Path("examples"),
     Path("benchmarks"),
 )

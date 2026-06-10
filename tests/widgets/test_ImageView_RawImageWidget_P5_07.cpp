@@ -1,6 +1,6 @@
-#include <pyqtgraph/functions.hpp>
-#include <pyqtgraph/imageview/ImageView.hpp>
-#include <pyqtgraph/widgets/RawImageWidget.hpp>
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/imageview/ImageView.hpp>
+#include <cppqtgraph/widgets/RawImageWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -17,12 +17,12 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_07_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P5_07_ARTIFACT_DIR "artifacts/P5.07"
+#ifndef CPPQTGRAPH_P5_07_ARTIFACT_DIR
+#define CPPQTGRAPH_P5_07_ARTIFACT_DIR "artifacts/P5.07"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_07_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_07_REPOSITORY_REPORT_DIR "reports/issues/P5.07"
+#ifndef CPPQTGRAPH_P5_07_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_07_REPOSITORY_REPORT_DIR "reports/issues/P5.07"
 #endif
 
 namespace {
@@ -153,9 +153,9 @@ bool checkRgb888(const QImage& image, int x, int y, int red, int green, int blue
     return true;
 }
 
-pyqtgraph::ImageLookupTable lutView(const std::vector<std::uint8_t>& lut, std::size_t channels)
+cppqtgraph::ImageLookupTable lutView(const std::vector<std::uint8_t>& lut, std::size_t channels)
 {
-    return pyqtgraph::ImageLookupTable{
+    return cppqtgraph::ImageLookupTable{
         lut.data(),
         lut.size() / channels,
         channels,
@@ -167,10 +167,10 @@ pyqtgraph::ImageLookupTable lutView(const std::vector<std::uint8_t>& lut, std::s
 bool testRawImageWidgetGrayscaleCopyAndFormat()
 {
     std::vector<std::uint8_t> data{10, 20, 30, 40, 50, 60};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
 
-    pyqtgraph::widgets::RawImageWidget widget;
-    widget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
+    cppqtgraph::widgets::RawImageWidget widget;
+    widget.setAxisOrder(cppqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
     widget.setImage(view);
 
     CHECK(widget.hasImage());
@@ -195,10 +195,10 @@ bool testRawImageWidgetGrayscaleCopyAndFormat()
 bool testRawImageWidgetStrideView()
 {
     std::array<std::uint8_t, 9> padded{{0, 10, 99, 20, 30, 99, 40, 50, 99}};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(padded.data(), {3, 2}, {3, 1});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(padded.data(), {3, 2}, {3, 1});
 
-    pyqtgraph::widgets::RawImageWidget widget;
-    widget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
+    cppqtgraph::widgets::RawImageWidget widget;
+    widget.setAxisOrder(cppqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
     widget.setImage(view);
 
     const QImage& image = widget.cachedImage();
@@ -225,10 +225,10 @@ bool testRawImageWidgetUint16Grayscale()
     }
 
     const std::array<std::uint16_t, 4> data{1000, 2000, 3000, 4000};
-    pyqtgraph::core::ArrayView<const std::uint16_t, 2> view(data.data(), {2, 2});
+    cppqtgraph::core::ArrayView<const std::uint16_t, 2> view(data.data(), {2, 2});
 
-    pyqtgraph::widgets::RawImageWidget widget;
-    widget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
+    cppqtgraph::widgets::RawImageWidget widget;
+    widget.setAxisOrder(cppqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
     widget.setImage(view);
 
     CHECK(widget.hasImage());
@@ -251,10 +251,10 @@ bool testRawImageWidgetRgbColorOrder()
     const std::array<std::uint8_t, 12> data{
         255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0,
     };
-    pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 3});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 3});
 
-    pyqtgraph::widgets::RawImageWidget widget;
-    widget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
+    cppqtgraph::widgets::RawImageWidget widget;
+    widget.setAxisOrder(cppqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
     widget.setImage(view);
 
     const QImage& image = widget.cachedImage();
@@ -281,7 +281,7 @@ bool testRawImageWidgetStridedLookupTable()
         padded[base + 3 * channelStride] = 255;
     }
 
-    pyqtgraph::ImageLookupTable stridedLut{
+    cppqtgraph::ImageLookupTable stridedLut{
         padded.data(),
         rows,
         channels,
@@ -289,21 +289,21 @@ bool testRawImageWidgetStridedLookupTable()
         channelStride,
     };
 
-    pyqtgraph::widgets::RawImageWidget widget;
-    widget.setLevels(pyqtgraph::ImageLevelRange{0.0, 255.0});
+    cppqtgraph::widgets::RawImageWidget widget;
+    widget.setLevels(cppqtgraph::ImageLevelRange{0.0, 255.0});
     widget.setLookupTable(stridedLut);
 
     const auto stored = widget.lookupTable();
     CHECK(stored.has_value());
     CHECK(stored->rowStride == static_cast<std::ptrdiff_t>(channels));
     CHECK(stored->channelStride == 1);
-    CHECK((pyqtgraph::applyLookupTable(0, *stored) == std::array<std::uint8_t, 4>{1, 2, 3, 255}));
-    CHECK((pyqtgraph::applyLookupTable(1, *stored) == std::array<std::uint8_t, 4>{11, 12, 13, 255}));
-    CHECK((pyqtgraph::applyLookupTable(2, *stored) == std::array<std::uint8_t, 4>{21, 22, 23, 255}));
-    CHECK((pyqtgraph::applyLookupTable(3, *stored) == std::array<std::uint8_t, 4>{31, 32, 33, 255}));
+    CHECK((cppqtgraph::applyLookupTable(0, *stored) == std::array<std::uint8_t, 4>{1, 2, 3, 255}));
+    CHECK((cppqtgraph::applyLookupTable(1, *stored) == std::array<std::uint8_t, 4>{11, 12, 13, 255}));
+    CHECK((cppqtgraph::applyLookupTable(2, *stored) == std::array<std::uint8_t, 4>{21, 22, 23, 255}));
+    CHECK((cppqtgraph::applyLookupTable(3, *stored) == std::array<std::uint8_t, 4>{31, 32, 33, 255}));
 
     const std::array<std::uint8_t, 1> data{64};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, 1});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, 1});
     widget.setImage(view);
 
     const QImage& image = widget.cachedImage();
@@ -313,7 +313,7 @@ bool testRawImageWidgetStridedLookupTable()
     padded[0] = 200;
     const auto afterMutation = widget.lookupTable();
     CHECK(afterMutation.has_value());
-    CHECK((pyqtgraph::applyLookupTable(0, *afterMutation) == std::array<std::uint8_t, 4>{1, 2, 3, 255}));
+    CHECK((cppqtgraph::applyLookupTable(0, *afterMutation) == std::array<std::uint8_t, 4>{1, 2, 3, 255}));
 
     return true;
 }
@@ -321,10 +321,10 @@ bool testRawImageWidgetStridedLookupTable()
 bool testRawImageWidgetLevelsAndLut()
 {
     const std::array<std::uint8_t, 4> data{0, 64, 128, 255};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
 
-    pyqtgraph::widgets::RawImageWidget widget;
-    widget.setLevels(pyqtgraph::ImageLevelRange{0.0, 255.0});
+    cppqtgraph::widgets::RawImageWidget widget;
+    widget.setLevels(cppqtgraph::ImageLevelRange{0.0, 255.0});
     widget.setImage(view);
 
     const std::vector<std::uint8_t> lut{
@@ -338,11 +338,11 @@ bool testRawImageWidgetLevelsAndLut()
     CHECK(checkIndexed8(image, 1, 1, 255));
 
     const std::array<float, 4> floatData{0.f, 64.f, 128.f, 255.f};
-    pyqtgraph::core::ArrayView<const float, 2> floatView(floatData.data(), {2, 2});
-    pyqtgraph::widgets::RawImageWidget floatWidget;
-    floatWidget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
+    cppqtgraph::core::ArrayView<const float, 2> floatView(floatData.data(), {2, 2});
+    cppqtgraph::widgets::RawImageWidget floatWidget;
+    floatWidget.setAxisOrder(cppqtgraph::widgets::RawImageWidget::AxisOrder::RowMajor);
     floatWidget.clearLookupTable();
-    floatWidget.setLevels(pyqtgraph::ImageLevelRange{64.0, 192.0});
+    floatWidget.setLevels(cppqtgraph::ImageLevelRange{64.0, 192.0});
     floatWidget.setImage(floatView);
 
     const QImage& leveled = floatWidget.cachedImage();
@@ -360,10 +360,10 @@ bool testRawImageWidgetLevelsAndLut()
 bool testRawImageWidgetAxisTranspose()
 {
     const std::array<std::uint8_t, 4> data{1, 2, 3, 4};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
 
-    pyqtgraph::widgets::RawImageWidget widget;
-    widget.setAxisOrder(pyqtgraph::widgets::RawImageWidget::AxisOrder::ColMajor);
+    cppqtgraph::widgets::RawImageWidget widget;
+    widget.setAxisOrder(cppqtgraph::widgets::RawImageWidget::AxisOrder::ColMajor);
     widget.setImage(view);
 
     CHECK(widget.width() == 2);
@@ -377,10 +377,10 @@ bool testRawImageWidgetAxisTranspose()
 bool testImageViewTwoDimensionalBuffer()
 {
     const std::array<std::uint8_t, 6> data{5, 10, 15, 20, 25, 30};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
 
-    pyqtgraph::imageview::ImageView imageView;
-    imageView.setAxisOrder(pyqtgraph::graphicsItems::ImageItem::AxisOrder::RowMajor);
+    cppqtgraph::imageview::ImageView imageView;
+    imageView.setAxisOrder(cppqtgraph::graphicsItems::ImageItem::AxisOrder::RowMajor);
     imageView.setImage(view, true, false);
 
     CHECK(imageView.hasImage());
@@ -411,10 +411,10 @@ bool testImageViewFrameStack()
     const std::array<std::uint8_t, 12> data{
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
     };
-    pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {3, 2, 2});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {3, 2, 2});
 
-    pyqtgraph::imageview::ImageView imageView;
-    imageView.setAxisOrder(pyqtgraph::graphicsItems::ImageItem::AxisOrder::RowMajor);
+    cppqtgraph::imageview::ImageView imageView;
+    imageView.setAxisOrder(cppqtgraph::graphicsItems::ImageItem::AxisOrder::RowMajor);
     imageView.setImage(view, false, false);
 
     CHECK(imageView.currentIndex() == 0);
@@ -437,10 +437,10 @@ bool testImageViewFrameStack()
 bool testImageViewCopyOnSet()
 {
     std::vector<std::uint8_t> data{100, 110, 120, 130};
-    pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
+    cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
 
-    pyqtgraph::imageview::ImageView imageView;
-    imageView.setAxisOrder(pyqtgraph::graphicsItems::ImageItem::AxisOrder::RowMajor);
+    cppqtgraph::imageview::ImageView imageView;
+    imageView.setAxisOrder(cppqtgraph::graphicsItems::ImageItem::AxisOrder::RowMajor);
     imageView.setImage(view, false, false);
 
     data[0] = 0;
@@ -453,8 +453,8 @@ bool testImageViewCopyOnSet()
 
 bool writeCompletionArtifact(bool passed)
 {
-    const QString artifactDir = QString::fromUtf8(PYQTGRAPH_CPP_P5_07_ARTIFACT_DIR);
-    const QString reportDir = QString::fromUtf8(PYQTGRAPH_CPP_P5_07_REPOSITORY_REPORT_DIR);
+    const QString artifactDir = QString::fromUtf8(CPPQTGRAPH_P5_07_ARTIFACT_DIR);
+    const QString reportDir = QString::fromUtf8(CPPQTGRAPH_P5_07_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(artifactDir));
     CHECK(ensureDirectory(reportDir));
 

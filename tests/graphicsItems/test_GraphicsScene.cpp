@@ -1,4 +1,4 @@
-#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -49,7 +49,7 @@ private:
 
 bool testGraphicsSceneTypeShape()
 {
-    using pyqtgraph::GraphicsScene::GraphicsScene;
+    using cppqtgraph::GraphicsScene::GraphicsScene;
 
     static_assert(std::is_base_of_v<QGraphicsScene, GraphicsScene>);
     static_assert(std::is_base_of_v<QObject, GraphicsScene>);
@@ -72,7 +72,7 @@ bool testGraphicsSceneTypeShape()
 
 bool testDefaultsAndSetters()
 {
-    pyqtgraph::GraphicsScene::GraphicsScene scene;
+    cppqtgraph::GraphicsScene::GraphicsScene scene;
     CHECK(scene.clickRadius() == 2);
     CHECK(scene.moveDistance() == 5.0);
 
@@ -81,7 +81,7 @@ bool testDefaultsAndSetters()
     CHECK(scene.clickRadius() == 7);
     CHECK(scene.moveDistance() == 11.5);
 
-    pyqtgraph::GraphicsScene::GraphicsScene configured(4, 8.25);
+    cppqtgraph::GraphicsScene::GraphicsScene configured(4, 8.25);
     CHECK(configured.clickRadius() == 4);
     CHECK(configured.moveDistance() == 8.25);
 
@@ -90,9 +90,9 @@ bool testDefaultsAndSetters()
 
 bool testPrepareForPaintSignal()
 {
-    pyqtgraph::GraphicsScene::GraphicsScene scene;
+    cppqtgraph::GraphicsScene::GraphicsScene scene;
     int prepareCount = 0;
-    QObject::connect(&scene, &pyqtgraph::GraphicsScene::GraphicsScene::sigPrepareForPaint, [&prepareCount]() {
+    QObject::connect(&scene, &cppqtgraph::GraphicsScene::GraphicsScene::sigPrepareForPaint, [&prepareCount]() {
         ++prepareCount;
     });
 
@@ -105,9 +105,9 @@ bool testPrepareForPaintSignal()
 
 bool testRenderEmitsPrepareForPaintSignal()
 {
-    pyqtgraph::GraphicsScene::GraphicsScene scene;
+    cppqtgraph::GraphicsScene::GraphicsScene scene;
     int prepareCount = 0;
-    QObject::connect(&scene, &pyqtgraph::GraphicsScene::GraphicsScene::sigPrepareForPaint, [&prepareCount]() {
+    QObject::connect(&scene, &cppqtgraph::GraphicsScene::GraphicsScene::sigPrepareForPaint, [&prepareCount]() {
         ++prepareCount;
     });
 
@@ -125,7 +125,7 @@ bool testRenderEmitsPrepareForPaintSignal()
 
 bool testAddRemoveSignals()
 {
-    pyqtgraph::GraphicsScene::GraphicsScene scene;
+    cppqtgraph::GraphicsScene::GraphicsScene scene;
     QGraphicsRectItem item(0.0, 0.0, 1.0, 1.0);
 
     int addedCount = 0;
@@ -133,12 +133,12 @@ bool testAddRemoveSignals()
     QGraphicsItem* addedItem = nullptr;
     QGraphicsItem* removedItem = nullptr;
 
-    QObject::connect(&scene, &pyqtgraph::GraphicsScene::GraphicsScene::sigItemAdded,
+    QObject::connect(&scene, &cppqtgraph::GraphicsScene::GraphicsScene::sigItemAdded,
         [&addedCount, &addedItem](QGraphicsItem* item) {
             ++addedCount;
             addedItem = item;
         });
-    QObject::connect(&scene, &pyqtgraph::GraphicsScene::GraphicsScene::sigItemRemoved,
+    QObject::connect(&scene, &cppqtgraph::GraphicsScene::GraphicsScene::sigItemRemoved,
         [&removedCount, &removedItem](QGraphicsItem* item) {
             ++removedCount;
             removedItem = item;
@@ -159,7 +159,7 @@ bool testAddRemoveSignals()
 
 bool testViewWidgetDiscovery()
 {
-    pyqtgraph::GraphicsScene::GraphicsScene scene;
+    cppqtgraph::GraphicsScene::GraphicsScene scene;
     CHECK(scene.getViewWidget() == nullptr);
 
     QGraphicsView view(&scene);

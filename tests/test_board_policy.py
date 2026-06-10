@@ -159,11 +159,11 @@ def test_P0_05_changed_file_ownership_fails_for_out_of_scope_path(tmp_path: Path
         tmp_path,
         registry=registry,
         workflow=workflow,
-        changed_files=["src/pyqtgraph/Foo.cpp"],
+        changed_files=["src/cppqtgraph/Foo.cpp"],
     )
 
     assert result.returncode != 0
-    assert "out-of-scope changed file: src/pyqtgraph/Foo.cpp" in result.stderr
+    assert "out-of-scope changed file: src/cppqtgraph/Foo.cpp" in result.stderr
 
 
 def test_P0_05_changed_file_ownership_rejects_missing_active_claim(tmp_path: Path) -> None:
@@ -286,7 +286,7 @@ def test_P0_05_gate_commit_rejects_out_of_scope_branch_changes(tmp_path: Path) -
         "    print('ai/issue-99')\n"
         "    raise SystemExit(0)\n"
         "if args == ['diff', '--name-only', 'origin/main...HEAD']:\n"
-        "    print('src/pyqtgraph/Foo.cpp')\n"
+        "    print('src/cppqtgraph/Foo.cpp')\n"
         "    raise SystemExit(0)\n"
         "if args in (\n"
         "    ['diff', '--check'],\n"
@@ -313,4 +313,4 @@ def test_P0_05_gate_commit_rejects_out_of_scope_branch_changes(tmp_path: Path) -
 
     assert result.returncode != 0
     assert "changed-file ownership check" in result.stdout
-    assert "out-of-scope changed file: src/pyqtgraph/Foo.cpp" in result.stderr
+    assert "out-of-scope changed file: src/cppqtgraph/Foo.cpp" in result.stderr

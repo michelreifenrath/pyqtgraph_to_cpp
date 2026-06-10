@@ -1,6 +1,6 @@
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
-#include <pyqtgraph/graphicsItems/ButtonItem.hpp>
-#include <pyqtgraph/graphicsItems/GraphicsWidgetAnchor.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/graphicsItems/ButtonItem.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsWidgetAnchor.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QPointF>
@@ -70,20 +70,20 @@ QPixmap makePixmap(int width, int height, qreal devicePixelRatio = 1.0)
     return pixmap;
 }
 
-pyqtgraph::GraphicsScene::MouseClickEvent makeClickEvent(Qt::MouseButton button)
+cppqtgraph::GraphicsScene::MouseClickEvent makeClickEvent(Qt::MouseButton button)
 {
     QGraphicsSceneMouseEvent qtEvent(QEvent::GraphicsSceneMouseRelease);
     qtEvent.setButton(button);
     qtEvent.setButtons(button == Qt::NoButton ? Qt::MouseButtons(Qt::NoButton) : Qt::MouseButtons(button));
     qtEvent.ignore();
-    return pyqtgraph::GraphicsScene::MouseClickEvent(&qtEvent);
+    return cppqtgraph::GraphicsScene::MouseClickEvent(&qtEvent);
 }
 
 bool testButtonGeometryStateEventsAndLifetime()
 {
-    using pyqtgraph::GraphicsScene::HoverEvent;
-    using pyqtgraph::GraphicsScene::MouseClickEvent;
-    using pyqtgraph::graphicsItems::ButtonItem;
+    using cppqtgraph::GraphicsScene::HoverEvent;
+    using cppqtgraph::GraphicsScene::MouseClickEvent;
+    using cppqtgraph::graphicsItems::ButtonItem;
 
     ButtonItem defaultButton(makePixmap(32, 32));
     CHECK(rectsAlmostEqual(defaultButton.boundingRect(), QRectF(0.0, 0.0, 32.0, 32.0)));
@@ -159,7 +159,7 @@ bool testButtonGeometryStateEventsAndLifetime()
 
 bool testAnchorGroupGeometryAndErrorPath()
 {
-    using pyqtgraph::graphicsItems::GraphicsWidgetAnchor;
+    using cppqtgraph::graphicsItems::GraphicsWidgetAnchor;
 
     QGraphicsWidget parent;
     QGraphicsWidget child(&parent);

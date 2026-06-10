@@ -1,7 +1,7 @@
-#include <pyqtgraph/colormap.hpp>
-#include <pyqtgraph/functions.hpp>
-#include <pyqtgraph/graphicsItems/GradientLegend.hpp>
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/colormap.hpp>
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/graphicsItems/GradientLegend.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QCoreApplication>
@@ -22,24 +22,24 @@
 #include <memory>
 #include <string_view>
 
-#ifndef PYQTGRAPH_CPP_P4_25_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_25_ARTIFACT_DIR "artifacts/P4.25"
+#ifndef CPPQTGRAPH_P4_25_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_25_ARTIFACT_DIR "artifacts/P4.25"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_25_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_25_VISUAL_DIFF_DIR "reports/visual-diffs/GradientLegend"
+#ifndef CPPQTGRAPH_P4_25_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_25_VISUAL_DIFF_DIR "reports/visual-diffs/GradientLegend"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_25_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P4_25_GPT_REVIEW_REPORT "reports/visual-diffs/GradientLegend/gpt5_vision_review.md"
+#ifndef CPPQTGRAPH_P4_25_GPT_REVIEW_REPORT
+#define CPPQTGRAPH_P4_25_GPT_REVIEW_REPORT "reports/visual-diffs/GradientLegend/gpt5_vision_review.md"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_25_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_25_REPOSITORY_REPORT_DIR "reports/issues/P4.25"
+#ifndef CPPQTGRAPH_P4_25_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_25_REPOSITORY_REPORT_DIR "reports/issues/P4.25"
 #endif
 
-using pyqtgraph::graphicsItems::GradientLegend;
-using pyqtgraph::graphicsItems::ViewBox;
+using cppqtgraph::graphicsItems::GradientLegend;
+using cppqtgraph::graphicsItems::ViewBox;
 
 namespace {
 
@@ -277,7 +277,7 @@ struct SemanticReviewStatus {
 SemanticReviewStatus readGptVisualReview()
 {
     SemanticReviewStatus status;
-    status.path = QStringLiteral(PYQTGRAPH_CPP_P4_25_GPT_REVIEW_REPORT);
+    status.path = QStringLiteral(CPPQTGRAPH_P4_25_GPT_REVIEW_REPORT);
     if (!QFile::exists(status.path)) {
         return status;
     }
@@ -320,7 +320,7 @@ bool writeTextFile(const QString& path, const QString& text)
 
 bool writeArtifacts(const QImage& reference, const QImage& actual, const PixelMetrics& metrics)
 {
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_25_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_25_VISUAL_DIFF_DIR);
     CHECK(QDir().mkpath(visualDir));
     QImage diff;
     const PixelMetrics computed = compareImages(reference, actual, diff);
@@ -388,7 +388,7 @@ bool testSetLabelsAndColorMap()
     CHECK(legend.labels().value(QStringLiteral("high")) == 1.0);
     CHECK(legend.labels().value(QStringLiteral("low")) == 0.0);
 
-    const pyqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 255), QColor(255, 255, 0)});
+    const cppqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 255), QColor(255, 255, 0)});
     legend.setColorMap(map);
     const auto stops = legend.gradient().stops();
     CHECK(stops.size() >= 2);
@@ -417,7 +417,7 @@ bool testSetIntColorScaleNonzeroMin()
     CHECK(stops.size() == static_cast<qsizetype>(span));
     for (int i = 0; i < span; ++i) {
         const qreal position = static_cast<qreal>(i) / static_cast<qreal>(span);
-        const QColor expected = pyqtgraph::intColor(minVal + i, span, values, maxValue, minValue, maxHue, minHue, sat, alpha);
+        const QColor expected = cppqtgraph::intColor(minVal + i, span, values, maxValue, minValue, maxHue, minHue, sat, alpha);
         CHECK(stops.at(i).first == position);
         CHECK(stops.at(i).second == expected);
     }
@@ -442,17 +442,17 @@ bool writeInteractionReport()
     report.insert(QStringLiteral("reference"),
                   QStringLiteral("pyqtgraph-0.14.0 a20028b98294b9cc8770f2015a92eb342224b788 pyqtgraph/graphicsItems/GradientLegend.py"));
     report.insert(QStringLiteral("manifest_targets"),
-                  QJsonArray{QStringLiteral("include/pyqtgraph/graphicsItems/GradientLegend.hpp"),
-                             QStringLiteral("src/pyqtgraph/graphicsItems/GradientLegend.cpp")});
+                  QJsonArray{QStringLiteral("include/cppqtgraph/graphicsItems/GradientLegend.hpp"),
+                             QStringLiteral("src/cppqtgraph/graphicsItems/GradientLegend.cpp")});
     report.insert(QStringLiteral("shared_wiring"), QJsonArray{QStringLiteral("CMakeLists.txt"), QStringLiteral("tests/CMakeLists.txt")});
     report.insert(QStringLiteral("tdd_baseline_failure"),
-                  QJsonObject{{QStringLiteral("command"), QStringLiteral("cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25")},
+                  QJsonObject{{QStringLiteral("command"), QStringLiteral("cmake --build --preset dev --target cppqtgraph_graphicsitems_gradientlegend_p4_25")},
                               {QStringLiteral("exit_code"), 2},
                               {QStringLiteral("expected"), QStringLiteral("compile failed before GradientLegend implementation was added")}});
     report.insert(QStringLiteral("focused_proof"),
                   QJsonObject{{QStringLiteral("command"), QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.25 --output-on-failure")},
                               {QStringLiteral("exit_code"), 0},
-                              {QStringLiteral("test_executable"), QStringLiteral("pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25")}});
+                              {QStringLiteral("test_executable"), QStringLiteral("cppqtgraph_graphicsitems_gradientlegend_p4_25")}});
     report.insert(QStringLiteral("checks"),
                   QJsonArray{QStringLiteral("default state and style"), QStringLiteral("setLabels and setColorMap"),
                              QStringLiteral("deterministic visual reference-vs-actual pixels")});
@@ -470,13 +470,13 @@ bool writeInteractionReport()
                              QStringLiteral("git diff --name-only origin/main...HEAD")});
     report.insert(QStringLiteral("manifest_dashboard"), QStringLiteral("not applicable: no manifest status fields changed"));
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_25_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_25_ARTIFACT_DIR);
     CHECK(QDir().mkpath(artifactDir));
     QFile file(artifactDir + QStringLiteral("/GradientLegend_visual_behavior.json"));
     CHECK(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
     file.write(QJsonDocument(report).toJson(QJsonDocument::Indented));
 
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P4_25_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P4_25_REPOSITORY_REPORT_DIR);
     CHECK(QDir().mkpath(reportDir));
     CHECK(writeTextFile(reportDir + QStringLiteral("/GradientLegend_visual_behavior.json"),
         QString::fromUtf8(QJsonDocument(report).toJson(QJsonDocument::Indented))));

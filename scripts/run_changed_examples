@@ -152,7 +152,7 @@ def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
             Example(
                 name=name,
                 target_path=normalize_path(target_path),
-                ctest_name=f"pyqtgraph_cpp.examples.{name}",
+                ctest_name=f"cppqtgraph.examples.{name}",
                 aliases=aliases,
                 visual_required=visual_required,
                 visual_ctest_name=(
@@ -174,7 +174,7 @@ def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
             Example(
                 name="ImageItem",
                 target_path="examples/ImageItem.cpp",
-                ctest_name="pyqtgraph_cpp.examples.ImageItem",
+                ctest_name="cppqtgraph.examples.ImageItem",
                 aliases=_unique_aliases("ImageItem", "ImageItem.cpp", "examples/ImageItem.cpp", upstream_path),
                 visual_required=validation.get("visual") == "required",
             )

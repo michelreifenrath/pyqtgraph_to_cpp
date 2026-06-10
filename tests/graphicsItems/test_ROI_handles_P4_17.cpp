@@ -1,5 +1,5 @@
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
-#include <pyqtgraph/graphicsItems/ROI.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/graphicsItems/ROI.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -18,21 +18,21 @@
 #include <iostream>
 #include <memory>
 
-#ifndef PYQTGRAPH_CPP_P4_17_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_17_ARTIFACT_DIR "artifacts/P4.17"
+#ifndef CPPQTGRAPH_P4_17_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_17_ARTIFACT_DIR "artifacts/P4.17"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_17_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_17_VISUAL_DIFF_DIR "reports/visual-diffs/ROI-handles"
+#ifndef CPPQTGRAPH_P4_17_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_17_VISUAL_DIFF_DIR "reports/visual-diffs/ROI-handles"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_17_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_17_REPOSITORY_REPORT_DIR "reports/issues/P4.17"
+#ifndef CPPQTGRAPH_P4_17_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_17_REPOSITORY_REPORT_DIR "reports/issues/P4.17"
 #endif
 
-using pyqtgraph::GraphicsScene::MouseDragEvent;
-using pyqtgraph::graphicsItems::ROI;
-using pyqtgraph::graphicsItems::ROIState;
+using cppqtgraph::GraphicsScene::MouseDragEvent;
+using cppqtgraph::graphicsItems::ROI;
+using cppqtgraph::graphicsItems::ROIState;
 
 namespace {
 
@@ -290,15 +290,15 @@ int main(int argc, char** argv)
                                                 {QStringLiteral("handlePixelsNearDraggedCorner"), handlePixels},
                                                 {QStringLiteral("imageSize"), pointJson(QPointF(image.width(), image.height()))}});
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_17_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_17_ARTIFACT_DIR);
     if (!writeReport(artifactDir, report)) {
         return fail("could not write P4.17 build artifact report");
     }
-    const QString repositoryReportDir = QStringLiteral(PYQTGRAPH_CPP_P4_17_REPOSITORY_REPORT_DIR);
+    const QString repositoryReportDir = QStringLiteral(CPPQTGRAPH_P4_17_REPOSITORY_REPORT_DIR);
     if (!writeReport(repositoryReportDir, report)) {
         return fail("could not write P4.17 repository report artifact");
     }
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_17_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_17_VISUAL_DIFF_DIR);
     if (!writeVisualArtifacts(visualDir, image, nonBackgroundPixels, handlePixels)) {
         return fail("could not write P4.17 ROI handle visual artifacts");
     }

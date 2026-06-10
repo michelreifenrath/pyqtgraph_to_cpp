@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/GraphicsWidget.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsWidget.hpp>
 
 #include <QtCore/QRectF>
 #include <QtCore/QtGlobal>
@@ -47,8 +47,8 @@ private:
 
 bool testConstructionAndHierarchy()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
 
     static_assert(std::is_constructible_v<GraphicsWidget>);
     static_assert(std::is_constructible_v<GraphicsWidget, QGraphicsItem*>);
@@ -66,7 +66,7 @@ bool testConstructionAndHierarchy()
 
 bool testInheritedViewWidgetDiscovery()
 {
-    pyqtgraph::graphicsItems::GraphicsWidget widget;
+    cppqtgraph::graphicsItems::GraphicsWidget widget;
     QGraphicsScene firstScene;
     firstScene.addItem(&widget);
 
@@ -92,7 +92,7 @@ bool testInheritedViewWidgetDiscovery()
 
 bool testUpstreamGeometryConvenienceMethods()
 {
-    pyqtgraph::graphicsItems::GraphicsWidget widget;
+    cppqtgraph::graphicsItems::GraphicsWidget widget;
 
     widget.setGeometry(QRectF(0.0, 0.0, 12.0, 34.0));
     CHECK(widget.width() == 12.0);

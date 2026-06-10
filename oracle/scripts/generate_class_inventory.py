@@ -192,13 +192,14 @@ def posix_relative(path: Path, base: Path) -> str:
 
 
 def target_record(upstream_path: str) -> dict[str, str]:
-    stem = upstream_path.removesuffix(".py")
+    upstream_stem = upstream_path.removesuffix(".py")
+    target_stem = "cppqtgraph/" + upstream_stem.removeprefix("pyqtgraph/")
     parts = upstream_path.split("/")
     subsystem = parts[1] if len(parts) > 2 else "core"
     return {
         "upstream_path": upstream_path,
-        "target_header_path": f"include/{stem}.hpp",
-        "target_source_path": f"src/{stem}.cpp",
+        "target_header_path": f"include/{target_stem}.hpp",
+        "target_source_path": f"src/{target_stem}.cpp",
         "subsystem": subsystem,
     }
 

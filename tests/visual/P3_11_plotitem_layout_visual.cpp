@@ -1,7 +1,7 @@
-#include <pyqtgraph/graphicsItems/LegendItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
-#include <pyqtgraph/widgets/PlotWidget.hpp>
+#include <cppqtgraph/graphicsItems/LegendItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QEventLoop>
@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#define PYQTGRAPH_CPP_SIMPLEPLOT_NO_MAIN
+#define CPPQTGRAPH_SIMPLEPLOT_NO_MAIN
 #include "../../examples/SimplePlot.cpp"
 
 namespace {
@@ -132,7 +132,7 @@ bool saveWidget(QWidget& widget, const Options& options)
 
 bool renderSimplePlot(const Options& options)
 {
-    auto example = pyqtgraph::examples::createSimplePlotExample();
+    auto example = cppqtgraph::examples::createSimplePlotExample();
     return saveWidget(*example.widget, options);
 }
 
@@ -153,7 +153,7 @@ std::vector<double> yValuesB()
 
 bool renderPlotDecorations(const Options& options)
 {
-    pyqtgraph::widgets::PlotWidget widget;
+    cppqtgraph::widgets::PlotWidget widget;
     auto* plot = widget.getPlotItem();
     plot->setTitle(QStringLiteral("PlotItem decorations"));
     plot->setLabel(QStringLiteral("left"), QStringLiteral("Amplitude"));
@@ -161,7 +161,7 @@ bool renderPlotDecorations(const Options& options)
     plot->showAxis(QStringLiteral("top"), true);
     plot->showAxis(QStringLiteral("right"), true);
 
-    auto* first = new pyqtgraph::graphicsItems::PlotCurveItem;
+    auto* first = new cppqtgraph::graphicsItems::PlotCurveItem;
     QPen firstPen(QColor(255, 220, 80), 2.0);
     firstPen.setCosmetic(true);
     first->setPen(firstPen);
@@ -170,7 +170,7 @@ bool renderPlotDecorations(const Options& options)
     first->setData(x, ya);
     plot->addItem(first);
 
-    auto* second = new pyqtgraph::graphicsItems::PlotCurveItem;
+    auto* second = new cppqtgraph::graphicsItems::PlotCurveItem;
     QPen secondPen(QColor(80, 180, 255), 2.0);
     secondPen.setCosmetic(true);
     second->setPen(secondPen);

@@ -1,4 +1,4 @@
-#include <pyqtgraph/widgets/LayoutWidget.hpp>
+#include <cppqtgraph/widgets/LayoutWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -18,12 +18,12 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_21_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P5_21_VISUAL_DIFF_DIR "reports/visual-diffs/LayoutWidget"
+#ifndef CPPQTGRAPH_P5_21_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P5_21_VISUAL_DIFF_DIR "reports/visual-diffs/LayoutWidget"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_21_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_21_REPOSITORY_REPORT_DIR "reports/issues/P5.21"
+#ifndef CPPQTGRAPH_P5_21_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_21_REPOSITORY_REPORT_DIR "reports/issues/P5.21"
 #endif
 
 namespace {
@@ -108,7 +108,7 @@ struct SemanticReviewStatus {
 
 QString caseArtifactDir(const QString& caseName)
 {
-    return QStringLiteral(PYQTGRAPH_CPP_P5_21_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+    return QStringLiteral(CPPQTGRAPH_P5_21_VISUAL_DIFF_DIR) + QChar('/') + caseName;
 }
 
 SemanticReviewStatus readGptVisualReview(const QString& caseName)
@@ -322,7 +322,7 @@ void buildReferenceArrangement(ReferenceLayoutWidget& layoutWidget)
     layoutWidget.addWidget(stopButton);
 }
 
-void buildActualArrangement(pyqtgraph::widgets::LayoutWidget& layoutWidget)
+void buildActualArrangement(cppqtgraph::widgets::LayoutWidget& layoutWidget)
 {
     pinLayoutForVisualTest(layoutWidget.gridLayout);
     layoutWidget.setFixedSize(220, 120);
@@ -334,7 +334,7 @@ void buildActualArrangement(pyqtgraph::widgets::LayoutWidget& layoutWidget)
 
     layoutWidget.nextRow();
     layoutWidget.addLabel(QStringLiteral("Gain"));
-    pyqtgraph::widgets::LayoutWidget* nested = layoutWidget.addLayout();
+    cppqtgraph::widgets::LayoutWidget* nested = layoutWidget.addLayout();
     pinLayoutForVisualTest(nested->gridLayout);
     nested->addLabel(QStringLiteral("Inner"));
     auto* stopButton = new QPushButton(QStringLiteral("Stop"), &layoutWidget);
@@ -344,7 +344,7 @@ void buildActualArrangement(pyqtgraph::widgets::LayoutWidget& layoutWidget)
 
 bool testLayoutWidgetApiShape()
 {
-    using pyqtgraph::widgets::LayoutWidget;
+    using cppqtgraph::widgets::LayoutWidget;
 
     static_assert(std::is_base_of_v<QWidget, LayoutWidget>);
     static_assert(!std::is_copy_constructible_v<LayoutWidget>);
@@ -361,7 +361,7 @@ bool testLayoutWidgetApiShape()
 
 bool testLayoutWidgetPlacement()
 {
-    using pyqtgraph::widgets::LayoutWidget;
+    using cppqtgraph::widgets::LayoutWidget;
 
     LayoutWidget widget;
     QLabel* title = widget.addLabel(QStringLiteral("Title"), 0, 0);
@@ -420,7 +420,7 @@ QImage renderLayoutWidgetReference()
 
 QImage renderLayoutWidgetActual()
 {
-    pyqtgraph::widgets::LayoutWidget actual;
+    cppqtgraph::widgets::LayoutWidget actual;
     buildActualArrangement(actual);
     return grabWidget(actual);
 }
@@ -514,17 +514,17 @@ bool writeCaseArtifacts(const QString& caseName, const QImage& reference, const 
 
 bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels, std::uint64_t actualPixels)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_21_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_21_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/LayoutWidget_arrangement.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.21\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::LayoutWidget\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::LayoutWidget\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/LayoutWidget.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/LayoutWidget.hpp\", \"src/pyqtgraph/widgets/LayoutWidget.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/LayoutWidget.hpp\", \"src/cppqtgraph/widgets/LayoutWidget.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.21 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_layoutwidget_p5_21\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.21 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_layoutwidget_p5_21\"},\n"
             "  \"checks\": [\"LayoutWidget API shape and QGridLayout ownership\", \"auto/explicit placement and nextRow/nextCol\", \"nested addLayout and kNextRow\", \"getWidget missing-cell nullptr\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/LayoutWidget\", \"cases\": [\"LayoutWidget-arrangement\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
             "  \"semantic_pixels\": {\"reference\": ")

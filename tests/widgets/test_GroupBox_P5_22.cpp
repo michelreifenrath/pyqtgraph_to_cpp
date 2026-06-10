@@ -1,4 +1,4 @@
-#include <pyqtgraph/widgets/GroupBox.hpp>
+#include <cppqtgraph/widgets/GroupBox.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -22,12 +22,12 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_22_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P5_22_VISUAL_DIFF_DIR "reports/visual-diffs/GroupBox"
+#ifndef CPPQTGRAPH_P5_22_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P5_22_VISUAL_DIFF_DIR "reports/visual-diffs/GroupBox"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_22_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_22_REPOSITORY_REPORT_DIR "reports/issues/P5.22"
+#ifndef CPPQTGRAPH_P5_22_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_22_REPOSITORY_REPORT_DIR "reports/issues/P5.22"
 #endif
 
 namespace {
@@ -112,7 +112,7 @@ struct SemanticReviewStatus {
 
 QString caseArtifactDir(const QString& caseName)
 {
-    return QStringLiteral(PYQTGRAPH_CPP_P5_22_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+    return QStringLiteral(CPPQTGRAPH_P5_22_VISUAL_DIFF_DIR) + QChar('/') + caseName;
 }
 
 SemanticReviewStatus readGptVisualReview(const QString& caseName)
@@ -386,7 +386,7 @@ QImage renderReferenceGroupBox(bool collapsed)
 
 QImage renderActualGroupBox(bool collapsed)
 {
-    pyqtgraph::widgets::GroupBox actual(QStringLiteral("Controls"));
+    cppqtgraph::widgets::GroupBox actual(QStringLiteral("Controls"));
     pinGroupBoxForVisual(actual);
     populateGroupBoxChildren(actual);
     if (collapsed) {
@@ -397,7 +397,7 @@ QImage renderActualGroupBox(bool collapsed)
 
 bool testGroupBoxApiShape()
 {
-    using pyqtgraph::widgets::GroupBox;
+    using cppqtgraph::widgets::GroupBox;
 
     static_assert(std::is_base_of_v<QGroupBox, GroupBox>);
 
@@ -409,7 +409,7 @@ bool testGroupBoxApiShape()
 
 bool testGroupBoxCollapseBehavior()
 {
-    using pyqtgraph::widgets::GroupBox;
+    using cppqtgraph::widgets::GroupBox;
 
     GroupBox box(QStringLiteral("Gain"));
     auto* child = new QLabel(QStringLiteral("Inner"), &box);
@@ -538,17 +538,17 @@ bool writeCaseArtifacts(const QString& caseName, const QImage& reference, const 
 
 bool writeIssueReport(const PixelMetrics& expandedMetrics, const PixelMetrics& collapsedMetrics)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_22_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_22_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/GroupBox_behavior.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.22\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::GroupBox\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::GroupBox\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/GroupBox.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/GroupBox.hpp\", \"src/pyqtgraph/widgets/GroupBox.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/GroupBox.hpp\", \"src/cppqtgraph/widgets/GroupBox.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.22 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_groupbox_p5_22\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.22 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_groupbox_p5_22\"},\n"
             "  \"checks\": [\"GroupBox API shape and title padding\", \"initial expanded state\", \"collapse/expand signal and child visibility\", \"collapse handle remains visible\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/GroupBox\", \"cases\": [\"GroupBox-expanded\", \"GroupBox-collapsed\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
             "  \"visual_metrics\": {\"expanded\": {\"changed_pixels\": ")

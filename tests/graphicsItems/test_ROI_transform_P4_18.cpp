@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/ROI.hpp>
+#include <cppqtgraph/graphicsItems/ROI.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -15,17 +15,17 @@
 #include <iostream>
 #include <optional>
 
-#ifndef PYQTGRAPH_CPP_P4_18_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_18_ARTIFACT_DIR "artifacts/P4.18"
+#ifndef CPPQTGRAPH_P4_18_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_18_ARTIFACT_DIR "artifacts/P4.18"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_18_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_18_REPOSITORY_REPORT_DIR "reports/issues/P4.18"
+#ifndef CPPQTGRAPH_P4_18_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_18_REPOSITORY_REPORT_DIR "reports/issues/P4.18"
 #endif
 
-using pyqtgraph::graphicsItems::ROI;
-using pyqtgraph::graphicsItems::ROIAffineSliceParams;
-using pyqtgraph::graphicsItems::ROIState;
+using cppqtgraph::graphicsItems::ROI;
+using cppqtgraph::graphicsItems::ROIAffineSliceParams;
+using cppqtgraph::graphicsItems::ROIState;
 
 namespace {
 
@@ -192,11 +192,11 @@ int main(int argc, char** argv)
                                                  {QStringLiteral("angleChanged"), angleSignals.changed},
                                                  {QStringLiteral("angleFinished"), angleSignals.finished}});
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_18_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_18_ARTIFACT_DIR);
     if (!writeReport(artifactDir, report)) {
         return fail("could not write P4.18 build artifact report");
     }
-    const QString repositoryReportDir = QStringLiteral(PYQTGRAPH_CPP_P4_18_REPOSITORY_REPORT_DIR);
+    const QString repositoryReportDir = QStringLiteral(CPPQTGRAPH_P4_18_REPOSITORY_REPORT_DIR);
     if (!writeReport(repositoryReportDir, report)) {
         return fail("could not write P4.18 repository report artifact");
     }

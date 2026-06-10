@@ -1,6 +1,6 @@
-#include <pyqtgraph/colormap.hpp>
-#include <pyqtgraph/widgets/ColorMapButton.hpp>
-#include <pyqtgraph/widgets/ColorMapMenu.hpp>
+#include <cppqtgraph/colormap.hpp>
+#include <cppqtgraph/widgets/ColorMapButton.hpp>
+#include <cppqtgraph/widgets/ColorMapMenu.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -22,12 +22,12 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_13_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P5_13_VISUAL_DIFF_DIR "reports/visual-diffs/ColorMapMenu"
+#ifndef CPPQTGRAPH_P5_13_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P5_13_VISUAL_DIFF_DIR "reports/visual-diffs/ColorMapMenu"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_13_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_13_REPOSITORY_REPORT_DIR "reports/issues/P5.13"
+#ifndef CPPQTGRAPH_P5_13_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_13_REPOSITORY_REPORT_DIR "reports/issues/P5.13"
 #endif
 
 namespace {
@@ -66,12 +66,12 @@ private:
 
 struct VisualCase {
     QString name;
-    pyqtgraph::ColorMap colorMap;
+    cppqtgraph::ColorMap colorMap;
 };
 
-pyqtgraph::ColorMap defaultColorMap()
+cppqtgraph::ColorMap defaultColorMap()
 {
-    return pyqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
+    return cppqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
 }
 
 std::vector<VisualCase> visualCases()
@@ -79,18 +79,18 @@ std::vector<VisualCase> visualCases()
     std::vector<VisualCase> cases;
     cases.push_back({QStringLiteral("default-grey"), defaultColorMap()});
 
-    if (const auto relaxed = pyqtgraph::get(QStringLiteral("PAL-relaxed"))) {
+    if (const auto relaxed = cppqtgraph::get(QStringLiteral("PAL-relaxed"))) {
         cases.push_back({QStringLiteral("pal-relaxed"), *relaxed});
     }
-    if (const auto relaxedBright = pyqtgraph::get(QStringLiteral("PAL-relaxed_bright"))) {
+    if (const auto relaxedBright = cppqtgraph::get(QStringLiteral("PAL-relaxed_bright"))) {
         cases.push_back({QStringLiteral("pal-relaxed-bright"), *relaxedBright});
     }
     return cases;
 }
 
-QImage lookupImageFromColorMap(const pyqtgraph::ColorMap& colorMap, bool horizontal)
+QImage lookupImageFromColorMap(const cppqtgraph::ColorMap& colorMap, bool horizontal)
 {
-    const auto lut = colorMap.getLookupTable(0.0, 1.0, 256, true, pyqtgraph::ColorMap::OutputMode::Byte);
+    const auto lut = colorMap.getLookupTable(0.0, 1.0, 256, true, cppqtgraph::ColorMap::OutputMode::Byte);
     if (lut.bytes.empty() || lut.rows() == 0 || lut.channels < 3) {
         return {};
     }
@@ -115,7 +115,7 @@ QImage lookupImageFromColorMap(const pyqtgraph::ColorMap& colorMap, bool horizon
 
 class ReferenceColorMapStripWidget : public QWidget {
 public:
-    explicit ReferenceColorMapStripWidget(const pyqtgraph::ColorMap& colorMap)
+    explicit ReferenceColorMapStripWidget(const cppqtgraph::ColorMap& colorMap)
         : colorMap_(colorMap)
     {
     }
@@ -143,10 +143,10 @@ private:
         painter.restore();
     }
 
-    pyqtgraph::ColorMap colorMap_;
+    cppqtgraph::ColorMap colorMap_;
 };
 
-QImage renderReferenceColorMapStrip(const pyqtgraph::ColorMap& colorMap, int width, int height)
+QImage renderReferenceColorMapStrip(const cppqtgraph::ColorMap& colorMap, int width, int height)
 {
     ReferenceColorMapStripWidget widget(colorMap);
     widget.resize(width, height);
@@ -155,9 +155,9 @@ QImage renderReferenceColorMapStrip(const pyqtgraph::ColorMap& colorMap, int wid
     return widget.grab().toImage();
 }
 
-QImage renderActualColorMapStrip(const pyqtgraph::ColorMap& colorMap, int width, int height)
+QImage renderActualColorMapStrip(const cppqtgraph::ColorMap& colorMap, int width, int height)
 {
-    pyqtgraph::widgets::ColorMapButton button;
+    cppqtgraph::widgets::ColorMapButton button;
     button.setColorMap(colorMap);
     button.resize(width, height);
     button.show();
@@ -265,7 +265,7 @@ struct SemanticReviewStatus {
 
 QString caseArtifactDir(const QString& caseName)
 {
-    return QStringLiteral(PYQTGRAPH_CPP_P5_13_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+    return QStringLiteral(CPPQTGRAPH_P5_13_VISUAL_DIFF_DIR) + QChar('/') + caseName;
 }
 
 SemanticReviewStatus readGptVisualReview(const QString& caseName)
@@ -401,17 +401,17 @@ bool writeCaseArtifacts(const VisualCase& visualCase, const QImage& reference, c
 
 bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels, std::uint64_t actualPixels)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_13_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_13_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ColorMapMenu_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.13\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::ColorMapButton\", \"pyqtgraph::widgets::ColorMapMenu\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::ColorMapButton\", \"cppqtgraph::widgets::ColorMapMenu\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ColorMapButton.py; ColorMapMenu.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ColorMapButton.hpp\", \"src/pyqtgraph/widgets/ColorMapButton.cpp\", \"include/pyqtgraph/widgets/ColorMapMenu.hpp\", \"src/pyqtgraph/widgets/ColorMapMenu.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/ColorMapButton.hpp\", \"src/cppqtgraph/widgets/ColorMapButton.cpp\", \"include/cppqtgraph/widgets/ColorMapMenu.hpp\", \"src/cppqtgraph/widgets/ColorMapMenu.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.13 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_colormapmenu_p5_13\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.13 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_colormapmenu_p5_13\"},\n"
             "  \"checks\": [\"ColorMapButton QWidget paints horizontal colormap strip\", \"left release opens ColorMapMenu\", \"None/user/local menu entries emit sigColorMapTriggered\", \"setColorMap updates button and sigColorMapChanged\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/ColorMapMenu\", \"cases\": [\"default-grey\", \"pal-relaxed\", \"pal-relaxed-bright\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
             "  \"semantic_pixels\": {\"reference\": ")
@@ -448,10 +448,10 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
             "| `python3 -m pytest -q` | 0 | pass |\n"
             "| `git diff --check` | 0 | pass |\n\n"
             "## Artifacts\n\n"
-            "- `include/pyqtgraph/widgets/ColorMapButton.hpp`\n"
-            "- `src/pyqtgraph/widgets/ColorMapButton.cpp`\n"
-            "- `include/pyqtgraph/widgets/ColorMapMenu.hpp`\n"
-            "- `src/pyqtgraph/widgets/ColorMapMenu.cpp`\n"
+            "- `include/cppqtgraph/widgets/ColorMapButton.hpp`\n"
+            "- `src/cppqtgraph/widgets/ColorMapButton.cpp`\n"
+            "- `include/cppqtgraph/widgets/ColorMapMenu.hpp`\n"
+            "- `src/cppqtgraph/widgets/ColorMapMenu.cpp`\n"
             "- `tests/widgets/test_ColorMapMenu_P5_13.cpp`\n"
             "- `reports/visual-diffs/ColorMapMenu/<case>/{reference.png,actual.png,diff.png,metrics.json,gpt5_vision_review.md}`\n"
             "- `reports/issues/P5.13/*`\n"));
@@ -470,8 +470,8 @@ QAction* findAction(QMenu* menu, const QString& text)
         if (action->text() == text) {
             return action;
         }
-        if (action->data().canConvert<pyqtgraph::widgets::ColorMapMenuActionData>()) {
-            const auto data = action->data().value<pyqtgraph::widgets::ColorMapMenuActionData>();
+        if (action->data().canConvert<cppqtgraph::widgets::ColorMapMenuActionData>()) {
+            const auto data = action->data().value<cppqtgraph::widgets::ColorMapMenuActionData>();
             if (data.name == text) {
                 return action;
             }
@@ -495,8 +495,8 @@ QMenu* findSubMenu(QMenu* menu, const QString& title)
 
 bool testConstructionAndApiShape()
 {
-    using pyqtgraph::widgets::ColorMapButton;
-    using pyqtgraph::widgets::ColorMapMenu;
+    using cppqtgraph::widgets::ColorMapButton;
+    using cppqtgraph::widgets::ColorMapMenu;
 
     static_assert(std::is_base_of_v<QWidget, ColorMapButton>);
     static_assert(std::is_base_of_v<QMenu, ColorMapMenu>);
@@ -517,10 +517,10 @@ bool testConstructionAndApiShape()
 
 bool testColorMapMenuSelection()
 {
-    using pyqtgraph::widgets::ColorMapMenu;
-    using pyqtgraph::widgets::ColorMapMenuSpecifier;
+    using cppqtgraph::widgets::ColorMapMenu;
+    using cppqtgraph::widgets::ColorMapMenuSpecifier;
 
-    const auto relaxed = pyqtgraph::get(QStringLiteral("PAL-relaxed"));
+    const auto relaxed = cppqtgraph::get(QStringLiteral("PAL-relaxed"));
     CHECK(relaxed.has_value());
 
     std::vector<ColorMapMenuSpecifier> userList;
@@ -532,8 +532,8 @@ bool testColorMapMenuSelection()
 
     QAction* noneAction = findAction(&menu, QStringLiteral("None"));
     CHECK(noneAction != nullptr);
-    std::optional<pyqtgraph::ColorMap> triggeredMap;
-    QObject::connect(&menu, &ColorMapMenu::sigColorMapTriggered, [&](const pyqtgraph::ColorMap& map) {
+    std::optional<cppqtgraph::ColorMap> triggeredMap;
+    QObject::connect(&menu, &ColorMapMenu::sigColorMapTriggered, [&](const cppqtgraph::ColorMap& map) {
         triggeredMap = map;
     });
     CHECK(QMetaObject::invokeMethod(&menu, "onTriggered", Q_ARG(QAction*, noneAction)));
@@ -557,13 +557,13 @@ bool testColorMapMenuSelection()
 
 bool testButtonMenuIntegration()
 {
-    using pyqtgraph::widgets::ColorMapButton;
+    using cppqtgraph::widgets::ColorMapButton;
 
     ColorMapButton button;
     QSignalSpy changedSpy(&button, &ColorMapButton::sigColorMapChanged);
     CHECK(changedSpy.isValid());
 
-    const auto relaxed = pyqtgraph::get(QStringLiteral("PAL-relaxed"));
+    const auto relaxed = cppqtgraph::get(QStringLiteral("PAL-relaxed"));
     CHECK(relaxed.has_value());
 
     auto* menu = button.getMenu();
@@ -651,7 +651,7 @@ bool testVisualBehavior()
 int main(int argc, char** argv)
 {
     qputenv("QT_QPA_PLATFORM", "offscreen");
-    qRegisterMetaType<pyqtgraph::widgets::ColorMapMenuActionData>();
+    qRegisterMetaType<cppqtgraph::widgets::ColorMapMenuActionData>();
     ApplicationGuard application(argc, argv);
 
     if (!testConstructionAndApiShape()) {

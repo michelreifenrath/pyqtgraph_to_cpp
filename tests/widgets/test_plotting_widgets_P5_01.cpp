@@ -1,10 +1,10 @@
-#include <pyqtgraph/graphicsItems/HistogramLUTItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
-#include <pyqtgraph/widgets/GraphicsLayoutWidget.hpp>
-#include <pyqtgraph/widgets/GraphicsView.hpp>
-#include <pyqtgraph/widgets/HistogramLUTWidget.hpp>
-#include <pyqtgraph/widgets/PlotWidget.hpp>
+#include <cppqtgraph/graphicsItems/HistogramLUTItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/widgets/GraphicsLayoutWidget.hpp>
+#include <cppqtgraph/widgets/GraphicsView.hpp>
+#include <cppqtgraph/widgets/HistogramLUTWidget.hpp>
+#include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -26,12 +26,12 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_01_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P5_01_VISUAL_DIFF_DIR "reports/visual-diffs/P5.01"
+#ifndef CPPQTGRAPH_P5_01_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P5_01_VISUAL_DIFF_DIR "reports/visual-diffs/P5.01"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_01_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_01_REPOSITORY_REPORT_DIR "reports/issues/P5.01"
+#ifndef CPPQTGRAPH_P5_01_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_01_REPOSITORY_REPORT_DIR "reports/issues/P5.01"
 #endif
 
 namespace {
@@ -175,7 +175,7 @@ struct SemanticReviewStatus {
 
 QString caseArtifactDir(const QString& caseName)
 {
-    return QStringLiteral(PYQTGRAPH_CPP_P5_01_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+    return QStringLiteral(CPPQTGRAPH_P5_01_VISUAL_DIFF_DIR) + QChar('/') + caseName;
 }
 
 SemanticReviewStatus readGptVisualReview(const QString& caseName)
@@ -241,12 +241,12 @@ std::vector<double> sampleY()
     return {0.2, 1.1, 0.7, 2.0, 1.4};
 }
 
-void decoratePlot(pyqtgraph::graphicsItems::PlotItem* plot, pyqtgraph::graphicsItems::PlotCurveItem*& curveOut)
+void decoratePlot(cppqtgraph::graphicsItems::PlotItem* plot, cppqtgraph::graphicsItems::PlotCurveItem*& curveOut)
 {
     plot->setTitle(QStringLiteral("PlotWidget"));
     plot->setLabel(QStringLiteral("left"), QStringLiteral("Y"));
     plot->setLabel(QStringLiteral("bottom"), QStringLiteral("X"));
-    auto* curve = new pyqtgraph::graphicsItems::PlotCurveItem;
+    auto* curve = new cppqtgraph::graphicsItems::PlotCurveItem;
     QPen pen(QColor(80, 180, 255), 2.0);
     pen.setCosmetic(true);
     curve->setPen(pen);
@@ -257,9 +257,9 @@ void decoratePlot(pyqtgraph::graphicsItems::PlotItem* plot, pyqtgraph::graphicsI
 
 QImage renderPlotWidgetReference()
 {
-    using pyqtgraph::graphicsItems::PlotCurveItem;
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::widgets::GraphicsView;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::widgets::GraphicsView;
 
     GraphicsView view;
     view.setFrameShape(QFrame::NoFrame);
@@ -275,8 +275,8 @@ QImage renderPlotWidgetReference()
 
 QImage renderPlotWidgetActual()
 {
-    using pyqtgraph::graphicsItems::PlotCurveItem;
-    using pyqtgraph::widgets::PlotWidget;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::widgets::PlotWidget;
 
     PlotWidget widget;
     PlotCurveItem* curve = nullptr;
@@ -287,10 +287,10 @@ QImage renderPlotWidgetActual()
 
 QImage renderGraphicsLayoutWidgetReference()
 {
-    using pyqtgraph::graphicsItems::GraphicsLayout;
-    using pyqtgraph::graphicsItems::PlotCurveItem;
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::widgets::GraphicsView;
+    using cppqtgraph::graphicsItems::GraphicsLayout;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::widgets::GraphicsView;
 
     GraphicsView view;
     view.setFrameShape(QFrame::NoFrame);
@@ -310,9 +310,9 @@ QImage renderGraphicsLayoutWidgetReference()
 
 QImage renderGraphicsLayoutWidgetActual()
 {
-    using pyqtgraph::graphicsItems::PlotCurveItem;
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::widgets::GraphicsLayoutWidget;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::widgets::GraphicsLayoutWidget;
 
     GraphicsLayoutWidget widget;
     PlotItem* leftPlot = widget.addPlot(0, 0);
@@ -328,8 +328,8 @@ QImage renderGraphicsLayoutWidgetActual()
 
 QImage renderHistogramLUTWidgetReference()
 {
-    using pyqtgraph::graphicsItems::HistogramLUTItem;
-    using pyqtgraph::widgets::GraphicsView;
+    using cppqtgraph::graphicsItems::HistogramLUTItem;
+    using cppqtgraph::widgets::GraphicsView;
 
     GraphicsView view;
     view.setFrameShape(QFrame::NoFrame);
@@ -346,8 +346,8 @@ QImage renderHistogramLUTWidgetReference()
 
 QImage renderHistogramLUTWidgetActual()
 {
-    using pyqtgraph::graphicsItems::HistogramLUTItem;
-    using pyqtgraph::widgets::HistogramLUTWidget;
+    using cppqtgraph::graphicsItems::HistogramLUTItem;
+    using cppqtgraph::widgets::HistogramLUTWidget;
 
     HistogramLUTWidget widget(nullptr, nullptr, true, QStringLiteral("mono"), QStringLiteral("right"),
         HistogramLUTItem::Orientation::Vertical);
@@ -442,7 +442,7 @@ bool writeCaseArtifacts(const QString& caseName, const QImage& reference, const 
 
 bool writeIssueReport(const std::vector<std::pair<QString, PixelMetrics>>& caseMetrics)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_01_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_01_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
 
     QString metricsJson = QStringLiteral("{\n");
@@ -463,12 +463,12 @@ bool writeIssueReport(const std::vector<std::pair<QString, PixelMetrics>>& caseM
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.01\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::PlotWidget\", \"pyqtgraph::widgets::GraphicsView\", \"pyqtgraph::widgets::GraphicsLayoutWidget\", \"pyqtgraph::widgets::HistogramLUTWidget\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::PlotWidget\", \"cppqtgraph::widgets::GraphicsView\", \"cppqtgraph::widgets::GraphicsLayoutWidget\", \"cppqtgraph::widgets::HistogramLUTWidget\"],\n"
             "  \"reference\": \"PyQtGraph 0.14.0 widget contracts verified through C++ wrapper-composition oracles built from previously ported dependencies\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/PlotWidget.hpp\", \"src/pyqtgraph/widgets/PlotWidget.cpp\", \"include/pyqtgraph/widgets/GraphicsView.hpp\", \"src/pyqtgraph/widgets/GraphicsView.cpp\", \"include/pyqtgraph/widgets/GraphicsLayoutWidget.hpp\", \"include/pyqtgraph/widgets/HistogramLUTWidget.hpp\", \"src/pyqtgraph/widgets/HistogramLUTWidget.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/PlotWidget.hpp\", \"src/cppqtgraph/widgets/PlotWidget.cpp\", \"include/cppqtgraph/widgets/GraphicsView.hpp\", \"src/cppqtgraph/widgets/GraphicsView.cpp\", \"include/cppqtgraph/widgets/GraphicsLayoutWidget.hpp\", \"include/cppqtgraph/widgets/HistogramLUTWidget.hpp\", \"src/cppqtgraph/widgets/HistogramLUTWidget.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
             "  \"manifest_dashboard\": \"updated: port_manifest.yaml regenerated and verified with scripts/generate_manifest --check\",\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset visual -L P5.01 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_plotting_widgets_p5_01\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset visual -L P5.01 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_plotting_widgets_p5_01\"},\n"
             "  \"validation_commands\": [\"cmake --preset visual\", \"cmake --build --preset visual --parallel\", \"QT_QPA_PLATFORM=offscreen ctest --preset visual -L P5.01 --output-on-failure\", \"python3 -m pytest -q\", \"git diff --check\", \"git diff --name-only origin/main...HEAD\"],\n"
             "  \"manual_semantic_inspection\": \"actual images were opened for PlotWidget-curve, GraphicsLayoutWidget-grid, and HistogramLUTWidget-vertical; all diffs are black and metrics pass with zero changed pixels\",\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/P5.01\", \"cases\": [\"PlotWidget-curve\", \"GraphicsLayoutWidget-grid\", \"HistogramLUTWidget-vertical\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
@@ -482,13 +482,13 @@ bool writeIssueReport(const std::vector<std::pair<QString, PixelMetrics>>& caseM
 
 bool testApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsLayout;
-    using pyqtgraph::graphicsItems::HistogramLUTItem;
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::widgets::GraphicsLayoutWidget;
-    using pyqtgraph::widgets::GraphicsView;
-    using pyqtgraph::widgets::HistogramLUTWidget;
-    using pyqtgraph::widgets::PlotWidget;
+    using cppqtgraph::graphicsItems::GraphicsLayout;
+    using cppqtgraph::graphicsItems::HistogramLUTItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::widgets::GraphicsLayoutWidget;
+    using cppqtgraph::widgets::GraphicsView;
+    using cppqtgraph::widgets::HistogramLUTWidget;
+    using cppqtgraph::widgets::PlotWidget;
 
     static_assert(std::is_base_of_v<GraphicsView, PlotWidget>);
     static_assert(std::is_base_of_v<GraphicsView, GraphicsLayoutWidget>);
@@ -500,7 +500,7 @@ bool testApiShape()
     CHECK(plotWidget.centralItem() == plotWidget.getPlotItem());
     CHECK(plotWidget.mouseEnabled() == false);
 
-    auto* addedCurve = new pyqtgraph::graphicsItems::PlotCurveItem;
+    auto* addedCurve = new cppqtgraph::graphicsItems::PlotCurveItem;
     plotWidget.addItem(addedCurve);
     CHECK(addedCurve->scene() == plotWidget.scene());
     CHECK(addedCurve->parentItem() != nullptr);

@@ -1,5 +1,5 @@
-#include <pyqtgraph/functions.hpp>
-#include <pyqtgraph/graphicsItems/ScatterPlotItem.hpp>
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/graphicsItems/ScatterPlotItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -32,12 +32,12 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_01_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_01_ARTIFACT_DIR "reports/visual/P4.01"
+#ifndef CPPQTGRAPH_P4_01_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_01_ARTIFACT_DIR "reports/visual/P4.01"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_01_CANONICAL_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_01_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P4.01-ScatterPlotItem"
+#ifndef CPPQTGRAPH_P4_01_CANONICAL_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_01_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P4.01-ScatterPlotItem"
 #endif
 
 namespace {
@@ -111,7 +111,7 @@ void drawReferenceSymbol(QPainter& painter, const QString& symbol, qreal size, c
     painter.scale(size, size);
     painter.setPen(pen);
     painter.setBrush(brush);
-    painter.drawPath(pyqtgraph::symbolPath(symbol));
+    painter.drawPath(cppqtgraph::symbolPath(symbol));
 }
 
 QImage renderReferenceSymbol(const QString& symbol, qreal size, const QPen& pen, const QBrush& brush, qreal dpr = 1.0)
@@ -179,7 +179,7 @@ QImage renderReference(const ScatterCase& scatterCase)
 
 QImage renderActual(const ScatterCase& scatterCase)
 {
-    pyqtgraph::graphicsItems::ScatterPlotItem item;
+    cppqtgraph::graphicsItems::ScatterPlotItem item;
     item.setPxMode(scatterCase.pxMode);
     item.setUseCache(scatterCase.useCache);
     item.setAntialias(scatterCase.antialias);
@@ -294,9 +294,9 @@ bool ensureDirectory(const QString& path)
 bool writeCaseArtifacts(const ScatterCase& scatterCase, const QImage& reference, const QImage& actual, const QImage& diff,
     const PixelMetrics& metrics)
 {
-    const QString reportCaseDir = QStringLiteral(PYQTGRAPH_CPP_P4_01_ARTIFACT_DIR) + QStringLiteral("/") + scatterCase.name;
+    const QString reportCaseDir = QStringLiteral(CPPQTGRAPH_P4_01_ARTIFACT_DIR) + QStringLiteral("/") + scatterCase.name;
     const QString canonicalCaseDir
-        = QStringLiteral(PYQTGRAPH_CPP_P4_01_CANONICAL_ARTIFACT_DIR) + QStringLiteral("-") + scatterCase.name;
+        = QStringLiteral(CPPQTGRAPH_P4_01_CANONICAL_ARTIFACT_DIR) + QStringLiteral("-") + scatterCase.name;
     CHECK(ensureDirectory(reportCaseDir));
     CHECK(ensureDirectory(canonicalCaseDir));
 
@@ -365,7 +365,7 @@ QPen nonCosmeticPen(const QColor& color, qreal width)
 std::vector<QString> upstreamSymbols()
 {
     std::vector<QString> names;
-    for (const auto& entry : pyqtgraph::symbolPaths()) {
+    for (const auto& entry : cppqtgraph::symbolPaths()) {
         names.push_back(entry.first);
     }
     return names;
@@ -438,7 +438,7 @@ bool expectInvalidArgument(auto&& callable)
 
 bool testScatterPlotItemMutatingSettersValidateFirst()
 {
-    pyqtgraph::graphicsItems::ScatterPlotItem item;
+    cppqtgraph::graphicsItems::ScatterPlotItem item;
     std::vector<double> x{1.0, 2.0};
     std::vector<double> y{3.0, 4.0};
     std::vector<QString> symbols{QStringLiteral("s"), QStringLiteral("t")};
@@ -479,7 +479,7 @@ bool testScatterPlotItemMutatingSettersValidateFirst()
     CHECK(pointsAfterInvalidSizes[1].size() == 8.0);
 
     CHECK(expectInvalidArgument([&]() {
-        (void)pyqtgraph::graphicsItems::renderSymbol(
+        (void)cppqtgraph::graphicsItems::renderSymbol(
             QStringLiteral("o"), std::numeric_limits<qreal>::quiet_NaN(), QPen(Qt::white), QBrush(Qt::white));
     }));
 
@@ -496,7 +496,7 @@ bool testScatterPlotItemMutatingSettersValidateFirst()
 
 bool testScatterPlotItemNonFiniteDataKeepsEmptyBounds()
 {
-    pyqtgraph::graphicsItems::ScatterPlotItem item;
+    cppqtgraph::graphicsItems::ScatterPlotItem item;
     std::vector<double> x{std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity()};
     std::vector<double> y{-std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()};
     item.setData(x, y);
@@ -530,7 +530,7 @@ bool testSymbolAtlasKeysIncludeGradientBrushState()
     vertical.setColorAt(0.0, Qt::red);
     vertical.setColorAt(1.0, Qt::blue);
 
-    pyqtgraph::graphicsItems::SymbolAtlas atlas;
+    cppqtgraph::graphicsItems::SymbolAtlas atlas;
     const QPen pen(Qt::white, 1.0);
     const QRect first = atlas.sourceRect(QStringLiteral("o"), 13.0, pen, QBrush(horizontal));
     const QRect second = atlas.sourceRect(QStringLiteral("o"), 13.0, pen, QBrush(vertical));
@@ -543,7 +543,7 @@ bool testSymbolAtlasKeysIncludeGradientBrushState()
 
 bool testScatterPlotItemCurrentCachePaddingAndPixelHitScale()
 {
-    pyqtgraph::graphicsItems::ScatterPlotItem item;
+    cppqtgraph::graphicsItems::ScatterPlotItem item;
     item.setPxMode(true);
     item.setUseCache(true);
     std::vector<double> x{0.0};
@@ -569,7 +569,7 @@ bool testScatterPlotItemCurrentCachePaddingAndPixelHitScale()
 
 bool writeSummaryReport(int passedCases, int totalCases)
 {
-    const QString reportRoot = QStringLiteral(PYQTGRAPH_CPP_P4_01_ARTIFACT_DIR);
+    const QString reportRoot = QStringLiteral(CPPQTGRAPH_P4_01_ARTIFACT_DIR);
     CHECK(ensureDirectory(reportRoot));
     writeTextFile(reportRoot + QStringLiteral("/manual_semantic_inspection.md"),
         QStringLiteral(

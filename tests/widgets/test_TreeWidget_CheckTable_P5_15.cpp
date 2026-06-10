@@ -1,5 +1,5 @@
-#include <pyqtgraph/widgets/CheckTable.hpp>
-#include <pyqtgraph/widgets/TreeWidget.hpp>
+#include <cppqtgraph/widgets/CheckTable.hpp>
+#include <cppqtgraph/widgets/TreeWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -14,8 +14,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P5_15_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_15_REPOSITORY_REPORT_DIR "reports/issues/P5.15"
+#ifndef CPPQTGRAPH_P5_15_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_15_REPOSITORY_REPORT_DIR "reports/issues/P5.15"
 #endif
 
 namespace {
@@ -67,9 +67,9 @@ void writeTextFile(const QString& path, const QString& text)
 
 bool testApiShape()
 {
-    using pyqtgraph::widgets::CheckTable;
-    using pyqtgraph::widgets::TreeWidget;
-    using pyqtgraph::widgets::TreeWidgetItem;
+    using cppqtgraph::widgets::CheckTable;
+    using cppqtgraph::widgets::TreeWidget;
+    using cppqtgraph::widgets::TreeWidgetItem;
 
     static_assert(std::is_base_of_v<QTreeWidget, TreeWidget>);
     static_assert(std::is_base_of_v<QTreeWidgetItem, TreeWidgetItem>);
@@ -91,8 +91,8 @@ bool testApiShape()
 
 bool testTreeWidgetBehavior()
 {
-    using pyqtgraph::widgets::TreeWidget;
-    using pyqtgraph::widgets::TreeWidgetItem;
+    using cppqtgraph::widgets::TreeWidget;
+    using cppqtgraph::widgets::TreeWidgetItem;
 
     TreeWidget tree;
     QSignalSpy checkSpy(&tree, &TreeWidget::sigItemCheckStateChanged);
@@ -135,8 +135,8 @@ bool testTreeWidgetBehavior()
 
 bool testTreeWidgetChangePropagation()
 {
-    using pyqtgraph::widgets::TreeWidget;
-    using pyqtgraph::widgets::TreeWidgetItem;
+    using cppqtgraph::widgets::TreeWidget;
+    using cppqtgraph::widgets::TreeWidgetItem;
 
     TreeWidget tree;
     tree.setColumnCount(2);
@@ -169,7 +169,7 @@ bool testTreeWidgetChangePropagation()
 
 bool testCheckTableBehavior()
 {
-    using pyqtgraph::widgets::CheckTable;
+    using cppqtgraph::widgets::CheckTable;
 
     CheckTable table({QStringLiteral("Alpha"), QStringLiteral("Beta")});
     QSignalSpy stateSpy(&table, &CheckTable::sigStateChanged);
@@ -216,17 +216,17 @@ bool testCheckTableBehavior()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_15_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_15_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/TreeWidget_CheckTable_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.15\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::TreeWidget\", \"pyqtgraph::widgets::CheckTable\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::TreeWidget\", \"cppqtgraph::widgets::CheckTable\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/TreeWidget.py; CheckTable.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/TreeWidget.hpp\", \"src/pyqtgraph/widgets/TreeWidget.cpp\", \"include/pyqtgraph/widgets/CheckTable.hpp\", \"src/pyqtgraph/widgets/CheckTable.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/TreeWidget.hpp\", \"src/cppqtgraph/widgets/TreeWidget.cpp\", \"include/cppqtgraph/widgets/CheckTable.hpp\", \"src/cppqtgraph/widgets/CheckTable.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_treewidget_checktable_p5_15\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_treewidget_checktable_p5_15\"},\n"
             "  \"checks\": [\"TreeWidget edit triggers, selection, expansion, check/text signals\", \"TreeWidgetItem widget caching and setData signal emission\", \"TreeWidget batch top-level and child change propagation\", \"CheckTable dynamic rows with removed-row state reuse\", \"CheckTable sigStateChanged and saveState/restoreState\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.15 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

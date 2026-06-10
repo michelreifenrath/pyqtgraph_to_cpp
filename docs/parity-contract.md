@@ -47,11 +47,11 @@ The following Python-ecosystem areas are out of C++ port scope by default unless
 
 ### Multiprocessing/proxies
 
-- `pyqtgraph/multiprocess/__init__.py` -> `include/pyqtgraph/multiprocess/__init__.hpp`, `src/pyqtgraph/multiprocess/__init__.cpp`
-- `pyqtgraph/multiprocess/bootstrap.py` -> `include/pyqtgraph/multiprocess/bootstrap.hpp`, `src/pyqtgraph/multiprocess/bootstrap.cpp`
-- `pyqtgraph/multiprocess/parallelizer.py` -> `include/pyqtgraph/multiprocess/parallelizer.hpp`, `src/pyqtgraph/multiprocess/parallelizer.cpp`
-- `pyqtgraph/multiprocess/processes.py` -> `include/pyqtgraph/multiprocess/processes.hpp`, `src/pyqtgraph/multiprocess/processes.cpp`
-- `pyqtgraph/multiprocess/remoteproxy.py` -> `include/pyqtgraph/multiprocess/remoteproxy.hpp`, `src/pyqtgraph/multiprocess/remoteproxy.cpp`
+- `pyqtgraph/multiprocess/__init__.py` -> `include/cppqtgraph/multiprocess/__init__.hpp`, `src/cppqtgraph/multiprocess/__init__.cpp`
+- `pyqtgraph/multiprocess/bootstrap.py` -> `include/cppqtgraph/multiprocess/bootstrap.hpp`, `src/cppqtgraph/multiprocess/bootstrap.cpp`
+- `pyqtgraph/multiprocess/parallelizer.py` -> `include/cppqtgraph/multiprocess/parallelizer.hpp`, `src/cppqtgraph/multiprocess/parallelizer.cpp`
+- `pyqtgraph/multiprocess/processes.py` -> `include/cppqtgraph/multiprocess/processes.hpp`, `src/cppqtgraph/multiprocess/processes.cpp`
+- `pyqtgraph/multiprocess/remoteproxy.py` -> `include/cppqtgraph/multiprocess/remoteproxy.hpp`, `src/cppqtgraph/multiprocess/remoteproxy.cpp`
 - `pyqtgraph/examples/multiprocess.py` -> non-port as a Python multiprocessing/proxy example; equivalent C++ coverage is native concurrency/process usage only if a future concrete C++ runtime feature requires it.
 - `pyqtgraph/examples/parallelize.py` -> non-port as a Python `Parallelize`/multiprocessing example; equivalent C++ coverage is native C++ task/concurrency behavior only if a future concrete C++ runtime feature requires it.
 - Key classes: `CanceledError`, `Parallelize`, `Tasker`, `Process`, `ForkedProcess`, `RemoteQtEventHandler`, `QtProcess`, `FileForwarder`, `ClosedError`, `NoResultError`, `RemoteExceptionWarning`, `RemoteEventHandler`, `Request`, `LocalObjectProxy`, `ObjectProxy`, `DeferredObjectProxy`.

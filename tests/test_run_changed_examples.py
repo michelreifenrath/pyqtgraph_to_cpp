@@ -10,7 +10,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_CTEST_COMMAND = (
-    "ctest --preset dev -R '^pyqtgraph_cpp\\.examples\\.SimplePlot$' --output-on-failure"
+    "ctest --preset dev -R '^cppqtgraph\\.examples\\.SimplePlot$' --output-on-failure"
 )
 
 
@@ -45,7 +45,7 @@ def test_manifest_registry_derives_simpleplot_from_port_manifest() -> None:
     assert len(simpleplot) == 1
     example = simpleplot[0]
     assert example.target_path == "examples/SimplePlot.cpp"
-    assert example.ctest_name == "pyqtgraph_cpp.examples.SimplePlot"
+    assert example.ctest_name == "cppqtgraph.examples.SimplePlot"
     assert example.visual_required is True
     assert "pyqtgraph/examples/SimplePlot.py" in example.aliases
     assert not hasattr(module, "EXAMPLES")

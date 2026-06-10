@@ -1,9 +1,9 @@
-#include <pyqtgraph/graphicsItems/CurvePoint.hpp>
-#include <pyqtgraph/graphicsItems/GraphItem.hpp>
+#include <cppqtgraph/graphicsItems/CurvePoint.hpp>
+#include <cppqtgraph/graphicsItems/GraphItem.hpp>
 
-#include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/graphicsItems/ScatterPlotItem.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsObject.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/ScatterPlotItem.hpp>
 
 #include <QtCore/QPointer>
 #include <QtCore/QPropertyAnimation>
@@ -85,9 +85,9 @@ bool doubleNear(qreal actual, qreal expected, qreal tolerance = 1e-6)
 
 bool testGraphItemConstructionAndLifetime()
 {
-    using pyqtgraph::graphicsItems::GraphItem;
-    using pyqtgraph::graphicsItems::GraphicsObject;
-    using pyqtgraph::graphicsItems::ScatterPlotItem;
+    using cppqtgraph::graphicsItems::GraphItem;
+    using cppqtgraph::graphicsItems::GraphicsObject;
+    using cppqtgraph::graphicsItems::ScatterPlotItem;
 
     static_assert(std::is_base_of_v<GraphicsObject, GraphItem>);
     static_assert(std::is_base_of_v<QGraphicsObject, GraphItem>);
@@ -111,8 +111,8 @@ bool testGraphItemConstructionAndLifetime()
 
 bool testGraphItemExampleDataAndEdges()
 {
-    using pyqtgraph::graphicsItems::GraphEdge;
-    using pyqtgraph::graphicsItems::GraphItem;
+    using cppqtgraph::graphicsItems::GraphEdge;
+    using cppqtgraph::graphicsItems::GraphItem;
 
     GraphItem graph;
     const std::vector<QPointF> positions = {
@@ -160,8 +160,8 @@ bool testGraphItemExampleDataAndEdges()
 
 bool testGraphItemEmptyAndInvalidAdjacency()
 {
-    using pyqtgraph::graphicsItems::GraphEdge;
-    using pyqtgraph::graphicsItems::GraphItem;
+    using cppqtgraph::graphicsItems::GraphEdge;
+    using cppqtgraph::graphicsItems::GraphItem;
 
     GraphItem graph;
     const std::vector<QPointF> positions = {{10.0, 10.0}, {50.0, 10.0}};
@@ -209,7 +209,7 @@ bool testGraphItemEmptyAndInvalidAdjacency()
 
 bool testGraphItemDynamicSceneBounds()
 {
-    using pyqtgraph::graphicsItems::GraphItem;
+    using cppqtgraph::graphicsItems::GraphItem;
 
     QGraphicsScene scene;
     GraphItem graph;
@@ -235,9 +235,9 @@ bool testGraphItemDynamicSceneBounds()
 
 bool testCurvePointPositioningAnimationAndLifetime()
 {
-    using pyqtgraph::graphicsItems::CurvePoint;
-    using pyqtgraph::graphicsItems::GraphicsObject;
-    using pyqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::graphicsItems::CurvePoint;
+    using cppqtgraph::graphicsItems::GraphicsObject;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
 
     static_assert(std::is_base_of_v<GraphicsObject, CurvePoint>);
     static_assert(std::is_base_of_v<QGraphicsObject, CurvePoint>);
@@ -302,10 +302,10 @@ bool testCurvePointPositioningAnimationAndLifetime()
 
 bool testCurveArrowExampleChildAndStyle()
 {
-    using pyqtgraph::graphicsItems::CurveArrow;
-    using pyqtgraph::graphicsItems::CurveArrowStyle;
-    using pyqtgraph::graphicsItems::CurvePoint;
-    using pyqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::graphicsItems::CurveArrow;
+    using cppqtgraph::graphicsItems::CurveArrowStyle;
+    using cppqtgraph::graphicsItems::CurvePoint;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
 
     static_assert(std::is_base_of_v<CurvePoint, CurveArrow>);
     static_assert(!std::is_copy_constructible_v<CurveArrow>);

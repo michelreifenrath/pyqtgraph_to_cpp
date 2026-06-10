@@ -1,6 +1,6 @@
-#include <pyqtgraph/graphicsItems/ScaleBar.hpp>
-#include <pyqtgraph/graphicsItems/TextItem.hpp>
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/graphicsItems/ScaleBar.hpp>
+#include <cppqtgraph/graphicsItems/TextItem.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -32,23 +32,23 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_23_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_23_VISUAL_DIFF_DIR "reports/visual-diffs/ScaleBar"
+#ifndef CPPQTGRAPH_P4_23_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_23_VISUAL_DIFF_DIR "reports/visual-diffs/ScaleBar"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_23_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P4_23_GPT_REVIEW_REPORT "reports/visual-diffs/ScaleBar/gpt5_vision_review.md"
+#ifndef CPPQTGRAPH_P4_23_GPT_REVIEW_REPORT
+#define CPPQTGRAPH_P4_23_GPT_REVIEW_REPORT "reports/visual-diffs/ScaleBar/gpt5_vision_review.md"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_23_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_23_REPOSITORY_REPORT_DIR "reports/issues/P4.23"
+#ifndef CPPQTGRAPH_P4_23_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_23_REPOSITORY_REPORT_DIR "reports/issues/P4.23"
 #endif
 
 namespace {
 
-using ScaleBar = pyqtgraph::graphicsItems::ScaleBar;
-using TextItem = pyqtgraph::graphicsItems::TextItem;
-using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+using ScaleBar = cppqtgraph::graphicsItems::ScaleBar;
+using TextItem = cppqtgraph::graphicsItems::TextItem;
+using ViewBox = cppqtgraph::graphicsItems::ViewBox;
 
 constexpr int imageWidth = 480;
 constexpr int imageHeight = 240;
@@ -443,7 +443,7 @@ struct SemanticReviewStatus {
 SemanticReviewStatus readGptVisualReview()
 {
     SemanticReviewStatus status;
-    status.path = QStringLiteral(PYQTGRAPH_CPP_P4_23_GPT_REVIEW_REPORT);
+    status.path = QStringLiteral(CPPQTGRAPH_P4_23_GPT_REVIEW_REPORT);
     if (!QFile::exists(status.path)) {
         std::cerr << "missing P4.23 GPT visual review: " << status.path.toStdString() << '\n';
         return status;
@@ -486,7 +486,7 @@ SemanticReviewStatus readGptVisualReview()
 
 bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage& diff, const PixelMetrics& metrics)
 {
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_23_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_23_VISUAL_DIFF_DIR);
     CHECK(ensureDirectory(visualDir));
     CHECK(reference.save(visualDir + QStringLiteral("/reference.png")));
     CHECK(actual.save(visualDir + QStringLiteral("/actual.png")));
@@ -544,18 +544,18 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
 
 bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels, std::uint64_t actualPixels)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P4_23_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P4_23_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ScaleBar_visual_behavior.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P4.23\",\n"
-            "  \"class\": \"pyqtgraph::graphicsItems::ScaleBar\",\n"
+            "  \"class\": \"cppqtgraph::graphicsItems::ScaleBar\",\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ScaleBar.py; ViewBox mapFromViewToItem anchoring\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/graphicsItems/ScaleBar.hpp\", \"src/pyqtgraph/graphicsItems/ScaleBar.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/graphicsItems/ScaleBar.hpp\", \"src/cppqtgraph/graphicsItems/ScaleBar.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"tdd_baseline_failure\": {\"command\": \"cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_scalebar_p4_23\", \"exit_code\": 2, \"expected\": \"compile failed before ScaleBar implementation was added\"},\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.23 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_graphicsitems_scalebar_p4_23\"},\n"
+            "  \"tdd_baseline_failure\": {\"command\": \"cmake --build --preset dev --target cppqtgraph_graphicsitems_scalebar_p4_23\", \"exit_code\": 2, \"expected\": \"compile failed before ScaleBar implementation was added\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.23 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_graphicsitems_scalebar_p4_23\"},\n"
             "  \"checks\": [\"view-coordinate bar width mapping\", \"offset anchor bottom-right and top-left\", \"pen/brush style on QGraphicsRectItem bar\", \"TextItem SI label centered above bar\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/ScaleBar\", \"reference\": \"reference.png\", \"actual\": \"actual.png\", \"diff\": \"diff.png\", \"metrics\": \"metrics.json\", \"gpt5_vision_review\": \"gpt5_vision_review.md\"},\n"
             "  \"semantic_pixels\": {\"reference\": ")

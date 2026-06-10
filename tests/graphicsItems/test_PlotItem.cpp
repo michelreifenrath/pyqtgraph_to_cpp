@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 
 #include <QtCore/QRectF>
 #include <QtCore/QtGlobal>
@@ -48,9 +48,9 @@ private:
 
 bool testConstructionAndHierarchy()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
-    using pyqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::PlotItem;
 
     static_assert(std::is_constructible_v<PlotItem>);
     static_assert(std::is_constructible_v<PlotItem, QGraphicsItem*>);
@@ -74,7 +74,7 @@ bool testConstructionAndHierarchy()
 
 bool testInheritedViewWidgetDiscovery()
 {
-    pyqtgraph::graphicsItems::PlotItem plot;
+    cppqtgraph::graphicsItems::PlotItem plot;
     QGraphicsScene firstScene;
     firstScene.addItem(&plot);
 
@@ -101,7 +101,7 @@ bool testInheritedViewWidgetDiscovery()
 bool testParentConstruction()
 {
     QGraphicsRectItem parent(QRectF(0.0, 0.0, 1.0, 1.0));
-    pyqtgraph::graphicsItems::PlotItem plot(&parent);
+    cppqtgraph::graphicsItems::PlotItem plot(&parent);
 
     CHECK(plot.parentItem() == &parent);
     CHECK(plot.graphicsItem() == static_cast<QGraphicsItem*>(&plot));

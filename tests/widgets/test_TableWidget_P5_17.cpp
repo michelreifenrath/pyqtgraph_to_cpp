@@ -1,4 +1,4 @@
-#include <pyqtgraph/widgets/TableWidget.hpp>
+#include <cppqtgraph/widgets/TableWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -10,8 +10,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P5_17_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_17_REPOSITORY_REPORT_DIR "reports/issues/P5.17"
+#ifndef CPPQTGRAPH_P5_17_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_17_REPOSITORY_REPORT_DIR "reports/issues/P5.17"
 #endif
 
 namespace {
@@ -63,8 +63,8 @@ void writeTextFile(const QString& path, const QString& text)
 
 bool testApiShape()
 {
-    using pyqtgraph::widgets::TableWidget;
-    using pyqtgraph::widgets::TableWidgetItem;
+    using cppqtgraph::widgets::TableWidget;
+    using cppqtgraph::widgets::TableWidgetItem;
 
     static_assert(std::is_base_of_v<QTableWidget, TableWidget>);
     static_assert(std::is_base_of_v<QTableWidgetItem, TableWidgetItem>);
@@ -81,7 +81,7 @@ bool testApiShape()
 
 bool testDataLoading()
 {
-    using pyqtgraph::widgets::TableWidget;
+    using cppqtgraph::widgets::TableWidget;
 
     TableWidget table;
 
@@ -118,8 +118,8 @@ bool testDataLoading()
 
 bool testEditabilityAndValueConversion()
 {
-    using pyqtgraph::widgets::TableWidget;
-    using pyqtgraph::widgets::TableWidgetItem;
+    using cppqtgraph::widgets::TableWidget;
+    using cppqtgraph::widgets::TableWidgetItem;
 
     TableWidget table;
     table.setEditable(true);
@@ -147,8 +147,8 @@ bool testEditabilityAndValueConversion()
 
 bool testSortingModes()
 {
-    using pyqtgraph::widgets::TableSortMode;
-    using pyqtgraph::widgets::TableWidget;
+    using cppqtgraph::widgets::TableSortMode;
+    using cppqtgraph::widgets::TableWidget;
 
     TableWidget table;
     const QVariantList rows = {
@@ -165,8 +165,8 @@ bool testSortingModes()
 
     table.setSortMode(1, TableSortMode::Value);
     table.sortByColumn(1, Qt::AscendingOrder);
-    CHECK(dynamic_cast<const pyqtgraph::widgets::TableWidgetItem*>(table.item(0, 1))->value().toInt() == 1);
-    CHECK(dynamic_cast<const pyqtgraph::widgets::TableWidgetItem*>(table.item(2, 1))->value().toInt() == 10);
+    CHECK(dynamic_cast<const cppqtgraph::widgets::TableWidgetItem*>(table.item(0, 1))->value().toInt() == 1);
+    CHECK(dynamic_cast<const cppqtgraph::widgets::TableWidgetItem*>(table.item(2, 1))->value().toInt() == 10);
 
     table.setSortMode(0, TableSortMode::Value);
     table.sortByColumn(0, Qt::AscendingOrder);
@@ -196,7 +196,7 @@ bool testSortingModes()
 
 bool testSelectionSerialization()
 {
-    using pyqtgraph::widgets::TableWidget;
+    using cppqtgraph::widgets::TableWidget;
 
     TableWidget table;
     const QVariantList rows = {
@@ -219,17 +219,17 @@ bool testSelectionSerialization()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_17_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_17_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/TableWidget_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.17\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::TableWidget\", \"pyqtgraph::widgets::TableWidgetItem\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::TableWidget\", \"cppqtgraph::widgets::TableWidgetItem\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/TableWidget.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/TableWidget.hpp\", \"src/pyqtgraph/widgets/TableWidget.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/TableWidget.hpp\", \"src/cppqtgraph/widgets/TableWidget.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.17 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_tablewidget_p5_17\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.17 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_tablewidget_p5_17\"},\n"
             "  \"checks\": [\"TableWidget defaults for scrolling, selection, sorting, and editability\", \"setData for list-of-lists, dict-of-lists, and list-of-dicts\", \"setEditable with typed value conversion on edit\", \"value/text/index sort modes\", \"serialize for selection and full table\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.17 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

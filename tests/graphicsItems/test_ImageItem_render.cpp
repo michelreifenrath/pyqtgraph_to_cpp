@@ -1,5 +1,5 @@
-#include <pyqtgraph/core/ArrayView.hpp>
-#include <pyqtgraph/graphicsItems/ImageItem.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/graphicsItems/ImageItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -21,8 +21,8 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P2_13_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P2_13_ARTIFACT_DIR "reports/visual-diffs/ImageItem/P2.13"
+#ifndef CPPQTGRAPH_P2_13_ARTIFACT_DIR
+#define CPPQTGRAPH_P2_13_ARTIFACT_DIR "reports/visual-diffs/ImageItem/P2.13"
 #endif
 
 namespace {
@@ -99,8 +99,8 @@ QImage renderActual(const std::array<std::uint8_t, logicalWidth * logicalHeight>
 {
     const auto fail = [] { return QImage(); };
 
-    pyqtgraph::graphicsItems::ImageItem item;
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {logicalWidth, logicalHeight});
+    cppqtgraph::graphicsItems::ImageItem item;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {logicalWidth, logicalHeight});
     item.setImage(view);
     if (!check(item.hasImage(), "item.hasImage()", __FILE__, __LINE__)) {
         return fail();
@@ -212,7 +212,7 @@ bool runSmoke()
     QImage diff;
     const PixelMetrics metrics = compareImages(reference, actual, diff);
 
-    const QString artifactDir = QString::fromUtf8(PYQTGRAPH_CPP_P2_13_ARTIFACT_DIR);
+    const QString artifactDir = QString::fromUtf8(CPPQTGRAPH_P2_13_ARTIFACT_DIR);
     CHECK(ensureDirectory(artifactDir));
     CHECK(reference.save(artifactDir + "/reference.png"));
     CHECK(actual.save(artifactDir + "/actual.png"));

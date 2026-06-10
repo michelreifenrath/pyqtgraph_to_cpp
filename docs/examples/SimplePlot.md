@@ -7,21 +7,21 @@
 - Pinned commit: `a20028b98294b9cc8770f2015a92eb342224b788`
 - Port issue: `PGEXAMPLE-001`
 
-This is a native Qt/C++ port using the current pyqtgraph-cpp public API. It creates a `pyqtgraph::widgets::PlotWidget`, applies the upstream title text to the widget window title, and adds a `pyqtgraph::graphicsItems::PlotCurveItem` containing 100 deterministic NumPy seed-0 y-values. The y-only `setData` call generates x-values `0..99`.
+This is a native Qt/C++ port using the current CppQtGraph public API. It creates a `cppqtgraph::widgets::PlotWidget`, applies the upstream title text to the widget window title, and adds a `cppqtgraph::graphicsItems::PlotCurveItem` containing 100 deterministic NumPy seed-0 y-values. The y-only `setData` call generates x-values `0..99`.
 
 ## Build and run
 
 ```sh
 cmake --preset dev
-cmake --build --preset dev --target pyqtgraph_cpp_examples_simpleplot --parallel
-./build/dev/pyqtgraph_cpp_examples_simpleplot
+cmake --build --preset dev --target cppqtgraph_examples_simpleplot --parallel
+./build/dev/cppqtgraph_examples_simpleplot
 ```
 
 Focused smoke test:
 
 ```sh
-cmake --build --preset dev --target pyqtgraph_cpp_examples_simpleplot_test --parallel
-ctest --preset dev -R pyqtgraph_cpp.examples.SimplePlot --output-on-failure
+cmake --build --preset dev --target cppqtgraph_examples_simpleplot_test --parallel
+ctest --preset dev -R cppqtgraph.examples.SimplePlot --output-on-failure
 ```
 
 ## Validation level

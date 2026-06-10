@@ -12,7 +12,7 @@
 #include <iostream>
 #include <string>
 
-#define PYQTGRAPH_CPP_SIMPLEPLOT_NO_MAIN
+#define CPPQTGRAPH_SIMPLEPLOT_NO_MAIN
 #include "../../examples/SimplePlot.cpp"
 
 namespace {
@@ -97,7 +97,7 @@ void processEvents()
 
 bool renderSimplePlot(const Options& options)
 {
-    auto example = pyqtgraph::examples::createSimplePlotExample();
+    auto example = cppqtgraph::examples::createSimplePlotExample();
     example.widget->resize(options.width, options.height);
     example.widget->show();
     processEvents();

@@ -1,4 +1,4 @@
-#include "pyqtgraph/Vector.hpp"
+#include "cppqtgraph/Vector.hpp"
 
 #include <QPoint>
 #include <QPointF>
@@ -19,8 +19,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P2_01_FIXTURE
-#define PYQTGRAPH_CPP_P2_01_FIXTURE "oracle/fixtures/P2_01/point_vector_oracle.json"
+#ifndef CPPQTGRAPH_P2_01_FIXTURE
+#define CPPQTGRAPH_P2_01_FIXTURE "oracle/fixtures/P2_01/point_vector_oracle.json"
 #endif
 
 namespace {
@@ -46,7 +46,7 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
 
 std::string readOracleFixture()
 {
-    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_01_FIXTURE});
+    std::ifstream input(std::filesystem::path{CPPQTGRAPH_P2_01_FIXTURE});
     CHECK(input.good());
     std::ostringstream buffer;
     buffer << input.rdbuf();
@@ -76,14 +76,14 @@ void assertNear(double actual, double expected, double tolerance = kTolerance)
     CHECK(std::abs(actual - expected) <= tolerance);
 }
 
-void assertVector(const pyqtgraph::Vector& vector, double x, double y, double z, double tolerance = kTolerance)
+void assertVector(const cppqtgraph::Vector& vector, double x, double y, double z, double tolerance = kTolerance)
 {
     assertNear(vector.x(), x, tolerance);
     assertNear(vector.y(), y, tolerance);
     assertNear(vector.z(), z, tolerance);
 }
 
-void expectOutOfRangeAt(const pyqtgraph::Vector& vector, qsizetype index)
+void expectOutOfRangeAt(const cppqtgraph::Vector& vector, qsizetype index)
 {
     bool threw = false;
     try {
@@ -94,7 +94,7 @@ void expectOutOfRangeAt(const pyqtgraph::Vector& vector, qsizetype index)
     CHECK(threw);
 }
 
-void expectOutOfRangeSet(pyqtgraph::Vector& vector, qsizetype index)
+void expectOutOfRangeSet(cppqtgraph::Vector& vector, qsizetype index)
 {
     bool threw = false;
     try {
@@ -105,7 +105,7 @@ void expectOutOfRangeSet(pyqtgraph::Vector& vector, qsizetype index)
     CHECK(threw);
 }
 
-void expectOutOfRangeIndexRead(const pyqtgraph::Vector& vector, int index)
+void expectOutOfRangeIndexRead(const cppqtgraph::Vector& vector, int index)
 {
     bool threw = false;
     try {
@@ -116,7 +116,7 @@ void expectOutOfRangeIndexRead(const pyqtgraph::Vector& vector, int index)
     CHECK(threw);
 }
 
-void expectOutOfRangeIndexWrite(pyqtgraph::Vector& vector, int index)
+void expectOutOfRangeIndexWrite(cppqtgraph::Vector& vector, int index)
 {
     bool threw = false;
     try {
@@ -131,7 +131,7 @@ void expectInvalidInitializerList(std::initializer_list<double> values)
 {
     bool threw = false;
     try {
-        const pyqtgraph::Vector vector(values);
+        const cppqtgraph::Vector vector(values);
         static_cast<void>(vector);
     } catch (const std::invalid_argument&) {
         threw = true;
@@ -143,7 +143,7 @@ void expectInvalidInitializerList(std::initializer_list<double> values)
 
 int main()
 {
-    using pyqtgraph::Vector;
+    using cppqtgraph::Vector;
 
     static_assert(std::is_base_of_v<QVector3D, Vector>);
     static_assert(std::is_convertible_v<Vector*, QVector3D*>);
@@ -217,7 +217,7 @@ int main()
     CHECK(!nonZero.angle(QVector3D{}).has_value());
 
     assertVector(Vector{-1.0, 2.0, -3.0}.abs(), 1.0, 2.0, 3.0);
-    assertVector(pyqtgraph::abs(Vector{-4.0, -5.0, 6.0}), 4.0, 5.0, 6.0);
+    assertVector(cppqtgraph::abs(Vector{-4.0, -5.0, 6.0}), 4.0, 5.0, 6.0);
 
     return 0;
 }

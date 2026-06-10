@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
 
 #include <QtCore/QRectF>
 #include <QtWidgets/QApplication>
@@ -74,7 +74,7 @@ bool spanEquals(std::span<const double> values, const std::vector<double>& expec
 
 bool testYOnlyGeneratesXData()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> y{2.0, -1.0, 4.0, 3.0};
 
     curve.setData(y);
@@ -88,7 +88,7 @@ bool testYOnlyGeneratesXData()
 
 bool testYOnlyNonFiniteValuesAreIgnoredForBounds()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const double nan = std::numeric_limits<double>::quiet_NaN();
     const double inf = std::numeric_limits<double>::infinity();
     const std::vector<double> y{nan, 2.0, inf, -1.0};
@@ -108,7 +108,7 @@ bool testYOnlyNonFiniteValuesAreIgnoredForBounds()
 
 bool testXYDataIsCopied()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     std::vector<double> x{-2.0, 1.0, 5.0};
     std::vector<double> y{10.0, -4.0, 6.0};
 
@@ -125,7 +125,7 @@ bool testXYDataIsCopied()
 
 bool testFlatDataBoundsAreNonEmptyAndIncludePenMargin()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> x{0.0, 1.0, 2.0};
     const std::vector<double> y{5.0, 5.0, 5.0};
 
@@ -140,7 +140,7 @@ bool testFlatDataBoundsAreNonEmptyAndIncludePenMargin()
 
 bool testReturnedSpansCanBePassedBackToSetData()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> originalX{-2.0, 1.0, 5.0};
     const std::vector<double> originalY{10.0, -4.0, 6.0};
     const std::vector<double> replacementY{4.0, 5.0, 6.0};
@@ -172,7 +172,7 @@ bool testReturnedSpansCanBePassedBackToSetData()
 
 bool testRepeatedSetDataReplacesDataAndBounds()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> firstX{-10.0, -5.0, 0.0};
     const std::vector<double> firstY{1.0, 2.0, 3.0};
     const std::vector<double> secondX{4.0, 8.0, 10.0};
@@ -192,7 +192,7 @@ bool testRepeatedSetDataReplacesDataAndBounds()
 
 bool testEmptyDataClearsDataAndBounds()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> x{1.0, 2.0, 3.0};
     const std::vector<double> y{4.0, 5.0, 6.0};
     const std::vector<double> empty;
@@ -209,7 +209,7 @@ bool testEmptyDataClearsDataAndBounds()
 
 bool testNonFiniteValuesAreIgnoredForBounds()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const double nan = std::numeric_limits<double>::quiet_NaN();
     const double inf = std::numeric_limits<double>::infinity();
     const std::vector<double> x{-inf, 2.0, inf, 4.0};
@@ -234,7 +234,7 @@ bool testNonFiniteValuesAreIgnoredForBounds()
 
 bool testAllNonFiniteAxisClearsBounds()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const double nan = std::numeric_limits<double>::quiet_NaN();
     const double inf = std::numeric_limits<double>::infinity();
 
@@ -254,7 +254,7 @@ bool testAllNonFiniteAxisClearsBounds()
 
 bool testMismatchedLengthsThrowAndLeaveDataUnchanged()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> x{1.0, 4.0, 9.0};
     const std::vector<double> y{-2.0, 6.0, 3.0};
     const std::vector<double> mismatchedX{100.0, 200.0};

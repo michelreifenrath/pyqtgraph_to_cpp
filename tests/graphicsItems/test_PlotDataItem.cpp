@@ -1,6 +1,6 @@
-#include <pyqtgraph/graphicsItems/PlotDataItem.hpp>
-#include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotDataItem.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsObject.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
 
 #include <QtCore/QPointer>
 #include <QtGui/QColor>
@@ -70,9 +70,9 @@ bool spanEquals(std::span<const double> values, const std::vector<double>& expec
 
 bool testTypeShapeAndDefaultState()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsObject;
-    using pyqtgraph::graphicsItems::PlotDataItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsObject;
+    using cppqtgraph::graphicsItems::PlotDataItem;
 
     static_assert(std::is_constructible_v<PlotDataItem>);
     static_assert(std::is_constructible_v<PlotDataItem, QGraphicsItem*>);
@@ -107,7 +107,7 @@ bool testTypeShapeAndDefaultState()
 
 bool testYOnlyDataNormalizesAndForwardsToCurve()
 {
-    pyqtgraph::graphicsItems::PlotDataItem item;
+    cppqtgraph::graphicsItems::PlotDataItem item;
     const std::vector<double> y{2.0, -1.0, 4.0};
 
     item.setData(y);
@@ -124,7 +124,7 @@ bool testYOnlyDataNormalizesAndForwardsToCurve()
 
 bool testXYDataIsCopiedAndMismatchPreservesPreviousData()
 {
-    pyqtgraph::graphicsItems::PlotDataItem item;
+    cppqtgraph::graphicsItems::PlotDataItem item;
     std::vector<double> x{-2.0, 1.0, 5.0};
     std::vector<double> y{10.0, -4.0, 6.0};
 
@@ -157,7 +157,7 @@ bool testXYDataIsCopiedAndMismatchPreservesPreviousData()
 
 bool testClearAndEmptyInputsResetWrapperAndCurve()
 {
-    pyqtgraph::graphicsItems::PlotDataItem item;
+    cppqtgraph::graphicsItems::PlotDataItem item;
     const std::vector<double> x{1.0, 2.0, 3.0};
     const std::vector<double> y{4.0, 5.0, 6.0};
     const std::vector<double> empty;
@@ -185,7 +185,7 @@ bool testClearAndEmptyInputsResetWrapperAndCurve()
 
 bool testPenStateControlsLineVisibilityWithoutDroppingData()
 {
-    pyqtgraph::graphicsItems::PlotDataItem item;
+    cppqtgraph::graphicsItems::PlotDataItem item;
     const std::vector<double> y{2.0, -1.0, 4.0};
     const QPen redPen(QColor(255, 0, 0));
 
@@ -215,10 +215,10 @@ bool testPenStateControlsLineVisibilityWithoutDroppingData()
 
 bool testCurveLifetimeIsOwnedByPlotDataItem()
 {
-    QPointer<pyqtgraph::graphicsItems::PlotCurveItem> curve;
+    QPointer<cppqtgraph::graphicsItems::PlotCurveItem> curve;
 
     {
-        pyqtgraph::graphicsItems::PlotDataItem item;
+        cppqtgraph::graphicsItems::PlotDataItem item;
         curve = item.curve();
         CHECK(curve != nullptr);
         CHECK(curve->parentItem() == &item);

@@ -1,6 +1,6 @@
-#include <pyqtgraph/functions.hpp>
-#include <pyqtgraph/widgets/FileDialog.hpp>
-#include <pyqtgraph/widgets/PathButton.hpp>
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/widgets/FileDialog.hpp>
+#include <cppqtgraph/widgets/PathButton.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -17,8 +17,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P5_23_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_23_REPOSITORY_REPORT_DIR "reports/issues/P5.23"
+#ifndef CPPQTGRAPH_P5_23_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_23_REPOSITORY_REPORT_DIR "reports/issues/P5.23"
 #endif
 
 namespace {
@@ -94,7 +94,7 @@ std::uint64_t semanticPixelCount(const QImage& image)
 
 bool testFileDialogApiShape()
 {
-    using pyqtgraph::widgets::FileDialog;
+    using cppqtgraph::widgets::FileDialog;
 
     static_assert(std::is_base_of_v<QFileDialog, FileDialog>);
     static_assert(!std::is_copy_constructible_v<FileDialog>);
@@ -106,7 +106,7 @@ bool testFileDialogApiShape()
 
 bool testFileDialogTempDirSelectionState()
 {
-    using pyqtgraph::widgets::FileDialog;
+    using cppqtgraph::widgets::FileDialog;
 
     QTemporaryDir tempDir;
     CHECK(tempDir.isValid());
@@ -139,7 +139,7 @@ bool testFileDialogTempDirSelectionState()
 
 bool testFileDialogCaptionConstructor()
 {
-    using pyqtgraph::widgets::FileDialog;
+    using cppqtgraph::widgets::FileDialog;
 
     QTemporaryDir tempDir;
     CHECK(tempDir.isValid());
@@ -156,7 +156,7 @@ bool testFileDialogCaptionConstructor()
 
 bool testPathButtonApiShape()
 {
-    using pyqtgraph::widgets::PathButton;
+    using cppqtgraph::widgets::PathButton;
 
     static_assert(std::is_base_of_v<QPushButton, PathButton>);
     static_assert(!std::is_copy_constructible_v<PathButton>);
@@ -171,7 +171,7 @@ bool testPathButtonApiShape()
 
 bool testPathButtonPenBrushPathSetters()
 {
-    using pyqtgraph::widgets::PathButton;
+    using cppqtgraph::widgets::PathButton;
 
     const QPainterPath path = sampleTrianglePath();
     PathButton button(nullptr, path, 40, 40, 5);
@@ -185,15 +185,15 @@ bool testPathButtonPenBrushPathSetters()
     button.setPath(path);
     CHECK(button.pen().color().alpha() > 0);
 
-    button.setPen(pyqtgraph::mkPen(QStringLiteral("r")));
-    button.setBrush(pyqtgraph::mkBrush(QStringLiteral("g")));
+    button.setPen(cppqtgraph::mkPen(QStringLiteral("r")));
+    button.setBrush(cppqtgraph::mkBrush(QStringLiteral("g")));
     CHECK(button.pen().color().red() > button.pen().color().blue());
     return true;
 }
 
 bool testPathButtonEmptyPathSafety()
 {
-    using pyqtgraph::widgets::PathButton;
+    using cppqtgraph::widgets::PathButton;
 
     PathButton button;
     button.show();
@@ -216,11 +216,11 @@ bool testPathButtonEmptyPathSafety()
 
 bool testPathButtonOffscreenRender()
 {
-    using pyqtgraph::widgets::PathButton;
+    using cppqtgraph::widgets::PathButton;
 
     const QPainterPath path = sampleTrianglePath();
     PathButton button(nullptr, path);
-    button.setBrush(pyqtgraph::mkBrush(QStringLiteral("w")));
+    button.setBrush(cppqtgraph::mkBrush(QStringLiteral("w")));
     button.show();
     QApplication::processEvents();
     button.repaint();
@@ -237,17 +237,17 @@ bool testPathButtonOffscreenRender()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_23_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_23_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/FileDialog_PathButton_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.23\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::FileDialog\", \"pyqtgraph::widgets::PathButton\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::FileDialog\", \"cppqtgraph::widgets::PathButton\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/FileDialog.py; pyqtgraph/widgets/PathButton.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/FileDialog.hpp\", \"src/pyqtgraph/widgets/FileDialog.cpp\", \"include/pyqtgraph/widgets/PathButton.hpp\", \"src/pyqtgraph/widgets/PathButton.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/FileDialog.hpp\", \"src/cppqtgraph/widgets/FileDialog.cpp\", \"include/cppqtgraph/widgets/PathButton.hpp\", \"src/cppqtgraph/widgets/PathButton.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.23 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_filedialog_pathbutton_p5_23\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.23 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_filedialog_pathbutton_p5_23\"},\n"
             "  \"checks\": [\"FileDialog QFileDialog subclass and temp-dir directory/selection state\", \"FileDialog AcceptSave and name-filter state without modal exec\", \"macOS DontUseNativeDialog compatibility option\", \"PathButton default 30x30 size and margin 7\", \"PathButton pen/brush/path setters\", \"PathButton empty and zero-area path paint safety\", \"PathButton offscreen path rendering\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.23 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

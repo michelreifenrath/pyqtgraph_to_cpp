@@ -91,9 +91,9 @@ def write_source_lock(root: Path, *, repo: str, commit: str) -> None:
 
 
 def write_fixture_targets(root: Path) -> None:
-    write_fixture_file(root / "include" / "pyqtgraph" / "PlotData.hpp")
-    write_fixture_file(root / "src" / "pyqtgraph" / "PlotData.cpp")
-    write_fixture_file(root / "include" / "pyqtgraph" / "widgets" / "PlotWidget.hpp")
+    write_fixture_file(root / "include" / "cppqtgraph" / "PlotData.hpp")
+    write_fixture_file(root / "src" / "cppqtgraph" / "PlotData.cpp")
+    write_fixture_file(root / "include" / "cppqtgraph" / "widgets" / "PlotWidget.hpp")
     write_fixture_file(root / "examples" / "Example.cpp")
 
 
@@ -118,8 +118,8 @@ def expected_source_files() -> list[dict[str, str]]:
     return [
         {
             "upstream_path": "pyqtgraph/PlotData.py",
-            "target_header_path": "include/pyqtgraph/PlotData.hpp",
-            "target_source_path": "src/pyqtgraph/PlotData.cpp",
+            "target_header_path": "include/cppqtgraph/PlotData.hpp",
+            "target_source_path": "src/cppqtgraph/PlotData.cpp",
             "subsystem": "core",
             "status": "ported",
             "completion": "missing",
@@ -127,8 +127,8 @@ def expected_source_files() -> list[dict[str, str]]:
         },
         {
             "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
-            "target_header_path": "include/pyqtgraph/widgets/PlotWidget.hpp",
-            "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
+            "target_header_path": "include/cppqtgraph/widgets/PlotWidget.hpp",
+            "target_source_path": "src/cppqtgraph/widgets/PlotWidget.cpp",
             "subsystem": "widgets",
             "status": "partial",
             "completion": "missing",
@@ -142,8 +142,8 @@ def expected_classes() -> list[dict[str, object]]:
         {
             "class_name": "PlotData",
             "upstream_path": "pyqtgraph/PlotData.py",
-            "target_header_path": "include/pyqtgraph/PlotData.hpp",
-            "target_source_path": "src/pyqtgraph/PlotData.cpp",
+            "target_header_path": "include/cppqtgraph/PlotData.hpp",
+            "target_source_path": "src/cppqtgraph/PlotData.cpp",
             "subsystem": "core",
             "bases": ["object"],
             "line": 1,
@@ -154,8 +154,8 @@ def expected_classes() -> list[dict[str, object]]:
         {
             "class_name": "HelperMixin",
             "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
-            "target_header_path": "include/pyqtgraph/widgets/PlotWidget.hpp",
-            "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
+            "target_header_path": "include/cppqtgraph/widgets/PlotWidget.hpp",
+            "target_source_path": "src/cppqtgraph/widgets/PlotWidget.cpp",
             "subsystem": "widgets",
             "bases": [],
             "line": 1,
@@ -166,8 +166,8 @@ def expected_classes() -> list[dict[str, object]]:
         {
             "class_name": "PlotWidget",
             "upstream_path": "pyqtgraph/widgets/PlotWidget.py",
-            "target_header_path": "include/pyqtgraph/widgets/PlotWidget.hpp",
-            "target_source_path": "src/pyqtgraph/widgets/PlotWidget.cpp",
+            "target_header_path": "include/cppqtgraph/widgets/PlotWidget.hpp",
+            "target_source_path": "src/cppqtgraph/widgets/PlotWidget.cpp",
             "subsystem": "widgets",
             "bases": ["HelperMixin", "QtWidgets.QWidget"],
             "line": 5,

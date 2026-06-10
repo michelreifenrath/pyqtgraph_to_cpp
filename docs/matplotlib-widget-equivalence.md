@@ -15,8 +15,8 @@ For this decision-only issue, the decision artifact records the conservative def
 Source entry in `port_manifest.yaml`:
 
 - upstream: `pyqtgraph/widgets/MatplotlibWidget.py`
-- target header: `include/pyqtgraph/widgets/MatplotlibWidget.hpp`
-- target source: `src/pyqtgraph/widgets/MatplotlibWidget.cpp`
+- target header: `include/cppqtgraph/widgets/MatplotlibWidget.hpp`
+- target source: `src/cppqtgraph/widgets/MatplotlibWidget.cpp`
 - subsystem: `widgets`
 - current manifest status: `not_started`
 - current manifest completion: `missing`
@@ -25,8 +25,8 @@ Class entry in `port_manifest.yaml`:
 
 - class: `MatplotlibWidget`
 - upstream: `pyqtgraph/widgets/MatplotlibWidget.py`
-- target header: `include/pyqtgraph/widgets/MatplotlibWidget.hpp`
-- target source: `src/pyqtgraph/widgets/MatplotlibWidget.cpp`
+- target header: `include/cppqtgraph/widgets/MatplotlibWidget.hpp`
+- target source: `src/cppqtgraph/widgets/MatplotlibWidget.cpp`
 - subsystem: `widgets`
 - base class: `QtWidgets.QWidget`
 - upstream line: `11`

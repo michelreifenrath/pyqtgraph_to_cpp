@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/ArrowItem.hpp>
+#include <cppqtgraph/graphicsItems/ArrowItem.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -31,16 +31,16 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_21_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_21_VISUAL_DIFF_DIR "reports/visual-diffs/ArrowItem"
+#ifndef CPPQTGRAPH_P4_21_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_21_VISUAL_DIFF_DIR "reports/visual-diffs/ArrowItem"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_21_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P4_21_GPT_REVIEW_REPORT "reports/visual-diffs/ArrowItem/gpt5_vision_review.md"
+#ifndef CPPQTGRAPH_P4_21_GPT_REVIEW_REPORT
+#define CPPQTGRAPH_P4_21_GPT_REVIEW_REPORT "reports/visual-diffs/ArrowItem/gpt5_vision_review.md"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_21_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_21_REPOSITORY_REPORT_DIR "reports/issues/P4.21"
+#ifndef CPPQTGRAPH_P4_21_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_21_REPOSITORY_REPORT_DIR "reports/issues/P4.21"
 #endif
 
 namespace {
@@ -120,7 +120,7 @@ qreal degreesToRadians(qreal degrees)
     return degrees * pi / 180.0;
 }
 
-QPainterPath referenceArrowPath(const pyqtgraph::graphicsItems::ArrowItemOptions& options)
+QPainterPath referenceArrowPath(const cppqtgraph::graphicsItems::ArrowItemOptions& options)
 {
     const qreal headWidth = options.headWidth.value_or(options.headLen * std::tan(degreesToRadians(options.tipAngle * 0.5)));
     QPainterPath path;
@@ -148,19 +148,19 @@ QPainterPath referenceArrowPath(const pyqtgraph::graphicsItems::ArrowItemOptions
 struct VisualCase {
     QString name;
     QPointF position;
-    pyqtgraph::graphicsItems::ArrowItemOptions options;
+    cppqtgraph::graphicsItems::ArrowItemOptions options;
 };
 
 std::vector<VisualCase> visualCases()
 {
     std::vector<VisualCase> cases;
 
-    pyqtgraph::graphicsItems::ArrowItemOptions defaultArrow;
+    cppqtgraph::graphicsItems::ArrowItemOptions defaultArrow;
     defaultArrow.pen = cosmeticPen(QColor(200, 200, 200));
     defaultArrow.brush = QBrush(QColor(50, 50, 200));
     cases.push_back({QStringLiteral("default-head"), QPointF(82.0, 72.0), defaultArrow});
 
-    pyqtgraph::graphicsItems::ArrowItemOptions tailed;
+    cppqtgraph::graphicsItems::ArrowItemOptions tailed;
     tailed.angle = 0.0;
     tailed.headLen = 26.0;
     tailed.headWidth = 12.0;
@@ -171,7 +171,7 @@ std::vector<VisualCase> visualCases()
     tailed.brush = QBrush(QColor(50, 180, 80));
     cases.push_back({QStringLiteral("explicit-width-tail"), QPointF(156.0, 62.0), tailed});
 
-    pyqtgraph::graphicsItems::ArrowItemOptions dataScaled;
+    cppqtgraph::graphicsItems::ArrowItemOptions dataScaled;
     dataScaled.pxMode = false;
     dataScaled.angle = 45.0;
     dataScaled.headLen = 30.0;
@@ -217,7 +217,7 @@ QImage renderActual(const std::vector<VisualCase>& cases)
     painter.setRenderHint(QPainter::Antialiasing, true);
     QStyleOptionGraphicsItem option;
     for (const VisualCase& visualCase : cases) {
-        pyqtgraph::graphicsItems::ArrowItem arrow(visualCase.options);
+        cppqtgraph::graphicsItems::ArrowItem arrow(visualCase.options);
         painter.save();
         painter.translate(visualCase.position);
         arrow.paint(&painter, &option, nullptr);
@@ -328,7 +328,7 @@ struct SemanticReviewStatus {
 SemanticReviewStatus readGptVisualReview()
 {
     SemanticReviewStatus status;
-    status.path = QStringLiteral(PYQTGRAPH_CPP_P4_21_GPT_REVIEW_REPORT);
+    status.path = QStringLiteral(CPPQTGRAPH_P4_21_GPT_REVIEW_REPORT);
     if (!QFile::exists(status.path)) {
         std::cerr << "missing P4.21 GPT visual review: " << status.path.toStdString() << '\n';
         return status;
@@ -371,7 +371,7 @@ SemanticReviewStatus readGptVisualReview()
 
 bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage& diff, const PixelMetrics& metrics)
 {
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_21_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_21_VISUAL_DIFF_DIR);
     CHECK(ensureDirectory(visualDir));
     CHECK(reference.save(visualDir + QStringLiteral("/reference.png")));
     CHECK(actual.save(visualDir + QStringLiteral("/actual.png")));
@@ -429,18 +429,18 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
 
 bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels, std::uint64_t actualPixels)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P4_21_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P4_21_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ArrowItem_visual_behavior.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P4.21\",\n"
-            "  \"class\": \"pyqtgraph::graphicsItems::ArrowItem\",\n"
+            "  \"class\": \"cppqtgraph::graphicsItems::ArrowItem\",\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ArrowItem.py; pyqtgraph/functions.py makeArrowPath; tests/graphicsItems/test_ArrowItem.py parent construction\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/graphicsItems/ArrowItem.hpp\", \"src/pyqtgraph/graphicsItems/ArrowItem.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/graphicsItems/ArrowItem.hpp\", \"src/cppqtgraph/graphicsItems/ArrowItem.cpp\"],\n"
             "  \"shared_wiring\": [\"tests/CMakeLists.txt\"],\n"
-            "  \"tdd_baseline_failure\": {\"command\": \"cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_arrowitem_p4_21\", \"exit_code\": 2, \"expected\": \"compile failed before ArrowItem implementation was added\"},\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.21 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_graphicsitems_arrowitem_p4_21\"},\n"
+            "  \"tdd_baseline_failure\": {\"command\": \"cmake --build --preset dev --target cppqtgraph_graphicsitems_arrowitem_p4_21\", \"exit_code\": 2, \"expected\": \"compile failed before ArrowItem implementation was added\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.21 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_graphicsitems_arrowitem_p4_21\"},\n"
             "  \"checks\": [\"QGraphicsPathItem parent/pos hierarchy\", \"makeArrowPath-compatible head/tail geometry\", \"pxMode ItemIgnoresTransformations flag\", \"dataBounds and pixelPadding style behavior\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/ArrowItem\", \"reference\": \"reference.png\", \"actual\": \"actual.png\", \"diff\": \"diff.png\", \"metrics\": \"metrics.json\", \"gpt5_vision_review\": \"gpt5_vision_review.md\"},\n"
             "  \"semantic_pixels\": {\"reference\": ")
@@ -467,8 +467,8 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
 
 bool testConstructionAndStyle()
 {
-    using pyqtgraph::graphicsItems::ArrowItem;
-    using pyqtgraph::graphicsItems::ArrowItemOptions;
+    using cppqtgraph::graphicsItems::ArrowItem;
+    using cppqtgraph::graphicsItems::ArrowItemOptions;
 
     static_assert(std::is_constructible_v<ArrowItem>);
     static_assert(std::is_constructible_v<ArrowItem, QGraphicsItem*>);

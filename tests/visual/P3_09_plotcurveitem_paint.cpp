@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -26,12 +26,12 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P3_09_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P3_09_ARTIFACT_DIR "reports/visual/P3.09"
+#ifndef CPPQTGRAPH_P3_09_ARTIFACT_DIR
+#define CPPQTGRAPH_P3_09_ARTIFACT_DIR "reports/visual/P3.09"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P3_09_CANONICAL_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P3_09_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P3.09-PlotCurveItem"
+#ifndef CPPQTGRAPH_P3_09_CANONICAL_ARTIFACT_DIR
+#define CPPQTGRAPH_P3_09_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P3.09-PlotCurveItem"
 #endif
 
 namespace {
@@ -73,10 +73,10 @@ struct CurveCase {
     QString name;
     std::vector<double> x;
     std::vector<double> y;
-    pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode connectMode
-        = pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All;
-    pyqtgraph::graphicsItems::PlotCurveItem::StepMode stepMode
-        = pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None;
+    cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode connectMode
+        = cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All;
+    cppqtgraph::graphicsItems::PlotCurveItem::StepMode stepMode
+        = cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None;
     QPen pen;
 };
 
@@ -174,17 +174,17 @@ void appendPairsPath(QPainterPath& path, const std::vector<double>& x, const std
 }
 
 std::pair<std::vector<double>, std::vector<double>> steppedData(
-    pyqtgraph::graphicsItems::PlotCurveItem::StepMode stepMode,
+    cppqtgraph::graphicsItems::PlotCurveItem::StepMode stepMode,
     const std::vector<double>& x,
     const std::vector<double>& y)
 {
-    if (stepMode == pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None) {
+    if (stepMode == cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None) {
         return {x, y};
     }
 
     std::vector<double> steppedX;
     std::vector<double> steppedY;
-    if (stepMode == pyqtgraph::graphicsItems::PlotCurveItem::StepMode::Center) {
+    if (stepMode == cppqtgraph::graphicsItems::PlotCurveItem::StepMode::Center) {
         if (x.size() != y.size() + 1) {
             return {{}, {}};
         }
@@ -205,7 +205,7 @@ std::pair<std::vector<double>, std::vector<double>> steppedData(
     steppedX.reserve(y.size() * 2);
     steppedY.reserve(y.size() * 2);
     for (std::size_t index = 0; index < y.size(); ++index) {
-        if (stepMode == pyqtgraph::graphicsItems::PlotCurveItem::StepMode::Right) {
+        if (stepMode == cppqtgraph::graphicsItems::PlotCurveItem::StepMode::Right) {
             steppedX.push_back(x[index]);
             steppedY.push_back(y[index]);
             steppedX.push_back(index + 1 < x.size() ? x[index + 1] : x[index]);
@@ -225,13 +225,13 @@ QPainterPath referencePath(const CurveCase& curveCase)
     auto [pathX, pathY] = steppedData(curveCase.stepMode, curveCase.x, curveCase.y);
     QPainterPath path;
     switch (curveCase.connectMode) {
-    case pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All:
+    case cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All:
         appendContinuousPath(path, pathX, pathY);
         break;
-    case pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite:
+    case cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite:
         appendFinitePath(path, pathX, pathY);
         break;
-    case pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs:
+    case cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs:
         appendPairsPath(path, pathX, pathY);
         break;
     }
@@ -254,7 +254,7 @@ QImage renderReference(const CurveCase& curveCase)
 
 QImage renderActual(const CurveCase& curveCase)
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     curve.setPen(curveCase.pen);
     curve.setConnectMode(curveCase.connectMode);
     curve.setStepMode(curveCase.stepMode);
@@ -365,9 +365,9 @@ bool ensureDirectory(const QString& path)
 bool writeCaseArtifacts(const CurveCase& curveCase, const QImage& reference, const QImage& actual, const QImage& diff,
     const PixelMetrics& metrics)
 {
-    const QString reportCaseDir = QStringLiteral(PYQTGRAPH_CPP_P3_09_ARTIFACT_DIR) + QStringLiteral("/") + curveCase.name;
+    const QString reportCaseDir = QStringLiteral(CPPQTGRAPH_P3_09_ARTIFACT_DIR) + QStringLiteral("/") + curveCase.name;
     const QString canonicalCaseDir
-        = QStringLiteral(PYQTGRAPH_CPP_P3_09_CANONICAL_ARTIFACT_DIR) + QStringLiteral("-") + curveCase.name;
+        = QStringLiteral(CPPQTGRAPH_P3_09_CANONICAL_ARTIFACT_DIR) + QStringLiteral("-") + curveCase.name;
     CHECK(ensureDirectory(reportCaseDir));
     CHECK(ensureDirectory(canonicalCaseDir));
 
@@ -435,28 +435,28 @@ std::vector<CurveCase> cases()
     cyan.setCosmetic(true);
     return {
         {QStringLiteral("straight-line"), {0.0, 1.0, 2.0, 3.0}, {0.0, 2.0, 1.0, 3.0},
-            pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
-            pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
+            cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
+            cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
         {QStringLiteral("connect-all-nonfinite"), {0.0, 1.0, 2.0, 3.0, 4.0},
             {0.0, 2.0, std::numeric_limits<double>::quiet_NaN(), -1.0, 2.0},
-            pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
-            pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
+            cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
+            cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
         {QStringLiteral("finite-gap"), {0.0, 1.0, 2.0, 3.0, 4.0},
             {0.0, 2.0, std::numeric_limits<double>::quiet_NaN(), -1.0, 2.0},
-            pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite,
-            pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
+            cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite,
+            cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
         {QStringLiteral("pairs-connected"), {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}, {0.0, 2.0, -1.0, 3.0, 1.0, 4.0},
-            pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs,
-            pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None, cyan},
+            cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs,
+            cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None, cyan},
         {QStringLiteral("step-left"), {0.0, 1.5, 3.0, 4.5, 6.0}, {0.0, 1.5, -1.0, 2.5, 1.0},
-            pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
-            pyqtgraph::graphicsItems::PlotCurveItem::StepMode::Left, defaultPen()},
+            cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
+            cppqtgraph::graphicsItems::PlotCurveItem::StepMode::Left, defaultPen()},
         {QStringLiteral("wide-dashed-pen"), {0.0, 1.0, 2.0, 3.0, 4.0}, {-2.0, 3.0, -1.0, 2.0, 0.0},
-            pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
-            pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None, dashed},
+            cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
+            cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None, dashed},
         {QStringLiteral("clipped-ranged"), {-8.0, -2.0, 0.0, 2.0, 5.0, 12.0}, {-6.0, -1.0, 1.0, 4.0, 0.0, 8.0},
-            pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
-            pyqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
+            cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::All,
+            cppqtgraph::graphicsItems::PlotCurveItem::StepMode::None, defaultPen()},
     };
 }
 
@@ -476,7 +476,7 @@ bool testBlankAndPlaceholderGuardsRejectNonSemanticImages()
 
 bool writeSummaryReport(int passedCases, int totalCases)
 {
-    const QString reportRoot = QStringLiteral(PYQTGRAPH_CPP_P3_09_ARTIFACT_DIR);
+    const QString reportRoot = QStringLiteral(CPPQTGRAPH_P3_09_ARTIFACT_DIR);
     CHECK(ensureDirectory(reportRoot));
     writeTextFile(reportRoot + QStringLiteral("/manual_semantic_inspection.md"),
         QStringLiteral(

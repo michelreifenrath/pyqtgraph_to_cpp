@@ -48,8 +48,8 @@ def base_manifest() -> dict:
         "source_files": [
             {
                 "upstream_path": "pyqtgraph/Foo.py",
-                "target_header_path": "include/pyqtgraph/Foo.hpp",
-                "target_source_path": "src/pyqtgraph/Foo.cpp",
+                "target_header_path": "include/cppqtgraph/Foo.hpp",
+                "target_source_path": "src/cppqtgraph/Foo.cpp",
                 "status": "not_started",
                 "completion": "missing",
             }
@@ -76,8 +76,8 @@ def base_manifest() -> dict:
             {
                 "class_name": "Foo",
                 "upstream_path": "pyqtgraph/Foo.py",
-                "target_header_path": "include/pyqtgraph/Foo.hpp",
-                "target_source_path": "src/pyqtgraph/Foo.cpp",
+                "target_header_path": "include/cppqtgraph/Foo.hpp",
+                "target_source_path": "src/cppqtgraph/Foo.cpp",
                 "status": "not_started",
                 "completion": "missing",
             }

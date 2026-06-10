@@ -1,5 +1,5 @@
-#include <pyqtgraph/widgets/JoystickButton.hpp>
-#include <pyqtgraph/widgets/VerticalLabel.hpp>
+#include <cppqtgraph/widgets/JoystickButton.hpp>
+#include <cppqtgraph/widgets/VerticalLabel.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -24,12 +24,12 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_20_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P5_20_VISUAL_DIFF_DIR "reports/visual-diffs/JoystickVerticalLabel"
+#ifndef CPPQTGRAPH_P5_20_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P5_20_VISUAL_DIFF_DIR "reports/visual-diffs/JoystickVerticalLabel"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_20_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_20_REPOSITORY_REPORT_DIR "reports/issues/P5.20"
+#ifndef CPPQTGRAPH_P5_20_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_20_REPOSITORY_REPORT_DIR "reports/issues/P5.20"
 #endif
 
 namespace {
@@ -124,7 +124,7 @@ struct SemanticReviewStatus {
 
 QString caseArtifactDir(const QString& caseName)
 {
-    return QStringLiteral(PYQTGRAPH_CPP_P5_20_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+    return QStringLiteral(CPPQTGRAPH_P5_20_VISUAL_DIFF_DIR) + QChar('/') + caseName;
 }
 
 SemanticReviewStatus readGptVisualReview(const QString& caseName)
@@ -253,7 +253,7 @@ QVector<double> expectedNormalizedState(double rawX, double rawY, double radius)
 
 bool testJoystickButtonApiShape()
 {
-    using pyqtgraph::widgets::JoystickButton;
+    using cppqtgraph::widgets::JoystickButton;
 
     static_assert(std::is_base_of_v<QPushButton, JoystickButton>);
     static_assert(!std::is_copy_constructible_v<JoystickButton>);
@@ -274,7 +274,7 @@ bool testJoystickButtonApiShape()
 
 bool testJoystickButtonSetStateNormalization()
 {
-    using pyqtgraph::widgets::JoystickButton;
+    using cppqtgraph::widgets::JoystickButton;
 
     JoystickButton button;
     QSignalSpy stateSpy(&button, &JoystickButton::sigStateChanged);
@@ -302,7 +302,7 @@ bool testJoystickButtonSetStateNormalization()
 
 bool testJoystickButtonInteraction()
 {
-    using pyqtgraph::widgets::JoystickButton;
+    using cppqtgraph::widgets::JoystickButton;
 
     JoystickButton button;
     button.show();
@@ -333,7 +333,7 @@ bool testJoystickButtonInteraction()
 
 bool testVerticalLabelApiShape()
 {
-    using pyqtgraph::widgets::VerticalLabel;
+    using cppqtgraph::widgets::VerticalLabel;
 
     static_assert(std::is_base_of_v<QLabel, VerticalLabel>);
     static_assert(!std::is_copy_constructible_v<VerticalLabel>);
@@ -351,7 +351,7 @@ bool testVerticalLabelApiShape()
 
 bool testVerticalLabelOrientationSwitch()
 {
-    using pyqtgraph::widgets::VerticalLabel;
+    using cppqtgraph::widgets::VerticalLabel;
 
     VerticalLabel label(QStringLiteral("Channel"), QStringLiteral("vertical"), true);
     label.show();
@@ -533,14 +533,14 @@ QImage renderVerticalLabelReference(const QString& text, const QString& orientat
 
 QImage renderVerticalLabelActual(const QString& text, const QString& orientation)
 {
-    pyqtgraph::widgets::VerticalLabel label(text, orientation, true);
+    cppqtgraph::widgets::VerticalLabel label(text, orientation, true);
     label.setAlignment(Qt::AlignCenter);
     return grabWidget(label);
 }
 
 QImage renderJoystickButtonActual(double rawX, double rawY)
 {
-    pyqtgraph::widgets::JoystickButton button;
+    cppqtgraph::widgets::JoystickButton button;
     button.show();
     QApplication::processEvents();
     button.setState(rawX, rawY);
@@ -711,17 +711,17 @@ bool testVisualBehavior()
 
 bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels, std::uint64_t actualPixels)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_20_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_20_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/JoystickVerticalLabel_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.20\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::JoystickButton\", \"pyqtgraph::widgets::VerticalLabel\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::JoystickButton\", \"cppqtgraph::widgets::VerticalLabel\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/JoystickButton.py and VerticalLabel.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/JoystickButton.hpp\", \"src/pyqtgraph/widgets/JoystickButton.cpp\", \"include/pyqtgraph/widgets/VerticalLabel.hpp\", \"src/pyqtgraph/widgets/VerticalLabel.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/JoystickButton.hpp\", \"src/cppqtgraph/widgets/JoystickButton.cpp\", \"include/cppqtgraph/widgets/VerticalLabel.hpp\", \"src/cppqtgraph/widgets/VerticalLabel.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.20 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_joystickbutton_verticallabel_p5_20\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.20 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_joystickbutton_verticallabel_p5_20\"},\n"
             "  \"checks\": [\"JoystickButton API shape and fixed 50x50 checkable button\", \"JoystickButton normalized squared-radius setState\", \"JoystickButton press/drag/release interaction\", \"VerticalLabel API shape and default sizeHint\", \"VerticalLabel orientation switch\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/JoystickVerticalLabel\", \"cases\": [\"JoystickButton-center\", \"JoystickButton-dragged\", \"VerticalLabel-vertical\", \"VerticalLabel-horizontal\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
             "  \"semantic_pixels\": {\"reference\": ")

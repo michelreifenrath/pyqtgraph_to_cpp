@@ -150,7 +150,7 @@ def visual_gate_commands(example: str) -> list[str]:
         raise ValueError(f"unsupported visual gate target: {example}; known targets: {known}")
     return [
         "cmake --preset visual",
-        "cmake --build --preset visual --target pyqtgraph_cpp_visual_render_example --parallel",
+        "cmake --build --preset visual --target cppqtgraph_visual_render_example --parallel",
         f"ctest --preset visual -R '^P1\\.08\\.visual\\.{re.escape(selected.name)}$' --output-on-failure",
     ]
 

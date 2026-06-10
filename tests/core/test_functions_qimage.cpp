@@ -1,4 +1,4 @@
-#include "../../include/pyqtgraph/functions_qimage.hpp"
+#include "../../include/cppqtgraph/functions_qimage.hpp"
 
 #include <QImage>
 
@@ -139,9 +139,9 @@ bool checkRgba64Pixel(const QImage& image,
 bool testUint8GrayscalePassthrough()
 {
     const std::array<std::uint8_t, 6> data{10, 20, 30, 40, 50, 60};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view);
     CHECK(image.has_value());
     CHECK(image->width() == 3);
     CHECK(image->height() == 2);
@@ -156,9 +156,9 @@ bool testUint8GrayscalePassthrough()
 bool testUint8RgbOrder()
 {
     const std::array<std::uint8_t, 12> data{1, 2, 3, 10, 20, 30, 100, 110, 120, 200, 210, 220};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 3});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 3});
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_RGB888);
     CHECK_RGB888(*image, 0, 0, 1, 2, 3);
@@ -171,9 +171,9 @@ bool testUint8RgbOrder()
 bool testUint8RgbaPreservesAlpha()
 {
     const std::array<std::uint8_t, 16> data{1, 2, 3, 4, 10, 20, 30, 128, 5, 6, 7, 0, 8, 9, 10, 255};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 4});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 4});
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_RGBA8888);
     CHECK_RGBA8888(*image, 0, 0, 1, 2, 3, 4);
@@ -186,9 +186,9 @@ bool testUint8RgbaPreservesAlpha()
 bool testStridedInputCopiesToContiguous()
 {
     const std::array<std::uint8_t, 12> data{1, 99, 2, 99, 3, 99, 4, 99, 5, 99, 6, 99};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3}, {6, 2});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3}, {6, 2});
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view);
     CHECK(image.has_value());
     CHECK(image->bytesPerLine() >= image->width());
     CHECK(image->constBits() != nullptr);
@@ -202,9 +202,9 @@ bool testStridedInputCopiesToContiguous()
 bool testCopyDetachesSource()
 {
     std::array<std::uint8_t, 4> data{10, 20, 30, 40};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 2});
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view);
     CHECK(image.has_value());
     CHECK_GRAY8(*image, 1, 0, 20);
 
@@ -220,9 +220,9 @@ bool testUint16GrayscalePassthrough()
     }
 
     const std::array<std::uint16_t, 4> data{1000, 2000, 3000, 4000};
-    const pyqtgraph::core::ArrayView<const std::uint16_t, 2> view(data.data(), {2, 2});
+    const cppqtgraph::core::ArrayView<const std::uint16_t, 2> view(data.data(), {2, 2});
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_Grayscale16);
     CHECK_GRAY16(*image, 0, 0, 1000);
@@ -244,9 +244,9 @@ bool testUint16Rgba64Passthrough()
         900, 1000, 1100, 1200,
         1300, 1400, 1500, 1600,
     };
-    const pyqtgraph::core::ArrayView<const std::uint16_t, 3> view(data.data(), {2, 2, 4});
+    const cppqtgraph::core::ArrayView<const std::uint16_t, 3> view(data.data(), {2, 2, 4});
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_RGBA64);
     CHECK_RGBA64(*image, 0, 0, 100, 200, 300, 400);
@@ -259,12 +259,12 @@ bool testUnsupportedReturnsNullopt()
     const std::array<std::uint8_t, 12> data{};
     const std::array<std::uint16_t, 12> data16{};
 
-    CHECK(!pyqtgraph::tryMakeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 2>(nullptr, {1, 1})).has_value());
-    CHECK(!pyqtgraph::tryMakeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {0, 2})).has_value());
-    CHECK(!pyqtgraph::tryMakeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 1})).has_value());
-    CHECK(!pyqtgraph::tryMakeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 2})).has_value());
-    CHECK(!pyqtgraph::tryMakeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 5})).has_value());
-    CHECK(!pyqtgraph::tryMakeQImage(pyqtgraph::core::ArrayView<const std::uint16_t, 3>(data16.data(), {1, 1, 3})).has_value());
+    CHECK(!cppqtgraph::tryMakeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 2>(nullptr, {1, 1})).has_value());
+    CHECK(!cppqtgraph::tryMakeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {0, 2})).has_value());
+    CHECK(!cppqtgraph::tryMakeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 1})).has_value());
+    CHECK(!cppqtgraph::tryMakeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 2})).has_value());
+    CHECK(!cppqtgraph::tryMakeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 5})).has_value());
+    CHECK(!cppqtgraph::tryMakeQImage(cppqtgraph::core::ArrayView<const std::uint16_t, 3>(data16.data(), {1, 1, 3})).has_value());
     return true;
 }
 

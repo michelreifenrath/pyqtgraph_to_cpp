@@ -1,5 +1,5 @@
-#include <pyqtgraph/SignalProxy.hpp>
-#include <pyqtgraph/ThreadsafeTimer.hpp>
+#include <cppqtgraph/SignalProxy.hpp>
+#include <cppqtgraph/ThreadsafeTimer.hpp>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QElapsedTimer>
@@ -66,10 +66,10 @@ bool waitUntil(const std::function<bool()>& predicate, int timeoutMs)
 
 bool testOracleFixtureDocumentsPinnedBehavior()
 {
-#ifndef PYQTGRAPH_CPP_P2_08_FIXTURE
-#error "PYQTGRAPH_CPP_P2_08_FIXTURE must be defined"
+#ifndef CPPQTGRAPH_P2_08_FIXTURE
+#error "CPPQTGRAPH_P2_08_FIXTURE must be defined"
 #endif
-    QFile fixture(QString::fromUtf8(PYQTGRAPH_CPP_P2_08_FIXTURE));
+    QFile fixture(QString::fromUtf8(CPPQTGRAPH_P2_08_FIXTURE));
     CHECK(fixture.open(QIODevice::ReadOnly));
     const QByteArray contents = fixture.readAll();
     CHECK(contents.contains("a20028b98294b9cc8770f2015a92eb342224b788"));
@@ -82,7 +82,7 @@ bool testOracleFixtureDocumentsPinnedBehavior()
 
 bool testThreadsafeTimerTypeShape()
 {
-    using pyqtgraph::ThreadsafeTimer;
+    using cppqtgraph::ThreadsafeTimer;
 
     static_assert(std::is_base_of_v<QObject, ThreadsafeTimer>);
     static_assert(std::is_constructible_v<ThreadsafeTimer>);
@@ -97,9 +97,9 @@ bool testThreadsafeTimerTypeShape()
 
 bool testThreadsafeTimerStartStopOnGuiThread()
 {
-    pyqtgraph::ThreadsafeTimer timer;
+    cppqtgraph::ThreadsafeTimer timer;
     int timeoutCount = 0;
-    QObject::connect(&timer, &pyqtgraph::ThreadsafeTimer::timeout, [&timeoutCount]() { ++timeoutCount; });
+    QObject::connect(&timer, &cppqtgraph::ThreadsafeTimer::timeout, [&timeoutCount]() { ++timeoutCount; });
 
     timer.start(15);
     CHECK(waitUntil([&timeoutCount]() { return timeoutCount >= 1; }, 250));
@@ -115,9 +115,9 @@ bool testThreadsafeTimerStartStopOnGuiThread()
 
 bool testThreadsafeTimerQueuedStartStopFromWorkerThread()
 {
-    pyqtgraph::ThreadsafeTimer timer;
+    cppqtgraph::ThreadsafeTimer timer;
     int timeoutCount = 0;
-    QObject::connect(&timer, &pyqtgraph::ThreadsafeTimer::timeout, [&timeoutCount]() { ++timeoutCount; });
+    QObject::connect(&timer, &cppqtgraph::ThreadsafeTimer::timeout, [&timeoutCount]() { ++timeoutCount; });
 
     std::unique_ptr<QThread> worker(QThread::create([&timer]() { timer.start(20); }));
     worker->start();
@@ -145,11 +145,11 @@ bool testThreadsafeTimerParentedWorkerThreadRequestsReachAppTimer()
     ownerThread.start();
 
     QObject* parent = nullptr;
-    pyqtgraph::ThreadsafeTimer* timer = nullptr;
+    cppqtgraph::ThreadsafeTimer* timer = nullptr;
     bool constructedOnWorker = false;
     CHECK(QMetaObject::invokeMethod(&context, [&]() {
         parent = new QObject();
-        timer = new pyqtgraph::ThreadsafeTimer(parent);
+        timer = new cppqtgraph::ThreadsafeTimer(parent);
         constructedOnWorker = timer->thread() == &ownerThread;
     }, Qt::BlockingQueuedConnection));
     CHECK(parent != nullptr);
@@ -157,7 +157,7 @@ bool testThreadsafeTimerParentedWorkerThreadRequestsReachAppTimer()
     CHECK(constructedOnWorker);
 
     int timeoutCount = 0;
-    QObject::connect(timer, &pyqtgraph::ThreadsafeTimer::timeout, QCoreApplication::instance(),
+    QObject::connect(timer, &cppqtgraph::ThreadsafeTimer::timeout, QCoreApplication::instance(),
         [&timeoutCount]() { ++timeoutCount; }, Qt::QueuedConnection);
 
     CHECK(QMetaObject::invokeMethod(&context, [&]() { timer->start(20); },
@@ -179,7 +179,7 @@ bool testThreadsafeTimerParentedWorkerThreadRequestsReachAppTimer()
 
 bool testSignalProxyTypeShapeAndFlushFalse()
 {
-    using pyqtgraph::SignalProxy;
+    using cppqtgraph::SignalProxy;
 
     static_assert(std::is_base_of_v<QObject, SignalProxy>);
     static_assert(std::is_constructible_v<SignalProxy>);
@@ -197,10 +197,10 @@ bool testSignalProxyTypeShapeAndFlushFalse()
 
 bool testSignalProxyDelayedCoalescesLatestArgs()
 {
-    pyqtgraph::SignalProxy proxy(0.04, 0.0, false);
+    cppqtgraph::SignalProxy proxy(0.04, 0.0, false);
     int delayedCount = 0;
     QVariantList lastArgs;
-    QObject::connect(&proxy, &pyqtgraph::SignalProxy::sigDelayed,
+    QObject::connect(&proxy, &cppqtgraph::SignalProxy::sigDelayed,
         [&delayedCount, &lastArgs](const QVariantList& args) {
             ++delayedCount;
             lastArgs = args;
@@ -221,10 +221,10 @@ bool testSignalProxyDelayedCoalescesLatestArgs()
 
 bool testSignalProxyFlushTrueClearsAndEmits()
 {
-    pyqtgraph::SignalProxy proxy(0.2, 0.0, false);
+    cppqtgraph::SignalProxy proxy(0.2, 0.0, false);
     int delayedCount = 0;
     QVariantList lastArgs;
-    QObject::connect(&proxy, &pyqtgraph::SignalProxy::sigDelayed,
+    QObject::connect(&proxy, &cppqtgraph::SignalProxy::sigDelayed,
         [&delayedCount, &lastArgs](const QVariantList& args) {
             ++delayedCount;
             lastArgs = args;
@@ -241,10 +241,10 @@ bool testSignalProxyFlushTrueClearsAndEmits()
 
 bool testSignalProxyRateLimitThrottlesAndKeepsLatestArgs()
 {
-    pyqtgraph::SignalProxy proxy(0.2, 20.0, false);
+    cppqtgraph::SignalProxy proxy(0.2, 20.0, false);
     int delayedCount = 0;
     QVariantList lastArgs;
-    QObject::connect(&proxy, &pyqtgraph::SignalProxy::sigDelayed,
+    QObject::connect(&proxy, &cppqtgraph::SignalProxy::sigDelayed,
         [&delayedCount, &lastArgs](const QVariantList& args) {
             ++delayedCount;
             lastArgs = args;
@@ -265,9 +265,9 @@ bool testSignalProxyRateLimitThrottlesAndKeepsLatestArgs()
 
 bool testSignalProxyDisconnectBlocksFutureSignals()
 {
-    pyqtgraph::SignalProxy proxy(0.01, 0.0, false);
+    cppqtgraph::SignalProxy proxy(0.01, 0.0, false);
     int delayedCount = 0;
-    QObject::connect(&proxy, &pyqtgraph::SignalProxy::sigDelayed, [&delayedCount](const QVariantList&) {
+    QObject::connect(&proxy, &cppqtgraph::SignalProxy::sigDelayed, [&delayedCount](const QVariantList&) {
         ++delayedCount;
     });
 

@@ -8,6 +8,7 @@ __pycache__/
 htmlcov/
 .coverage
 build/
+reference/pyqtgraph/
 
 .archon/state/
 .archon/.env

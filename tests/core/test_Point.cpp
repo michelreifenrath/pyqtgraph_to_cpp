@@ -1,4 +1,4 @@
-#include "pyqtgraph/Point.hpp"
+#include "cppqtgraph/Point.hpp"
 
 #include <QPoint>
 #include <QPointF>
@@ -18,8 +18,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P2_01_FIXTURE
-#define PYQTGRAPH_CPP_P2_01_FIXTURE "oracle/fixtures/P2_01/point_vector_oracle.json"
+#ifndef CPPQTGRAPH_P2_01_FIXTURE
+#define CPPQTGRAPH_P2_01_FIXTURE "oracle/fixtures/P2_01/point_vector_oracle.json"
 #endif
 
 namespace {
@@ -45,7 +45,7 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
 
 std::string readOracleFixture()
 {
-    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_01_FIXTURE});
+    std::ifstream input(std::filesystem::path{CPPQTGRAPH_P2_01_FIXTURE});
     CHECK(input.good());
     std::ostringstream buffer;
     buffer << input.rdbuf();
@@ -80,13 +80,13 @@ void assertNear(double actual, double expected, double tolerance = kTolerance)
     CHECK(std::abs(actual - expected) <= tolerance);
 }
 
-void assertPoint(const pyqtgraph::Point& point, double x, double y, double tolerance = kTolerance)
+void assertPoint(const cppqtgraph::Point& point, double x, double y, double tolerance = kTolerance)
 {
     assertNear(point.x(), x, tolerance);
     assertNear(point.y(), y, tolerance);
 }
 
-void expectOutOfRangeAt(const pyqtgraph::Point& point, qsizetype index)
+void expectOutOfRangeAt(const cppqtgraph::Point& point, qsizetype index)
 {
     bool threw = false;
     try {
@@ -97,7 +97,7 @@ void expectOutOfRangeAt(const pyqtgraph::Point& point, qsizetype index)
     CHECK(threw);
 }
 
-void expectOutOfRangeSet(pyqtgraph::Point& point, qsizetype index)
+void expectOutOfRangeSet(cppqtgraph::Point& point, qsizetype index)
 {
     bool threw = false;
     try {
@@ -112,7 +112,7 @@ void expectInvalidInitializerList(std::initializer_list<double> values)
 {
     bool threw = false;
     try {
-        const pyqtgraph::Point point(values);
+        const cppqtgraph::Point point(values);
         static_cast<void>(point);
     } catch (const std::invalid_argument&) {
         threw = true;
@@ -124,7 +124,7 @@ void expectInvalidInitializerList(std::initializer_list<double> values)
 
 int main()
 {
-    using pyqtgraph::Point;
+    using cppqtgraph::Point;
 
     static_assert(std::is_same_v<decltype(Point{1.0, 2.0} + Point{3.0, 4.0}), Point>);
     static_assert(std::is_same_v<decltype(Point{1.0, 2.0} * QPointF{3.0, 4.0}), Point>);

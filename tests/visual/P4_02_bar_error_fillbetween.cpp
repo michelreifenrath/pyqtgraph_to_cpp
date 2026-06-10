@@ -1,8 +1,8 @@
-#include <pyqtgraph/graphicsItems/BarGraphItem.hpp>
-#include <pyqtgraph/graphicsItems/ErrorBarItem.hpp>
-#include <pyqtgraph/graphicsItems/FillBetweenItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/graphicsItems/BarGraphItem.hpp>
+#include <cppqtgraph/graphicsItems/ErrorBarItem.hpp>
+#include <cppqtgraph/graphicsItems/FillBetweenItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
@@ -33,12 +33,12 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_02_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_02_ARTIFACT_DIR "reports/visual/P4.02"
+#ifndef CPPQTGRAPH_P4_02_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_02_ARTIFACT_DIR "reports/visual/P4.02"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_02_CANONICAL_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_02_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P4.02-bar-error-fillbetween"
+#ifndef CPPQTGRAPH_P4_02_CANONICAL_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_02_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P4.02-bar-error-fillbetween"
 #endif
 
 namespace {
@@ -262,11 +262,11 @@ QImage renderActual()
 
     painter.save();
     painter.setTransform(panelTransform(barPanel, barView));
-    pyqtgraph::graphicsItems::BarGraphItem bg1(x, y1, 0.3);
+    cppqtgraph::graphicsItems::BarGraphItem bg1(x, y1, 0.3);
     bg1.setBrush(QBrush(Qt::red));
-    pyqtgraph::graphicsItems::BarGraphItem bg2(shifted(x, 0.33), y2, 0.3);
+    cppqtgraph::graphicsItems::BarGraphItem bg2(shifted(x, 0.33), y2, 0.3);
     bg2.setBrush(QBrush(Qt::green));
-    pyqtgraph::graphicsItems::BarGraphItem bg3(shifted(x, 0.66), y3, 0.3);
+    cppqtgraph::graphicsItems::BarGraphItem bg3(shifted(x, 0.66), y3, 0.3);
     bg3.setBrush(QBrush(Qt::blue));
     std::vector<double> barY;
     std::vector<double> barHeight;
@@ -274,7 +274,7 @@ QImage renderActual()
         barY.push_back(value * 0.3 + 2.0);
         barHeight.push_back(0.4 + value * 0.2);
     }
-    pyqtgraph::graphicsItems::BarGraphItem bg4;
+    cppqtgraph::graphicsItems::BarGraphItem bg4;
     bg4.setData(x, barY, barHeight, 0.8);
     for (auto* item : {&bg1, &bg2, &bg3, &bg4}) {
         item->paint(&painter, &option, nullptr);
@@ -291,7 +291,7 @@ QImage renderActual()
         top.push_back(1.0 + (2.0 * static_cast<double>(index) / 9.0));
         bottom.push_back(2.0 + ((0.5 - 2.0) * static_cast<double>(index) / 9.0));
     }
-    pyqtgraph::graphicsItems::ErrorBarItem errors;
+    cppqtgraph::graphicsItems::ErrorBarItem errors;
     errors.setData(x, y, top, bottom, 0.5);
     errors.paint(&painter, &option, nullptr);
     painter.restore();
@@ -309,11 +309,11 @@ QImage renderActual()
         lower.push_back(-3.0 * gauss - 0.35 * std::cos(value * 1.7));
         upper.push_back(3.0 * gauss + 0.25 * std::sin(value * 1.3));
     }
-    pyqtgraph::graphicsItems::PlotCurveItem lowerCurve;
+    cppqtgraph::graphicsItems::PlotCurveItem lowerCurve;
     lowerCurve.setData(fillX, lower);
-    pyqtgraph::graphicsItems::PlotCurveItem upperCurve;
+    cppqtgraph::graphicsItems::PlotCurveItem upperCurve;
     upperCurve.setData(fillX, upper);
-    pyqtgraph::graphicsItems::FillBetweenItem fill(&lowerCurve, &upperCurve, QBrush(QColor(100, 100, 255, 180)), QPen(Qt::NoPen));
+    cppqtgraph::graphicsItems::FillBetweenItem fill(&lowerCurve, &upperCurve, QBrush(QColor(100, 100, 255, 180)), QPen(Qt::NoPen));
     fill.paint(&painter, &option, nullptr);
     painter.restore();
 
@@ -413,8 +413,8 @@ QString normalizedReviewValue(QString value)
 SemanticReviewStatus readOptionalGptVisualReview()
 {
     SemanticReviewStatus status;
-#ifdef PYQTGRAPH_CPP_P4_02_GPT_REVIEW_REPORT
-    status.sourcePath = QStringLiteral(PYQTGRAPH_CPP_P4_02_GPT_REVIEW_REPORT);
+#ifdef CPPQTGRAPH_P4_02_GPT_REVIEW_REPORT
+    status.sourcePath = QStringLiteral(CPPQTGRAPH_P4_02_GPT_REVIEW_REPORT);
 #endif
     if (status.sourcePath.isEmpty()) {
         status.sourcePath = qEnvironmentVariable("PG_P4_02_VISUAL_REVIEW_REPORT");
@@ -422,11 +422,11 @@ SemanticReviewStatus readOptionalGptVisualReview()
     const bool explicitReviewSource = !status.sourcePath.isEmpty();
     if (status.sourcePath.isEmpty()) {
         const std::vector<QString> existingReviewCandidates{
-#ifdef PYQTGRAPH_CPP_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR
-            QStringLiteral(PYQTGRAPH_CPP_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR) + QStringLiteral("/gpt5_vision_review.md"),
+#ifdef CPPQTGRAPH_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR
+            QStringLiteral(CPPQTGRAPH_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR) + QStringLiteral("/gpt5_vision_review.md"),
 #endif
-#ifdef PYQTGRAPH_CPP_P4_02_REPOSITORY_ARTIFACT_DIR
-            QStringLiteral(PYQTGRAPH_CPP_P4_02_REPOSITORY_ARTIFACT_DIR) + QStringLiteral("/bar-error-fillbetween/gpt5_vision_review.md"),
+#ifdef CPPQTGRAPH_P4_02_REPOSITORY_ARTIFACT_DIR
+            QStringLiteral(CPPQTGRAPH_P4_02_REPOSITORY_ARTIFACT_DIR) + QStringLiteral("/bar-error-fillbetween/gpt5_vision_review.md"),
 #endif
         };
         for (const QString& candidate : existingReviewCandidates) {
@@ -511,13 +511,13 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
             caseDirs.push_back(dir);
         }
     };
-    addUniqueCaseDir(QStringLiteral(PYQTGRAPH_CPP_P4_02_ARTIFACT_DIR) + QStringLiteral("/bar-error-fillbetween"));
-    addUniqueCaseDir(QStringLiteral(PYQTGRAPH_CPP_P4_02_CANONICAL_ARTIFACT_DIR));
-#ifdef PYQTGRAPH_CPP_P4_02_REPOSITORY_ARTIFACT_DIR
-    addUniqueCaseDir(QStringLiteral(PYQTGRAPH_CPP_P4_02_REPOSITORY_ARTIFACT_DIR) + QStringLiteral("/bar-error-fillbetween"));
+    addUniqueCaseDir(QStringLiteral(CPPQTGRAPH_P4_02_ARTIFACT_DIR) + QStringLiteral("/bar-error-fillbetween"));
+    addUniqueCaseDir(QStringLiteral(CPPQTGRAPH_P4_02_CANONICAL_ARTIFACT_DIR));
+#ifdef CPPQTGRAPH_P4_02_REPOSITORY_ARTIFACT_DIR
+    addUniqueCaseDir(QStringLiteral(CPPQTGRAPH_P4_02_REPOSITORY_ARTIFACT_DIR) + QStringLiteral("/bar-error-fillbetween"));
 #endif
-#ifdef PYQTGRAPH_CPP_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR
-    addUniqueCaseDir(QStringLiteral(PYQTGRAPH_CPP_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR));
+#ifdef CPPQTGRAPH_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR
+    addUniqueCaseDir(QStringLiteral(CPPQTGRAPH_P4_02_REPOSITORY_CANONICAL_ARTIFACT_DIR));
 #endif
     const SemanticReviewStatus reviewStatus = readOptionalGptVisualReview();
     for (const QString& caseDir : caseDirs) {
@@ -590,9 +590,9 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
             reportRoots.push_back(dir);
         }
     };
-    addUniqueReportRoot(QStringLiteral(PYQTGRAPH_CPP_P4_02_ARTIFACT_DIR));
-#ifdef PYQTGRAPH_CPP_P4_02_REPOSITORY_ARTIFACT_DIR
-    addUniqueReportRoot(QStringLiteral(PYQTGRAPH_CPP_P4_02_REPOSITORY_ARTIFACT_DIR));
+    addUniqueReportRoot(QStringLiteral(CPPQTGRAPH_P4_02_ARTIFACT_DIR));
+#ifdef CPPQTGRAPH_P4_02_REPOSITORY_ARTIFACT_DIR
+    addUniqueReportRoot(QStringLiteral(CPPQTGRAPH_P4_02_REPOSITORY_ARTIFACT_DIR));
 #endif
     for (const QString& reportRoot : reportRoots) {
         CHECK(ensureDirectory(reportRoot));
@@ -611,16 +611,16 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
 
 bool testDataGuardsAndBounds()
 {
-    pyqtgraph::graphicsItems::BarGraphItemOptions defaultBarOptions;
-    pyqtgraph::graphicsItems::ErrorBarItemOptions defaultErrorOptions;
+    cppqtgraph::graphicsItems::BarGraphItemOptions defaultBarOptions;
+    cppqtgraph::graphicsItems::ErrorBarItemOptions defaultErrorOptions;
     CHECK(defaultBarOptions.pen.isCosmetic());
     CHECK(defaultErrorOptions.pen.isCosmetic());
-    pyqtgraph::graphicsItems::BarGraphItem optionBars(defaultBarOptions);
-    pyqtgraph::graphicsItems::ErrorBarItem optionErrors(defaultErrorOptions);
+    cppqtgraph::graphicsItems::BarGraphItem optionBars(defaultBarOptions);
+    cppqtgraph::graphicsItems::ErrorBarItem optionErrors(defaultErrorOptions);
     CHECK(optionBars.pen().isCosmetic());
     CHECK(optionErrors.pen().isCosmetic());
 
-    pyqtgraph::graphicsItems::ErrorBarItem deferred;
+    cppqtgraph::graphicsItems::ErrorBarItem deferred;
     CHECK(!deferred.isVisible());
     CHECK(deferred.boundingRect().isNull());
 
@@ -638,30 +638,30 @@ bool testDataGuardsAndBounds()
     CHECK(!deferred.isVisible());
     CHECK(deferred.boundingRect().isNull());
 
-    pyqtgraph::graphicsItems::ErrorBarItemOptions asymmetricVerticalOptions;
+    cppqtgraph::graphicsItems::ErrorBarItemOptions asymmetricVerticalOptions;
     asymmetricVerticalOptions.x = {10.0};
     asymmetricVerticalOptions.y = {20.0};
     asymmetricVerticalOptions.top = {3.0};
     asymmetricVerticalOptions.bottom = {1.0};
     asymmetricVerticalOptions.beam = 0.0;
-    pyqtgraph::graphicsItems::ErrorBarItem asymmetricVertical(asymmetricVerticalOptions);
+    cppqtgraph::graphicsItems::ErrorBarItem asymmetricVertical(asymmetricVerticalOptions);
     const QRectF asymmetricPathBounds = asymmetricVertical.path().boundingRect();
     CHECK(std::abs(asymmetricPathBounds.top() - 19.0) < 1.0e-9);
     CHECK(std::abs(asymmetricPathBounds.bottom() - 23.0) < 1.0e-9);
 
-    pyqtgraph::graphicsItems::ErrorBarItemOptions verticalOnlyOptions;
+    cppqtgraph::graphicsItems::ErrorBarItemOptions verticalOnlyOptions;
     verticalOnlyOptions.x = {1.0};
     verticalOnlyOptions.y = {2.0};
     verticalOnlyOptions.top = {1.0};
     verticalOnlyOptions.bottom = {1.0};
     verticalOnlyOptions.pen = QPen(Qt::white, 6.0);
-    pyqtgraph::graphicsItems::ErrorBarItem verticalOnly(verticalOnlyOptions);
+    cppqtgraph::graphicsItems::ErrorBarItem verticalOnly(verticalOnlyOptions);
     CHECK(verticalOnly.path().boundingRect().width() == 0.0);
     CHECK(verticalOnly.boundingRect().width() >= 6.0);
     verticalOnly.setPen(QPen(Qt::white, 10.0));
     CHECK(verticalOnly.boundingRect().width() >= 10.0);
 
-    pyqtgraph::graphicsItems::BarGraphItem bars;
+    cppqtgraph::graphicsItems::BarGraphItem bars;
     const std::vector<double> heights{2.0, -3.0};
     bars.setData(x, heights, -0.5);
     const auto [xMin, xMax] = bars.dataBounds(0);
@@ -672,7 +672,7 @@ bool testDataGuardsAndBounds()
     CHECK(yMax >= 2.0);
     CHECK(!bars.shape().isEmpty());
 
-    pyqtgraph::graphicsItems::BarGraphItemOptions explicitCoords;
+    cppqtgraph::graphicsItems::BarGraphItemOptions explicitCoords;
     explicitCoords.x0 = {20.0};
     explicitCoords.x1 = {21.0};
     explicitCoords.height = {1.0};
@@ -701,19 +701,19 @@ bool testDataGuardsAndBounds()
     }
     CHECK(paintAfterStyleMismatchOk);
 
-    pyqtgraph::graphicsItems::PlotCurveItem lowerStep;
-    pyqtgraph::graphicsItems::PlotCurveItem upperStep;
+    cppqtgraph::graphicsItems::PlotCurveItem lowerStep;
+    cppqtgraph::graphicsItems::PlotCurveItem upperStep;
     const std::vector<double> stepX{0.0, 1.0, 2.0};
     const std::vector<double> stepLower{0.0, 1.0, 0.0};
     const std::vector<double> stepUpper{2.0, 3.0, 2.0};
-    lowerStep.setStepMode(pyqtgraph::graphicsItems::PlotCurveItem::StepMode::Right);
-    upperStep.setStepMode(pyqtgraph::graphicsItems::PlotCurveItem::StepMode::Right);
+    lowerStep.setStepMode(cppqtgraph::graphicsItems::PlotCurveItem::StepMode::Right);
+    upperStep.setStepMode(cppqtgraph::graphicsItems::PlotCurveItem::StepMode::Right);
     lowerStep.setData(stepX, stepLower);
     upperStep.setData(stepX, stepUpper);
-    pyqtgraph::graphicsItems::FillBetweenItem stepFill(&lowerStep, &upperStep, QBrush(Qt::blue));
+    cppqtgraph::graphicsItems::FillBetweenItem stepFill(&lowerStep, &upperStep, QBrush(Qt::blue));
     CHECK(stepFill.zValue() < lowerStep.zValue());
     {
-        pyqtgraph::graphicsItems::ViewBox viewBox;
+        cppqtgraph::graphicsItems::ViewBox viewBox;
         viewBox.addItem(&stepFill);
         CHECK(stepFill.parentItem() != nullptr);
         CHECK(stepFill.zValue() < lowerStep.zValue());
@@ -724,16 +724,16 @@ bool testDataGuardsAndBounds()
     CHECK(std::abs(stepPath.elementAt(1).x - 1.0) < 1.0e-9);
     CHECK(std::abs(stepPath.elementAt(1).y - 0.0) < 1.0e-9);
 
-    pyqtgraph::graphicsItems::PlotCurveItem singleLowerStep;
-    pyqtgraph::graphicsItems::PlotCurveItem singleUpperStep;
-    singleLowerStep.setStepMode(pyqtgraph::graphicsItems::PlotCurveItem::StepMode::Center);
-    singleUpperStep.setStepMode(pyqtgraph::graphicsItems::PlotCurveItem::StepMode::Center);
-    singleLowerStep.setConnectMode(pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
-    singleUpperStep.setConnectMode(pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
+    cppqtgraph::graphicsItems::PlotCurveItem singleLowerStep;
+    cppqtgraph::graphicsItems::PlotCurveItem singleUpperStep;
+    singleLowerStep.setStepMode(cppqtgraph::graphicsItems::PlotCurveItem::StepMode::Center);
+    singleUpperStep.setStepMode(cppqtgraph::graphicsItems::PlotCurveItem::StepMode::Center);
+    singleLowerStep.setConnectMode(cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
+    singleUpperStep.setConnectMode(cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
     const std::vector<double> centerStepX{0.0, 1.0, 2.0, 3.0};
     singleLowerStep.setData(centerStepX, std::vector<double>{std::nan(""), 0.0, std::nan("")});
     singleUpperStep.setData(centerStepX, std::vector<double>{std::nan(""), 2.0, std::nan("")});
-    pyqtgraph::graphicsItems::FillBetweenItem singleStepFill(&singleLowerStep, &singleUpperStep, QBrush(Qt::blue));
+    cppqtgraph::graphicsItems::FillBetweenItem singleStepFill(&singleLowerStep, &singleUpperStep, QBrush(Qt::blue));
     const QRectF singleStepBounds = singleStepFill.path().boundingRect();
     CHECK(!singleStepFill.path().isEmpty());
     CHECK(singleStepBounds.left() <= 1.0);
@@ -764,39 +764,39 @@ bool testDataGuardsAndBounds()
         return count;
     };
 
-    pyqtgraph::graphicsItems::PlotCurveItem lowerFinite;
-    pyqtgraph::graphicsItems::PlotCurveItem upperFinite;
-    lowerFinite.setConnectMode(pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
-    upperFinite.setConnectMode(pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
+    cppqtgraph::graphicsItems::PlotCurveItem lowerFinite;
+    cppqtgraph::graphicsItems::PlotCurveItem upperFinite;
+    lowerFinite.setConnectMode(cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
+    upperFinite.setConnectMode(cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Finite);
     const double nan = std::nan("");
     const std::vector<double> gapX{0.0, 1.0, 2.0, 3.0, 4.0};
     lowerFinite.setData(gapX, std::vector<double>{0.0, 1.0, nan, 1.0, 0.0});
     upperFinite.setData(gapX, std::vector<double>{2.0, 3.0, nan, 3.0, 2.0});
-    pyqtgraph::graphicsItems::FillBetweenItem finiteFill(&lowerFinite, &upperFinite, QBrush(Qt::blue));
+    cppqtgraph::graphicsItems::FillBetweenItem finiteFill(&lowerFinite, &upperFinite, QBrush(Qt::blue));
     CHECK(moveToCount(finiteFill.path()) >= 2);
 
-    pyqtgraph::graphicsItems::PlotCurveItem lowerPairs;
-    pyqtgraph::graphicsItems::PlotCurveItem upperPairs;
-    lowerPairs.setConnectMode(pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs);
-    upperPairs.setConnectMode(pyqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs);
+    cppqtgraph::graphicsItems::PlotCurveItem lowerPairs;
+    cppqtgraph::graphicsItems::PlotCurveItem upperPairs;
+    lowerPairs.setConnectMode(cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs);
+    upperPairs.setConnectMode(cppqtgraph::graphicsItems::PlotCurveItem::ConnectMode::Pairs);
     const std::vector<double> pairX{0.0, 1.0, 2.0, 3.0};
     lowerPairs.setData(pairX, std::vector<double>{0.0, 1.0, 0.0, 1.0});
     upperPairs.setData(pairX, std::vector<double>{2.0, 3.0, 2.0, 3.0});
-    pyqtgraph::graphicsItems::FillBetweenItem pairsFill(&lowerPairs, &upperPairs, QBrush(Qt::blue));
+    cppqtgraph::graphicsItems::FillBetweenItem pairsFill(&lowerPairs, &upperPairs, QBrush(Qt::blue));
     CHECK(moveToCount(pairsFill.path()) >= 2);
 
-    pyqtgraph::graphicsItems::PlotCurveItem shorterLower;
-    pyqtgraph::graphicsItems::PlotCurveItem longerUpper;
+    cppqtgraph::graphicsItems::PlotCurveItem shorterLower;
+    cppqtgraph::graphicsItems::PlotCurveItem longerUpper;
     shorterLower.setData(std::vector<double>{0.0, 1.0, 2.0}, std::vector<double>{0.0, 0.0, 0.0});
     longerUpper.setData(std::vector<double>{0.0, 1.0, 2.0, 3.0}, std::vector<double>{1.0, 1.0, 1.0, 1.0});
-    pyqtgraph::graphicsItems::FillBetweenItem unequalFill(&shorterLower, &longerUpper, QBrush(Qt::blue));
+    cppqtgraph::graphicsItems::FillBetweenItem unequalFill(&shorterLower, &longerUpper, QBrush(Qt::blue));
     CHECK(unequalFill.path().boundingRect().right() > 2.9);
 
-    auto transientLower = std::make_unique<pyqtgraph::graphicsItems::PlotCurveItem>();
-    auto transientUpper = std::make_unique<pyqtgraph::graphicsItems::PlotCurveItem>();
+    auto transientLower = std::make_unique<cppqtgraph::graphicsItems::PlotCurveItem>();
+    auto transientUpper = std::make_unique<cppqtgraph::graphicsItems::PlotCurveItem>();
     transientLower->setData(std::vector<double>{0.0, 1.0}, std::vector<double>{0.0, 0.0});
     transientUpper->setData(std::vector<double>{0.0, 1.0}, std::vector<double>{1.0, 1.0});
-    pyqtgraph::graphicsItems::FillBetweenItem guardedFill(transientLower.get(), transientUpper.get(), QBrush(Qt::blue));
+    cppqtgraph::graphicsItems::FillBetweenItem guardedFill(transientLower.get(), transientUpper.get(), QBrush(Qt::blue));
     CHECK(!guardedFill.path().isEmpty());
     transientLower.reset();
     CHECK(guardedFill.curve1() == nullptr);

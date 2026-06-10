@@ -1,5 +1,5 @@
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
-#include <pyqtgraph/graphicsItems/ROI.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/graphicsItems/ROI.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -19,29 +19,29 @@
 #include <iostream>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P4_20_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_20_ARTIFACT_DIR "artifacts/P4.20"
+#ifndef CPPQTGRAPH_P4_20_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_20_ARTIFACT_DIR "artifacts/P4.20"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_20_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_20_VISUAL_DIFF_DIR "reports/visual-diffs/ROI-shapes"
+#ifndef CPPQTGRAPH_P4_20_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_20_VISUAL_DIFF_DIR "reports/visual-diffs/ROI-shapes"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_20_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P4_20_GPT_REVIEW_REPORT "reports/visual-diffs/ROI-shapes/gpt5_vision_review.md"
+#ifndef CPPQTGRAPH_P4_20_GPT_REVIEW_REPORT
+#define CPPQTGRAPH_P4_20_GPT_REVIEW_REPORT "reports/visual-diffs/ROI-shapes/gpt5_vision_review.md"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_20_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_20_REPOSITORY_REPORT_DIR "reports/issues/P4.20"
+#ifndef CPPQTGRAPH_P4_20_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_20_REPOSITORY_REPORT_DIR "reports/issues/P4.20"
 #endif
 
-using pyqtgraph::graphicsItems::CircleROI;
-using pyqtgraph::graphicsItems::EllipseROI;
-using pyqtgraph::graphicsItems::LineROI;
-using pyqtgraph::graphicsItems::PolyLineROI;
-using pyqtgraph::graphicsItems::RectROI;
-using pyqtgraph::graphicsItems::ROI;
-using pyqtgraph::graphicsItems::ROIState;
+using cppqtgraph::graphicsItems::CircleROI;
+using cppqtgraph::graphicsItems::EllipseROI;
+using cppqtgraph::graphicsItems::LineROI;
+using cppqtgraph::graphicsItems::PolyLineROI;
+using cppqtgraph::graphicsItems::RectROI;
+using cppqtgraph::graphicsItems::ROI;
+using cppqtgraph::graphicsItems::ROIState;
 
 namespace {
 
@@ -102,14 +102,14 @@ std::unique_ptr<QGraphicsSceneMouseEvent> mouseEvent(QEvent::Type type,
     return event;
 }
 
-pyqtgraph::GraphicsScene::MouseDragEvent dragEvent(QGraphicsItem* item,
+cppqtgraph::GraphicsScene::MouseDragEvent dragEvent(QGraphicsItem* item,
                                                    QGraphicsSceneMouseEvent* event,
                                                    QGraphicsSceneMouseEvent* press,
                                                    QGraphicsSceneMouseEvent* last,
                                                    bool start,
                                                    bool finish)
 {
-    pyqtgraph::GraphicsScene::MouseDragEvent drag(event, press, last, start, finish);
+    cppqtgraph::GraphicsScene::MouseDragEvent drag(event, press, last, start, finish);
     drag.setCurrentItem(item);
     return drag;
 }
@@ -209,7 +209,7 @@ struct SemanticReviewStatus {
 SemanticReviewStatus readGptVisualReview()
 {
     SemanticReviewStatus status;
-    status.path = QStringLiteral(PYQTGRAPH_CPP_P4_20_GPT_REVIEW_REPORT);
+    status.path = QStringLiteral(CPPQTGRAPH_P4_20_GPT_REVIEW_REPORT);
     if (!QFile::exists(status.path)) {
         std::cerr << "missing P4.20 GPT visual review: " << status.path.toStdString() << '\n';
         return status;
@@ -252,7 +252,7 @@ SemanticReviewStatus readGptVisualReview()
 
 bool writeVisualArtifacts(const QImage& image, int nonBackgroundPixels, const SemanticReviewStatus& review)
 {
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_20_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_20_VISUAL_DIFF_DIR);
     if (!QDir().mkpath(visualDir)) {
         return false;
     }
@@ -305,8 +305,8 @@ bool writeRepositoryReport(const QJsonArray& checks,
                            const SemanticReviewStatus& review)
 {
     QJsonArray manifestTargets;
-    manifestTargets.append(QStringLiteral("include/pyqtgraph/graphicsItems/ROI.hpp"));
-    manifestTargets.append(QStringLiteral("src/pyqtgraph/graphicsItems/ROI.cpp"));
+    manifestTargets.append(QStringLiteral("include/cppqtgraph/graphicsItems/ROI.hpp"));
+    manifestTargets.append(QStringLiteral("src/cppqtgraph/graphicsItems/ROI.cpp"));
 
     QJsonArray sharedWiring;
     sharedWiring.append(QStringLiteral("tests/CMakeLists.txt"));
@@ -331,11 +331,11 @@ bool writeRepositoryReport(const QJsonArray& checks,
 
     QJsonObject report{{QStringLiteral("issue"), QStringLiteral("P4.20")},
                        {QStringLiteral("classes"),
-                        QJsonArray{QStringLiteral("pyqtgraph::graphicsItems::RectROI"),
-                                   QStringLiteral("pyqtgraph::graphicsItems::EllipseROI"),
-                                   QStringLiteral("pyqtgraph::graphicsItems::CircleROI"),
-                                   QStringLiteral("pyqtgraph::graphicsItems::LineROI"),
-                                   QStringLiteral("pyqtgraph::graphicsItems::PolyLineROI")}},
+                        QJsonArray{QStringLiteral("cppqtgraph::graphicsItems::RectROI"),
+                                   QStringLiteral("cppqtgraph::graphicsItems::EllipseROI"),
+                                   QStringLiteral("cppqtgraph::graphicsItems::CircleROI"),
+                                   QStringLiteral("cppqtgraph::graphicsItems::LineROI"),
+                                   QStringLiteral("cppqtgraph::graphicsItems::PolyLineROI")}},
                        {QStringLiteral("reference"),
                         QStringLiteral("pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ROI.py:1621-2050 RectROI, LineROI, EllipseROI, CircleROI, PolyLineROI")},
                        {QStringLiteral("manifest_targets"), manifestTargets},
@@ -345,7 +345,7 @@ bool writeRepositoryReport(const QJsonArray& checks,
                                       QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure")},
                                      {QStringLiteral("exit_code"), 0},
                                      {QStringLiteral("test_executable"),
-                                      QStringLiteral("pyqtgraph_cpp_graphicsitems_roi_shapes_p4_20")}}},
+                                      QStringLiteral("cppqtgraph_graphicsitems_roi_shapes_p4_20")}}},
                        {QStringLiteral("checks"), checks},
                        {QStringLiteral("visual_artifacts"),
                         QJsonObject{{QStringLiteral("root"), QStringLiteral("reports/visual-diffs/ROI-shapes")},
@@ -375,7 +375,7 @@ bool writeRepositoryReport(const QJsonArray& checks,
                                     {QStringLiteral("maxDelta"), 0},
                                     {QStringLiteral("actualPixels"), actualPixels}}}};
 
-    const QString repositoryReportDir = QStringLiteral(PYQTGRAPH_CPP_P4_20_REPOSITORY_REPORT_DIR);
+    const QString repositoryReportDir = QStringLiteral(CPPQTGRAPH_P4_20_REPOSITORY_REPORT_DIR);
     return writeReport(repositoryReportDir, report);
 }
 
@@ -450,11 +450,11 @@ int main(int argc, char** argv)
     auto continueMove = mouseEvent(QEvent::GraphicsSceneMouseMove, QPointF(60.0, 55.0), QPointF(50.0, 40.0), Qt::LeftButton, Qt::LeftButton, QPointF(50.0, 40.0));
     auto finishMove = mouseEvent(QEvent::GraphicsSceneMouseMove, QPointF(60.0, 55.0), QPointF(60.0, 55.0), Qt::LeftButton, Qt::LeftButton, QPointF(50.0, 40.0));
 
-    pyqtgraph::GraphicsScene::MouseDragEvent startDrag = dragEvent(corner, startMove.get(), press.get(), nullptr, true, false);
+    cppqtgraph::GraphicsScene::MouseDragEvent startDrag = dragEvent(corner, startMove.get(), press.get(), nullptr, true, false);
     corner->mouseDragEvent(&startDrag);
-    pyqtgraph::GraphicsScene::MouseDragEvent continueDrag = dragEvent(corner, continueMove.get(), press.get(), startMove.get(), false, false);
+    cppqtgraph::GraphicsScene::MouseDragEvent continueDrag = dragEvent(corner, continueMove.get(), press.get(), startMove.get(), false, false);
     corner->mouseDragEvent(&continueDrag);
-    pyqtgraph::GraphicsScene::MouseDragEvent finishDrag = dragEvent(corner, finishMove.get(), press.get(), continueMove.get(), false, true);
+    cppqtgraph::GraphicsScene::MouseDragEvent finishDrag = dragEvent(corner, finishMove.get(), press.get(), continueMove.get(), false, true);
     corner->mouseDragEvent(&finishDrag);
 
     if (!samePoint(interactiveRect.size(), QPointF(40.0, 35.0))) {
@@ -471,11 +471,11 @@ int main(int argc, char** argv)
     auto vertexStart = mouseEvent(QEvent::GraphicsSceneMouseMove, originalVertex, originalVertex, Qt::LeftButton, Qt::LeftButton, originalVertex);
     auto vertexContinue = mouseEvent(QEvent::GraphicsSceneMouseMove, draggedVertex, originalVertex, Qt::LeftButton, Qt::LeftButton, originalVertex);
     auto vertexFinish = mouseEvent(QEvent::GraphicsSceneMouseMove, draggedVertex, draggedVertex, Qt::LeftButton, Qt::LeftButton, originalVertex);
-    pyqtgraph::GraphicsScene::MouseDragEvent vertexStartDrag = dragEvent(vertex, vertexStart.get(), vertexPress.get(), nullptr, true, false);
+    cppqtgraph::GraphicsScene::MouseDragEvent vertexStartDrag = dragEvent(vertex, vertexStart.get(), vertexPress.get(), nullptr, true, false);
     vertex->mouseDragEvent(&vertexStartDrag);
-    pyqtgraph::GraphicsScene::MouseDragEvent vertexContinueDrag = dragEvent(vertex, vertexContinue.get(), vertexPress.get(), vertexStart.get(), false, false);
+    cppqtgraph::GraphicsScene::MouseDragEvent vertexContinueDrag = dragEvent(vertex, vertexContinue.get(), vertexPress.get(), vertexStart.get(), false, false);
     vertex->mouseDragEvent(&vertexContinueDrag);
-    pyqtgraph::GraphicsScene::MouseDragEvent vertexFinishDrag = dragEvent(vertex, vertexFinish.get(), vertexPress.get(), vertexContinue.get(), false, true);
+    cppqtgraph::GraphicsScene::MouseDragEvent vertexFinishDrag = dragEvent(vertex, vertexFinish.get(), vertexPress.get(), vertexContinue.get(), false, true);
     vertex->mouseDragEvent(&vertexFinishDrag);
     if (samePoint(vertex->scenePos(), originalVertex)) {
         return fail("PolyLineROI free-handle drag should move the vertex");
@@ -511,7 +511,7 @@ int main(int argc, char** argv)
                                                         {QStringLiteral("maxDelta"), 0},
                                                         {QStringLiteral("actualPixels"), actualPixels}});
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_20_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_20_ARTIFACT_DIR);
     if (!writeReport(artifactDir, report)) {
         return fail("could not write P4.20 build artifact report");
     }

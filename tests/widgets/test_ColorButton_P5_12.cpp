@@ -1,5 +1,5 @@
-#include <pyqtgraph/functions.hpp>
-#include <pyqtgraph/widgets/ColorButton.hpp>
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/widgets/ColorButton.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -26,12 +26,12 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_12_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P5_12_VISUAL_DIFF_DIR "reports/visual-diffs/ColorButton"
+#ifndef CPPQTGRAPH_P5_12_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P5_12_VISUAL_DIFF_DIR "reports/visual-diffs/ColorButton"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_12_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_12_REPOSITORY_REPORT_DIR "reports/issues/P5.12"
+#ifndef CPPQTGRAPH_P5_12_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_12_REPOSITORY_REPORT_DIR "reports/issues/P5.12"
 #endif
 
 namespace {
@@ -85,11 +85,11 @@ std::vector<VisualCase> visualCases()
 
 void paintColorSwatch(QPainter& painter, const QRect& rect, const QColor& color)
 {
-    painter.setBrush(pyqtgraph::mkBrush(QStringLiteral("w")));
+    painter.setBrush(cppqtgraph::mkBrush(QStringLiteral("w")));
     painter.drawRect(rect);
     painter.setBrush(QBrush(Qt::BrushStyle::DiagCrossPattern));
     painter.drawRect(rect);
-    painter.setBrush(pyqtgraph::mkBrush(color));
+    painter.setBrush(cppqtgraph::mkBrush(color));
     painter.drawRect(rect);
 }
 
@@ -111,7 +111,7 @@ QImage renderReferenceButton(const QColor& color)
     return image;
 }
 
-QImage renderActualButton(pyqtgraph::widgets::ColorButton& button, const QColor& color)
+QImage renderActualButton(cppqtgraph::widgets::ColorButton& button, const QColor& color)
 {
     button.setColor(color, true);
     button.resize(buttonWidth, buttonHeight);
@@ -220,7 +220,7 @@ struct SemanticReviewStatus {
 
 QString caseArtifactDir(const QString& caseName)
 {
-    return QStringLiteral(PYQTGRAPH_CPP_P5_12_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+    return QStringLiteral(CPPQTGRAPH_P5_12_VISUAL_DIFF_DIR) + QChar('/') + caseName;
 }
 
 SemanticReviewStatus readGptVisualReview(const QString& caseName)
@@ -356,17 +356,17 @@ bool writeCaseArtifacts(const VisualCase& visualCase, const QImage& reference, c
 
 bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels, std::uint64_t actualPixels)
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_12_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_12_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ColorButton_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.12\",\n"
-            "  \"class\": \"pyqtgraph::widgets::ColorButton\",\n"
+            "  \"class\": \"cppqtgraph::widgets::ColorButton\",\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ColorButton.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ColorButton.hpp\", \"src/pyqtgraph/widgets/ColorButton.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/ColorButton.hpp\", \"src/cppqtgraph/widgets/ColorButton.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_colorbutton_p5_12\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_colorbutton_p5_12\"},\n"
             "  \"checks\": [\"QPushButton subclass with default gray swatch\", \"setColor finished/changing signals\", \"saveState/restoreState RGBA bytes\", \"dialog slot rollback and accept behavior\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/ColorButton\", \"cases\": [\"default-gray\", \"alpha-cyan\", \"opaque-orange\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
             "  \"semantic_pixels\": {\"reference\": ")
@@ -403,8 +403,8 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
             "| `python3 -m pytest -q` | 0 | pass |\n"
             "| `git diff --check` | 0 | pass |\n\n"
             "## Artifacts\n\n"
-            "- `include/pyqtgraph/widgets/ColorButton.hpp`\n"
-            "- `src/pyqtgraph/widgets/ColorButton.cpp`\n"
+            "- `include/cppqtgraph/widgets/ColorButton.hpp`\n"
+            "- `src/cppqtgraph/widgets/ColorButton.cpp`\n"
             "- `tests/widgets/test_ColorButton_P5_12.cpp`\n"
             "- `reports/visual-diffs/ColorButton/<case>/{reference.png,actual.png,diff.png,metrics.json,gpt5_vision_review.md}`\n"
             "- `reports/issues/P5.12/*`\n"));
@@ -413,7 +413,7 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
 
 bool testConstructionAndApiShape()
 {
-    using pyqtgraph::widgets::ColorButton;
+    using cppqtgraph::widgets::ColorButton;
 
     static_assert(std::is_base_of_v<QPushButton, ColorButton>);
     static_assert(std::is_constructible_v<ColorButton>);
@@ -447,7 +447,7 @@ bool testConstructionAndApiShape()
 
 bool testSignalAndDialogSlots()
 {
-    using pyqtgraph::widgets::ColorButton;
+    using cppqtgraph::widgets::ColorButton;
 
     ColorButton button;
     QSignalSpy changingSpy(&button, &ColorButton::sigColorChanging);
@@ -494,7 +494,7 @@ bool testVisualBehavior()
 
     for (const VisualCase& visualCase : cases) {
         const QImage reference = renderReferenceButton(visualCase.color);
-        pyqtgraph::widgets::ColorButton button;
+        cppqtgraph::widgets::ColorButton button;
         const QImage actual = renderActualButton(button, visualCase.color);
         const std::uint64_t caseReferencePixels = semanticPixelCount(reference);
         const std::uint64_t caseActualPixels = semanticPixelCount(actual);

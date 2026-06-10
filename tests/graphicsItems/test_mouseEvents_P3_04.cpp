@@ -1,5 +1,5 @@
-#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
@@ -17,11 +17,11 @@
 #include <memory>
 #include <string_view>
 
-using pyqtgraph::GraphicsScene::GraphicsScene;
-using pyqtgraph::GraphicsScene::GraphicsSceneEventHandler;
-using pyqtgraph::GraphicsScene::HoverEvent;
-using pyqtgraph::GraphicsScene::MouseClickEvent;
-using pyqtgraph::GraphicsScene::MouseDragEvent;
+using cppqtgraph::GraphicsScene::GraphicsScene;
+using cppqtgraph::GraphicsScene::GraphicsSceneEventHandler;
+using cppqtgraph::GraphicsScene::HoverEvent;
+using cppqtgraph::GraphicsScene::MouseClickEvent;
+using cppqtgraph::GraphicsScene::MouseDragEvent;
 
 namespace {
 
@@ -48,7 +48,7 @@ bool samePoint(const QPointF& actual, qreal expectedX, qreal expectedY)
         && qFuzzyCompare(actual.y() + 1.0, expectedY + 1.0);
 }
 
-QPointF toPointF(const pyqtgraph::Point& point)
+QPointF toPointF(const cppqtgraph::Point& point)
 {
     return QPointF(point.x(), point.y());
 }
@@ -211,8 +211,8 @@ void sendMouseToViewport(QGraphicsView& view,
 
 bool writeReport(const QJsonObject& report)
 {
-#ifdef PYQTGRAPH_CPP_P3_04_ARTIFACT_DIR
-    const QString artifactDir = QString::fromUtf8(PYQTGRAPH_CPP_P3_04_ARTIFACT_DIR);
+#ifdef CPPQTGRAPH_P3_04_ARTIFACT_DIR
+    const QString artifactDir = QString::fromUtf8(CPPQTGRAPH_P3_04_ARTIFACT_DIR);
 #else
     const QString artifactDir = QStringLiteral("artifacts/P3.04");
 #endif
@@ -286,7 +286,7 @@ bool runP304InteractionProof()
     QJsonArray eventSequence;
     report.insert(QStringLiteral("issue"), QStringLiteral("P3.04"));
     report.insert(QStringLiteral("reference"), QStringLiteral("pyqtgraph-0.14.0 pyqtgraph/GraphicsScene/GraphicsScene.py:47-71,138-243,250-387,401-469; pyqtgraph/GraphicsScene/mouseEvents.py:10-128,155-241,246-380"));
-    report.insert(QStringLiteral("dispatchPath"), QStringLiteral("QMouseEvent sent to QGraphicsView viewport; QGraphicsView dispatches QGraphicsSceneMouseEvent to pyqtgraph::GraphicsScene"));
+    report.insert(QStringLiteral("dispatchPath"), QStringLiteral("QMouseEvent sent to QGraphicsView viewport; QGraphicsView dispatches QGraphicsSceneMouseEvent to cppqtgraph::GraphicsScene"));
     report.insert(QStringLiteral("preState"), QJsonObject {
         {QStringLiteral("top"), itemState(top)},
         {QStringLiteral("bottom"), itemState(bottom)},

@@ -1,4 +1,4 @@
-#include "../../include/pyqtgraph/functions.hpp"
+#include "../../include/cppqtgraph/functions.hpp"
 
 #include <QBrush>
 #include <QColor>
@@ -20,8 +20,8 @@
 #include <string>
 #include <string_view>
 
-#ifndef PYQTGRAPH_CPP_P2_04_FIXTURE
-#define PYQTGRAPH_CPP_P2_04_FIXTURE "oracle/fixtures/P2_04/functions_symbol_oracle.json"
+#ifndef CPPQTGRAPH_P2_04_FIXTURE
+#define CPPQTGRAPH_P2_04_FIXTURE "oracle/fixtures/P2_04/functions_symbol_oracle.json"
 #endif
 
 namespace {
@@ -44,9 +44,9 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
 
 std::string readOracleFixture()
 {
-    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_04_FIXTURE});
+    std::ifstream input(std::filesystem::path{CPPQTGRAPH_P2_04_FIXTURE});
     if (!input.good()) {
-        std::cerr << "missing P2.04 oracle fixture: " << PYQTGRAPH_CPP_P2_04_FIXTURE << '\n';
+        std::cerr << "missing P2.04 oracle fixture: " << CPPQTGRAPH_P2_04_FIXTURE << '\n';
         return {};
     }
     std::ostringstream buffer;
@@ -222,48 +222,48 @@ bool checkBrush(const QBrush& brush,
 bool testUpstreamMkColorOracleCases()
 {
     // Representative cases from pinned pyqtgraph-0.14.0 tests/test_functions.py::test_mkColor.
-    CHECK_RGBA(pyqtgraph::mkColor("r"), 255, 0, 0, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("g"), 0, 255, 0, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("b"), 0, 0, 255, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("c"), 0, 255, 255, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("m"), 255, 0, 255, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("y"), 255, 255, 0, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("k"), 0, 0, 0, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("w"), 255, 255, 255, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("d"), 150, 150, 150, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("l"), 200, 200, 200, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("s"), 100, 100, 150, 255);
-    CHECK_RGBA(pyqtgraph::mkColor(0.75), 191, 191, 191, 255);
-    CHECK_RGBA(pyqtgraph::mkColor(11.0, 22.0, 33.0), 11, 22, 33, 255);
-    CHECK_RGBA(pyqtgraph::mkColor(11.0, 22.0, 33.0, 44.0), 11, 22, 33, 44);
-    CHECK_RGBA(pyqtgraph::mkColor(std::array<int, 2>{0, 2}), 255, 0, 0, 255);
-    CHECK_RGBA(pyqtgraph::mkColor(std::array<int, 2>{1, 2}), 0, 255, 255, 255);
-    CHECK_RGBA(pyqtgraph::mkColor(std::array<int, 2>{2, 2}), 255, 0, 0, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("#89a"), 136, 153, 170, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("#89ab"), 136, 153, 170, 187);
-    CHECK_RGBA(pyqtgraph::mkColor("#4488cc"), 68, 136, 204, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("#4488cc00"), 68, 136, 204, 0);
-    CHECK_RGBA(pyqtgraph::mkColor(QColor(1, 2, 3, 4)), 1, 2, 3, 4);
-    CHECK_RGBA(pyqtgraph::mkColor("steelblue"), 70, 130, 180, 255);
-    CHECK_RGBA(pyqtgraph::mkColor("lawngreen"), 124, 252, 0, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("r"), 255, 0, 0, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("g"), 0, 255, 0, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("b"), 0, 0, 255, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("c"), 0, 255, 255, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("m"), 255, 0, 255, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("y"), 255, 255, 0, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("k"), 0, 0, 0, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("w"), 255, 255, 255, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("d"), 150, 150, 150, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("l"), 200, 200, 200, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("s"), 100, 100, 150, 255);
+    CHECK_RGBA(cppqtgraph::mkColor(0.75), 191, 191, 191, 255);
+    CHECK_RGBA(cppqtgraph::mkColor(11.0, 22.0, 33.0), 11, 22, 33, 255);
+    CHECK_RGBA(cppqtgraph::mkColor(11.0, 22.0, 33.0, 44.0), 11, 22, 33, 44);
+    CHECK_RGBA(cppqtgraph::mkColor(std::array<int, 2>{0, 2}), 255, 0, 0, 255);
+    CHECK_RGBA(cppqtgraph::mkColor(std::array<int, 2>{1, 2}), 0, 255, 255, 255);
+    CHECK_RGBA(cppqtgraph::mkColor(std::array<int, 2>{2, 2}), 255, 0, 0, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("#89a"), 136, 153, 170, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("#89ab"), 136, 153, 170, 187);
+    CHECK_RGBA(cppqtgraph::mkColor("#4488cc"), 68, 136, 204, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("#4488cc00"), 68, 136, 204, 0);
+    CHECK_RGBA(cppqtgraph::mkColor(QColor(1, 2, 3, 4)), 1, 2, 3, 4);
+    CHECK_RGBA(cppqtgraph::mkColor("steelblue"), 70, 130, 180, 255);
+    CHECK_RGBA(cppqtgraph::mkColor("lawngreen"), 124, 252, 0, 255);
     return true;
 }
 
 bool testColorHelpers()
 {
     const QColor source(1, 2, 3, 4);
-    CHECK(pyqtgraph::colorTuple(source) == (std::array<int, 4>{1, 2, 3, 4}));
-    CHECK(pyqtgraph::colorStr(source) == QString("01020304"));
+    CHECK(cppqtgraph::colorTuple(source) == (std::array<int, 4>{1, 2, 3, 4}));
+    CHECK(cppqtgraph::colorStr(source) == QString("01020304"));
 
-    const auto gl = pyqtgraph::glColor(source);
+    const auto gl = cppqtgraph::glColor(source);
     CHECK(std::abs(gl[0] - source.redF()) < 1.0e-12);
     CHECK(std::abs(gl[1] - source.greenF()) < 1.0e-12);
     CHECK(std::abs(gl[2] - source.blueF()) < 1.0e-12);
     CHECK(std::abs(gl[3] - source.alphaF()) < 1.0e-12);
 
-    CHECK_RGBA(pyqtgraph::hsvColor(0.5, 1.0, 1.0, 0.5), 0, 255, 255, 128);
+    CHECK_RGBA(cppqtgraph::hsvColor(0.5, 1.0, 1.0, 0.5), 0, 255, 255, 128);
 
-    const pyqtgraph::Color named("r");
+    const cppqtgraph::Color named("r");
     CHECK_RGBA(named, 255, 0, 0, 255);
     const auto namedGl = named.glColor();
     CHECK(std::abs(namedGl[0] - 1.0) < 1.0e-12);
@@ -275,7 +275,7 @@ bool testColorHelpers()
 
 bool testPenOptionsAndBrushEdges()
 {
-    pyqtgraph::PenOptions hsvOptions;
+    cppqtgraph::PenOptions hsvOptions;
     hsvOptions.hsv = std::array<double, 4>{0.5, 1.0, 1.0, 0.5};
     hsvOptions.width = 5.0;
     hsvOptions.style = Qt::DashLine;
@@ -283,7 +283,7 @@ bool testPenOptionsAndBrushEdges()
     hsvOptions.hasDash = true;
     hsvOptions.cosmetic = false;
 
-    const QPen hsvPen = pyqtgraph::mkPen(hsvOptions);
+    const QPen hsvPen = cppqtgraph::mkPen(hsvOptions);
     CHECK_RGBA(hsvPen.color(), 0, 255, 255, 128);
     CHECK(hsvPen.widthF() == 5.0);
     CHECK(hsvPen.style() == Qt::CustomDashLine);
@@ -295,17 +295,17 @@ bool testPenOptionsAndBrushEdges()
     CHECK(hsvPen.dashPattern()[2] == 3.0);
     CHECK(hsvPen.dashPattern()[3] == 4.0);
 
-    pyqtgraph::PenOptions colorOptions;
-    colorOptions.color = pyqtgraph::mkColor("#ff0");
+    cppqtgraph::PenOptions colorOptions;
+    colorOptions.color = cppqtgraph::mkColor("#ff0");
     colorOptions.width = 2.0;
     colorOptions.style = Qt::DotLine;
-    CHECK_PEN(pyqtgraph::mkPen(colorOptions), 255, 255, 0, 255, 2.0, Qt::DotLine, true);
+    CHECK_PEN(cppqtgraph::mkPen(colorOptions), 255, 255, 0, 255, 2.0, Qt::DotLine, true);
 
-    CHECK(pyqtgraph::mkPen(nullptr).style() == Qt::NoPen);
-    CHECK(pyqtgraph::mkBrush(nullptr).style() == Qt::NoBrush);
-    CHECK_BRUSH(pyqtgraph::mkBrush("b", Qt::Dense4Pattern), 0, 0, 255, 255, Qt::Dense4Pattern);
-    CHECK_BRUSH(pyqtgraph::mkBrush(QColor(1, 2, 3, 4)), 1, 2, 3, 4, Qt::SolidPattern);
-    CHECK_BRUSH(pyqtgraph::mkBrush(std::array<int, 4>{11, 12, 13, 14}), 11, 12, 13, 14, Qt::SolidPattern);
+    CHECK(cppqtgraph::mkPen(nullptr).style() == Qt::NoPen);
+    CHECK(cppqtgraph::mkBrush(nullptr).style() == Qt::NoBrush);
+    CHECK_BRUSH(cppqtgraph::mkBrush("b", Qt::Dense4Pattern), 0, 0, 255, 255, Qt::Dense4Pattern);
+    CHECK_BRUSH(cppqtgraph::mkBrush(QColor(1, 2, 3, 4)), 1, 2, 3, 4, Qt::SolidPattern);
+    CHECK_BRUSH(cppqtgraph::mkBrush(std::array<int, 4>{11, 12, 13, 14}), 11, 12, 13, 14, Qt::SolidPattern);
     return true;
 }
 
@@ -317,7 +317,7 @@ bool testSymbolBehavior()
     // and coords. Paths are normalized to the upstream unit-size coordinate
     // contract centered on (0, 0); see the P2.04 fixture for the recorded
     // ScatterPlotItem.py symbol contract and tolerances.
-    const auto& symbols = pyqtgraph::symbolPaths();
+    const auto& symbols = cppqtgraph::symbolPaths();
     constexpr std::array<std::string_view, 19> upstreamSymbols = {"o",
                                                                  "s",
                                                                  "t",
@@ -344,30 +344,30 @@ bool testSymbolBehavior()
         CHECK(symbolPath != symbols.end());
         CHECK(symbolPath->first == symbolName);
         CHECK(symbols.find(symbolName) != symbols.end());
-        CHECK(!pyqtgraph::symbolPath(symbol).isEmpty());
+        CHECK(!cppqtgraph::symbolPath(symbol).isEmpty());
         ++symbolPath;
     }
     CHECK(symbolPath == symbols.end());
 
-    const QPainterPath circle = pyqtgraph::symbolPath("o");
+    const QPainterPath circle = cppqtgraph::symbolPath("o");
     CHECK_RECT(circle.boundingRect(), -0.5, -0.5, 1.0, 1.0);
     CHECK(circle.contains(QPointF(0.0, 0.0)));
     CHECK(!circle.contains(QPointF(0.6, 0.0)));
 
-    const QPainterPath square = pyqtgraph::symbolPath(QString("s"));
+    const QPainterPath square = cppqtgraph::symbolPath(QString("s"));
     CHECK_RECT(square.boundingRect(), -0.5, -0.5, 1.0, 1.0);
     CHECK(square.contains(QPointF(0.25, 0.25)));
 
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t"), QPointF(-0.5, -0.5), QPointF(0.0, 0.5), QPointF(0.5, -0.5));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t1"), QPointF(-0.5, 0.5), QPointF(0.0, -0.5), QPointF(0.5, 0.5));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t2"), QPointF(-0.5, -0.5), QPointF(-0.5, 0.5), QPointF(0.5, 0.0));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("t3"), QPointF(0.5, 0.5), QPointF(0.5, -0.5), QPointF(-0.5, 0.0));
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("t"), QPointF(-0.5, -0.5), QPointF(0.0, 0.5), QPointF(0.5, -0.5));
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("t1"), QPointF(-0.5, 0.5), QPointF(0.0, -0.5), QPointF(0.5, 0.5));
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("t2"), QPointF(-0.5, -0.5), QPointF(-0.5, 0.5), QPointF(0.5, 0.0));
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("t3"), QPointF(0.5, 0.5), QPointF(0.5, -0.5), QPointF(-0.5, 0.0));
 
-    const QPainterPath diamond = pyqtgraph::symbolPath("d");
+    const QPainterPath diamond = cppqtgraph::symbolPath("d");
     CHECK_RECT(diamond.boundingRect(), -0.4, -0.5, 0.8, 1.0);
     CHECK_PATH_PREFIX(diamond, QPointF(0.0, -0.5), QPointF(-0.4, 0.0), QPointF(0.0, 0.5), QPointF(0.4, 0.0));
 
-    const QPainterPath plus = pyqtgraph::symbolPath("+");
+    const QPainterPath plus = cppqtgraph::symbolPath("+");
     CHECK_RECT(plus.boundingRect(), -0.5, -0.5, 1.0, 1.0);
     CHECK_PATH_PREFIX(plus,
                       QPointF(-0.5, -0.1),
@@ -386,18 +386,18 @@ bool testSymbolBehavior()
     CHECK(plus.contains(QPointF(0.45, 0.0)));
     CHECK(!plus.contains(QPointF(0.45, 0.45)));
 
-    const QPainterPath cross = pyqtgraph::symbolPath("x");
+    const QPainterPath cross = cppqtgraph::symbolPath("x");
     CHECK(cross.contains(QPointF(0.0, 0.0)));
     const double crossExtent = 0.6 / std::sqrt(2.0);
     CHECK_RECT(cross.boundingRect(), -crossExtent, -crossExtent, 2.0 * crossExtent, 2.0 * crossExtent);
 
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("p"),
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("p"),
                       QPointF(0.0, -0.5),
                       QPointF(-0.4755, -0.1545),
                       QPointF(-0.2939, 0.4045),
                       QPointF(0.2939, 0.4045),
                       QPointF(0.4755, -0.1545));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("h"),
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("h"),
                       QPointF(0.433, 0.25),
                       QPointF(0.0, 0.5),
                       QPointF(-0.433, 0.25),
@@ -405,7 +405,7 @@ bool testSymbolBehavior()
                       QPointF(0.0, -0.5),
                       QPointF(0.433, -0.25));
 
-    const QPainterPath star = pyqtgraph::symbolPath(std::string_view("star"));
+    const QPainterPath star = cppqtgraph::symbolPath(std::string_view("star"));
     CHECK_PATH_PREFIX(star,
                       QPointF(0.0, -0.5),
                       QPointF(-0.1123, -0.1545),
@@ -419,9 +419,9 @@ bool testSymbolBehavior()
                       QPointF(0.1123, -0.1545));
     CHECK(star.contains(QPointF(0.0, 0.0)));
 
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("|"), QPointF(-0.1, 0.5), QPointF(0.1, 0.5), QPointF(0.1, -0.5), QPointF(-0.1, -0.5));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("_"), QPointF(-0.5, -0.1), QPointF(-0.5, 0.1), QPointF(0.5, 0.1), QPointF(0.5, -0.1));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_up"),
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("|"), QPointF(-0.1, 0.5), QPointF(0.1, 0.5), QPointF(0.1, -0.5), QPointF(-0.1, -0.5));
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("_"), QPointF(-0.5, -0.1), QPointF(-0.5, 0.1), QPointF(0.5, 0.1), QPointF(0.5, -0.1));
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("arrow_up"),
                       QPointF(-0.125, 0.125),
                       QPointF(0.0, 0.0),
                       QPointF(0.125, 0.125),
@@ -429,7 +429,7 @@ bool testSymbolBehavior()
                       QPointF(0.05, 0.5),
                       QPointF(-0.05, 0.5),
                       QPointF(-0.05, 0.125));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_right"),
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("arrow_right"),
                       QPointF(-0.125, -0.125),
                       QPointF(0.0, 0.0),
                       QPointF(-0.125, 0.125),
@@ -437,7 +437,7 @@ bool testSymbolBehavior()
                       QPointF(-0.5, 0.05),
                       QPointF(-0.5, -0.05),
                       QPointF(-0.125, -0.05));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_down"),
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("arrow_down"),
                       QPointF(0.125, -0.125),
                       QPointF(0.0, 0.0),
                       QPointF(-0.125, -0.125),
@@ -445,7 +445,7 @@ bool testSymbolBehavior()
                       QPointF(-0.05, -0.5),
                       QPointF(0.05, -0.5),
                       QPointF(0.05, -0.125));
-    CHECK_PATH_PREFIX(pyqtgraph::symbolPath("arrow_left"),
+    CHECK_PATH_PREFIX(cppqtgraph::symbolPath("arrow_left"),
                       QPointF(0.125, 0.125),
                       QPointF(0.0, 0.0),
                       QPointF(0.125, -0.125),
@@ -454,7 +454,7 @@ bool testSymbolBehavior()
                       QPointF(0.5, 0.05),
                       QPointF(0.125, 0.05));
 
-    const QPainterPath crosshair = pyqtgraph::symbolPath("crosshair");
+    const QPainterPath crosshair = cppqtgraph::symbolPath("crosshair");
     CHECK_RECT(crosshair.boundingRect(), -1.0, -1.0, 2.0, 2.0);
     CHECK(crosshair.elementCount() >= 17);
     CHECK_PATH_ELEMENT(crosshair, crosshair.elementCount() - 4, -1.0, 0.0);
@@ -464,7 +464,7 @@ bool testSymbolBehavior()
 
     bool rejectedUnknown = false;
     try {
-        (void)pyqtgraph::symbolPath("not-a-symbol");
+        (void)cppqtgraph::symbolPath("not-a-symbol");
     } catch (const std::invalid_argument&) {
         rejectedUnknown = true;
     }
@@ -472,7 +472,7 @@ bool testSymbolBehavior()
 
     bool rejectedNull = false;
     try {
-        (void)pyqtgraph::symbolPath(nullptr);
+        (void)cppqtgraph::symbolPath(nullptr);
     } catch (const std::invalid_argument&) {
         rejectedNull = true;
     }

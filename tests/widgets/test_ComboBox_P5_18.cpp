@@ -1,4 +1,4 @@
-#include <pyqtgraph/widgets/ComboBox.hpp>
+#include <cppqtgraph/widgets/ComboBox.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -14,8 +14,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P5_18_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_18_REPOSITORY_REPORT_DIR "reports/issues/P5.18"
+#ifndef CPPQTGRAPH_P5_18_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_18_REPOSITORY_REPORT_DIR "reports/issues/P5.18"
 #endif
 
 namespace {
@@ -67,7 +67,7 @@ void writeTextFile(const QString& path, const QString& text)
 
 bool testApiShape()
 {
-    using pyqtgraph::widgets::ComboBox;
+    using cppqtgraph::widgets::ComboBox;
 
     static_assert(std::is_base_of_v<QComboBox, ComboBox>);
     static_assert(!std::is_copy_constructible_v<ComboBox>);
@@ -80,7 +80,7 @@ bool testApiShape()
 
 bool testUniqueItemTextEnforcement()
 {
-    using pyqtgraph::widgets::ComboBox;
+    using cppqtgraph::widgets::ComboBox;
 
     ComboBox combo;
     combo.addItem(QStringLiteral("one"), 1);
@@ -104,7 +104,7 @@ bool testUniqueItemTextEnforcement()
 
 bool testOrderedTextValueMapping()
 {
-    using pyqtgraph::widgets::ComboBox;
+    using cppqtgraph::widgets::ComboBox;
 
     ComboBox listCombo;
     listCombo.setItems(QVariantList{QStringLiteral("a"), QStringLiteral("b")});
@@ -150,7 +150,7 @@ bool testOrderedTextValueMapping()
 
 bool testValueSetters()
 {
-    using pyqtgraph::widgets::ComboBox;
+    using cppqtgraph::widgets::ComboBox;
 
     ComboBox combo;
     combo.setItems(QVariantMap{{QStringLiteral("one"), 1}, {QStringLiteral("two"), 2}});
@@ -179,7 +179,7 @@ bool testValueSetters()
 
 bool testChosenTextRestore()
 {
-    using pyqtgraph::widgets::ComboBox;
+    using cppqtgraph::widgets::ComboBox;
 
     ComboBox combo;
     combo.setItems(QVariantList{QStringLiteral("a"), QStringLiteral("b"), QStringLiteral("c")});
@@ -196,7 +196,7 @@ bool testChosenTextRestore()
 
 bool testSaveRestoreState()
 {
-    using pyqtgraph::widgets::ComboBox;
+    using cppqtgraph::widgets::ComboBox;
 
     ComboBox textCombo;
     textCombo.setItems(QVariantList{QStringLiteral("a"), QStringLiteral("b")});
@@ -247,7 +247,7 @@ bool testSaveRestoreState()
 
 bool testBulkUpdateSignalBehavior()
 {
-    using pyqtgraph::widgets::ComboBox;
+    using cppqtgraph::widgets::ComboBox;
 
     ComboBox combo;
     combo.setItems(QVariantMap{{QStringLiteral("a"), 1}, {QStringLiteral("b"), 2}});
@@ -281,17 +281,17 @@ bool testBulkUpdateSignalBehavior()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_18_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_18_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ComboBox_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.18\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::ComboBox\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::ComboBox\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ComboBox.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ComboBox.hpp\", \"src/pyqtgraph/widgets/ComboBox.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/ComboBox.hpp\", \"src/cppqtgraph/widgets/ComboBox.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_combobox_p5_18\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_combobox_p5_18\"},\n"
             "  \"checks\": [\"ComboBox API shape and empty value\", \"unique item text enforcement\", \"ordered list and text-to-value mapping\", \"dict/pair text-to-value mapping\", \"setValue selects first matching UI item\", \"value/setValue/setText selection\", \"empty chosen text restores on repopulate\", \"saveState/restoreState for text and item data\", \"bulk/direct text item state falls back to text\", \"appended item data stays aligned\", \"bulk updates emit currentIndexChanged only for final logical changes\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

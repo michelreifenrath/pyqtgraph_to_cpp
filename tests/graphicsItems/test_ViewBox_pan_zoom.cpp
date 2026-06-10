@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QFile>
 #include <QtCore/QJsonArray>
@@ -15,13 +15,13 @@
 #include <stdexcept>
 #include <string_view>
 
-#ifndef PYQTGRAPH_CPP_INTERACTION_FIXTURE_DIR
-#define PYQTGRAPH_CPP_INTERACTION_FIXTURE_DIR "oracle/fixtures/interactions"
+#ifndef CPPQTGRAPH_INTERACTION_FIXTURE_DIR
+#define CPPQTGRAPH_INTERACTION_FIXTURE_DIR "oracle/fixtures/interactions"
 #endif
 
 namespace {
 
-using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+using ViewBox = cppqtgraph::graphicsItems::ViewBox;
 
 bool check(bool condition, std::string_view expression, std::string_view file, int line)
 {
@@ -123,7 +123,7 @@ bool applyFixtureOperation(ViewBox& viewBox, const QJsonObject& operation)
 
 bool testFixturePanZoomCases()
 {
-    QFile fixture(QStringLiteral(PYQTGRAPH_CPP_INTERACTION_FIXTURE_DIR "/ViewBox_basic_pan_zoom.json"));
+    QFile fixture(QStringLiteral(CPPQTGRAPH_INTERACTION_FIXTURE_DIR "/ViewBox_basic_pan_zoom.json"));
     CHECK(fixture.open(QIODevice::ReadOnly));
 
     const auto document = QJsonDocument::fromJson(fixture.readAll());
