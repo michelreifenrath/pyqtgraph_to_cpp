@@ -1,10 +1,10 @@
 {
   "issue": "P5.25",
-  "classes": ["pyqtgraph::widgets::FeedbackButton", "pyqtgraph::widgets::BusyCursor"],
+  "classes": ["cppqtgraph::widgets::FeedbackButton", "cppqtgraph::widgets::BusyCursor"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/FeedbackButton.py; pyqtgraph/widgets/BusyCursor.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/FeedbackButton.hpp", "src/pyqtgraph/widgets/FeedbackButton.cpp", "include/pyqtgraph/widgets/BusyCursor.hpp", "src/pyqtgraph/widgets/BusyCursor.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/FeedbackButton.hpp", "src/cppqtgraph/widgets/FeedbackButton.cpp", "include/cppqtgraph/widgets/BusyCursor.hpp", "src/cppqtgraph/widgets/BusyCursor.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.25 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_feedbackbutton_busycursor_p5_25"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.25 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_feedbackbutton_busycursor_p5_25"},
   "checks": ["FeedbackButton API shape", "original text/tooltip/style capture and reset", "processing disabled state", "success green blink style", "failure red blink style", "feedback dispatch", "permanent text update", "limited-time text/tooltip restore", "BusyCursor set/restore", "BusyCursor nesting"],
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.25 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
 }

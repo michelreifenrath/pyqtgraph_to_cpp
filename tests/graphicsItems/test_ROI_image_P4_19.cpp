@@ -1,6 +1,6 @@
-#include <pyqtgraph/core/ArrayView.hpp>
-#include <pyqtgraph/graphicsItems/ImageItem.hpp>
-#include <pyqtgraph/graphicsItems/ROI.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/graphicsItems/ImageItem.hpp>
+#include <cppqtgraph/graphicsItems/ROI.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -24,28 +24,28 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_19_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_19_ARTIFACT_DIR "artifacts/P4.19"
+#ifndef CPPQTGRAPH_P4_19_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_19_ARTIFACT_DIR "artifacts/P4.19"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_19_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_19_VISUAL_DIFF_DIR "reports/visual-diffs/ROI-image-extraction"
+#ifndef CPPQTGRAPH_P4_19_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_19_VISUAL_DIFF_DIR "reports/visual-diffs/ROI-image-extraction"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_19_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P4_19_GPT_REVIEW_REPORT "reports/issues/P4.19/gpt5_vision_review.md"
+#ifndef CPPQTGRAPH_P4_19_GPT_REVIEW_REPORT
+#define CPPQTGRAPH_P4_19_GPT_REVIEW_REPORT "reports/issues/P4.19/gpt5_vision_review.md"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_19_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_19_REPOSITORY_REPORT_DIR "reports/issues/P4.19"
+#ifndef CPPQTGRAPH_P4_19_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_19_REPOSITORY_REPORT_DIR "reports/issues/P4.19"
 #endif
 
-using pyqtgraph::core::ArrayView;
-using pyqtgraph::graphicsItems::ImageItem;
-using pyqtgraph::graphicsItems::ROI;
-using pyqtgraph::graphicsItems::ROIArrayRegion;
-using pyqtgraph::graphicsItems::ROIArraySlice;
-using pyqtgraph::graphicsItems::ROIAffineSliceParams;
+using cppqtgraph::core::ArrayView;
+using cppqtgraph::graphicsItems::ImageItem;
+using cppqtgraph::graphicsItems::ROI;
+using cppqtgraph::graphicsItems::ROIArrayRegion;
+using cppqtgraph::graphicsItems::ROIArraySlice;
+using cppqtgraph::graphicsItems::ROIAffineSliceParams;
 
 namespace {
 
@@ -353,9 +353,9 @@ bool runChecks()
     ROIArrayRegion halfPixelReference;
     halfPixelReference.shape = {2, 2};
     halfPixelReference.values = {32.5, 33.5, 52.5, 53.5};
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_19_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_19_VISUAL_DIFF_DIR);
     CHECK(writeVisualArtifacts(visualDir, halfPixelReference, halfPixelRegion, report));
-    CHECK(hasExternalGptReview(QStringLiteral(PYQTGRAPH_CPP_P4_19_GPT_REVIEW_REPORT)));
+    CHECK(hasExternalGptReview(QStringLiteral(CPPQTGRAPH_P4_19_GPT_REVIEW_REPORT)));
 
     report.insert(QStringLiteral("checks"), checks);
     report.insert(QStringLiteral("identityAffine"), affineJson(identityParams));
@@ -369,8 +369,8 @@ bool runChecks()
     report.insert(QStringLiteral("rowMajorSliceBounds"), boundsJson(rowMajorSlice.value()));
     report.insert(QStringLiteral("scaledImageAffine"), affineJson(scaledImageParams));
 
-    CHECK(writeJson(QStringLiteral(PYQTGRAPH_CPP_P4_19_ARTIFACT_DIR), QStringLiteral("ROI_image_extraction.json"), report));
-    CHECK(writeJson(QStringLiteral(PYQTGRAPH_CPP_P4_19_REPOSITORY_REPORT_DIR), QStringLiteral("ROI_image_extraction.json"), report));
+    CHECK(writeJson(QStringLiteral(CPPQTGRAPH_P4_19_ARTIFACT_DIR), QStringLiteral("ROI_image_extraction.json"), report));
+    CHECK(writeJson(QStringLiteral(CPPQTGRAPH_P4_19_REPOSITORY_REPORT_DIR), QStringLiteral("ROI_image_extraction.json"), report));
     return true;
 }
 

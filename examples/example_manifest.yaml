@@ -1,0 +1,156 @@
+reference:
+  repo: https://github.com/pyqtgraph/pyqtgraph
+  ref: pyqtgraph-0.14.0
+  pinned_commit: a20028b98294b9cc8770f2015a92eb342224b788
+  docs_url: https://pyqtgraph.readthedocs.io/
+
+examples:
+  - order: 0
+    name: SimplePlot
+    title: Simple Plot smoke slice
+    upstream_file: pyqtgraph/examples/SimplePlot.py
+    cpp_file: examples/SimplePlot.cpp
+    status: ported
+    aliases:
+      - SimplePlot.cpp
+      - pyqtgraph/examples/SimplePlot.py
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: not_applicable
+
+  - order: 0
+    name: ImageItem
+    title: ImageItem smoke slice
+    upstream_file: pyqtgraph/examples/ImageItem.py
+    cpp_file: examples/ImageItem.cpp
+    status: ported
+    aliases:
+      - ImageItem.cpp
+      - pyqtgraph/examples/ImageItem.py
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: not_applicable
+
+  - order: 1
+    name: CLIexample
+    title: Command-line usage
+    upstream_file: pyqtgraph/examples/CLIexample.py
+    cpp_file: examples/CLIexample.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: not_applicable
+
+  - order: 2
+    name: Plotting
+    title: Basic Plotting
+    upstream_file: pyqtgraph/examples/Plotting.py
+    cpp_file: examples/Plotting.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 3
+    name: ImageView
+    title: ImageView
+    upstream_file: pyqtgraph/examples/ImageView.py
+    cpp_file: examples/ImageView.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 4
+    name: parametertree
+    title: ParameterTree
+    upstream_file: pyqtgraph/examples/parametertree.py
+    cpp_file: examples/parametertree.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 5
+    name: MultiDataPlot
+    title: Plotting Datasets
+    upstream_file: pyqtgraph/examples/MultiDataPlot.py
+    cpp_file: examples/MultiDataPlot.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 6
+    name: InteractiveParameter
+    title: Parameter-Function Interaction
+    upstream_file: pyqtgraph/examples/InteractiveParameter.py
+    cpp_file: examples/InteractiveParameter.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 7
+    name: crosshair
+    title: Crosshair / Mouse Interaction
+    upstream_file: pyqtgraph/examples/crosshair.py
+    cpp_file: examples/crosshair.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 8
+    name: DataSlicing
+    title: Data Slicing
+    upstream_file: pyqtgraph/examples/DataSlicing.py
+    cpp_file: examples/DataSlicing.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 9
+    name: customPlot
+    title: Plot Customization
+    upstream_file: pyqtgraph/examples/customPlot.py
+    cpp_file: examples/customPlot.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: required
+
+  - order: 10
+    name: DateAxisItem
+    title: Timestamps on x axis
+    upstream_file: pyqtgraph/examples/DateAxisItem.py
+    cpp_file: examples/DateAxisItem.cpp
+    status: planned
+    validation:
+      smoke: required
+      numeric: required
+      visual: required
+      interaction: not_applicable

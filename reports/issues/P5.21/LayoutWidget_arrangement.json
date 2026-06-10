@@ -1,10 +1,10 @@
 {
   "issue": "P5.21",
-  "classes": ["pyqtgraph::widgets::LayoutWidget"],
+  "classes": ["cppqtgraph::widgets::LayoutWidget"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/LayoutWidget.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/LayoutWidget.hpp", "src/pyqtgraph/widgets/LayoutWidget.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/LayoutWidget.hpp", "src/cppqtgraph/widgets/LayoutWidget.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.21 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_layoutwidget_p5_21"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.21 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_layoutwidget_p5_21"},
   "checks": ["LayoutWidget API shape and QGridLayout ownership", "auto/explicit placement and nextRow/nextCol", "nested addLayout and kNextRow", "getWidget missing-cell nullptr", "deterministic visual reference-vs-actual pixels"],
   "visual_artifacts": {"root": "reports/visual-diffs/LayoutWidget", "cases": ["LayoutWidget-arrangement"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
   "semantic_pixels": {"reference": 26376, "actual": 26376},

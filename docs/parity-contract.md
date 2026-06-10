@@ -2,13 +2,13 @@
 
 Issue: GitHub #95 / P0.01
 
-This document defines the default parity policy for the native C++ port. It is a policy and equivalence decision artifact only; `port_manifest.yaml` is unchanged because this issue defines policy only.
+This document defines the default parity policy for the native C++ port. It is a policy and equivalence decision artifact only; `examples/example_manifest.yaml` is unchanged because this issue defines policy only.
 
 ## Source-of-truth policy
 
-- `MISSION.md` defines the native C++/Qt product goal and non-goals; `FACTORY_RULES.md` defines the current issue, evidence, validation, and merge gates.
-- Decision-only parity questions are proven by the issue-owned decision/equivalence document, not by runtime tests unless executable behavior changes. The document records conservative defaults, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decisions, and follow-up issue links or waivers for disputed or out-of-scope behavior.
-- Issue-owned scope controls edits. This contract does not modify manifest inventory, dashboard state, source, examples, tests, or automation.
+- `MISSION.md` defines the native C++/Qt product goal, non-goals, hard invariants, and lightweight example-first strategy.
+- Decision-only parity questions are proven by a decision/equivalence document, not by runtime tests unless executable behavior changes. The document records conservative defaults, rationale, accepted C++ equivalence or explicit non-port decisions, and follow-up links or waivers for disputed or out-of-scope behavior.
+- Current task scope controls edits. This contract does not modify source, examples, tests, or active example-manifest status.
 
 ## Native C++ parity contract
 
@@ -18,7 +18,7 @@ A manifest entry is out of C++ port scope by default when its primary purpose is
 
 ## Local-only validation policy
 
-Validation for this repository follows the assigned issue and `FACTORY_RULES.md`. For decision-doc issues, no runtime tests are required unless executable behavior changes. Pixel-affecting implementation issues must follow the issue's visual-validation level and the artifact rules in `FACTORY_RULES.md`; this issue is docs-only and visual validation is not applicable.
+Validation for this repository follows the assigned issue and `MISSION.md`. For decision-doc issues, no runtime tests are required unless executable behavior changes. Pixel-affecting implementation issues must follow the issue's visual-validation level and the artifact rules in `MISSION.md`; this issue is docs-only and visual validation is not applicable.
 
 ## Python-ecosystem default policy
 
@@ -47,11 +47,11 @@ The following Python-ecosystem areas are out of C++ port scope by default unless
 
 ### Multiprocessing/proxies
 
-- `pyqtgraph/multiprocess/__init__.py` -> `include/pyqtgraph/multiprocess/__init__.hpp`, `src/pyqtgraph/multiprocess/__init__.cpp`
-- `pyqtgraph/multiprocess/bootstrap.py` -> `include/pyqtgraph/multiprocess/bootstrap.hpp`, `src/pyqtgraph/multiprocess/bootstrap.cpp`
-- `pyqtgraph/multiprocess/parallelizer.py` -> `include/pyqtgraph/multiprocess/parallelizer.hpp`, `src/pyqtgraph/multiprocess/parallelizer.cpp`
-- `pyqtgraph/multiprocess/processes.py` -> `include/pyqtgraph/multiprocess/processes.hpp`, `src/pyqtgraph/multiprocess/processes.cpp`
-- `pyqtgraph/multiprocess/remoteproxy.py` -> `include/pyqtgraph/multiprocess/remoteproxy.hpp`, `src/pyqtgraph/multiprocess/remoteproxy.cpp`
+- `pyqtgraph/multiprocess/__init__.py` -> `include/cppqtgraph/multiprocess/__init__.hpp`, `src/cppqtgraph/multiprocess/__init__.cpp`
+- `pyqtgraph/multiprocess/bootstrap.py` -> `include/cppqtgraph/multiprocess/bootstrap.hpp`, `src/cppqtgraph/multiprocess/bootstrap.cpp`
+- `pyqtgraph/multiprocess/parallelizer.py` -> `include/cppqtgraph/multiprocess/parallelizer.hpp`, `src/cppqtgraph/multiprocess/parallelizer.cpp`
+- `pyqtgraph/multiprocess/processes.py` -> `include/cppqtgraph/multiprocess/processes.hpp`, `src/cppqtgraph/multiprocess/processes.cpp`
+- `pyqtgraph/multiprocess/remoteproxy.py` -> `include/cppqtgraph/multiprocess/remoteproxy.hpp`, `src/cppqtgraph/multiprocess/remoteproxy.cpp`
 - `pyqtgraph/examples/multiprocess.py` -> non-port as a Python multiprocessing/proxy example; equivalent C++ coverage is native concurrency/process usage only if a future concrete C++ runtime feature requires it.
 - `pyqtgraph/examples/parallelize.py` -> non-port as a Python `Parallelize`/multiprocessing example; equivalent C++ coverage is native C++ task/concurrency behavior only if a future concrete C++ runtime feature requires it.
 - Key classes: `CanceledError`, `Parallelize`, `Tasker`, `Process`, `ForkedProcess`, `RemoteQtEventHandler`, `QtProcess`, `FileForwarder`, `ClosedError`, `NoResultError`, `RemoteExceptionWarning`, `RemoteEventHandler`, `Request`, `LocalObjectProxy`, `ObjectProxy`, `DeferredObjectProxy`.

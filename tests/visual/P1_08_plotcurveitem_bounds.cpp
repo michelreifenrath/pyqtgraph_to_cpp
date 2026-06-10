@@ -1,5 +1,5 @@
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 
 #include <QtCore/QRectF>
 #include <QtGui/QTransform>
@@ -56,7 +56,7 @@ bool rectNearlyEqual(const QRectF& lhs, const QRectF& rhs)
 
 bool testFlatCurveBoundsIncludePenMargin()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> x{0.0, 1.0, 2.0};
     const std::vector<double> y{5.0, 5.0, 5.0};
 
@@ -72,7 +72,7 @@ bool testFlatCurveBoundsIncludePenMargin()
 
 bool testCurveBoundsIncludeEdgePenMargin()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> x{-2.0, 3.0};
     const std::vector<double> y{-4.0, 6.0};
 
@@ -85,9 +85,9 @@ bool testCurveBoundsIncludeEdgePenMargin()
 
 bool testOffscreenDataIsTransformedBeforePaint()
 {
-    pyqtgraph::graphicsItems::PlotItem plot;
+    cppqtgraph::graphicsItems::PlotItem plot;
     plot.setGeometry(QRectF(0.0, 0.0, 800.0, 600.0));
-    pyqtgraph::graphicsItems::PlotCurveItem curve(&plot);
+    cppqtgraph::graphicsItems::PlotCurveItem curve(&plot);
     const std::vector<double> x{10000.0, 10010.0};
     const std::vector<double> y{50000.0, 50010.0};
 
@@ -101,9 +101,9 @@ bool testOffscreenDataIsTransformedBeforePaint()
 
 bool testPreloadedCurveIsTransformedWhenParented()
 {
-    pyqtgraph::graphicsItems::PlotItem plot;
+    cppqtgraph::graphicsItems::PlotItem plot;
     plot.setGeometry(QRectF(0.0, 0.0, 800.0, 600.0));
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     const std::vector<double> x{10000.0, 10010.0};
     const std::vector<double> y{50000.0, 50010.0};
 
@@ -120,15 +120,15 @@ bool testPreloadedCurveIsTransformedWhenParented()
 
 bool testPlotChildChangesRefreshCurrentCurveTransforms()
 {
-    pyqtgraph::graphicsItems::PlotItem plot;
+    cppqtgraph::graphicsItems::PlotItem plot;
     plot.setGeometry(QRectF(0.0, 0.0, 800.0, 600.0));
-    pyqtgraph::graphicsItems::PlotCurveItem visibleCurve(&plot);
+    cppqtgraph::graphicsItems::PlotCurveItem visibleCurve(&plot);
     const std::vector<double> visibleX{0.0, 10.0};
     const std::vector<double> visibleY{0.0, 10.0};
     visibleCurve.setData(std::span<const double>(visibleX), std::span<const double>(visibleY));
     const QTransform visibleOnlyTransform = visibleCurve.transform();
 
-    pyqtgraph::graphicsItems::PlotCurveItem farCurve;
+    cppqtgraph::graphicsItems::PlotCurveItem farCurve;
     const std::vector<double> farX{1000.0, 1010.0};
     const std::vector<double> farY{1000.0, 1010.0};
     farCurve.setData(std::span<const double>(farX), std::span<const double>(farY));

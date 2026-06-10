@@ -1,6 +1,6 @@
-#include "pyqtgraph/SRTTransform.hpp"
-#include "pyqtgraph/SRTTransform3D.hpp"
-#include "pyqtgraph/Transform3D.hpp"
+#include "cppqtgraph/SRTTransform.hpp"
+#include "cppqtgraph/SRTTransform3D.hpp"
+#include "cppqtgraph/Transform3D.hpp"
 
 #include <QMatrix4x4>
 #include <QPoint>
@@ -21,8 +21,8 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P2_02_FIXTURE
-#define PYQTGRAPH_CPP_P2_02_FIXTURE "oracle/fixtures/P2_02/transform_srt_oracle.json"
+#ifndef CPPQTGRAPH_P2_02_FIXTURE
+#define CPPQTGRAPH_P2_02_FIXTURE "oracle/fixtures/P2_02/transform_srt_oracle.json"
 #endif
 
 namespace {
@@ -50,7 +50,7 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
 
 std::string readOracleFixture()
 {
-    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_02_FIXTURE});
+    std::ifstream input(std::filesystem::path{CPPQTGRAPH_P2_02_FIXTURE});
     CHECK(input.good());
     std::ostringstream buffer;
     buffer << input.rdbuf();
@@ -149,9 +149,9 @@ void assertProjectedMatrix2D(const std::array<double, 9>& matrix)
 
 int main()
 {
-    using pyqtgraph::SRTTransform;
-    using pyqtgraph::SRTTransform3D;
-    using pyqtgraph::Transform3D;
+    using cppqtgraph::SRTTransform;
+    using cppqtgraph::SRTTransform3D;
+    using cppqtgraph::Transform3D;
 
     static_assert(std::is_base_of_v<QMatrix4x4, Transform3D>);
     static_assert(std::is_base_of_v<QTransform, SRTTransform>);
@@ -224,7 +224,7 @@ int main()
     assertVector(srt3d.getTranslation(), 10.0, 20.0, 40.0);
     assertMatrix3D(srt3d.matrix3D());
     assertProjectedMatrix2D(srt3d.matrix2D());
-    assertVector(srt3d.map(pyqtgraph::Vector{1.0, 0.0, 0.0}), 10.0 + 0.2 * std::sqrt(0.5), 20.0 + 0.2 * std::sqrt(0.5), 40.0);
+    assertVector(srt3d.map(cppqtgraph::Vector{1.0, 0.0, 0.0}), 10.0 + 0.2 * std::sqrt(0.5), 20.0 + 0.2 * std::sqrt(0.5), 40.0);
     assertVector(srt3d.map(QVector3D{0.0F, 1.0F, 0.0F}), 10.0 - 0.4 * std::sqrt(0.5), 20.0 + 0.4 * std::sqrt(0.5), 40.0);
     assertPoint(srt3d.map(QPointF{1.0, 0.0}), 10.0 + 0.2 * std::sqrt(0.5), 20.0 + 0.2 * std::sqrt(0.5), kVectorTolerance);
     const auto mappedArray = srt3d.map(std::array<double, 3>{1.0, 0.0, 0.0});
@@ -256,7 +256,7 @@ int main()
     assertMatrix3D(restored3D.matrix3D());
 
     SRTTransform3D zeroZScale;
-    zeroZScale.restoreState(SRTTransform3D::State{pyqtgraph::Vector{1.0, 2.0, 3.0}, pyqtgraph::Vector{2.0, 3.0, 0.0}, 0.0, pyqtgraph::Vector{0.0, 0.0, 1.0}});
+    zeroZScale.restoreState(SRTTransform3D::State{cppqtgraph::Vector{1.0, 2.0, 3.0}, cppqtgraph::Vector{2.0, 3.0, 0.0}, 0.0, cppqtgraph::Vector{0.0, 0.0, 1.0}});
     assertVector(zeroZScale.getScale(), 2.0, 3.0, 0.0);
 
     SRTTransform3D twoValueScale;

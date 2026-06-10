@@ -1,8 +1,8 @@
-#include <pyqtgraph/graphicsItems/GraphicsLayout.hpp>
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
-#include <pyqtgraph/widgets/GraphicsLayoutWidget.hpp>
-#include <pyqtgraph/widgets/GraphicsView.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsLayout.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/widgets/GraphicsLayoutWidget.hpp>
+#include <cppqtgraph/widgets/GraphicsView.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -65,10 +65,10 @@ bool sameRect(const QRectF& left, const QRectF& right)
 
 QString artifactDir()
 {
-#ifdef PYQTGRAPH_CPP_P3_12_ARTIFACT_DIR
-    return QString::fromUtf8(PYQTGRAPH_CPP_P3_12_ARTIFACT_DIR);
+#ifdef CPPQTGRAPH_P3_12_ARTIFACT_DIR
+    return QString::fromUtf8(CPPQTGRAPH_P3_12_ARTIFACT_DIR);
 #else
-    return QDir::tempPath() + QStringLiteral("/pyqtgraph_cpp_P3_12");
+    return QDir::tempPath() + QStringLiteral("/cppqtgraph_P3_12");
 #endif
 }
 
@@ -95,12 +95,12 @@ bool writeInteractionReport(const QString& text)
 
 bool testConstructionAndApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsLayout;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::graphicsItems::ViewBox;
-    using pyqtgraph::widgets::GraphicsLayoutWidget;
-    using pyqtgraph::widgets::GraphicsView;
+    using cppqtgraph::graphicsItems::GraphicsLayout;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::graphicsItems::ViewBox;
+    using cppqtgraph::widgets::GraphicsLayoutWidget;
+    using cppqtgraph::widgets::GraphicsView;
 
     static_assert(std::is_base_of_v<QGraphicsView, GraphicsView>);
     static_assert(std::is_base_of_v<GraphicsView, GraphicsLayoutWidget>);
@@ -130,10 +130,10 @@ bool testConstructionAndApiShape()
 
 bool testP312InteractionReplay()
 {
-    using pyqtgraph::graphicsItems::GraphicsLayout;
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::graphicsItems::ViewBox;
-    using pyqtgraph::widgets::GraphicsLayoutWidget;
+    using cppqtgraph::graphicsItems::GraphicsLayout;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::graphicsItems::ViewBox;
+    using cppqtgraph::widgets::GraphicsLayoutWidget;
 
     GraphicsLayoutWidget widget;
     widget.resize(280, 180);
@@ -154,12 +154,12 @@ bool testP312InteractionReplay()
     int transformSignalCount = 0;
     int scaleSignalCount = 0;
     int layoutGeometryCount = 0;
-    QObject::connect(&widget, &pyqtgraph::widgets::GraphicsView::sigDeviceRangeChanged,
-                     [&rangeSignalCount](pyqtgraph::widgets::GraphicsView*, const QRectF&) { ++rangeSignalCount; });
-    QObject::connect(&widget, &pyqtgraph::widgets::GraphicsView::sigDeviceTransformChanged,
-                     [&transformSignalCount](pyqtgraph::widgets::GraphicsView*) { ++transformSignalCount; });
-    QObject::connect(&widget, &pyqtgraph::widgets::GraphicsView::sigScaleChanged,
-                     [&scaleSignalCount](pyqtgraph::widgets::GraphicsView*) { ++scaleSignalCount; });
+    QObject::connect(&widget, &cppqtgraph::widgets::GraphicsView::sigDeviceRangeChanged,
+                     [&rangeSignalCount](cppqtgraph::widgets::GraphicsView*, const QRectF&) { ++rangeSignalCount; });
+    QObject::connect(&widget, &cppqtgraph::widgets::GraphicsView::sigDeviceTransformChanged,
+                     [&transformSignalCount](cppqtgraph::widgets::GraphicsView*) { ++transformSignalCount; });
+    QObject::connect(&widget, &cppqtgraph::widgets::GraphicsView::sigScaleChanged,
+                     [&scaleSignalCount](cppqtgraph::widgets::GraphicsView*) { ++scaleSignalCount; });
     QObject::connect(layout, &QGraphicsWidget::geometryChanged, [&layoutGeometryCount]() { ++layoutGeometryCount; });
 
     PlotItem* plot = widget.addPlot(0, 0);

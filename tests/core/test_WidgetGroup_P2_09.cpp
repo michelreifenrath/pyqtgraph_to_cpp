@@ -1,4 +1,4 @@
-#include <pyqtgraph/WidgetGroup.hpp>
+#include <cppqtgraph/WidgetGroup.hpp>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMetaObject>
@@ -26,8 +26,8 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P2_09_FIXTURE
-#define PYQTGRAPH_CPP_P2_09_FIXTURE "oracle/fixtures/P2_09/widgetgroup_oracle.json"
+#ifndef CPPQTGRAPH_P2_09_FIXTURE
+#define CPPQTGRAPH_P2_09_FIXTURE "oracle/fixtures/P2_09/widgetgroup_oracle.json"
 #endif
 
 namespace {
@@ -64,9 +64,9 @@ private:
 
 std::string readOracleFixture()
 {
-    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_09_FIXTURE});
+    std::ifstream input(std::filesystem::path{CPPQTGRAPH_P2_09_FIXTURE});
     if (!input.good()) {
-        std::cerr << "missing P2.09 oracle fixture: " << PYQTGRAPH_CPP_P2_09_FIXTURE << '\n';
+        std::cerr << "missing P2.09 oracle fixture: " << CPPQTGRAPH_P2_09_FIXTURE << '\n';
         return {};
     }
     std::ostringstream buffer;
@@ -101,7 +101,7 @@ bool requireP209OracleFixture()
 
 bool testTypeShape()
 {
-    using pyqtgraph::WidgetGroup;
+    using cppqtgraph::WidgetGroup;
 
     static_assert(std::is_base_of_v<QObject, WidgetGroup>);
     static_assert(std::is_constructible_v<WidgetGroup>);
@@ -122,7 +122,7 @@ bool testTypeShape()
 
 bool testNamedBuiltinRoundtripAndUnknownKeys()
 {
-    pyqtgraph::WidgetGroup group;
+    cppqtgraph::WidgetGroup group;
 
     QSpinBox spin;
     spin.setRange(-1000, 1000);
@@ -194,7 +194,7 @@ bool testNamedBuiltinRoundtripAndUnknownKeys()
 
 bool testScaleSaveRestore()
 {
-    pyqtgraph::WidgetGroup group;
+    cppqtgraph::WidgetGroup group;
     QSpinBox spin;
     spin.setRange(0, 1000);
     spin.setValue(200);
@@ -215,7 +215,7 @@ bool testScaleSaveRestore()
 
 bool testSigChangedEmitsOnCacheDeltaOnly()
 {
-    pyqtgraph::WidgetGroup group;
+    cppqtgraph::WidgetGroup group;
     QSpinBox spin;
     spin.setRange(0, 10);
     spin.setValue(1);
@@ -223,7 +223,7 @@ bool testSigChangedEmitsOnCacheDeltaOnly()
 
     std::vector<QString> names;
     std::vector<QVariant> values;
-    QObject::connect(&group, &pyqtgraph::WidgetGroup::sigChanged,
+    QObject::connect(&group, &cppqtgraph::WidgetGroup::sigChanged,
         [&names, &values](const QString& name, const QVariant& value) {
             names.push_back(name);
             values.push_back(value);
@@ -269,7 +269,7 @@ bool testAutoAddRecursion()
     splitter->addWidget(splitSpin);
     splitter->addWidget(new QLabel("other", splitter));
 
-    pyqtgraph::WidgetGroup group;
+    cppqtgraph::WidgetGroup group;
     group.autoAdd(&parent);
     QVariantMap state = group.state();
 
@@ -298,7 +298,7 @@ bool testSplitterStateRestoreAndAllZeroFallback()
     QCoreApplication::processEvents();
     splitter.setSizes({80, 120});
 
-    pyqtgraph::WidgetGroup group;
+    cppqtgraph::WidgetGroup group;
     group.addWidget(&splitter, "splitter");
 
     const QVariantMap saved = group.state();

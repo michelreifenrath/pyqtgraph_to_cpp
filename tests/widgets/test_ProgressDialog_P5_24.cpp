@@ -1,4 +1,4 @@
-#include <pyqtgraph/widgets/ProgressDialog.hpp>
+#include <cppqtgraph/widgets/ProgressDialog.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -11,8 +11,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P5_24_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_24_REPOSITORY_REPORT_DIR "reports/issues/P5.24"
+#ifndef CPPQTGRAPH_P5_24_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_24_REPOSITORY_REPORT_DIR "reports/issues/P5.24"
 #endif
 
 namespace {
@@ -64,7 +64,7 @@ void writeTextFile(const QString& path, const QString& text)
 
 bool testApiShape()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     static_assert(std::is_base_of_v<QProgressDialog, ProgressDialog>);
     static_assert(!std::is_copy_constructible_v<ProgressDialog>);
@@ -76,7 +76,7 @@ bool testApiShape()
 
 bool testConstructorState()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     ProgressDialog dialog(QStringLiteral("Processing"), 2, 50, QStringLiteral("Cancel"), nullptr, 300);
     CHECK(dialog.minimumDuration() == 300);
@@ -90,7 +90,7 @@ bool testConstructorState()
 
 bool testOperatorPlusEquals()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     ProgressDialog dialog(QStringLiteral("Stepping"), 0, 10);
     dialog.begin();
@@ -106,7 +106,7 @@ bool testOperatorPlusEquals()
 
 bool testCancelAndWasCanceled()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     ProgressDialog dialog(QStringLiteral("Cancelable"), 0, 5);
     dialog.begin();
@@ -119,7 +119,7 @@ bool testCancelAndWasCanceled()
 
 bool testNoCancelMode()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     ProgressDialog dialog(QStringLiteral("No cancel"), 0, 5, std::nullopt);
     CHECK(!dialog.hasCancelButton());
@@ -128,7 +128,7 @@ bool testNoCancelMode()
 
 bool testDisabledNoOpBehavior()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     ProgressDialog dialog(QStringLiteral("Disabled"), 0, 100, QStringLiteral("Cancel"), nullptr, 250, false, true);
     CHECK(dialog.disabled());
@@ -150,7 +150,7 @@ bool testDisabledNoOpBehavior()
 
 bool testBusyCursorFinishBehavior()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     ProgressDialog dialog(QStringLiteral("Busy"), 0, 3, QStringLiteral("Cancel"), nullptr, 250, true);
     CHECK(QApplication::overrideCursor() == nullptr);
@@ -163,7 +163,7 @@ bool testBusyCursorFinishBehavior()
 
 bool testDestructorFinishesToMaximum()
 {
-    using pyqtgraph::widgets::ProgressDialog;
+    using cppqtgraph::widgets::ProgressDialog;
 
     auto dialog = std::make_unique<ProgressDialog>(QStringLiteral("Scoped"), 0, 7);
     dialog->begin();
@@ -174,17 +174,17 @@ bool testDestructorFinishesToMaximum()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_24_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_24_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ProgressDialog_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.24\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::ProgressDialog\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::ProgressDialog\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ProgressDialog.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ProgressDialog.hpp\", \"src/pyqtgraph/widgets/ProgressDialog.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/ProgressDialog.hpp\", \"src/cppqtgraph/widgets/ProgressDialog.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_progressdialog_p5_24\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_progressdialog_p5_24\"},\n"
             "  \"checks\": [\"ProgressDialog API shape\", \"minimum duration and WindowModal constructor state\", \"initial minimum value\", \"operator+= increment and finish auto-reset\", \"cancel and wasCanceled\", \"no-cancel mode\", \"disabled no-op behavior\", \"busy-cursor begin/finish lifecycle\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

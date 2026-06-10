@@ -1,5 +1,5 @@
-#include <pyqtgraph/widgets/BusyCursor.hpp>
-#include <pyqtgraph/widgets/FeedbackButton.hpp>
+#include <cppqtgraph/widgets/BusyCursor.hpp>
+#include <cppqtgraph/widgets/FeedbackButton.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QElapsedTimer>
@@ -16,8 +16,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P5_25_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_25_REPOSITORY_REPORT_DIR "reports/issues/P5.25"
+#ifndef CPPQTGRAPH_P5_25_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_25_REPOSITORY_REPORT_DIR "reports/issues/P5.25"
 #endif
 
 namespace {
@@ -84,7 +84,7 @@ void writeTextFile(const QString& path, const QString& text)
 
 bool testFeedbackButtonApiShape()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     static_assert(std::is_base_of_v<QPushButton, FeedbackButton>);
     static_assert(!std::is_copy_constructible_v<FeedbackButton>);
@@ -97,7 +97,7 @@ bool testFeedbackButtonApiShape()
 
 bool testFeedbackButtonCapturesOriginalState()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Original"));
     button.setToolTip(QStringLiteral("orig tip"));
@@ -121,7 +121,7 @@ bool testFeedbackButtonCapturesOriginalState()
 
 bool testFeedbackButtonProcessingDisabledState()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Go"));
     button.processing();
@@ -132,7 +132,7 @@ bool testFeedbackButtonProcessingDisabledState()
 
 bool testFeedbackButtonSuccessSetsBlinkStyle()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Go"));
     button.success(QStringLiteral("Done"), QStringLiteral("ok tip"));
@@ -145,7 +145,7 @@ bool testFeedbackButtonSuccessSetsBlinkStyle()
 
 bool testFeedbackButtonFailureSetsBlinkStyle()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Go"));
     button.failure(QStringLiteral("Failed"), QStringLiteral("err tip"));
@@ -158,7 +158,7 @@ bool testFeedbackButtonFailureSetsBlinkStyle()
 
 bool testFeedbackButtonFeedbackDispatch()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Go"));
     button.feedback(true, QStringLiteral("OK"));
@@ -173,7 +173,7 @@ bool testFeedbackButtonFeedbackDispatch()
 
 bool testFeedbackButtonPermanentTextUpdate()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Go"));
     button.setText(QStringLiteral("Permanent"));
@@ -185,7 +185,7 @@ bool testFeedbackButtonPermanentTextUpdate()
 
 bool testFeedbackButtonLimitedTimeRestore()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Go"));
     button.success(QStringLiteral("Done"), QStringLiteral("tip"));
@@ -196,7 +196,7 @@ bool testFeedbackButtonLimitedTimeRestore()
 
 bool testFeedbackButtonResetRestoresAll()
 {
-    using pyqtgraph::widgets::FeedbackButton;
+    using cppqtgraph::widgets::FeedbackButton;
 
     FeedbackButton button(QStringLiteral("Go"));
     button.setToolTip(QStringLiteral("base tip"));
@@ -211,7 +211,7 @@ bool testFeedbackButtonResetRestoresAll()
 
 bool testBusyCursorSetsAndRestores()
 {
-    using pyqtgraph::widgets::BusyCursor;
+    using cppqtgraph::widgets::BusyCursor;
 
     CHECK(QApplication::overrideCursor() == nullptr);
   {
@@ -225,7 +225,7 @@ bool testBusyCursorSetsAndRestores()
 
 bool testBusyCursorNesting()
 {
-    using pyqtgraph::widgets::BusyCursor;
+    using cppqtgraph::widgets::BusyCursor;
 
     CHECK(QApplication::overrideCursor() == nullptr);
   {
@@ -249,17 +249,17 @@ bool testBusyCursorNoAppNoOp()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_25_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_25_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/FeedbackButton_BusyCursor_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.25\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::FeedbackButton\", \"pyqtgraph::widgets::BusyCursor\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::FeedbackButton\", \"cppqtgraph::widgets::BusyCursor\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/FeedbackButton.py; pyqtgraph/widgets/BusyCursor.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/FeedbackButton.hpp\", \"src/pyqtgraph/widgets/FeedbackButton.cpp\", \"include/pyqtgraph/widgets/BusyCursor.hpp\", \"src/pyqtgraph/widgets/BusyCursor.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/FeedbackButton.hpp\", \"src/cppqtgraph/widgets/FeedbackButton.cpp\", \"include/cppqtgraph/widgets/BusyCursor.hpp\", \"src/cppqtgraph/widgets/BusyCursor.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.25 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_feedbackbutton_busycursor_p5_25\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.25 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_feedbackbutton_busycursor_p5_25\"},\n"
             "  \"checks\": [\"FeedbackButton API shape\", \"original text/tooltip/style capture and reset\", \"processing disabled state\", \"success green blink style\", \"failure red blink style\", \"feedback dispatch\", \"permanent text update\", \"limited-time text/tooltip restore\", \"BusyCursor set/restore\", \"BusyCursor nesting\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.25 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

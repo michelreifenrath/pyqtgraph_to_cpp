@@ -1,15 +1,15 @@
 {
   "issue": "P4.21",
-  "class": "pyqtgraph::graphicsItems::ArrowItem",
+  "class": "cppqtgraph::graphicsItems::ArrowItem",
   "reference": "pyqtgraph-0.14.0 pyqtgraph/graphicsItems/ArrowItem.py; pyqtgraph/functions.py makeArrowPath; tests/graphicsItems/test_ArrowItem.py parent construction",
-  "manifest_targets": ["include/pyqtgraph/graphicsItems/ArrowItem.hpp", "src/pyqtgraph/graphicsItems/ArrowItem.cpp"],
+  "manifest_targets": ["include/cppqtgraph/graphicsItems/ArrowItem.hpp", "src/cppqtgraph/graphicsItems/ArrowItem.cpp"],
   "shared_wiring": ["tests/CMakeLists.txt"],
-  "tdd_baseline_failure": {"command": "cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_arrowitem_p4_21", "exit_code": 2, "expected": "compile failed before ArrowItem implementation was added"},
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.21 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_graphicsitems_arrowitem_p4_21"},
+  "tdd_baseline_failure": {"command": "cmake --build --preset dev --target cppqtgraph_graphicsitems_arrowitem_p4_21", "exit_code": 2, "expected": "compile failed before ArrowItem implementation was added"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.21 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_graphicsitems_arrowitem_p4_21"},
   "checks": ["QGraphicsPathItem parent/pos hierarchy", "makeArrowPath-compatible head/tail geometry", "pxMode ItemIgnoresTransformations flag", "dataBounds and pixelPadding style behavior", "deterministic visual reference-vs-actual pixels"],
   "visual_artifacts": {"root": "reports/visual-diffs/ArrowItem", "reference": "reference.png", "actual": "actual.png", "diff": "diff.png", "metrics": "metrics.json", "gpt5_vision_review": "gpt5_vision_review.md"},
   "semantic_pixels": {"reference": 1351, "actual": 1351},
   "visual_metrics": {"changed_pixels": 0, "max_delta": 0, "mean_delta": 0.000000, "passed": true},
   "validation_commands": ["cmake --preset dev", "cmake --build --preset dev --parallel", "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.21 --output-on-failure", "python3 -m pytest -q", "git diff --check", "git diff --name-only origin/main...HEAD"],
-  "manifest_dashboard": "not_applicable: port_manifest/dashboard updates are outside P4.21 owned paths for this shard"
+  "example_manifest": "not_applicable: no example_manifest.yaml status fields changed for this focused shard"
 }

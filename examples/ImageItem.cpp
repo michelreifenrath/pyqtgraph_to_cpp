@@ -3,10 +3,10 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
-#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
-#include <pyqtgraph/core/ArrayView.hpp>
-#include <pyqtgraph/graphicsItems/ImageItem.hpp>
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/graphicsItems/ImageItem.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QObject>
@@ -28,7 +28,7 @@
 #include <random>
 #include <vector>
 
-namespace pyqtgraph::examples {
+namespace cppqtgraph::examples {
 
 struct ImageItemExampleState {
     ImageItemExampleState();
@@ -164,13 +164,13 @@ ImageItemExample createImageItemExample()
             .state = std::move(state)};
 }
 
-} // namespace pyqtgraph::examples
+} // namespace cppqtgraph::examples
 
-#ifndef PYQTGRAPH_CPP_IMAGEITEM_NO_MAIN
+#ifndef CPPQTGRAPH_IMAGEITEM_NO_MAIN
 int main(int argc, char** argv)
 {
     QApplication application(argc, argv);
-    auto example = pyqtgraph::examples::createImageItemExample();
+    auto example = cppqtgraph::examples::createImageItemExample();
     example.widget->show();
     return QApplication::exec();
 }

@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/GraphicsWidgetAnchor.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsWidgetAnchor.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QPointF>
@@ -55,7 +55,7 @@ bool pointsAlmostEqual(const QPointF& lhs, const QPointF& rhs)
 
 bool testGraphicsWidgetAnchorInteractionReplay()
 {
-    using pyqtgraph::graphicsItems::GraphicsWidgetAnchor;
+    using cppqtgraph::graphicsItems::GraphicsWidgetAnchor;
 
     static_assert(std::is_constructible_v<GraphicsWidgetAnchor, QGraphicsWidget*>);
     static_assert(!std::is_copy_constructible_v<GraphicsWidgetAnchor>);
@@ -111,11 +111,11 @@ bool testAutoAnchorChoosesNearestParentBoundary()
     relativeChild.setPos(QPointF(70.0, 10.0));
     absoluteChild.setPos(QPointF(70.0, 10.0));
 
-    pyqtgraph::graphicsItems::GraphicsWidgetAnchor relativeAnchor(&relativeChild);
+    cppqtgraph::graphicsItems::GraphicsWidgetAnchor relativeAnchor(&relativeChild);
     relativeAnchor.autoAnchor(relativeChild.pos());
     CHECK(pointsAlmostEqual(relativeChild.pos(), QPointF(70.0, 10.0)));
 
-    pyqtgraph::graphicsItems::GraphicsWidgetAnchor absoluteAnchor(&absoluteChild);
+    cppqtgraph::graphicsItems::GraphicsWidgetAnchor absoluteAnchor(&absoluteChild);
     absoluteAnchor.autoAnchor(absoluteChild.pos(), false);
     CHECK(pointsAlmostEqual(absoluteChild.pos(), QPointF(70.0, 10.0)));
 
@@ -130,7 +130,7 @@ bool testAutoAnchorChoosesNearestParentBoundary()
 
 bool testAnchorWithoutParentThrowsAndLeavesPositionUnchanged()
 {
-    pyqtgraph::graphicsItems::GraphicsWidgetAnchor anchor;
+    cppqtgraph::graphicsItems::GraphicsWidgetAnchor anchor;
     QGraphicsWidget orphan;
     orphan.setPos(QPointF(3.0, 4.0));
     anchor.setAnchorItem(&orphan);

@@ -11,16 +11,17 @@
         "visual-artifacts-gpt"
     ],
     "classes": [
-        "pyqtgraph::graphicsItems::RectROI",
-        "pyqtgraph::graphicsItems::EllipseROI",
-        "pyqtgraph::graphicsItems::CircleROI",
-        "pyqtgraph::graphicsItems::LineROI",
-        "pyqtgraph::graphicsItems::PolyLineROI"
+        "cppqtgraph::graphicsItems::RectROI",
+        "cppqtgraph::graphicsItems::EllipseROI",
+        "cppqtgraph::graphicsItems::CircleROI",
+        "cppqtgraph::graphicsItems::LineROI",
+        "cppqtgraph::graphicsItems::PolyLineROI"
     ],
+    "example_manifest": "not_applicable: no example_manifest.yaml status fields changed for this focused shard",
     "focused_proof": {
         "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.20 --output-on-failure",
         "exit_code": 0,
-        "test_executable": "pyqtgraph_cpp_graphicsitems_roi_shapes_p4_20"
+        "test_executable": "cppqtgraph_graphicsitems_roi_shapes_p4_20"
     },
     "interactiveRect": {
         "post": {
@@ -58,10 +59,9 @@
             4
         ]
     },
-    "manifest_dashboard": "not_applicable: port_manifest/dashboard updates are outside P4.20 owned paths for this shard",
     "manifest_targets": [
-        "include/pyqtgraph/graphicsItems/ROI.hpp",
-        "src/pyqtgraph/graphicsItems/ROI.cpp"
+        "include/cppqtgraph/graphicsItems/ROI.hpp",
+        "src/cppqtgraph/graphicsItems/ROI.cpp"
     ],
     "polygonPoints": 4,
     "rectState": {

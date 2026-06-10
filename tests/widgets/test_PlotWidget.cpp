@@ -1,6 +1,6 @@
-#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
-#include <pyqtgraph/widgets/GraphicsView.hpp>
-#include <pyqtgraph/widgets/PlotWidget.hpp>
+#include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/widgets/GraphicsView.hpp>
+#include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QPointer>
 #include <QtCore/QRectF>
@@ -54,7 +54,7 @@ bool sameRect(const QRectF& left, const QRectF& right)
         && qFuzzyCompare(left.width(), right.width()) && qFuzzyCompare(left.height(), right.height());
 }
 
-QRectF sceneRectForViewport(const pyqtgraph::widgets::PlotWidget& widget)
+QRectF sceneRectForViewport(const cppqtgraph::widgets::PlotWidget& widget)
 {
     const QSize viewportSize = widget.viewport()->size();
     return QRectF(0.0, 0.0, static_cast<qreal>(viewportSize.width()), static_cast<qreal>(viewportSize.height()));
@@ -62,9 +62,9 @@ QRectF sceneRectForViewport(const pyqtgraph::widgets::PlotWidget& widget)
 
 bool testConstructionAndApiShape()
 {
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::widgets::GraphicsView;
-    using pyqtgraph::widgets::PlotWidget;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::widgets::GraphicsView;
+    using cppqtgraph::widgets::PlotWidget;
 
     static_assert(std::is_constructible_v<PlotWidget>);
     static_assert(std::is_constructible_v<PlotWidget, QWidget*>);
@@ -91,7 +91,7 @@ bool testConstructionAndApiShape()
 bool testParentConstruction()
 {
     QWidget parent;
-    pyqtgraph::widgets::PlotWidget widget(&parent);
+    cppqtgraph::widgets::PlotWidget widget(&parent);
 
     CHECK(widget.parentWidget() == &parent);
     CHECK(widget.getPlotItem() != nullptr);
@@ -101,9 +101,9 @@ bool testParentConstruction()
 
 bool testUsesPyqtgraphGraphicsScene()
 {
-    pyqtgraph::widgets::PlotWidget widget;
+    cppqtgraph::widgets::PlotWidget widget;
 
-    auto* scene = dynamic_cast<pyqtgraph::GraphicsScene::GraphicsScene*>(widget.scene());
+    auto* scene = dynamic_cast<cppqtgraph::GraphicsScene::GraphicsScene*>(widget.scene());
     CHECK(scene != nullptr);
     CHECK(scene->clickRadius() == 2);
     CHECK(scene->moveDistance() == 5.0);
@@ -113,13 +113,13 @@ bool testUsesPyqtgraphGraphicsScene()
 
 bool testOwnedPlotItemInScene()
 {
-    pyqtgraph::widgets::PlotWidget widget;
+    cppqtgraph::widgets::PlotWidget widget;
 
-    pyqtgraph::graphicsItems::PlotItem* plotItem = widget.getPlotItem();
+    cppqtgraph::graphicsItems::PlotItem* plotItem = widget.getPlotItem();
     CHECK(plotItem != nullptr);
     CHECK(widget.getPlotItem() == plotItem);
 
-    const pyqtgraph::widgets::PlotWidget& constWidget = widget;
+    const cppqtgraph::widgets::PlotWidget& constWidget = widget;
     CHECK(constWidget.getPlotItem() == plotItem);
 
     CHECK(widget.scene() != nullptr);
@@ -132,9 +132,9 @@ bool testOwnedPlotItemInScene()
 
 bool testP301OwnershipInteractionReplay()
 {
-    using pyqtgraph::GraphicsScene::GraphicsScene;
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::widgets::PlotWidget;
+    using cppqtgraph::GraphicsScene::GraphicsScene;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::widgets::PlotWidget;
 
     PlotWidget widget;
     widget.resize(240, 180);

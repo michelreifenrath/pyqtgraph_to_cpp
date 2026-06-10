@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -18,7 +18,7 @@
 #include <memory>
 #include <optional>
 
-using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+using ViewBox = cppqtgraph::graphicsItems::ViewBox;
 
 namespace {
 
@@ -337,7 +337,7 @@ int main(int argc, char** argv)
     report.insert(QStringLiteral("linkedSignals"), signalJson(followerLog));
     report.insert(QStringLiteral("negativeNoOp"), QJsonObject{{QStringLiteral("disabledWheelAccepted"), disabledWheel->isAccepted()}, {QStringLiteral("manualCountBefore"), manualBeforeDisabled}, {QStringLiteral("manualCountAfter"), log.manualChanged}});
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P3_06_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P3_06_ARTIFACT_DIR);
     QDir().mkpath(artifactDir);
     QFile file(artifactDir + QStringLiteral("/ViewBox_interaction_linking.json"));
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {

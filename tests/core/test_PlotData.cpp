@@ -1,4 +1,4 @@
-#include "../../include/pyqtgraph/PlotData.hpp"
+#include "../../include/cppqtgraph/PlotData.hpp"
 
 #include <array>
 #include <cmath>
@@ -16,8 +16,8 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P2_03_FIXTURE
-#define PYQTGRAPH_CPP_P2_03_FIXTURE "oracle/fixtures/P2_03/plotdata_oracle.json"
+#ifndef CPPQTGRAPH_P2_03_FIXTURE
+#define CPPQTGRAPH_P2_03_FIXTURE "oracle/fixtures/P2_03/plotdata_oracle.json"
 #endif
 
 namespace {
@@ -52,9 +52,9 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
 
 std::string readOracleFixture()
 {
-    std::ifstream input(std::filesystem::path{PYQTGRAPH_CPP_P2_03_FIXTURE});
+    std::ifstream input(std::filesystem::path{CPPQTGRAPH_P2_03_FIXTURE});
     if (!input.good()) {
-        std::cerr << "missing P2.03 oracle fixture: " << PYQTGRAPH_CPP_P2_03_FIXTURE << '\n';
+        std::cerr << "missing P2.03 oracle fixture: " << CPPQTGRAPH_P2_03_FIXTURE << '\n';
         return {};
     }
     std::ostringstream buffer;
@@ -83,7 +83,7 @@ bool requireP203OracleFixture()
 
 bool testFieldLifecycleAndLookup()
 {
-    pyqtgraph::PlotData data;
+    cppqtgraph::PlotData data;
 
     CHECK(!data.hasField("x"));
     CHECK(!data.hasField("y"));
@@ -109,7 +109,7 @@ bool testFieldLifecycleAndLookup()
 
 bool testAssignmentReplacementAndCachedExtrema()
 {
-    pyqtgraph::PlotData data;
+    cppqtgraph::PlotData data;
 
     data.set("x", {3.0, -2.0, 5.0});
     CHECK(data.hasField("x"));
@@ -132,7 +132,7 @@ bool testAssignmentReplacementAndCachedExtrema()
 
 bool testErrorsAndNanExtrema()
 {
-    pyqtgraph::PlotData data;
+    cppqtgraph::PlotData data;
 
     CHECK_THROWS(data.min("missing"), std::out_of_range);
     CHECK_THROWS(data.max("missing"), std::out_of_range);
@@ -151,13 +151,13 @@ bool testErrorsAndNanExtrema()
 
 bool testConstLookupAndMutableIndexing()
 {
-    pyqtgraph::PlotData data;
+    cppqtgraph::PlotData data;
     data.addFields({"x"});
     data["x"].push_back(4.0);
     data["x"].push_back(-1.0);
 
-    const pyqtgraph::PlotData& constData = data;
-    CHECK((std::is_same_v<decltype(constData["x"]), const pyqtgraph::PlotData::Values&>));
+    const cppqtgraph::PlotData& constData = data;
+    CHECK((std::is_same_v<decltype(constData["x"]), const cppqtgraph::PlotData::Values&>));
     CHECK(constData["x"].size() == 2);
     CHECK(constData.min("x") == -1.0);
     CHECK(constData.max("x") == 4.0);
@@ -167,7 +167,7 @@ bool testConstLookupAndMutableIndexing()
 
 bool testP203NormalizedRangeAndContainerInputs()
 {
-    pyqtgraph::PlotData data;
+    cppqtgraph::PlotData data;
 
     const std::array<int, 4> integerArray{1, 2, 3, 4};
     data.set("range", integerArray);
@@ -198,7 +198,7 @@ bool testP203NormalizedRangeAndContainerInputs()
 
 bool testP203MaskedExtrema()
 {
-    pyqtgraph::PlotData data;
+    cppqtgraph::PlotData data;
     const double nan = std::numeric_limits<double>::quiet_NaN();
 
     data.setMasked("masked", {7.0, -5.0, 2.0, nan}, {false, true, false, true});

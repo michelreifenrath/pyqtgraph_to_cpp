@@ -1,5 +1,5 @@
-#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QPointF>
@@ -21,8 +21,8 @@
 
 namespace {
 
-using GraphicsScene = pyqtgraph::GraphicsScene::GraphicsScene;
-using ViewBox = pyqtgraph::graphicsItems::ViewBox;
+using GraphicsScene = cppqtgraph::GraphicsScene::GraphicsScene;
+using ViewBox = cppqtgraph::graphicsItems::ViewBox;
 
 bool check(bool condition, std::string_view expression, std::string_view file, int line)
 {

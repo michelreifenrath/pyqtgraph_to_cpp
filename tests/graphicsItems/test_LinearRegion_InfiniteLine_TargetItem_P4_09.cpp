@@ -1,7 +1,7 @@
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
-#include <pyqtgraph/graphicsItems/InfiniteLine.hpp>
-#include <pyqtgraph/graphicsItems/LinearRegionItem.hpp>
-#include <pyqtgraph/graphicsItems/TargetItem.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/graphicsItems/InfiniteLine.hpp>
+#include <cppqtgraph/graphicsItems/LinearRegionItem.hpp>
+#include <cppqtgraph/graphicsItems/TargetItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -18,10 +18,10 @@
 #include <iostream>
 #include <memory>
 
-using pyqtgraph::graphicsItems::InfiniteLine;
-using pyqtgraph::graphicsItems::LinearRegionItem;
-using pyqtgraph::graphicsItems::TargetItem;
-using pyqtgraph::GraphicsScene::MouseDragEvent;
+using cppqtgraph::graphicsItems::InfiniteLine;
+using cppqtgraph::graphicsItems::LinearRegionItem;
+using cppqtgraph::graphicsItems::TargetItem;
+using cppqtgraph::GraphicsScene::MouseDragEvent;
 
 namespace {
 
@@ -256,7 +256,7 @@ int main(int argc, char** argv)
                                                     {QStringLiteral("regionNoOpFinishedBefore"), regionFinishedBeforeNoOp},
                                                     {QStringLiteral("regionNoOpFinishedAfter"), regionSignals.finished}});
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_09_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_09_ARTIFACT_DIR);
     QDir().mkpath(artifactDir);
     QFile file(artifactDir + QStringLiteral("/LinearRegion_InfiniteLine_TargetItem_interaction.json"));
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {

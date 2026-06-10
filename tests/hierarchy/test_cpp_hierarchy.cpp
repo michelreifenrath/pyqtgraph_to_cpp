@@ -1,12 +1,12 @@
-#include <pyqtgraph/graphicsItems/AxisItem.hpp>
-#include <pyqtgraph/graphicsItems/GraphicsItem.hpp>
-#include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
-#include <pyqtgraph/graphicsItems/GraphicsWidget.hpp>
-#include <pyqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/widgets/GraphicsView.hpp>
-#include <pyqtgraph/widgets/PlotWidget.hpp>
+#include <cppqtgraph/graphicsItems/AxisItem.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsItem.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsObject.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsWidget.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/widgets/GraphicsView.hpp>
+#include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -58,9 +58,9 @@ private:
     std::unique_ptr<QApplication> application_;
 };
 
-class ConcreteGraphicsObject final : public pyqtgraph::graphicsItems::GraphicsObject {
+class ConcreteGraphicsObject final : public cppqtgraph::graphicsItems::GraphicsObject {
 public:
-    using pyqtgraph::graphicsItems::GraphicsObject::GraphicsObject;
+    using cppqtgraph::graphicsItems::GraphicsObject::GraphicsObject;
 
     QRectF boundingRect() const override { return QRectF(0.0, 0.0, 1.0, 1.0); }
 
@@ -69,7 +69,7 @@ public:
 
 bool testGraphicsItemApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
 
     static_assert(!std::is_base_of_v<QObject, GraphicsItem>);
     static_assert(!std::is_base_of_v<QGraphicsItem, GraphicsItem>);
@@ -99,8 +99,8 @@ bool testGraphicsItemApiShape()
 
 bool testGraphicsObjectApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsObject;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsObject;
 
     static_assert(std::is_base_of_v<QObject, GraphicsObject>);
     static_assert(std::is_base_of_v<QGraphicsItem, GraphicsObject>);
@@ -119,8 +119,8 @@ bool testGraphicsObjectApiShape()
 
 bool testGraphicsWidgetApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
 
     static_assert(std::is_constructible_v<GraphicsWidget>);
     static_assert(std::is_constructible_v<GraphicsWidget, QGraphicsItem*>);
@@ -145,9 +145,9 @@ bool testGraphicsWidgetApiShape()
 
 bool testAxisItemApiShape()
 {
-    using pyqtgraph::graphicsItems::AxisItem;
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
 
     static_assert(std::is_constructible_v<AxisItem>);
     static_assert(std::is_constructible_v<AxisItem, QGraphicsItem*>);
@@ -165,9 +165,9 @@ bool testAxisItemApiShape()
 
 bool testViewBoxApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
-    using pyqtgraph::graphicsItems::ViewBox;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::ViewBox;
 
     static_assert(std::is_constructible_v<ViewBox>);
     static_assert(std::is_constructible_v<ViewBox, QGraphicsItem*>);
@@ -191,9 +191,9 @@ bool testViewBoxApiShape()
 
 bool testPlotItemApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
-    using pyqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::PlotItem;
 
     static_assert(std::is_constructible_v<PlotItem>);
     static_assert(std::is_constructible_v<PlotItem, QGraphicsItem*>);
@@ -241,9 +241,9 @@ bool testPlotItemApiShape()
 
 bool testPlotWidgetApiShape()
 {
-    using pyqtgraph::graphicsItems::PlotItem;
-    using pyqtgraph::widgets::GraphicsView;
-    using pyqtgraph::widgets::PlotWidget;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::widgets::GraphicsView;
+    using cppqtgraph::widgets::PlotWidget;
 
     static_assert(std::is_constructible_v<PlotWidget>);
     static_assert(std::is_constructible_v<PlotWidget, QWidget*>);
@@ -273,9 +273,9 @@ bool testPlotWidgetApiShape()
 
 bool testPlotCurveItemApiShape()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsObject;
-    using pyqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsObject;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
 
     static_assert(std::is_constructible_v<PlotCurveItem>);
     static_assert(std::is_constructible_v<PlotCurveItem, QGraphicsItem*>);

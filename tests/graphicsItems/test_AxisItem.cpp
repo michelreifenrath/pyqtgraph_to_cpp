@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/AxisItem.hpp>
+#include <cppqtgraph/graphicsItems/AxisItem.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QRectF>
@@ -83,9 +83,9 @@ private:
 
 bool testConstructionAndHierarchy()
 {
-    using pyqtgraph::graphicsItems::AxisItem;
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsWidget;
+    using cppqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsWidget;
 
     static_assert(std::is_constructible_v<AxisItem>);
     static_assert(std::is_constructible_v<AxisItem, QGraphicsItem*>);
@@ -112,7 +112,7 @@ bool testConstructionAndHierarchy()
 
 bool testInheritedViewWidgetDiscovery()
 {
-    pyqtgraph::graphicsItems::AxisItem axis;
+    cppqtgraph::graphicsItems::AxisItem axis;
     QGraphicsScene firstScene;
     firstScene.addItem(&axis);
 
@@ -139,7 +139,7 @@ bool testInheritedViewWidgetDiscovery()
 bool testParentConstruction()
 {
     QGraphicsRectItem parent(QRectF(0.0, 0.0, 1.0, 1.0));
-    pyqtgraph::graphicsItems::AxisItem axis(&parent);
+    cppqtgraph::graphicsItems::AxisItem axis(&parent);
 
     CHECK(axis.parentItem() == &parent);
     CHECK(axis.graphicsItem() == static_cast<QGraphicsItem*>(&axis));
@@ -150,7 +150,7 @@ bool testParentConstruction()
 
 bool testP307TickLabelAndUnitsOracle()
 {
-    using pyqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::AxisItem;
 
     AxisItem bottom(QStringLiteral("bottom"));
     bottom.setGeometry(QRectF(0.0, 0.0, 400.0, 70.0));
@@ -505,10 +505,10 @@ ImageStats compareImages(const QImage& reference, const QImage& actual, QImage& 
 void drawReferenceAxis(
     QPainter& painter,
     const QRectF& rect,
-    pyqtgraph::graphicsItems::AxisItem::Orientation orientation,
+    cppqtgraph::graphicsItems::AxisItem::Orientation orientation,
     const QString& label)
 {
-    using pyqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::AxisItem;
     const std::vector<double> majorValues{0.0, 20.0, 40.0, 60.0, 80.0, 100.0};
     const std::vector<QString> majorLabels{
         QStringLiteral("0"),
@@ -561,15 +561,15 @@ QImage renderReferenceFixture()
         const double y = 40.0 + static_cast<double>(index) * 42.0;
         painter.drawLine(QPointF(90.0, y), QPointF(430.0, y));
     }
-    drawReferenceAxis(painter, QRectF(90.0, 250.0, 340.0, 60.0), pyqtgraph::graphicsItems::AxisItem::Orientation::Bottom, QStringLiteral("Time"));
-    drawReferenceAxis(painter, QRectF(20.0, 40.0, 70.0, 210.0), pyqtgraph::graphicsItems::AxisItem::Orientation::Left, QStringLiteral("Value"));
+    drawReferenceAxis(painter, QRectF(90.0, 250.0, 340.0, 60.0), cppqtgraph::graphicsItems::AxisItem::Orientation::Bottom, QStringLiteral("Time"));
+    drawReferenceAxis(painter, QRectF(20.0, 40.0, 70.0, 210.0), cppqtgraph::graphicsItems::AxisItem::Orientation::Left, QStringLiteral("Value"));
     painter.end();
     return image;
 }
 
 QImage renderActualFixture()
 {
-    using pyqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::AxisItem;
 
     QGraphicsScene scene;
     scene.setSceneRect(0.0, 0.0, 480.0, 320.0);
@@ -816,14 +816,14 @@ bool writeP307VisualArtifactSet(
 
 bool testP307VisualArtifacts()
 {
-#ifndef PYQTGRAPH_CPP_P3_07_ARTIFACT_DIR
+#ifndef CPPQTGRAPH_P3_07_ARTIFACT_DIR
     return true;
 #else
-#ifndef PYQTGRAPH_CPP_P3_07_GPT_REVIEW_REPORT
-    std::cerr << "PYQTGRAPH_CPP_P3_07_GPT_REVIEW_REPORT must name the required GPT visual review artifact\n";
+#ifndef CPPQTGRAPH_P3_07_GPT_REVIEW_REPORT
+    std::cerr << "CPPQTGRAPH_P3_07_GPT_REVIEW_REPORT must name the required GPT visual review artifact\n";
     return false;
 #else
-    const std::filesystem::path reviewSourcePath{PYQTGRAPH_CPP_P3_07_GPT_REVIEW_REPORT};
+    const std::filesystem::path reviewSourcePath{CPPQTGRAPH_P3_07_GPT_REVIEW_REPORT};
     const std::optional<SemanticReviewStatus> reviewStatus = readRequiredGptVisualReview(reviewSourcePath);
     CHECK(reviewStatus.has_value());
 
@@ -851,9 +851,9 @@ bool testP307VisualArtifacts()
     constexpr double maxChangedPercent = 5.0;
     const bool deterministicPass = comparison.meanDelta <= maxMeanDelta && changedPercent <= maxChangedPercent;
 
-    std::vector<std::filesystem::path> artifactDirs{std::filesystem::path{PYQTGRAPH_CPP_P3_07_ARTIFACT_DIR}};
-#ifdef PYQTGRAPH_CPP_P3_07_CANONICAL_ARTIFACT_DIR
-    artifactDirs.push_back(std::filesystem::path{PYQTGRAPH_CPP_P3_07_CANONICAL_ARTIFACT_DIR});
+    std::vector<std::filesystem::path> artifactDirs{std::filesystem::path{CPPQTGRAPH_P3_07_ARTIFACT_DIR}};
+#ifdef CPPQTGRAPH_P3_07_CANONICAL_ARTIFACT_DIR
+    artifactDirs.push_back(std::filesystem::path{CPPQTGRAPH_P3_07_CANONICAL_ARTIFACT_DIR});
 #endif
     for (const std::filesystem::path& artifactDir : artifactDirs) {
         CHECK(writeP307VisualArtifactSet(

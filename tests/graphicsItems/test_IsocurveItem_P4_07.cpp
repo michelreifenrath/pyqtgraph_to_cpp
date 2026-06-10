@@ -1,5 +1,5 @@
-#include <pyqtgraph/core/ArrayView.hpp>
-#include <pyqtgraph/graphicsItems/IsocurveItem.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/graphicsItems/IsocurveItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -28,12 +28,12 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_07_FIXTURE
-#define PYQTGRAPH_CPP_P4_07_FIXTURE "oracle/fixtures/P4_07/isocurve_oracle.json"
+#ifndef CPPQTGRAPH_P4_07_FIXTURE
+#define CPPQTGRAPH_P4_07_FIXTURE "oracle/fixtures/P4_07/isocurve_oracle.json"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_07_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_07_ARTIFACT_DIR "artifacts/P4.07"
+#ifndef CPPQTGRAPH_P4_07_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_07_ARTIFACT_DIR "artifacts/P4.07"
 #endif
 
 namespace {
@@ -74,7 +74,7 @@ bool nearly(double actual, double expected, double tolerance = 1.0e-9)
 
 QJsonObject readFixture()
 {
-    QFile file(QStringLiteral(PYQTGRAPH_CPP_P4_07_FIXTURE));
+    QFile file(QStringLiteral(CPPQTGRAPH_P4_07_FIXTURE));
     if (!file.open(QIODevice::ReadOnly)) {
         throw std::runtime_error("could not open P4.07 oracle fixture");
     }
@@ -218,8 +218,8 @@ QJsonObject imageDiffMetrics(const QImage& actual, const QImage& reference, QIma
 
 bool exerciseCases(const QJsonObject& fixture, QJsonObject& report)
 {
-    using pyqtgraph::core::ArrayView;
-    using pyqtgraph::graphicsItems::IsocurveItem;
+    using cppqtgraph::core::ArrayView;
+    using cppqtgraph::graphicsItems::IsocurveItem;
 
     QJsonArray caseReports;
     for (const QJsonValue& caseValue : fixture.value(QStringLiteral("cases")).toArray()) {
@@ -268,8 +268,8 @@ bool exerciseCases(const QJsonObject& fixture, QJsonObject& report)
 
 bool renderVisual(const QJsonObject& fixture, const QString& artifactDir, QJsonObject& report)
 {
-    using pyqtgraph::core::ArrayView;
-    using pyqtgraph::graphicsItems::IsocurveItem;
+    using cppqtgraph::core::ArrayView;
+    using cppqtgraph::graphicsItems::IsocurveItem;
 
     const QString visualCase = fixture.value(QStringLiteral("visual_case")).toString();
     QJsonObject selected;
@@ -393,7 +393,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_07_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_07_ARTIFACT_DIR);
     if (!exerciseCases(fixture, report) || !renderVisual(fixture, artifactDir, report) || !writeReport(artifactDir, report)) {
         return 1;
     }

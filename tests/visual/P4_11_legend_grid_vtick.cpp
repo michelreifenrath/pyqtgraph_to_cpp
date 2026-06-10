@@ -1,9 +1,9 @@
-#include <pyqtgraph/graphicsItems/GridItem.hpp>
-#include <pyqtgraph/graphicsItems/LegendItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
-#include <pyqtgraph/graphicsItems/VTickGroup.hpp>
-#include <pyqtgraph/widgets/PlotWidget.hpp>
+#include <cppqtgraph/graphicsItems/GridItem.hpp>
+#include <cppqtgraph/graphicsItems/LegendItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/graphicsItems/VTickGroup.hpp>
+#include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QEventLoop>
@@ -31,12 +31,12 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_11_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_11_ARTIFACT_DIR "reports/visual/P4.11"
+#ifndef CPPQTGRAPH_P4_11_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_11_ARTIFACT_DIR "reports/visual/P4.11"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_11_CANONICAL_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_11_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P4.11-legend-grid-vtick"
+#ifndef CPPQTGRAPH_P4_11_CANONICAL_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_11_CANONICAL_ARTIFACT_DIR "reports/visual-diffs/P4.11-legend-grid-vtick"
 #endif
 
 namespace {
@@ -211,14 +211,14 @@ void processEvents()
 
 QImage renderActual()
 {
-    pyqtgraph::widgets::PlotWidget widget;
+    cppqtgraph::widgets::PlotWidget widget;
     auto* plot = widget.getPlotItem();
     plot->setTitle(QStringLiteral("Legend / Grid / VTickGroup"));
     plot->setLabel(QStringLiteral("left"), QStringLiteral("Value"));
     plot->setLabel(QStringLiteral("bottom"), QStringLiteral("Sample"));
     plot->setRange(referenceView, 0.0);
 
-    auto* grid = new pyqtgraph::graphicsItems::GridItem;
+    auto* grid = new cppqtgraph::graphicsItems::GridItem;
     grid->setTextPen(std::nullopt);
     QPen gridPen(QColor(155, 155, 155));
     gridPen.setCosmetic(true);
@@ -236,7 +236,7 @@ QImage renderActual()
     auto* second = plot->plot(x, yValuesB(), QStringLiteral("falling"));
     second->setPen(cosmeticPen(QColor(80, 180, 255), 2.0));
 
-    auto* ticks = new pyqtgraph::graphicsItems::VTickGroup({0.75, 2.25, 4.5, 5.5}, {0.78, 1.0}, cosmeticPen(QColor(255, 210, 80), 2.0));
+    auto* ticks = new cppqtgraph::graphicsItems::VTickGroup({0.75, 2.25, 4.5, 5.5}, {0.78, 1.0}, cosmeticPen(QColor(255, 210, 80), 2.0));
     plot->addItem(ticks, true);
 
     widget.resize(imageWidth, imageHeight);
@@ -305,8 +305,8 @@ void writeTextFile(const QString& path, const QString& text)
 bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage& diff, const PixelMetrics& metrics)
 {
     const std::vector<QString> caseDirs{
-        QStringLiteral(PYQTGRAPH_CPP_P4_11_ARTIFACT_DIR) + QStringLiteral("/") + QString::fromLatin1(caseName),
-        QStringLiteral(PYQTGRAPH_CPP_P4_11_CANONICAL_ARTIFACT_DIR),
+        QStringLiteral(CPPQTGRAPH_P4_11_ARTIFACT_DIR) + QStringLiteral("/") + QString::fromLatin1(caseName),
+        QStringLiteral(CPPQTGRAPH_P4_11_CANONICAL_ARTIFACT_DIR),
     };
     for (const QString& caseDir : caseDirs) {
         CHECK(ensureDirectory(caseDir));
@@ -349,7 +349,7 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
                     "  \"reproducibility\": {\"qt_qpa_platform\": \"offscreen\", \"size\": \"800x600\", \"fixed_data\": true}\n"
                     "}\n"));
     }
-    const QString reportRoot = QStringLiteral(PYQTGRAPH_CPP_P4_11_ARTIFACT_DIR);
+    const QString reportRoot = QStringLiteral(CPPQTGRAPH_P4_11_ARTIFACT_DIR);
     CHECK(ensureDirectory(reportRoot));
     writeTextFile(reportRoot + QStringLiteral("/manual_semantic_inspection.md"),
         QStringLiteral(
@@ -367,12 +367,12 @@ bool writeArtifacts(const QImage& reference, const QImage& actual, const QImage&
 
 bool testApiBasics()
 {
-    pyqtgraph::graphicsItems::LegendItem legend(std::nullopt);
+    cppqtgraph::graphicsItems::LegendItem legend(std::nullopt);
     CHECK(!legend.offset().has_value());
     CHECK(legend.columnCount() == 1);
     CHECK(legend.itemCount() == 0);
 
-    pyqtgraph::graphicsItems::VTickGroup ticks;
+    cppqtgraph::graphicsItems::VTickGroup ticks;
     CHECK(ticks.xValues().empty());
     CHECK(std::abs(ticks.yRange()[0] - 0.0) < 1.0e-9);
     CHECK(std::abs(ticks.yRange()[1] - 1.0) < 1.0e-9);
@@ -381,7 +381,7 @@ bool testApiBasics()
     ticks.setYRange({0.8, 1.0});
     CHECK(std::abs(ticks.yRange()[0] - 0.8) < 1.0e-9);
 
-    pyqtgraph::graphicsItems::GridItem grid;
+    cppqtgraph::graphicsItems::GridItem grid;
     CHECK(grid.tickSpacing().x.size() == 3);
     CHECK(grid.tickSpacing().y.size() == 3);
     grid.setTextPen(std::nullopt);

@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/ROI.hpp>
+#include <cppqtgraph/graphicsItems/ROI.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -16,18 +16,18 @@
 #include <iostream>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P4_16_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_16_ARTIFACT_DIR "artifacts/P4.16"
+#ifndef CPPQTGRAPH_P4_16_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_16_ARTIFACT_DIR "artifacts/P4.16"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_16_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_16_REPOSITORY_REPORT_DIR "reports/issues/P4.16"
+#ifndef CPPQTGRAPH_P4_16_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_16_REPOSITORY_REPORT_DIR "reports/issues/P4.16"
 #endif
 
-using pyqtgraph::Point;
-using pyqtgraph::graphicsItems::GraphicsObject;
-using pyqtgraph::graphicsItems::ROI;
-using pyqtgraph::graphicsItems::ROIState;
+using cppqtgraph::Point;
+using cppqtgraph::graphicsItems::GraphicsObject;
+using cppqtgraph::graphicsItems::ROI;
+using cppqtgraph::graphicsItems::ROIState;
 
 namespace {
 
@@ -226,11 +226,11 @@ int main(int argc, char** argv)
                                               {QStringLiteral("width"), image.width()},
                                               {QStringLiteral("height"), image.height()}});
 
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_16_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_16_ARTIFACT_DIR);
     if (!writeReport(artifactDir, report)) {
         return fail("could not write P4.16 build artifact report");
     }
-    const QString repositoryReportDir = QStringLiteral(PYQTGRAPH_CPP_P4_16_REPOSITORY_REPORT_DIR);
+    const QString repositoryReportDir = QStringLiteral(CPPQTGRAPH_P4_16_REPOSITORY_REPORT_DIR);
     if (!writeReport(repositoryReportDir, report)) {
         return fail("could not write P4.16 repository report artifact");
     }

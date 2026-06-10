@@ -1,4 +1,4 @@
-#define PYQTGRAPH_CPP_SIMPLEPLOT_NO_MAIN
+#define CPPQTGRAPH_SIMPLEPLOT_NO_MAIN
 #include "../../examples/SimplePlot.cpp"
 
 #include <QtCore/QSize>
@@ -49,7 +49,7 @@ bool nearlyEqual(double lhs, double rhs)
 
 bool testSimplePlotFactory()
 {
-    auto example = pyqtgraph::examples::createSimplePlotExample();
+    auto example = cppqtgraph::examples::createSimplePlotExample();
 
     CHECK(example.widget != nullptr);
     CHECK(example.curve != nullptr);

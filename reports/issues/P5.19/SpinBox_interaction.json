@@ -1,10 +1,10 @@
 {
   "issue": "P5.19",
-  "classes": ["pyqtgraph::widgets::SpinBox", "pyqtgraph::widgets::ErrorBox"],
+  "classes": ["cppqtgraph::widgets::SpinBox", "cppqtgraph::widgets::ErrorBox"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/SpinBox.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/SpinBox.hpp", "src/pyqtgraph/widgets/SpinBox.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/SpinBox.hpp", "src/cppqtgraph/widgets/SpinBox.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_spinbox_p5_19"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_spinbox_p5_19"},
   "checks": ["SpinBox API shape and default value", "bounds clipping and wrapping", "integer mode", "integer mode default stepping", "setRange clears bounds", "custom format placeholders", "linear and decimal stepping with minStep", "SI prefix formatting and parsing", "ASCII u SI prefix parsing", "custom prefix/suffix formatting", "editingFinished commit", "immediate and delayed signal behavior"],
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
 }

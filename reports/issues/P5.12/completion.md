@@ -19,8 +19,8 @@ Implemented native Qt/C++ `ColorButton` with color swatch painting, QColorDialog
 
 ## Artifacts
 
-- `include/pyqtgraph/widgets/ColorButton.hpp`
-- `src/pyqtgraph/widgets/ColorButton.cpp`
+- `include/cppqtgraph/widgets/ColorButton.hpp`
+- `src/cppqtgraph/widgets/ColorButton.cpp`
 - `tests/widgets/test_ColorButton_P5_12.cpp`
 - `reports/visual-diffs/ColorButton/<case>/{reference.png,actual.png,diff.png,metrics.json,gpt5_vision_review.md}`
 - `reports/issues/P5.12/*`

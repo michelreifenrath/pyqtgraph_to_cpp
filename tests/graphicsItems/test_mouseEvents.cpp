@@ -1,4 +1,4 @@
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
 
 #include <QtCore/QPoint>
 #include <QtWidgets/QApplication>
@@ -43,7 +43,7 @@ private:
     std::unique_ptr<QApplication> application_;
 };
 
-bool samePoint(const pyqtgraph::Point& actual, qreal x, qreal y)
+bool samePoint(const cppqtgraph::Point& actual, qreal x, qreal y)
 {
     return qFuzzyCompare(actual.x(), x) && qFuzzyCompare(actual.y(), y);
 }
@@ -57,7 +57,7 @@ qint64 steadyClockNowMilliseconds() noexcept
 
 bool testMouseClickEventShapeAndAccessors()
 {
-    using pyqtgraph::GraphicsScene::MouseClickEvent;
+    using cppqtgraph::GraphicsScene::MouseClickEvent;
 
     static_assert(std::is_constructible_v<MouseClickEvent, QGraphicsSceneMouseEvent*>);
     static_assert(std::is_constructible_v<MouseClickEvent, QGraphicsSceneMouseEvent*, bool>);
@@ -113,8 +113,8 @@ bool testMouseClickEventShapeAndAccessors()
 
 bool testMouseDragEventShapeAndAccessors()
 {
-    using pyqtgraph::GraphicsScene::MouseClickEvent;
-    using pyqtgraph::GraphicsScene::MouseDragEvent;
+    using cppqtgraph::GraphicsScene::MouseClickEvent;
+    using cppqtgraph::GraphicsScene::MouseDragEvent;
 
     static_assert(std::is_constructible_v<MouseDragEvent, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*>);
     static_assert(std::is_constructible_v<MouseDragEvent, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*, QGraphicsSceneMouseEvent*, bool, bool>);
@@ -236,7 +236,7 @@ bool testMouseDragEventShapeAndAccessors()
 
 bool testHoverEventShapeAccessorsAndClaims()
 {
-    using pyqtgraph::GraphicsScene::HoverEvent;
+    using cppqtgraph::GraphicsScene::HoverEvent;
 
     static_assert(std::is_constructible_v<HoverEvent, QGraphicsSceneMouseEvent*, bool>);
     static_assert(std::is_destructible_v<HoverEvent>);

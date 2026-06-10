@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/GraphicsItem.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsItem.hpp>
 
 #include <QtCore/QPointer>
 #include <QtCore/QRectF>
@@ -47,7 +47,7 @@ private:
 bool testNoViewReturnsNull()
 {
     QGraphicsRectItem host(QRectF(0.0, 0.0, 1.0, 1.0));
-    pyqtgraph::graphicsItems::GraphicsItem item(&host);
+    cppqtgraph::graphicsItems::GraphicsItem item(&host);
 
     CHECK(item.getViewWidget() == nullptr);
 
@@ -66,7 +66,7 @@ bool testViewWidgetCachingAndForget()
     scene.addItem(&host);
 
     QGraphicsView firstView(&scene);
-    pyqtgraph::graphicsItems::GraphicsItem item(&host);
+    cppqtgraph::graphicsItems::GraphicsItem item(&host);
 
     QGraphicsView* cached = item.getViewWidget();
     CHECK(cached == &firstView);
@@ -91,7 +91,7 @@ bool testDeletedCachedViewStaysNullUntilForgotten()
     QGraphicsScene scene;
     QGraphicsRectItem host(QRectF(0.0, 0.0, 1.0, 1.0));
     scene.addItem(&host);
-    pyqtgraph::graphicsItems::GraphicsItem item(&host);
+    cppqtgraph::graphicsItems::GraphicsItem item(&host);
 
     auto firstView = std::make_unique<QGraphicsView>(&scene);
     QPointer<QGraphicsView> firstViewPointer(firstView.get());

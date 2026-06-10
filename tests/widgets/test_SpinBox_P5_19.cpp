@@ -1,4 +1,4 @@
-#include <pyqtgraph/widgets/SpinBox.hpp>
+#include <cppqtgraph/widgets/SpinBox.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -15,8 +15,8 @@
 #include <string_view>
 #include <type_traits>
 
-#ifndef PYQTGRAPH_CPP_P5_19_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_19_REPOSITORY_REPORT_DIR "reports/issues/P5.19"
+#ifndef CPPQTGRAPH_P5_19_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_19_REPOSITORY_REPORT_DIR "reports/issues/P5.19"
 #endif
 
 namespace {
@@ -78,7 +78,7 @@ void writeTextFile(const QString& path, const QString& text)
 
 bool testApiShape()
 {
-    using pyqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBox;
 
     static_assert(std::is_base_of_v<QAbstractSpinBox, SpinBox>);
     static_assert(!std::is_copy_constructible_v<SpinBox>);
@@ -91,7 +91,7 @@ bool testApiShape()
 
 bool testDefaultValueAndText()
 {
-    using pyqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBox;
 
     SpinBox box;
     CHECK_CLOSE(box.value(), 0.0, 1.0e-12);
@@ -101,8 +101,8 @@ bool testDefaultValueAndText()
 
 bool testBoundsClipping()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -119,8 +119,8 @@ bool testBoundsClipping()
 
 bool testBoundsWrapping()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -135,8 +135,8 @@ bool testBoundsWrapping()
 
 bool testIntegerMode()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -151,8 +151,8 @@ bool testIntegerMode()
 
 bool testIntegerModeDefaultStepping()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -169,8 +169,8 @@ bool testIntegerModeDefaultStepping()
 
 bool testSetRangeClearsBounds()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -187,8 +187,8 @@ bool testSetRangeClearsBounds()
 
 bool testCustomFormatPlaceholders()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -206,8 +206,8 @@ bool testCustomFormatPlaceholders()
 
 bool testLinearStepping()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -224,8 +224,8 @@ bool testLinearStepping()
 
 bool testDecimalSteppingAndMinStep()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -254,8 +254,8 @@ bool testDecimalSteppingAndMinStep()
 
 bool testSiPrefixFormatting()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -275,8 +275,8 @@ bool testSiPrefixFormatting()
 
 bool testSiPrefixParsing()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -293,8 +293,8 @@ bool testSiPrefixParsing()
 
 bool testSiPrefixAsciiUParsing()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -311,8 +311,8 @@ bool testSiPrefixAsciiUParsing()
 
 bool testCustomPrefixSuffixFormatting()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -330,8 +330,8 @@ bool testCustomPrefixSuffixFormatting()
 
 bool testEditingFinishedCommit()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -347,8 +347,8 @@ bool testEditingFinishedCommit()
 
 bool testSignalOrderImmediate()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -370,8 +370,8 @@ bool testSignalOrderImmediate()
 
 bool testSignalDelayOnStepBy()
 {
-    using pyqtgraph::widgets::SpinBox;
-    using pyqtgraph::widgets::SpinBoxOptions;
+    using cppqtgraph::widgets::SpinBox;
+    using cppqtgraph::widgets::SpinBoxOptions;
 
     SpinBox box;
     SpinBoxOptions opts;
@@ -399,17 +399,17 @@ bool testSignalDelayOnStepBy()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_19_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_19_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/SpinBox_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.19\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::SpinBox\", \"pyqtgraph::widgets::ErrorBox\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::SpinBox\", \"cppqtgraph::widgets::ErrorBox\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/SpinBox.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/SpinBox.hpp\", \"src/pyqtgraph/widgets/SpinBox.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/SpinBox.hpp\", \"src/cppqtgraph/widgets/SpinBox.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_spinbox_p5_19\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_spinbox_p5_19\"},\n"
             "  \"checks\": [\"SpinBox API shape and default value\", \"bounds clipping and wrapping\", \"integer mode\", \"integer mode default stepping\", \"setRange clears bounds\", \"custom format placeholders\", \"linear and decimal stepping with minStep\", \"SI prefix formatting and parsing\", \"ASCII u SI prefix parsing\", \"custom prefix/suffix formatting\", \"editingFinished commit\", \"immediate and delayed signal behavior\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.19 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

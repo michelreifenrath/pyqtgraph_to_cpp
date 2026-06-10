@@ -1,7 +1,7 @@
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
 
-#include <pyqtgraph/graphicsItems/GraphicsItem.hpp>
-#include <pyqtgraph/graphicsItems/GraphicsObject.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsItem.hpp>
+#include <cppqtgraph/graphicsItems/GraphicsObject.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -56,9 +56,9 @@ private:
 
 bool testConstructionAndHierarchy()
 {
-    using pyqtgraph::graphicsItems::GraphicsItem;
-    using pyqtgraph::graphicsItems::GraphicsObject;
-    using pyqtgraph::graphicsItems::PlotCurveItem;
+    using cppqtgraph::graphicsItems::GraphicsItem;
+    using cppqtgraph::graphicsItems::GraphicsObject;
+    using cppqtgraph::graphicsItems::PlotCurveItem;
 
     static_assert(std::is_constructible_v<PlotCurveItem>);
     static_assert(std::is_constructible_v<PlotCurveItem, QGraphicsItem*>);
@@ -85,7 +85,7 @@ bool testConstructionAndHierarchy()
 
 bool testInheritedViewWidgetDiscovery()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     QGraphicsScene firstScene;
     firstScene.addItem(&curve);
 
@@ -112,7 +112,7 @@ bool testInheritedViewWidgetDiscovery()
 bool testParentConstruction()
 {
     QGraphicsRectItem parent(QRectF(0.0, 0.0, 1.0, 1.0));
-    pyqtgraph::graphicsItems::PlotCurveItem curve(&parent);
+    cppqtgraph::graphicsItems::PlotCurveItem curve(&parent);
 
     CHECK(curve.parentItem() == &parent);
     CHECK(curve.graphicsItem() == static_cast<QGraphicsItem*>(&curve));
@@ -124,7 +124,7 @@ bool testParentConstruction()
 
 bool testPaintNoOpSmoke()
 {
-    pyqtgraph::graphicsItems::PlotCurveItem curve;
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
     QImage image(8, 8, QImage::Format_ARGB32_Premultiplied);
     image.fill(Qt::transparent);
     QPainter painter(&image);

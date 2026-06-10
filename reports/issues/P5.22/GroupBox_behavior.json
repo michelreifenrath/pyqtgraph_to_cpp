@@ -1,10 +1,10 @@
 {
   "issue": "P5.22",
-  "classes": ["pyqtgraph::widgets::GroupBox"],
+  "classes": ["cppqtgraph::widgets::GroupBox"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/GroupBox.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/GroupBox.hpp", "src/pyqtgraph/widgets/GroupBox.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/GroupBox.hpp", "src/cppqtgraph/widgets/GroupBox.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.22 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_groupbox_p5_22"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.22 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_groupbox_p5_22"},
   "checks": ["GroupBox API shape and title padding", "initial expanded state", "collapse/expand signal and child visibility", "collapse handle remains visible", "deterministic visual reference-vs-actual pixels"],
   "visual_artifacts": {"root": "reports/visual-diffs/GroupBox", "cases": ["GroupBox-expanded", "GroupBox-collapsed"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
   "visual_metrics": {"expanded": {"changed_pixels": 0, "max_delta": 0, "passed": true}, "collapsed": {"changed_pixels": 0, "max_delta": 0, "passed": true}},

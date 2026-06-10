@@ -30,4 +30,4 @@ def test_P3_13_visual_required_simpleplot_selects_visual_ctest() -> None:
         "ctest --preset visual -R '^P3\\.13\\.visual\\.SimplePlot$' --output-on-failure"
         in result.stdout.splitlines()
     )
-    assert "pyqtgraph_cpp.examples.SimplePlot" not in result.stdout
+    assert "cppqtgraph.examples.SimplePlot" not in result.stdout

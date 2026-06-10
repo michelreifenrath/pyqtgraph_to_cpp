@@ -1,4 +1,4 @@
-#include <pyqtgraph/graphicsItems/DateAxisItem.hpp>
+#include <cppqtgraph/graphicsItems/DateAxisItem.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QRectF>
@@ -77,8 +77,8 @@ bool containsClose(const std::vector<double>& values, double expected)
 
 bool testConstructionAndApi()
 {
-    using pyqtgraph::graphicsItems::AxisItem;
-    using pyqtgraph::graphicsItems::DateAxisItem;
+    using cppqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::DateAxisItem;
 
     static_assert(std::is_base_of_v<AxisItem, DateAxisItem>);
     static_assert(std::is_constructible_v<DateAxisItem>);
@@ -103,7 +103,7 @@ bool testConstructionAndApi()
 
 bool testPinnedOracleTickStrings()
 {
-    using pyqtgraph::graphicsItems::DateAxisItem;
+    using cppqtgraph::graphicsItems::DateAxisItem;
 
     DateAxisItem axis(QStringLiteral("bottom"), 0);
     const std::vector<double> values{0.0, 978307200.0, 978328800.0, 978350400.0, 978372000.0};
@@ -135,7 +135,7 @@ bool testPinnedOracleTickStrings()
 
 bool testPinnedOracleTickValues()
 {
-    using pyqtgraph::graphicsItems::DateAxisItem;
+    using cppqtgraph::graphicsItems::DateAxisItem;
 
     DateAxisItem axis(QStringLiteral("bottom"), 0);
     const auto levels = axis.tickValues(978307199.0, 978372001.0, 324.0);
@@ -162,7 +162,7 @@ bool testPinnedOracleTickValues()
 
 bool testSupplementalAxisVisualArtifact()
 {
-    using pyqtgraph::graphicsItems::DateAxisItem;
+    using cppqtgraph::graphicsItems::DateAxisItem;
 
     DateAxisItem axis(QStringLiteral("bottom"), 0);
     axis.setGeometry(QRectF(0.0, 0.0, 640.0, 80.0));
@@ -189,8 +189,8 @@ bool testSupplementalAxisVisualArtifact()
     }
     CHECK(brightPixels > 250);
 
-#ifdef PYQTGRAPH_CPP_P3_08_ARTIFACT_DIR
-    const std::filesystem::path artifactDir = PYQTGRAPH_CPP_P3_08_ARTIFACT_DIR;
+#ifdef CPPQTGRAPH_P3_08_ARTIFACT_DIR
+    const std::filesystem::path artifactDir = CPPQTGRAPH_P3_08_ARTIFACT_DIR;
     std::filesystem::create_directories(artifactDir);
     const std::filesystem::path imagePath = artifactDir / "dateaxis_bottom_day_hour.png";
     CHECK(image.save(QString::fromStdString(imagePath.string())));

@@ -1,4 +1,4 @@
-#include <pyqtgraph/widgets/ScatterPlotWidget.hpp>
+#include <cppqtgraph/widgets/ScatterPlotWidget.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -17,8 +17,8 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_08_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_08_REPOSITORY_REPORT_DIR "reports/issues/P5.08"
+#ifndef CPPQTGRAPH_P5_08_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_08_REPOSITORY_REPORT_DIR "reports/issues/P5.08"
 #endif
 
 namespace {
@@ -68,9 +68,9 @@ void writeTextFile(const QString& path, const QString& text)
     stream << text;
 }
 
-pyqtgraph::widgets::ScatterPlotRecordArray makeSampleData()
+cppqtgraph::widgets::ScatterPlotRecordArray makeSampleData()
 {
-    pyqtgraph::widgets::ScatterPlotRecordArray records;
+    cppqtgraph::widgets::ScatterPlotRecordArray records;
     records.push_back({{QStringLiteral("x"), 1.0}, {QStringLiteral("y"), 10.0}, {QStringLiteral("group"), 1.0}});
     records.push_back({{QStringLiteral("x"), 1.0}, {QStringLiteral("y"), 20.0}, {QStringLiteral("group"), 2.0}});
     records.push_back({{QStringLiteral("x"), 2.0}, {QStringLiteral("y"), 30.0}, {QStringLiteral("group"), 1.0}});
@@ -82,7 +82,7 @@ pyqtgraph::widgets::ScatterPlotRecordArray makeSampleData()
 
 bool testApiShape()
 {
-    using pyqtgraph::widgets::ScatterPlotWidget;
+    using cppqtgraph::widgets::ScatterPlotWidget;
 
     static_assert(std::is_base_of_v<QSplitter, ScatterPlotWidget>);
     static_assert(!std::is_copy_constructible_v<ScatterPlotWidget>);
@@ -99,8 +99,8 @@ bool testApiShape()
 
 bool testFieldOrderingAndSelectionCap()
 {
-    using pyqtgraph::widgets::ScatterPlotFieldOptions;
-    using pyqtgraph::widgets::ScatterPlotWidget;
+    using cppqtgraph::widgets::ScatterPlotFieldOptions;
+    using cppqtgraph::widgets::ScatterPlotWidget;
 
     ScatterPlotWidget widget;
     widget.setFields({
@@ -134,14 +134,14 @@ bool testFieldOrderingAndSelectionCap()
 
 bool testSingleFieldPseudoScatterAndFilter()
 {
-    using pyqtgraph::widgets::ScatterPlotWidget;
+    using cppqtgraph::widgets::ScatterPlotWidget;
 
     ScatterPlotWidget widget;
-    pyqtgraph::widgets::ScatterPlotFieldOptions xField;
+    cppqtgraph::widgets::ScatterPlotFieldOptions xField;
     xField.mode = QStringLiteral("range");
     widget.setFields({
         {QStringLiteral("x"), xField},
-        {QStringLiteral("y"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("y"), cppqtgraph::widgets::ScatterPlotFieldOptions{}},
     });
     widget.setData(makeSampleData());
     widget.setSelectedFields({QStringLiteral("x")});
@@ -153,7 +153,7 @@ bool testSingleFieldPseudoScatterAndFilter()
     CHECK(preVisibleCount == 4);
 
     const std::array<double, 4> pseudoInput = {1.0, 1.0, 2.0, 3.0};
-    const auto pseudoY = pyqtgraph::widgets::pseudoScatter(pseudoInput);
+    const auto pseudoY = cppqtgraph::widgets::pseudoScatter(pseudoInput);
     CHECK(pseudoY.size() == 4);
     CHECK(pseudoY[0] != pseudoY[1]);
 
@@ -175,15 +175,15 @@ bool testSingleFieldPseudoScatterAndFilter()
 
 bool testSingleFieldPseudoScatterNonFiniteValues()
 {
-    using pyqtgraph::widgets::ScatterPlotWidget;
+    using cppqtgraph::widgets::ScatterPlotWidget;
 
     ScatterPlotWidget widget;
     widget.setFields({
-        {QStringLiteral("x"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
-        {QStringLiteral("y"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("x"), cppqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("y"), cppqtgraph::widgets::ScatterPlotFieldOptions{}},
     });
 
-    pyqtgraph::widgets::ScatterPlotRecordArray records;
+    cppqtgraph::widgets::ScatterPlotRecordArray records;
     records.push_back({{QStringLiteral("x"), 1.0}, {QStringLiteral("y"), 10.0}});
     records.push_back({{QStringLiteral("x"), 1.0}, {QStringLiteral("y"), 20.0}});
     records.push_back({{QStringLiteral("x"), 2.0}, {QStringLiteral("y"), 30.0}});
@@ -210,7 +210,7 @@ bool testSingleFieldPseudoScatterNonFiniteValues()
     }
 
     const std::array<double, 4> finiteInput = {1.0, 1.0, 2.0, 3.0};
-    const auto pseudoY = pyqtgraph::widgets::pseudoScatter(finiteInput);
+    const auto pseudoY = cppqtgraph::widgets::pseudoScatter(finiteInput);
     CHECK(pseudoY.size() == 4);
     CHECK(std::isfinite(pseudoY[0]));
     CHECK(std::isfinite(pseudoY[1]));
@@ -220,12 +220,12 @@ bool testSingleFieldPseudoScatterNonFiniteValues()
 
 bool testTwoFieldScatterSelectionAndSignals()
 {
-    using pyqtgraph::widgets::ScatterPlotWidget;
+    using cppqtgraph::widgets::ScatterPlotWidget;
 
     ScatterPlotWidget widget;
     widget.setFields({
-        {QStringLiteral("x"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
-        {QStringLiteral("y"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("x"), cppqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("y"), cppqtgraph::widgets::ScatterPlotFieldOptions{}},
     });
     widget.setData(makeSampleData());
     widget.setSelectedFields({QStringLiteral("x"), QStringLiteral("y")});
@@ -263,12 +263,12 @@ bool testTwoFieldScatterSelectionAndSignals()
 
 bool testNoOpWhenNoFieldsSelected()
 {
-    using pyqtgraph::widgets::ScatterPlotWidget;
+    using cppqtgraph::widgets::ScatterPlotWidget;
 
     ScatterPlotWidget widget;
     widget.setFields({
-        {QStringLiteral("x"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
-        {QStringLiteral("y"), pyqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("x"), cppqtgraph::widgets::ScatterPlotFieldOptions{}},
+        {QStringLiteral("y"), cppqtgraph::widgets::ScatterPlotFieldOptions{}},
     });
     widget.setData(makeSampleData());
     QApplication::processEvents();
@@ -289,17 +289,17 @@ bool testNoOpWhenNoFieldsSelected()
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_08_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_08_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ScatterPlotWidget_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.08\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::ScatterPlotWidget\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::ScatterPlotWidget\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ScatterPlotWidget.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ScatterPlotWidget.hpp\", \"src/pyqtgraph/widgets/ScatterPlotWidget.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/ScatterPlotWidget.hpp\", \"src/cppqtgraph/widgets/ScatterPlotWidget.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.08 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_scatterplotwidget_p5_08\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.08 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_scatterplotwidget_p5_08\"},\n"
             "  \"checks\": [\"QSplitter widget with field list, color map, and plot\", \"field selection capped at two\", \"single-field pseudoScatter plot and filter mask\", \"two-field scatter with selection overlay and signals\", \"no-op when no fields selected\"],\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.08 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}, {\"command\": \"git diff --name-only origin/main...HEAD\", \"exit_code\": 0}]\n"
             "}\n"));

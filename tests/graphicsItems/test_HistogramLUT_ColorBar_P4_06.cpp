@@ -1,9 +1,9 @@
-#include <pyqtgraph/colormap.hpp>
-#include <pyqtgraph/core/ArrayView.hpp>
-#include <pyqtgraph/functions.hpp>
-#include <pyqtgraph/graphicsItems/ColorBarItem.hpp>
-#include <pyqtgraph/graphicsItems/HistogramLUTItem.hpp>
-#include <pyqtgraph/graphicsItems/ImageItem.hpp>
+#include <cppqtgraph/colormap.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/graphicsItems/ColorBarItem.hpp>
+#include <cppqtgraph/graphicsItems/HistogramLUTItem.hpp>
+#include <cppqtgraph/graphicsItems/ImageItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -23,8 +23,8 @@
 #include <utility>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_06_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_06_ARTIFACT_DIR "artifacts/P4.06"
+#ifndef CPPQTGRAPH_P4_06_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_06_ARTIFACT_DIR "artifacts/P4.06"
 #endif
 
 namespace {
@@ -48,7 +48,7 @@ QJsonArray levelsJson(const std::pair<double, double>& levels)
     return array;
 }
 
-QJsonArray imageLevelsJson(const std::optional<pyqtgraph::ImageLevelRange>& levels)
+QJsonArray imageLevelsJson(const std::optional<cppqtgraph::ImageLevelRange>& levels)
 {
     QJsonArray array;
     if (levels.has_value()) {
@@ -58,7 +58,7 @@ QJsonArray imageLevelsJson(const std::optional<pyqtgraph::ImageLevelRange>& leve
     return array;
 }
 
-QJsonObject lutJson(const std::optional<pyqtgraph::ImageLookupTable>& lut)
+QJsonObject lutJson(const std::optional<cppqtgraph::ImageLookupTable>& lut)
 {
     QJsonObject object;
     object.insert(QStringLiteral("present"), lut.has_value());
@@ -81,14 +81,14 @@ QJsonObject signalJson(int lookupChanged, int histLevelsChanged, int histLevelsF
                        {QStringLiteral("colorBarLevelsFinished"), colorLevelsFinished}};
 }
 
-pyqtgraph::ColorMap testColorMap()
+cppqtgraph::ColorMap testColorMap()
 {
-    return pyqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 64, 32)}, QStringLiteral("P4.06-test"));
+    return cppqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 64, 32)}, QStringLiteral("P4.06-test"));
 }
 
 bool writeReport(const QJsonObject& report)
 {
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_06_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_06_ARTIFACT_DIR);
     QDir().mkpath(artifactDir);
     QFile file(artifactDir + QStringLiteral("/HistogramLUT_ColorBar_interaction.json"));
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -108,11 +108,11 @@ int main(int argc, char** argv)
     }
     QApplication app(argc, argv);
 
-    using pyqtgraph::ImageLevelRange;
-    using pyqtgraph::core::ArrayView;
-    using pyqtgraph::graphicsItems::ColorBarItem;
-    using pyqtgraph::graphicsItems::HistogramLUTItem;
-    using pyqtgraph::graphicsItems::ImageItem;
+    using cppqtgraph::ImageLevelRange;
+    using cppqtgraph::core::ArrayView;
+    using cppqtgraph::graphicsItems::ColorBarItem;
+    using cppqtgraph::graphicsItems::HistogramLUTItem;
+    using cppqtgraph::graphicsItems::ImageItem;
 
     QJsonObject report;
     QJsonArray events;

@@ -9,29 +9,29 @@
     {
       "name": "dev",
       "displayName": "Developer Debug Configuration",
-      "description": "Configure the C++20 pyqtgraph-cpp skeleton for local development.",
+      "description": "Configure the C++20 CppQtGraph skeleton for local development.",
       "binaryDir": "${sourceDir}/build/dev",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTING": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
-        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+        "CPPQTGRAPH_REQUIRE_QT": "ON",
+        "CPPQTGRAPH_REQUIRE_OPENCV": "ON",
+        "CPPQTGRAPH_ENABLE_SANITIZERS": "OFF"
       }
     },
     {
       "name": "release",
       "displayName": "Release Configuration",
-      "description": "Configure the C++20 pyqtgraph-cpp skeleton for release and performance-record validation.",
+      "description": "Configure the C++20 CppQtGraph skeleton for release and performance-record validation.",
       "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTING": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
-        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+        "CPPQTGRAPH_REQUIRE_QT": "ON",
+        "CPPQTGRAPH_REQUIRE_OPENCV": "ON",
+        "CPPQTGRAPH_ENABLE_SANITIZERS": "OFF"
       }
     },
     {
@@ -43,9 +43,9 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTING": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
-        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+        "CPPQTGRAPH_REQUIRE_QT": "ON",
+        "CPPQTGRAPH_REQUIRE_OPENCV": "ON",
+        "CPPQTGRAPH_ENABLE_SANITIZERS": "OFF"
       }
     },
     {
@@ -57,9 +57,9 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTING": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
-        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+        "CPPQTGRAPH_REQUIRE_QT": "ON",
+        "CPPQTGRAPH_REQUIRE_OPENCV": "ON",
+        "CPPQTGRAPH_ENABLE_SANITIZERS": "OFF"
       }
     },
     {
@@ -72,9 +72,9 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTING": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
-        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+        "CPPQTGRAPH_REQUIRE_QT": "ON",
+        "CPPQTGRAPH_REQUIRE_OPENCV": "ON",
+        "CPPQTGRAPH_ENABLE_SANITIZERS": "OFF"
       }
     },
     {
@@ -86,9 +86,9 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTING": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_QT": "ON",
-        "PYQTGRAPH_CPP_REQUIRE_OPENCV": "ON",
-        "PYQTGRAPH_CPP_ENABLE_SANITIZERS": "OFF"
+        "CPPQTGRAPH_REQUIRE_QT": "ON",
+        "CPPQTGRAPH_REQUIRE_OPENCV": "ON",
+        "CPPQTGRAPH_ENABLE_SANITIZERS": "OFF"
       }
     }
   ],

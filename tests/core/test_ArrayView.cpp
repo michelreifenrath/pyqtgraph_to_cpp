@@ -1,4 +1,4 @@
-#include <pyqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
 
 #include <array>
 #include <cstddef>
@@ -28,7 +28,7 @@ bool check(bool condition, std::string_view expression, std::string_view file, i
 
 bool testDefaultView()
 {
-    pyqtgraph::core::ArrayView<double> view;
+    cppqtgraph::core::ArrayView<double> view;
 
     CHECK(view.data() == nullptr);
     CHECK(view.size() == 0);
@@ -44,7 +44,7 @@ bool testDefaultView()
 bool testPointerAndShapeView()
 {
     std::array<double, 3> values{1.0, 2.0, 3.0};
-    pyqtgraph::core::ArrayView<double> view(values.data(), std::array<std::size_t, 1>{values.size()});
+    cppqtgraph::core::ArrayView<double> view(values.data(), std::array<std::size_t, 1>{values.size()});
 
     CHECK(view.data() == values.data());
     CHECK(view.size() == values.size());
@@ -65,7 +65,7 @@ bool testPointerAndShapeView()
 bool testRankTwoContiguousView()
 {
     std::array<int, 6> values{0, 1, 2, 3, 4, 5};
-    pyqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{2, 3});
+    cppqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{2, 3});
 
     CHECK(view.data() == values.data());
     CHECK(view.size() == values.size());
@@ -91,7 +91,7 @@ bool testRankTwoContiguousView()
 bool testRankTwoStridedView()
 {
     std::array<int, 12> values{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-    pyqtgraph::core::ArrayView<int, 2> view(
+    cppqtgraph::core::ArrayView<int, 2> view(
         values.data() + 1,
         std::array<std::size_t, 2>{2, 3},
         std::array<std::ptrdiff_t, 2>{4, 1});
@@ -114,7 +114,7 @@ bool testRankTwoStridedView()
 bool testZeroExtentIsEmpty()
 {
     std::array<int, 3> values{1, 2, 3};
-    pyqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{3, 0});
+    cppqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{3, 0});
 
     CHECK(view.size() == 0);
     CHECK(view.empty());
@@ -129,7 +129,7 @@ bool testZeroExtentIsEmpty()
 bool testRankOneStridedIndexing()
 {
     std::array<int, 6> values{0, 1, 2, 3, 4, 5};
-    pyqtgraph::core::ArrayView<int> view(
+    cppqtgraph::core::ArrayView<int> view(
         values.data() + 1,
         std::array<std::size_t, 1>{3},
         std::array<std::ptrdiff_t, 1>{2});
@@ -150,7 +150,7 @@ bool testRankOneStridedIndexing()
 bool testSlicing()
 {
     std::array<int, 12> values{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-    pyqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{3, 4});
+    cppqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{3, 4});
 
     const auto columns = view.slice(1, 1, 4, 2);
     CHECK(columns.data() == values.data() + 1);
@@ -175,7 +175,7 @@ bool testSlicing()
     CHECK(rows(0, 0) == 4);
     CHECK(rows(1, 3) == 11);
 
-    pyqtgraph::core::ArrayView<int> vector(values.data(), std::array<std::size_t, 1>{6});
+    cppqtgraph::core::ArrayView<int> vector(values.data(), std::array<std::size_t, 1>{6});
     const auto everyOther = vector.slice(0, 1, 6, 2);
     CHECK(everyOther.data() == values.data() + 1);
     CHECK(everyOther.shape()[0] == 3);
@@ -189,7 +189,7 @@ bool testSlicing()
 
 bool testShapeOnlySlicePreservesNullData()
 {
-    pyqtgraph::core::ArrayView<int> view(nullptr, std::array<std::size_t, 1>{4});
+    cppqtgraph::core::ArrayView<int> view(nullptr, std::array<std::size_t, 1>{4});
 
     const auto sliced = view.slice(0, 1, 3);
     CHECK(sliced.data() == nullptr);
@@ -203,7 +203,7 @@ bool testShapeOnlySlicePreservesNullData()
 bool testInvalidSlices()
 {
     std::array<int, 6> values{0, 1, 2, 3, 4, 5};
-    pyqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{2, 3});
+    cppqtgraph::core::ArrayView<int, 2> view(values.data(), std::array<std::size_t, 2>{2, 3});
 
     bool threw = false;
     try {
@@ -243,7 +243,7 @@ bool testInvalidSlices()
 bool testConstView()
 {
     const std::array<double, 2> values{5.0, 6.0};
-    pyqtgraph::core::ArrayView<const double> view(values.data(), std::array<std::size_t, 1>{values.size()});
+    cppqtgraph::core::ArrayView<const double> view(values.data(), std::array<std::size_t, 1>{values.size()});
 
     CHECK(view.data() == values.data());
     CHECK(view.size() == values.size());

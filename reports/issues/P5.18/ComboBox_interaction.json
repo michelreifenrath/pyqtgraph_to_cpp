@@ -1,10 +1,10 @@
 {
   "issue": "P5.18",
-  "classes": ["pyqtgraph::widgets::ComboBox"],
+  "classes": ["cppqtgraph::widgets::ComboBox"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/ComboBox.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/ComboBox.hpp", "src/pyqtgraph/widgets/ComboBox.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/ComboBox.hpp", "src/cppqtgraph/widgets/ComboBox.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_combobox_p5_18"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_combobox_p5_18"},
   "checks": ["ComboBox API shape and empty value", "unique item text enforcement", "ordered list and text-to-value mapping", "dict/pair text-to-value mapping", "setValue selects first matching UI item", "value/setValue/setText selection", "empty chosen text restores on repopulate", "saveState/restoreState for text and item data", "bulk/direct text item state falls back to text", "appended item data stays aligned", "bulk updates emit currentIndexChanged only for final logical changes"],
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.18 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
 }

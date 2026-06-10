@@ -1,5 +1,5 @@
-#include "../../include/pyqtgraph/functions.hpp"
-#include "../../include/pyqtgraph/functions_qimage.hpp"
+#include "../../include/cppqtgraph/functions.hpp"
+#include "../../include/cppqtgraph/functions_qimage.hpp"
 
 #include <QColor>
 #include <QImage>
@@ -69,22 +69,22 @@ bool checkThrowsInvalidArgument(Callable callable, std::string_view label)
 bool testApplyLookupTableClipsIndices()
 {
     const std::array<std::uint8_t, 9> lutData{10, 20, 30, 40, 50, 60, 70, 80, 90};
-    const pyqtgraph::ImageLookupTable lut{lutData.data(), 3, 3, 3, 1};
+    const cppqtgraph::ImageLookupTable lut{lutData.data(), 3, 3, 3, 1};
 
-    CHECK((pyqtgraph::applyLookupTable(-7, lut) == std::array<std::uint8_t, 4>{10, 20, 30, 255}));
-    CHECK((pyqtgraph::applyLookupTable(1, lut) == std::array<std::uint8_t, 4>{40, 50, 60, 255}));
-    CHECK((pyqtgraph::applyLookupTable(99, lut) == std::array<std::uint8_t, 4>{70, 80, 90, 255}));
+    CHECK((cppqtgraph::applyLookupTable(-7, lut) == std::array<std::uint8_t, 4>{10, 20, 30, 255}));
+    CHECK((cppqtgraph::applyLookupTable(1, lut) == std::array<std::uint8_t, 4>{40, 50, 60, 255}));
+    CHECK((cppqtgraph::applyLookupTable(99, lut) == std::array<std::uint8_t, 4>{70, 80, 90, 255}));
     return true;
 }
 
 bool testUint8LevelsUseIndexedColorTable()
 {
     const std::array<std::uint8_t, 5> data{0, 1, 2, 3, 4};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
-    pyqtgraph::TryMakeQImageOptions options;
-    options.levels = pyqtgraph::ImageLevelRange{1.0, 3.0};
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
+    cppqtgraph::TryMakeQImageOptions options;
+    options.levels = cppqtgraph::ImageLevelRange{1.0, 3.0};
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view, options);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view, options);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_Indexed8);
     CHECK(static_cast<int>(image->constScanLine(0)[4]) == 4);
@@ -106,11 +106,11 @@ bool testUint8LutWithoutLevelsUsesClippedEffectiveTable()
     }
 
     const std::array<std::uint8_t, 3> data{0, 1, 255};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
-    pyqtgraph::TryMakeQImageOptions options;
-    options.lut = pyqtgraph::ImageLookupTable{lutData.data(), 256, 3, 3, 1};
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
+    cppqtgraph::TryMakeQImageOptions options;
+    options.lut = cppqtgraph::ImageLookupTable{lutData.data(), 256, 3, 3, 1};
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view, options);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view, options);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_Indexed8);
     CHECK_PIXEL(*image, 0, 0, 0, 255, 7, 255);
@@ -127,12 +127,12 @@ bool testLevelsLutMoreThan256RowsDoesNotTruncateEffectiveIndices()
     }
 
     const std::array<std::uint8_t, 3> data{0, 128, 255};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
-    pyqtgraph::TryMakeQImageOptions options;
-    options.levels = pyqtgraph::ImageLevelRange{0.0, 255.0};
-    options.lut = pyqtgraph::ImageLookupTable{lutData.data(), lutData.size(), 1, 1, 1};
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
+    cppqtgraph::TryMakeQImageOptions options;
+    options.levels = cppqtgraph::ImageLevelRange{0.0, 255.0};
+    options.lut = cppqtgraph::ImageLookupTable{lutData.data(), lutData.size(), 1, 1, 1};
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view, options);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view, options);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_Indexed8);
     CHECK_PIXEL(*image, 0, 0, 10, 10, 10, 255);
@@ -144,11 +144,11 @@ bool testLevelsLutMoreThan256RowsDoesNotTruncateEffectiveIndices()
 bool testUint16LevelsRescaleToGray8()
 {
     const std::array<std::uint16_t, 4> data{0, 512, 32768, 65535};
-    const pyqtgraph::core::ArrayView<const std::uint16_t, 2> view(data.data(), {1, data.size()});
-    pyqtgraph::TryMakeQImageOptions options;
-    options.levels = pyqtgraph::ImageLevelRange{512.0, 65536.0};
+    const cppqtgraph::core::ArrayView<const std::uint16_t, 2> view(data.data(), {1, data.size()});
+    cppqtgraph::TryMakeQImageOptions options;
+    options.levels = cppqtgraph::ImageLevelRange{512.0, 65536.0};
 
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view, options);
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view, options);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_Grayscale8);
     CHECK_PIXEL(*image, 0, 0, 0, 0, 0, 255);
@@ -161,13 +161,13 @@ bool testUint16LevelsRescaleToGray8()
 bool testFloatRequiresLevelsAndRescales()
 {
     const std::array<float, 4> data{1.0F, 5.0F, 13.0F, 17.0F};
-    const pyqtgraph::core::ArrayView<const float, 2> view(data.data(), {1, data.size()});
+    const cppqtgraph::core::ArrayView<const float, 2> view(data.data(), {1, data.size()});
 
-    CHECK(!pyqtgraph::tryMakeQImage(view).has_value());
+    CHECK(!cppqtgraph::tryMakeQImage(view).has_value());
 
-    pyqtgraph::TryMakeQImageOptions options;
-    options.levels = pyqtgraph::ImageLevelRange{5.0, 13.0};
-    const std::optional<QImage> image = pyqtgraph::tryMakeQImage(view, options);
+    cppqtgraph::TryMakeQImageOptions options;
+    options.levels = cppqtgraph::ImageLevelRange{5.0, 13.0};
+    const std::optional<QImage> image = cppqtgraph::tryMakeQImage(view, options);
     CHECK(image.has_value());
     CHECK(image->format() == QImage::Format_Grayscale8);
     CHECK_PIXEL(*image, 0, 0, 0, 0, 0, 255);
@@ -180,15 +180,15 @@ bool testFloatRequiresLevelsAndRescales()
 bool testTryMakeQImageGuardsUnsupportedCombinations()
 {
     const std::array<std::uint8_t, 4> rgba{1, 2, 3, 4};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> rgbaView(rgba.data(), {1, 1, 4});
-    pyqtgraph::TryMakeQImageOptions options;
-    options.levels = pyqtgraph::ImageLevelRange{0.0, 255.0};
-    CHECK(!pyqtgraph::tryMakeQImage(rgbaView, options).has_value());
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> rgbaView(rgba.data(), {1, 1, 4});
+    cppqtgraph::TryMakeQImageOptions options;
+    options.levels = cppqtgraph::ImageLevelRange{0.0, 255.0};
+    CHECK(!cppqtgraph::tryMakeQImage(rgbaView, options).has_value());
 
     const std::array<std::uint8_t, 4> data{0, 1, 2, 3};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
-    options.lut = pyqtgraph::ImageLookupTable{data.data(), 2, 2, 2, 1};
-    CHECK(checkThrowsInvalidArgument([&] { (void)pyqtgraph::tryMakeQImage(view, options); }, "two-channel lut"));
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {1, data.size()});
+    options.lut = cppqtgraph::ImageLookupTable{data.data(), 2, 2, 2, 1};
+    CHECK(checkThrowsInvalidArgument([&] { (void)cppqtgraph::tryMakeQImage(view, options); }, "two-channel lut"));
     return true;
 }
 

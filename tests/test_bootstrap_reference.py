@@ -23,7 +23,7 @@ def load_yaml(path: Path):
 def test_reference_metadata_files_agree_on_pin():
     lock = load_yaml(Path("reference/source.lock"))
     ref_text = Path("reference/PYQTGRAPH_REF").read_text(encoding="utf-8")
-    manifest = load_yaml(Path("port_manifest.yaml"))
+    manifest = load_yaml(Path("examples/example_manifest.yaml"))
 
     expected = {
         "repo": REPO,
@@ -47,7 +47,7 @@ def test_check_offline_verifies_reference_without_writes():
     tracked_paths = [
         Path("reference/source.lock"),
         Path("reference/PYQTGRAPH_REF"),
-        Path("port_manifest.yaml"),
+        Path("examples/example_manifest.yaml"),
     ]
     before = {path: path.read_bytes() for path in tracked_paths}
 
@@ -66,7 +66,8 @@ def copy_metadata(root: Path) -> None:
     (root / "reference").mkdir(parents=True)
     shutil.copy2("reference/source.lock", root / "reference/source.lock")
     shutil.copy2("reference/PYQTGRAPH_REF", root / "reference/PYQTGRAPH_REF")
-    shutil.copy2("port_manifest.yaml", root / "port_manifest.yaml")
+    (root / "examples").mkdir(parents=True, exist_ok=True)
+    shutil.copy2("examples/example_manifest.yaml", root / "examples/example_manifest.yaml")
 
 
 def test_check_offline_rejects_unverifiable_checkout_directory(tmp_path: Path):
@@ -92,9 +93,9 @@ def test_check_offline_rejects_unverifiable_checkout_directory(tmp_path: Path):
     assert "not a git repository" in result.stderr
 
 
-def test_check_offline_reports_mismatched_manifest_field(tmp_path: Path):
+def test_check_offline_reports_mismatched_example_manifest_field(tmp_path: Path):
     copy_metadata(tmp_path)
-    manifest_path = tmp_path / "port_manifest.yaml"
+    manifest_path = tmp_path / "examples" / "example_manifest.yaml"
     manifest = load_yaml(manifest_path)
     manifest["reference"]["pinned_commit"] = "0" * 40
     manifest_path.write_text(
@@ -175,7 +176,7 @@ def test_refresh_with_local_git_remote_writes_checkout_and_metadata(tmp_path: Pa
         "docs_url": DOCS_URL,
         "checkout_path": CHECKOUT_PATH,
     }
-    assert load_yaml(root / "port_manifest.yaml")["reference"] == {
+    assert load_yaml(root / "examples" / "example_manifest.yaml")["reference"] == {
         "repo": str(remote),
         "ref": REF,
         "pinned_commit": commit,

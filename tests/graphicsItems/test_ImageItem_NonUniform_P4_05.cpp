@@ -1,7 +1,7 @@
-#include <pyqtgraph/core/ArrayView.hpp>
-#include <pyqtgraph/functions.hpp>
-#include <pyqtgraph/graphicsItems/ImageItem.hpp>
-#include <pyqtgraph/graphicsItems/NonUniformImage.hpp>
+#include <cppqtgraph/core/ArrayView.hpp>
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/graphicsItems/ImageItem.hpp>
+#include <cppqtgraph/graphicsItems/NonUniformImage.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QDir>
@@ -25,8 +25,8 @@
 #include <string_view>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P4_05_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_05_ARTIFACT_DIR "artifacts/P4.05"
+#ifndef CPPQTGRAPH_P4_05_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_05_ARTIFACT_DIR "artifacts/P4.05"
 #endif
 
 namespace {
@@ -101,9 +101,9 @@ bool expectColor(const QImage& image, int x, int y, const QColor& expected)
     return true;
 }
 
-pyqtgraph::ImageLookupTable lutView(const std::vector<std::uint8_t>& lut, std::size_t channels)
+cppqtgraph::ImageLookupTable lutView(const std::vector<std::uint8_t>& lut, std::size_t channels)
 {
-    return pyqtgraph::ImageLookupTable{lut.data(), lut.size() / channels, channels, static_cast<std::ptrdiff_t>(channels), 1};
+    return cppqtgraph::ImageLookupTable{lut.data(), lut.size() / channels, channels, static_cast<std::ptrdiff_t>(channels), 1};
 }
 
 bool throwsInvalidArgument(auto&& callable)
@@ -121,9 +121,9 @@ bool throwsInvalidArgument(auto&& callable)
 
 bool exerciseImageItemLevelsLuts(const QString& artifactDir)
 {
-    using pyqtgraph::ImageLevelRange;
-    using pyqtgraph::core::ArrayView;
-    using pyqtgraph::graphicsItems::ImageItem;
+    using cppqtgraph::ImageLevelRange;
+    using cppqtgraph::core::ArrayView;
+    using cppqtgraph::graphicsItems::ImageItem;
 
     // P4.05 oracle: deterministic uint8, col-major display, non-contiguous input stride, copied data, scalar levels.
     std::array<std::uint8_t, 9> padded{{0, 10, 99, 20, 30, 99, 40, 50, 99}};
@@ -209,9 +209,9 @@ bool exerciseImageItemLevelsLuts(const QString& artifactDir)
 
 bool exerciseNonUniformImage(const QString& artifactDir)
 {
-    using pyqtgraph::ImageLevelRange;
-    using pyqtgraph::core::ArrayView;
-    using pyqtgraph::graphicsItems::NonUniformImage;
+    using cppqtgraph::ImageLevelRange;
+    using cppqtgraph::core::ArrayView;
+    using cppqtgraph::graphicsItems::NonUniformImage;
 
     const std::array<double, 3> x{{0.0, 2.0, 5.0}};
     const std::array<double, 3> y{{0.0, 1.0, 3.0}};
@@ -276,7 +276,7 @@ bool exerciseNonUniformImage(const QString& artifactDir)
 
 bool runP405()
 {
-    const QString artifactDir = QString::fromUtf8(PYQTGRAPH_CPP_P4_05_ARTIFACT_DIR);
+    const QString artifactDir = QString::fromUtf8(CPPQTGRAPH_P4_05_ARTIFACT_DIR);
     CHECK(ensureDirectory(artifactDir));
 
     const bool imageItemPassed = exerciseImageItemLevelsLuts(artifactDir);

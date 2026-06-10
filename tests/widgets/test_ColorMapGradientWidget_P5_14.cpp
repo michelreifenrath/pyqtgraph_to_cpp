@@ -1,8 +1,8 @@
-#include <pyqtgraph/colormap.hpp>
-#include <pyqtgraph/graphicsItems/GradientEditorItem.hpp>
-#include <pyqtgraph/widgets/ColorMapWidget.hpp>
-#include <pyqtgraph/widgets/GradientWidget.hpp>
-#include <pyqtgraph/widgets/GraphicsView.hpp>
+#include <cppqtgraph/colormap.hpp>
+#include <cppqtgraph/graphicsItems/GradientEditorItem.hpp>
+#include <cppqtgraph/widgets/ColorMapWidget.hpp>
+#include <cppqtgraph/widgets/GradientWidget.hpp>
+#include <cppqtgraph/widgets/GraphicsView.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -24,12 +24,12 @@
 #include <type_traits>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P5_14_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P5_14_VISUAL_DIFF_DIR "reports/visual-diffs/ColorMapGradientWidget"
+#ifndef CPPQTGRAPH_P5_14_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P5_14_VISUAL_DIFF_DIR "reports/visual-diffs/ColorMapGradientWidget"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P5_14_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P5_14_REPOSITORY_REPORT_DIR "reports/issues/P5.14"
+#ifndef CPPQTGRAPH_P5_14_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P5_14_REPOSITORY_REPORT_DIR "reports/issues/P5.14"
 #endif
 
 namespace {
@@ -156,7 +156,7 @@ void writeTextFile(const QString& path, const QString& text)
 
 QString caseArtifactDir(const QString& caseName)
 {
-    return QStringLiteral(PYQTGRAPH_CPP_P5_14_VISUAL_DIFF_DIR) + QChar('/') + caseName;
+    return QStringLiteral(CPPQTGRAPH_P5_14_VISUAL_DIFF_DIR) + QChar('/') + caseName;
 }
 
 QString normalizedReviewValue(QString value)
@@ -271,8 +271,8 @@ bool writeCaseArtifacts(const QString& caseName,
 
 QImage renderGradientReference()
 {
-    using pyqtgraph::graphicsItems::GradientEditorItem;
-    using pyqtgraph::widgets::GraphicsView;
+    using cppqtgraph::graphicsItems::GradientEditorItem;
+    using cppqtgraph::widgets::GraphicsView;
 
     GraphicsView view;
     view.setCacheMode(QGraphicsView::CacheNone);
@@ -291,7 +291,7 @@ QImage renderGradientReference()
 
 QImage renderGradientWidgetActual()
 {
-    using pyqtgraph::widgets::GradientWidget;
+    using cppqtgraph::widgets::GradientWidget;
 
     GradientWidget widget;
     widget.setMaxDim(gradientHeight);
@@ -306,9 +306,9 @@ QImage renderGradientWidgetActual()
     return widget.grab().toImage();
 }
 
-QImage lookupStripImage(const pyqtgraph::ColorMap& colorMap, int width, int height)
+QImage lookupStripImage(const cppqtgraph::ColorMap& colorMap, int width, int height)
 {
-    const auto lut = colorMap.getLookupTable(0.0, 1.0, static_cast<std::size_t>(width), true, pyqtgraph::ColorMap::OutputMode::Byte);
+    const auto lut = colorMap.getLookupTable(0.0, 1.0, static_cast<std::size_t>(width), true, cppqtgraph::ColorMap::OutputMode::Byte);
     QImage image(width, height, QImage::Format_RGBA8888);
     image.fill(Qt::transparent);
     if (lut.bytes.empty() || lut.rows() == 0 || lut.channels < 3) {
@@ -336,9 +336,9 @@ QImage cropColorMapStrip(const QImage& image)
     return image.copy(4 + labelSkip, 4, compareWidth, stripHeight);
 }
 
-QImage renderColorMapWidgetReference(const pyqtgraph::ColorMap& colorMap)
+QImage renderColorMapWidgetReference(const cppqtgraph::ColorMap& colorMap)
 {
-    using pyqtgraph::widgets::ColorMapWidget;
+    using cppqtgraph::widgets::ColorMapWidget;
 
     constexpr int stripHeight = 16;
     const int stripWidth = std::max(32, colorMapWidgetWidth - 8);
@@ -359,10 +359,10 @@ QImage renderColorMapWidgetReference(const pyqtgraph::ColorMap& colorMap)
     return cropColorMapStrip(image);
 }
 
-QImage renderColorMapWidgetActual(const pyqtgraph::ColorMap& colorMap)
+QImage renderColorMapWidgetActual(const cppqtgraph::ColorMap& colorMap)
 {
-    using pyqtgraph::widgets::ColorMapFieldOptions;
-    using pyqtgraph::widgets::ColorMapWidget;
+    using cppqtgraph::widgets::ColorMapFieldOptions;
+    using cppqtgraph::widgets::ColorMapWidget;
 
     ColorMapWidget widget;
     ColorMapFieldOptions options;
@@ -389,17 +389,17 @@ QImage renderColorMapWidgetActual(const pyqtgraph::ColorMap& colorMap)
 
 bool writeIssueReport()
 {
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P5_14_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P5_14_REPOSITORY_REPORT_DIR);
     CHECK(ensureDirectory(reportDir));
     writeTextFile(reportDir + QStringLiteral("/ColorMapGradientWidget_interaction.json"),
         QStringLiteral(
             "{\n"
             "  \"issue\": \"P5.14\",\n"
-            "  \"classes\": [\"pyqtgraph::widgets::ColorMapWidget\", \"pyqtgraph::widgets::GradientWidget\"],\n"
+            "  \"classes\": [\"cppqtgraph::widgets::ColorMapWidget\", \"cppqtgraph::widgets::GradientWidget\"],\n"
             "  \"reference\": \"pyqtgraph-0.14.0 pyqtgraph/widgets/ColorMapWidget.py; GradientWidget.py\",\n"
-            "  \"manifest_targets\": [\"include/pyqtgraph/widgets/ColorMapWidget.hpp\", \"src/pyqtgraph/widgets/ColorMapWidget.cpp\", \"include/pyqtgraph/widgets/GradientWidget.hpp\", \"src/pyqtgraph/widgets/GradientWidget.cpp\"],\n"
+            "  \"manifest_targets\": [\"include/cppqtgraph/widgets/ColorMapWidget.hpp\", \"src/cppqtgraph/widgets/ColorMapWidget.cpp\", \"include/cppqtgraph/widgets/GradientWidget.hpp\", \"src/cppqtgraph/widgets/GradientWidget.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.14 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"pyqtgraph_cpp_widgets_colormapgradientwidget_p5_14\"},\n"
+            "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.14 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_colormapgradientwidget_p5_14\"},\n"
             "  \"checks\": [\"GradientWidget wraps GradientEditorItem with signal forwarding and orientation sizing\", \"ColorMapWidget range/enum mapping with save/restore\", \"deterministic visual reference-vs-actual pixels\"],\n"
             "  \"visual_artifacts\": {\"root\": \"reports/visual-diffs/ColorMapGradientWidget\", \"cases\": [\"GradientWidget\", \"ColorMapWidget-range\"], \"per_case_files\": [\"reference.png\", \"actual.png\", \"diff.png\", \"metrics.json\", \"gpt5_vision_review.md\"]},\n"
             "  \"validation_commands\": [{\"command\": \"cmake --preset dev\", \"exit_code\": 0}, {\"command\": \"cmake --build --preset dev --parallel\", \"exit_code\": 0}, {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.14 --output-on-failure\", \"exit_code\": 0}, {\"command\": \"python3 -m pytest -q\", \"exit_code\": 0}, {\"command\": \"git diff --check\", \"exit_code\": 0}]\n"
@@ -416,9 +416,9 @@ bool writeIssueReport()
 
 bool testApiShape()
 {
-    using pyqtgraph::widgets::ColorMapWidget;
-    using pyqtgraph::widgets::GradientWidget;
-    using pyqtgraph::widgets::GraphicsView;
+    using cppqtgraph::widgets::ColorMapWidget;
+    using cppqtgraph::widgets::GradientWidget;
+    using cppqtgraph::widgets::GraphicsView;
 
     static_assert(std::is_base_of_v<GraphicsView, GradientWidget>);
     static_assert(std::is_base_of_v<QWidget, ColorMapWidget>);
@@ -436,8 +436,8 @@ bool testApiShape()
 
 bool testGradientWidgetBehavior()
 {
-    using pyqtgraph::graphicsItems::GradientEditorState;
-    using pyqtgraph::widgets::GradientWidget;
+    using cppqtgraph::graphicsItems::GradientEditorState;
+    using cppqtgraph::widgets::GradientWidget;
 
     GradientWidget widget(nullptr, QStringLiteral("bottom"));
     QSignalSpy changedSpy(&widget, &GradientWidget::sigGradientChanged);
@@ -466,15 +466,15 @@ bool testGradientWidgetBehavior()
     CHECK(widget.maxDim() == 40);
     CHECK(widget.width() == 40);
 
-    const pyqtgraph::ColorMap map = widget.colorMap();
+    const cppqtgraph::ColorMap map = widget.colorMap();
     CHECK(map.size() >= 2);
     return true;
 }
 
 bool testColorMapWidgetMapping()
 {
-    using pyqtgraph::widgets::ColorMapFieldOptions;
-    using pyqtgraph::widgets::ColorMapWidget;
+    using cppqtgraph::widgets::ColorMapFieldOptions;
+    using cppqtgraph::widgets::ColorMapWidget;
 
     ColorMapWidget widget;
     QSignalSpy spy(&widget, &ColorMapWidget::sigColorMapChanged);
@@ -499,11 +499,11 @@ bool testColorMapWidgetMapping()
     CHECK(spy.count() >= 1);
     CHECK(widget.fieldNames().size() == 1);
 
-    pyqtgraph::widgets::RangeColorMapMapping* rangeMapping = widget.addColorMap(QStringLiteral("value"));
+    cppqtgraph::widgets::RangeColorMapMapping* rangeMapping = widget.addColorMap(QStringLiteral("value"));
     CHECK(rangeMapping != nullptr);
     CHECK(widget.rangeMappings().size() == 1);
 
-    pyqtgraph::widgets::ColorMapRecordArray rangeData;
+    cppqtgraph::widgets::ColorMapRecordArray rangeData;
     rangeData.push_back({{QStringLiteral("value"), 5.0}});
     rangeData.push_back({{QStringLiteral("value"), 10.0}});
     rangeData.push_back({{QStringLiteral("value"), std::numeric_limits<double>::quiet_NaN()}});
@@ -538,7 +538,7 @@ bool testColorMapWidgetMapping()
     CHECK(!restoredChannels.rangeMappings()[0].channels.alpha);
     CHECK(restoredChannels.rangeMappings()[0].nanColor == QColor(10, 20, 30));
 
-    rangeMapping->operation = pyqtgraph::widgets::ColorMapOperation::Set;
+    rangeMapping->operation = cppqtgraph::widgets::ColorMapOperation::Set;
     const auto setChannelBytes = widget.mapBytes(rangeData);
     CHECK(setChannelBytes[0][0] >= 120 && setChannelBytes[0][0] <= 140);
     CHECK(setChannelBytes[0][1] == 0);
@@ -547,7 +547,7 @@ bool testColorMapWidgetMapping()
     CHECK(setChannelBytes[2][1] == 0);
     CHECK(setChannelBytes[2][2] == 0);
 
-    rangeMapping->operation = pyqtgraph::widgets::ColorMapOperation::Overlay;
+    rangeMapping->operation = cppqtgraph::widgets::ColorMapOperation::Overlay;
     const auto overlayChannelBytes = widget.mapBytes(rangeData);
     CHECK(overlayChannelBytes[0][0] >= 120 && overlayChannelBytes[0][0] <= 140);
     CHECK(overlayChannelBytes[0][1] == 0);
@@ -559,7 +559,7 @@ bool testColorMapWidgetMapping()
     ColorMapWidget duplicateWidget;
     duplicateWidget.setFields({{QStringLiteral("value"), rangeField}});
     duplicateWidget.addColorMap(QStringLiteral("value"));
-    pyqtgraph::widgets::RangeColorMapMapping* duplicateMapping = duplicateWidget.addColorMap(QStringLiteral("value"));
+    cppqtgraph::widgets::RangeColorMapMapping* duplicateMapping = duplicateWidget.addColorMap(QStringLiteral("value"));
     CHECK(duplicateMapping != nullptr);
     CHECK(duplicateWidget.rangeMappings().size() == 2);
     CHECK(duplicateWidget.rangeMappings()[0].name == QStringLiteral("value"));
@@ -578,17 +578,17 @@ bool testColorMapWidgetMapping()
 
     ColorMapWidget orderWidget;
     orderWidget.setFields({{QStringLiteral("value"), rangeField}});
-    pyqtgraph::widgets::RangeColorMapMapping* firstOrderedMapping =
+    cppqtgraph::widgets::RangeColorMapMapping* firstOrderedMapping =
         orderWidget.addColorMap(QStringLiteral("value"), QStringLiteral("z_first"));
     CHECK(firstOrderedMapping != nullptr);
-    firstOrderedMapping->operation = pyqtgraph::widgets::ColorMapOperation::Overlay;
-    firstOrderedMapping->colorMap = pyqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 0, 0)});
-    pyqtgraph::widgets::RangeColorMapMapping* secondOrderedMapping =
+    firstOrderedMapping->operation = cppqtgraph::widgets::ColorMapOperation::Overlay;
+    firstOrderedMapping->colorMap = cppqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 0, 0)});
+    cppqtgraph::widgets::RangeColorMapMapping* secondOrderedMapping =
         orderWidget.addColorMap(QStringLiteral("value"), QStringLiteral("a_second"));
     CHECK(secondOrderedMapping != nullptr);
-    secondOrderedMapping->operation = pyqtgraph::widgets::ColorMapOperation::Set;
-    secondOrderedMapping->colorMap = pyqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 255), QColor(0, 0, 255)});
-    pyqtgraph::widgets::ColorMapRecordArray orderData;
+    secondOrderedMapping->operation = cppqtgraph::widgets::ColorMapOperation::Set;
+    secondOrderedMapping->colorMap = cppqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 255), QColor(0, 0, 255)});
+    cppqtgraph::widgets::ColorMapRecordArray orderData;
     orderData.push_back({{QStringLiteral("value"), 5.0}});
     const auto orderedBytes = orderWidget.mapBytes(orderData);
     const QVariantMap orderedSaved = orderWidget.saveState();
@@ -619,10 +619,10 @@ bool testColorMapWidgetMapping()
     mixedOrderWidget.setFields({{QStringLiteral("value"), rangeSecondField}, {QStringLiteral("category"), enumFirstField}});
     mixedOrderWidget.addColorMap(QStringLiteral("category"), QStringLiteral("enum_first"));
     CHECK(mixedOrderWidget.enumMappings().size() == 1);
-    pyqtgraph::widgets::RangeColorMapMapping* rangeSecondMapping =
+    cppqtgraph::widgets::RangeColorMapMapping* rangeSecondMapping =
         mixedOrderWidget.addColorMap(QStringLiteral("value"), QStringLiteral("range_second"));
     CHECK(rangeSecondMapping != nullptr);
-    pyqtgraph::widgets::ColorMapRecordArray mixedData;
+    cppqtgraph::widgets::ColorMapRecordArray mixedData;
     mixedData.push_back({{QStringLiteral("value"), 5.0}, {QStringLiteral("category"), 1.0}});
     const auto mixedBytes = mixedOrderWidget.mapBytes(mixedData);
     CHECK(mixedBytes.size() == 1);
@@ -655,12 +655,12 @@ bool testColorMapWidgetMapping()
     CHECK(fieldDefaultsSaved.value(QStringLiteral("fields")).toMap().value(QStringLiteral("value")).toMap().contains(QStringLiteral("defaults")));
     ColorMapWidget fieldDefaultsRestored;
     fieldDefaultsRestored.restoreState(fieldDefaultsSaved);
-    pyqtgraph::widgets::RangeColorMapMapping* restoredDefaultsMapping =
+    cppqtgraph::widgets::RangeColorMapMapping* restoredDefaultsMapping =
         fieldDefaultsRestored.addColorMap(QStringLiteral("value"));
     CHECK(restoredDefaultsMapping != nullptr);
     CHECK(restoredDefaultsMapping->minValue == 0.0);
     CHECK(restoredDefaultsMapping->maxValue == 10.0);
-    pyqtgraph::widgets::ColorMapRecordArray defaultsProbe;
+    cppqtgraph::widgets::ColorMapRecordArray defaultsProbe;
     defaultsProbe.push_back({{QStringLiteral("value"), 10.0}});
     const auto defaultsProbeBytes = fieldDefaultsRestored.mapBytes(defaultsProbe);
     CHECK(defaultsProbeBytes[0][0] >= 250);
@@ -676,16 +676,16 @@ bool testColorMapWidgetMapping()
     byteField.defaults.insert(QStringLiteral("colormap"), byteColorMapState);
     byteWidget.setFields({{QStringLiteral("value"), byteField}});
     byteWidget.addColorMap(QStringLiteral("value"));
-    pyqtgraph::widgets::ColorMapRecordArray byteData;
+    cppqtgraph::widgets::ColorMapRecordArray byteData;
     byteData.push_back({{QStringLiteral("value"), 0.5}});
-    const auto byteResult = byteWidget.map(byteData, pyqtgraph::widgets::ColorMapOutputMode::Byte);
+    const auto byteResult = byteWidget.map(byteData, cppqtgraph::widgets::ColorMapOutputMode::Byte);
     CHECK(byteResult.size() == 1);
     CHECK(byteResult[0][0] == static_cast<double>(127) / 255.0);
 
     ColorMapWidget enumWidget;
     enumWidget.setFields({{QStringLiteral("category"), enumField}});
     enumWidget.addColorMap(QStringLiteral("category"));
-    pyqtgraph::widgets::ColorMapRecordArray enumData;
+    cppqtgraph::widgets::ColorMapRecordArray enumData;
     enumData.push_back({{QStringLiteral("category"), 1.0}});
     enumData.push_back({{QStringLiteral("category"), 2.0}});
     const auto enumBytes = enumWidget.mapBytes(enumData);
@@ -697,7 +697,7 @@ bool testColorMapWidgetMapping()
 
 bool testVisualArtifacts()
 {
-    const pyqtgraph::ColorMap colorMap({0.0, 0.5, 1.0}, {QColor(0, 0, 0), QColor(128, 0, 0), QColor(255, 0, 0)});
+    const cppqtgraph::ColorMap colorMap({0.0, 0.5, 1.0}, {QColor(0, 0, 0), QColor(128, 0, 0), QColor(255, 0, 0)});
 
     const QImage gradientReference = renderGradientReference();
     const QImage gradientActual = renderGradientWidgetActual();

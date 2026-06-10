@@ -1,4 +1,4 @@
-#include "../../include/pyqtgraph/colormap.hpp"
+#include "../../include/cppqtgraph/colormap.hpp"
 
 #include <QColor>
 
@@ -11,9 +11,9 @@
 
 namespace {
 
-using MappingMode = pyqtgraph::ColorMap::MappingMode;
-using OutputMode = pyqtgraph::ColorMap::OutputMode;
-using LookupTable = pyqtgraph::ColorMap::LookupTable;
+using MappingMode = cppqtgraph::ColorMap::MappingMode;
+using OutputMode = cppqtgraph::ColorMap::OutputMode;
+using LookupTable = cppqtgraph::ColorMap::LookupTable;
 
 bool check(bool condition, std::string_view expression, std::string_view file, int line)
 {
@@ -92,7 +92,7 @@ double floatAt(const LookupTable& table, std::size_t row, std::size_t channel)
 
 bool testDefaultByteLookupTableDropsOpaqueAlpha()
 {
-    const pyqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 128, 64)});
+    const cppqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 128, 64)});
 
     const LookupTable table = map.getLookupTable(0.0, 1.0, 3);
 
@@ -115,7 +115,7 @@ bool testDefaultByteLookupTableDropsOpaqueAlpha()
 
 bool testAlphaPolicyMatchesPyQtGraphLookupTables()
 {
-    const pyqtgraph::ColorMap transparentMap(
+    const cppqtgraph::ColorMap transparentMap(
         {0.0, 1.0},
         {QColor(0, 0, 0, 255), QColor(255, 0, 0, 128)});
 
@@ -131,7 +131,7 @@ bool testAlphaPolicyMatchesPyQtGraphLookupTables()
     CHECK_SIZE(forcedRgb.channels, std::size_t{3});
     CHECK_SIZE(forcedRgb.bytes.size(), std::size_t{9});
 
-    const pyqtgraph::ColorMap opaqueMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
+    const cppqtgraph::ColorMap opaqueMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
     CHECK(!opaqueMap.usesAlpha());
 
     const LookupTable forcedRgba = opaqueMap.getLookupTable(0.0, 1.0, 2, true);
@@ -144,7 +144,7 @@ bool testAlphaPolicyMatchesPyQtGraphLookupTables()
 
 bool testFloatAndQColorModesUseNormalizedChannels()
 {
-    const pyqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
+    const cppqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
 
     const LookupTable floatTable = map.getLookupTable(0.25, 0.75, 2, true, OutputMode::Float);
     CHECK(floatTable.mode == OutputMode::Float);
@@ -169,7 +169,7 @@ bool testFloatAndQColorModesUseNormalizedChannels()
 
 bool testClippingAndNonDefaultSampling()
 {
-    const pyqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
+    const cppqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
 
     const LookupTable clipped = map.getLookupTable(-1.0, 2.0, 4);
     CHECK_INT(byteAt(clipped, 0, 0), 0);
@@ -186,7 +186,7 @@ bool testClippingAndNonDefaultSampling()
 
 bool testStopsAreSortedBeforeInterpolation()
 {
-    const pyqtgraph::ColorMap map({1.0, 0.0}, {QColor(255, 255, 255), QColor(0, 0, 0)});
+    const cppqtgraph::ColorMap map({1.0, 0.0}, {QColor(255, 255, 255), QColor(0, 0, 0)});
 
     CHECK_SIZE(map.positions().size(), std::size_t{2});
     CHECK_NEAR(map.positions()[0], 0.0, 0.0);
@@ -201,7 +201,7 @@ bool testStopsAreSortedBeforeInterpolation()
 
 bool testRepeatMappingWrapsSamplesBeforeInterpolation()
 {
-    pyqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
+    cppqtgraph::ColorMap map({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
     map.setMappingMode(MappingMode::Repeat);
 
     const LookupTable table = map.getLookupTable(0.75, 1.25, 3);

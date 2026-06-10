@@ -1,4 +1,4 @@
-#include "../../include/pyqtgraph/colormap.hpp"
+#include "../../include/cppqtgraph/colormap.hpp"
 
 #include <QColor>
 #include <QString>
@@ -66,7 +66,7 @@ bool testConstructionStoresStopsAndName()
     const std::vector<double> positions{0.0, 0.5, 1.0};
     const std::vector<QColor> colors{QColor(0, 0, 0), QColor(128, 64, 32), QColor(255, 255, 255)};
 
-    const pyqtgraph::ColorMap map(positions, colors, QStringLiteral("test-map"));
+    const cppqtgraph::ColorMap map(positions, colors, QStringLiteral("test-map"));
 
     CHECK_EQ(map.size(), positions.size());
     CHECK(!map.empty());
@@ -79,7 +79,7 @@ bool testConstructionStoresStopsAndName()
 
 bool testDefaultNameIsEmpty()
 {
-    const pyqtgraph::ColorMap map({0.0, 1.0}, {QColor(1, 2, 3), QColor(4, 5, 6)});
+    const cppqtgraph::ColorMap map({0.0, 1.0}, {QColor(1, 2, 3), QColor(4, 5, 6)});
 
     CHECK_EQ(map.size(), std::size_t{2});
     CHECK(map.name().isEmpty());
@@ -89,9 +89,9 @@ bool testDefaultNameIsEmpty()
 
 bool testValidationErrors()
 {
-    CHECK(checkThrowsInvalidArgument([] { (void)pyqtgraph::ColorMap({}, {}); }, "empty stops"));
+    CHECK(checkThrowsInvalidArgument([] { (void)cppqtgraph::ColorMap({}, {}); }, "empty stops"));
     CHECK(checkThrowsInvalidArgument(
-        [] { (void)pyqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0)}); },
+        [] { (void)cppqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0)}); },
         "mismatched stop counts"));
 
     return true;

@@ -1,6 +1,6 @@
-#include <pyqtgraph/GraphicsScene/GraphicsScene.hpp>
-#include <pyqtgraph/GraphicsScene/mouseEvents.hpp>
-#include <pyqtgraph/graphicsItems/GradientEditorItem.hpp>
+#include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
+#include <cppqtgraph/graphicsItems/GradientEditorItem.hpp>
 
 #include <QtCore/QByteArray>
 #include <QtCore/QCoreApplication>
@@ -25,28 +25,28 @@
 #include <memory>
 #include <string_view>
 
-#ifndef PYQTGRAPH_CPP_P4_24_ARTIFACT_DIR
-#define PYQTGRAPH_CPP_P4_24_ARTIFACT_DIR "artifacts/P4.24"
+#ifndef CPPQTGRAPH_P4_24_ARTIFACT_DIR
+#define CPPQTGRAPH_P4_24_ARTIFACT_DIR "artifacts/P4.24"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_24_VISUAL_DIFF_DIR
-#define PYQTGRAPH_CPP_P4_24_VISUAL_DIFF_DIR "reports/visual-diffs/GradientEditorItem"
+#ifndef CPPQTGRAPH_P4_24_VISUAL_DIFF_DIR
+#define CPPQTGRAPH_P4_24_VISUAL_DIFF_DIR "reports/visual-diffs/GradientEditorItem"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_24_GPT_REVIEW_REPORT
-#define PYQTGRAPH_CPP_P4_24_GPT_REVIEW_REPORT "reports/visual-diffs/GradientEditorItem/gpt5_vision_review.md"
+#ifndef CPPQTGRAPH_P4_24_GPT_REVIEW_REPORT
+#define CPPQTGRAPH_P4_24_GPT_REVIEW_REPORT "reports/visual-diffs/GradientEditorItem/gpt5_vision_review.md"
 #endif
 
-#ifndef PYQTGRAPH_CPP_P4_24_REPOSITORY_REPORT_DIR
-#define PYQTGRAPH_CPP_P4_24_REPOSITORY_REPORT_DIR "reports/issues/P4.24"
+#ifndef CPPQTGRAPH_P4_24_REPOSITORY_REPORT_DIR
+#define CPPQTGRAPH_P4_24_REPOSITORY_REPORT_DIR "reports/issues/P4.24"
 #endif
 
-using pyqtgraph::graphicsItems::GradientEditorItem;
-using pyqtgraph::graphicsItems::GradientEditorState;
-using pyqtgraph::graphicsItems::Tick;
-using pyqtgraph::GraphicsScene::GraphicsScene;
-using pyqtgraph::GraphicsScene::MouseClickEvent;
-using pyqtgraph::GraphicsScene::MouseDragEvent;
+using cppqtgraph::graphicsItems::GradientEditorItem;
+using cppqtgraph::graphicsItems::GradientEditorState;
+using cppqtgraph::graphicsItems::Tick;
+using cppqtgraph::GraphicsScene::GraphicsScene;
+using cppqtgraph::GraphicsScene::MouseClickEvent;
+using cppqtgraph::GraphicsScene::MouseDragEvent;
 
 namespace {
 
@@ -311,7 +311,7 @@ struct SemanticReviewStatus {
 SemanticReviewStatus readGptVisualReview()
 {
     SemanticReviewStatus status;
-    status.path = QStringLiteral(PYQTGRAPH_CPP_P4_24_GPT_REVIEW_REPORT);
+    status.path = QStringLiteral(CPPQTGRAPH_P4_24_GPT_REVIEW_REPORT);
     if (!QFile::exists(status.path)) {
         return status;
     }
@@ -354,7 +354,7 @@ bool writeTextFile(const QString& path, const QString& text)
 
 bool writeArtifacts(const QImage& reference, const QImage& actual, const PixelMetrics& metrics)
 {
-    const QString visualDir = QStringLiteral(PYQTGRAPH_CPP_P4_24_VISUAL_DIFF_DIR);
+    const QString visualDir = QStringLiteral(CPPQTGRAPH_P4_24_VISUAL_DIFF_DIR);
     CHECK(QDir().mkpath(visualDir));
     QImage diff;
     const PixelMetrics computed = compareImages(reference, actual, diff);
@@ -416,7 +416,7 @@ bool testDefaultStateAndLookup()
     CHECK(mid.green() == 0);
     CHECK(mid.blue() == 0);
 
-    const pyqtgraph::ColorMap map = editor.colorMap();
+    const cppqtgraph::ColorMap map = editor.colorMap();
     CHECK(map.size() == 2);
     CHECK(map.positions().front() == 0.0);
     CHECK(map.positions().back() == 1.0);
@@ -575,17 +575,17 @@ bool writeInteractionReport(const GradientEditorItem& editor)
     report.insert(QStringLiteral("reference"),
                   QStringLiteral("pyqtgraph-0.14.0 a20028b98294b9cc8770f2015a92eb342224b788 pyqtgraph/graphicsItems/GradientEditorItem.py"));
     report.insert(QStringLiteral("manifest_targets"),
-                  QJsonArray{QStringLiteral("include/pyqtgraph/graphicsItems/GradientEditorItem.hpp"),
-                             QStringLiteral("src/pyqtgraph/graphicsItems/GradientEditorItem.cpp")});
+                  QJsonArray{QStringLiteral("include/cppqtgraph/graphicsItems/GradientEditorItem.hpp"),
+                             QStringLiteral("src/cppqtgraph/graphicsItems/GradientEditorItem.cpp")});
     report.insert(QStringLiteral("shared_wiring"), QJsonArray{QStringLiteral("CMakeLists.txt"), QStringLiteral("tests/CMakeLists.txt")});
     report.insert(QStringLiteral("tdd_baseline_failure"),
-                  QJsonObject{{QStringLiteral("command"), QStringLiteral("cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24")},
+                  QJsonObject{{QStringLiteral("command"), QStringLiteral("cmake --build --preset dev --target cppqtgraph_graphicsitems_gradienteditoritem_p4_24")},
                               {QStringLiteral("exit_code"), 2},
                               {QStringLiteral("expected"), QStringLiteral("compile failed before GradientEditorItem implementation was added")}});
     report.insert(QStringLiteral("focused_proof"),
                   QJsonObject{{QStringLiteral("command"), QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.24 --output-on-failure")},
                               {QStringLiteral("exit_code"), 0},
-                              {QStringLiteral("test_executable"), QStringLiteral("pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24")}});
+                              {QStringLiteral("test_executable"), QStringLiteral("cppqtgraph_graphicsitems_gradienteditoritem_p4_24")}});
     report.insert(QStringLiteral("checks"),
                   QJsonArray{QStringLiteral("default state and RGB lookup"), QStringLiteral("left-click stop add"),
                              QStringLiteral("drag move with clamp"), QStringLiteral("right-click remove guard"),
@@ -601,18 +601,18 @@ bool writeInteractionReport(const GradientEditorItem& editor)
                   QJsonArray{QStringLiteral("cmake --preset dev"), QStringLiteral("cmake --build --preset dev --parallel"),
                              QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.24 --output-on-failure"),
                              QStringLiteral("python3 -m pytest -q"), QStringLiteral("git diff --check"),
-                             QStringLiteral("python3 oracle/scripts/generate_class_inventory.py --check"),
+                             QStringLiteral("scripts/run_changed_examples --dry-run SimplePlot ImageItem"),
                              QStringLiteral("git diff --name-only origin/main...HEAD")});
-    report.insert(QStringLiteral("manifest_dashboard"), QStringLiteral("updated: port_manifest.yaml generated class inventory verified"));
+    report.insert(QStringLiteral("example_manifest"), QStringLiteral("not_applicable: no example_manifest.yaml status fields changed for this focused item test"));
     report.insert(QStringLiteral("ticks"), tickListJson(editor));
     report.insert(QStringLiteral("colorMode"), editor.colorMode());
-    const QString artifactDir = QStringLiteral(PYQTGRAPH_CPP_P4_24_ARTIFACT_DIR);
+    const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_24_ARTIFACT_DIR);
     CHECK(QDir().mkpath(artifactDir));
     QFile file(artifactDir + QStringLiteral("/GradientEditorItem_interaction.json"));
     CHECK(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
     file.write(QJsonDocument(report).toJson(QJsonDocument::Indented));
 
-    const QString reportDir = QStringLiteral(PYQTGRAPH_CPP_P4_24_REPOSITORY_REPORT_DIR);
+    const QString reportDir = QStringLiteral(CPPQTGRAPH_P4_24_REPOSITORY_REPORT_DIR);
     CHECK(QDir().mkpath(reportDir));
     CHECK(writeTextFile(reportDir + QStringLiteral("/GradientEditorItem_interaction.json"),
         QString::fromUtf8(QJsonDocument(report).toJson(QJsonDocument::Indented))));

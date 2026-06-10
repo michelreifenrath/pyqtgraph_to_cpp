@@ -3,15 +3,15 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
-#include <pyqtgraph/graphicsItems/PlotCurveItem.hpp>
-#include <pyqtgraph/widgets/PlotWidget.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtWidgets/QApplication>
 
 #include <memory>
 #include <vector>
 
-namespace pyqtgraph::examples {
+namespace cppqtgraph::examples {
 
 struct SimplePlotExample {
     std::unique_ptr<widgets::PlotWidget> widget;
@@ -57,13 +57,13 @@ SimplePlotExample createSimplePlotExample()
     return {.widget = std::move(widget), .curve = curve};
 }
 
-} // namespace pyqtgraph::examples
+} // namespace cppqtgraph::examples
 
-#ifndef PYQTGRAPH_CPP_SIMPLEPLOT_NO_MAIN
+#ifndef CPPQTGRAPH_SIMPLEPLOT_NO_MAIN
 int main(int argc, char** argv)
 {
     QApplication application(argc, argv);
-    auto example = pyqtgraph::examples::createSimplePlotExample();
+    auto example = cppqtgraph::examples::createSimplePlotExample();
     example.widget->show();
     return QApplication::exec();
 }

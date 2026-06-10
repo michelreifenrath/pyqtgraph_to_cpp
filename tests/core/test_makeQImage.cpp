@@ -1,4 +1,4 @@
-#include "../../include/pyqtgraph/functions_qimage.hpp"
+#include "../../include/cppqtgraph/functions_qimage.hpp"
 
 #include <QColor>
 #include <QImage>
@@ -67,9 +67,9 @@ bool checkThrowsInvalidArgument(Callable callable, std::string_view label)
 bool testGrayscaleTransposeDefault()
 {
     const std::array<std::uint8_t, 6> data{10, 20, 30, 40, 50, 60};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
 
-    const QImage image = pyqtgraph::makeQImage(view);
+    const QImage image = cppqtgraph::makeQImage(view);
     CHECK(image.width() == 2);
     CHECK(image.height() == 3);
     CHECK(image.format() == QImage::Format_Grayscale8);
@@ -83,9 +83,9 @@ bool testGrayscaleTransposeDefault()
 bool testBgrOrderMatchesPyQtGraph()
 {
     const std::array<std::uint8_t, 12> data{1, 2, 3, 10, 20, 30, 0, 128, 255, 7, 8, 9};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 3});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 3});
 
-    const QImage image = pyqtgraph::makeQImage(view);
+    const QImage image = cppqtgraph::makeQImage(view);
     CHECK(image.width() == 2);
     CHECK(image.height() == 2);
     CHECK(image.format() == QImage::Format_RGB32);
@@ -99,9 +99,9 @@ bool testBgrOrderMatchesPyQtGraph()
 bool testBgraPreservesAlpha()
 {
     const std::array<std::uint8_t, 16> data{1, 2, 3, 0, 10, 20, 30, 128, 0, 128, 255, 255, 7, 8, 9, 64};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 4});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {2, 2, 4});
 
-    const QImage image = pyqtgraph::makeQImage(view);
+    const QImage image = cppqtgraph::makeQImage(view);
     CHECK(image.width() == 2);
     CHECK(image.height() == 2);
     CHECK(image.format() == QImage::Format_ARGB32);
@@ -115,11 +115,11 @@ bool testBgraPreservesAlpha()
 bool testAlphaFalseDropsBgraAlpha()
 {
     const std::array<std::uint8_t, 4> data{1, 2, 3, 4};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {1, 1, 4});
-    pyqtgraph::MakeQImageOptions options;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {1, 1, 4});
+    cppqtgraph::MakeQImageOptions options;
     options.alpha = false;
 
-    const QImage image = pyqtgraph::makeQImage(view, options);
+    const QImage image = cppqtgraph::makeQImage(view, options);
     CHECK(image.width() == 1);
     CHECK(image.height() == 1);
     CHECK(image.format() == QImage::Format_RGB32);
@@ -130,11 +130,11 @@ bool testAlphaFalseDropsBgraAlpha()
 bool testAlphaTrueAddsOpaqueAlphaForBgr()
 {
     const std::array<std::uint8_t, 3> data{1, 2, 3};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {1, 1, 3});
-    pyqtgraph::MakeQImageOptions options;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {1, 1, 3});
+    cppqtgraph::MakeQImageOptions options;
     options.alpha = true;
 
-    const QImage image = pyqtgraph::makeQImage(view, options);
+    const QImage image = cppqtgraph::makeQImage(view, options);
     CHECK(image.width() == 1);
     CHECK(image.height() == 1);
     CHECK(image.format() == QImage::Format_ARGB32);
@@ -145,11 +145,11 @@ bool testAlphaTrueAddsOpaqueAlphaForBgr()
 bool testTransposeFalse()
 {
     const std::array<std::uint8_t, 6> data{10, 20, 30, 40, 50, 60};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
-    pyqtgraph::MakeQImageOptions options;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
+    cppqtgraph::MakeQImageOptions options;
     options.transpose = false;
 
-    const QImage image = pyqtgraph::makeQImage(view, options);
+    const QImage image = cppqtgraph::makeQImage(view, options);
     CHECK(image.width() == 3);
     CHECK(image.height() == 2);
     CHECK_PIXEL(image, 0, 0, 10, 10, 10, 255);
@@ -162,11 +162,11 @@ bool testTransposeFalse()
 bool testStridedInputCopiesElements()
 {
     const std::array<std::uint8_t, 12> data{1, 99, 2, 99, 3, 99, 4, 99, 5, 99, 6, 99};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3}, {6, 2});
-    pyqtgraph::MakeQImageOptions options;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3}, {6, 2});
+    cppqtgraph::MakeQImageOptions options;
     options.transpose = false;
 
-    QImage image = pyqtgraph::makeQImage(view, options);
+    QImage image = cppqtgraph::makeQImage(view, options);
     CHECK(image.width() == 3);
     CHECK(image.height() == 2);
     CHECK_PIXEL(image, 0, 0, 1, 1, 1, 255);
@@ -180,9 +180,9 @@ bool testStridedInputCopiesElements()
 bool testCopyTrueDetachesSource()
 {
     std::array<std::uint8_t, 6> data{10, 20, 30, 40, 50, 60};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 3});
 
-    const QImage image = pyqtgraph::makeQImage(view);
+    const QImage image = cppqtgraph::makeQImage(view);
     CHECK_PIXEL(image, 1, 0, 40, 40, 40, 255);
 
     data[3] = 99;
@@ -193,12 +193,12 @@ bool testCopyTrueDetachesSource()
 bool testCopyFalseSharesCompatibleGrayscale()
 {
     alignas(4) std::array<std::uint8_t, 8> data{10, 20, 30, 40, 50, 60, 70, 80};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 4});
-    pyqtgraph::MakeQImageOptions options;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {2, 4});
+    cppqtgraph::MakeQImageOptions options;
     options.transpose = false;
     options.copy = false;
 
-    const QImage image = pyqtgraph::makeQImage(view, options);
+    const QImage image = cppqtgraph::makeQImage(view, options);
     CHECK(image.width() == 4);
     CHECK(image.height() == 2);
     CHECK(image.format() == QImage::Format_Grayscale8);
@@ -213,11 +213,11 @@ bool testCopyFalseSharesCompatibleGrayscale()
 bool testCopyFalseSharesCompatibleTransposedGrayscale()
 {
     alignas(4) std::array<std::uint8_t, 8> data{10, 20, 30, 40, 50, 60, 70, 80};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {4, 2}, {1, 4});
-    pyqtgraph::MakeQImageOptions options;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 2> view(data.data(), {4, 2}, {1, 4});
+    cppqtgraph::MakeQImageOptions options;
     options.copy = false;
 
-    const QImage image = pyqtgraph::makeQImage(view, options);
+    const QImage image = cppqtgraph::makeQImage(view, options);
     CHECK(image.width() == 4);
     CHECK(image.height() == 2);
     CHECK(image.format() == QImage::Format_Grayscale8);
@@ -232,12 +232,12 @@ bool testCopyFalseSharesCompatibleTransposedGrayscale()
 bool testCopyFalseSharesCompatibleBgra()
 {
     alignas(4) std::array<std::uint8_t, 8> data{1, 2, 3, 4, 10, 20, 30, 128};
-    const pyqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {1, 2, 4});
-    pyqtgraph::MakeQImageOptions options;
+    const cppqtgraph::core::ArrayView<const std::uint8_t, 3> view(data.data(), {1, 2, 4});
+    cppqtgraph::MakeQImageOptions options;
     options.transpose = false;
     options.copy = false;
 
-    const QImage image = pyqtgraph::makeQImage(view, options);
+    const QImage image = cppqtgraph::makeQImage(view, options);
     CHECK(image.width() == 2);
     CHECK(image.height() == 1);
     CHECK(image.format() == QImage::Format_ARGB32);
@@ -253,27 +253,27 @@ bool testCopyFalseSharesCompatibleBgra()
 bool testCopyFalseRejectsUnsupportedInputs()
 {
     const std::array<std::uint8_t, 16> data{};
-    pyqtgraph::MakeQImageOptions options;
+    cppqtgraph::MakeQImageOptions options;
     options.copy = false;
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {2, 2}), options); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {2, 2}), options); },
         "copy=false default-transposed contiguous rank-2 input"));
 
     options.transpose = false;
     CHECK(checkThrowsInvalidArgument(
         [&] {
-            (void)pyqtgraph::makeQImage(
-                pyqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {2, 2}, {4, 2}), options);
+            (void)cppqtgraph::makeQImage(
+                cppqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {2, 2}, {4, 2}), options);
         },
         "copy=false strided rank-2 input"));
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 3}), options); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {1, 1, 3}), options); },
         "copy=false three-channel input"));
 
     options.transpose = true;
     options.alpha = std::nullopt;
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 4}), options); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 4}), options); },
         "copy=false default-transposed four-channel input"));
     return true;
 }
@@ -282,22 +282,22 @@ bool testInvalidInputs()
 {
     const std::array<std::uint8_t, 20> data{};
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 1})); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 1})); },
         "one channel rank-3 input"));
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 2})); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 2})); },
         "two channels"));
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 5})); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 3>(data.data(), {2, 2, 5})); },
         "five channels"));
     CHECK(checkThrowsInvalidArgument(
-        [] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 2>(nullptr, {1, 1})); },
+        [] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 2>(nullptr, {1, 1})); },
         "null data"));
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {0, 1})); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {0, 1})); },
         "zero first extent"));
     CHECK(checkThrowsInvalidArgument(
-        [&] { (void)pyqtgraph::makeQImage(pyqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {1, 0})); },
+        [&] { (void)cppqtgraph::makeQImage(cppqtgraph::core::ArrayView<const std::uint8_t, 2>(data.data(), {1, 0})); },
         "zero second extent"));
     return true;
 }

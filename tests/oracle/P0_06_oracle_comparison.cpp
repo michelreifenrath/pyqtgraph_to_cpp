@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#ifndef PYQTGRAPH_CPP_P0_06_FIXTURE
-#define PYQTGRAPH_CPP_P0_06_FIXTURE "oracle/fixtures/P0_06/probe_contract.json"
+#ifndef CPPQTGRAPH_P0_06_FIXTURE
+#define CPPQTGRAPH_P0_06_FIXTURE "oracle/fixtures/P0_06/probe_contract.json"
 #endif
 
 namespace {
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    const auto fixture_path = std::filesystem::path(PYQTGRAPH_CPP_P0_06_FIXTURE);
+    const auto fixture_path = std::filesystem::path(CPPQTGRAPH_P0_06_FIXTURE);
     const auto fixture = read_file(fixture_path);
 
     const std::vector<double> values{1.25, -2.5, 3.75};
