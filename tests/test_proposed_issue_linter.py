@@ -10,8 +10,5 @@ def test_factory_control_plane_scripts_are_not_vendored_in_product_repo() -> Non
     assert not (REPO_ROOT / "scripts" / "factory").exists()
 
 
-def test_factory_repo_notice_points_to_external_control_plane() -> None:
-    notice = (REPO_ROOT / "FACTORY_REPO.md").read_text(encoding="utf-8")
-
-    assert "https://github.com/michelreifenrath/pyqtgraph_to_cpp_factory" in notice
-    assert "control plane" in notice
+def test_factory_repo_notice_is_not_vendored_in_product_repo() -> None:
+    assert not (REPO_ROOT / "FACTORY_REPO.md").exists()

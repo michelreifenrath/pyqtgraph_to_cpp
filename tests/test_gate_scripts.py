@@ -105,11 +105,8 @@ def test_gate_help_lists_required_modes() -> None:
     assert "performance" not in result.stdout
 
 
-def test_workflow_pre_pr_autoreview_uses_branch_mode() -> None:
-    workflow_text = (REPO_ROOT / "WORKFLOW.md").read_text(encoding="utf-8")
-
-    assert "scripts/run_autoreview --mode branch" in workflow_text
-    assert "scripts/run_autoreview --mode commit" not in workflow_text
+def test_root_workflow_policy_file_is_not_required() -> None:
+    assert not (REPO_ROOT / "WORKFLOW.md").exists()
 
 
 def test_gate_focus_runs_configured_validation_and_writes_summary(
