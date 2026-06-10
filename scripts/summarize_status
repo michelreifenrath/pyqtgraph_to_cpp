@@ -20,6 +20,7 @@ REQUIRED_SECTIONS = (
     "example_validation_levels",
 )
 TRACKED_SECTIONS = ("source_files", "examples", "example_assets", "classes")
+WIDGETS_SUBSYSTEM = "widgets"
 SUMMARY_COUNTS = {
     "source_file_count": "source_files",
     "example_count": "examples",
@@ -309,6 +310,24 @@ def complete_metadata_errors(
     )
 
 
+def subsystem_source_file_counts(
+    records: list[dict[str, Any]], subsystem: str, root: Path
+) -> dict[str, int]:
+    complete = 0
+    total = 0
+    for index, record in enumerate(records):
+        if not isinstance(record, dict) or record.get("subsystem") != subsystem:
+            continue
+        total += 1
+        if (
+            record.get("status") == "ported"
+            and record.get("completion") == "complete"
+            and not complete_metadata_errors("source_files", index, record, root)
+        ):
+            complete += 1
+    return {"total": total, "complete": complete}
+
+
 def section_counts(
     section: str, records: list[dict[str, Any]], root: Path
 ) -> dict[str, int]:
@@ -567,6 +586,14 @@ def print_dashboard(manifest: dict[str, Any], root: Path) -> dict[str, int]:
             f"{section}: total={counts['total']} ported={counts['ported']} "
             f"complete={counts['complete']} incomplete={counts['incomplete']}"
         )
+        if section == "source_files":
+            widgets_counts = subsystem_source_file_counts(
+                records, WIDGETS_SUBSYSTEM, root
+            )
+            print(
+                f"{WIDGETS_SUBSYSTEM}: "
+                f"{widgets_counts['complete']}/{widgets_counts['total']} complete"
+            )
 
     validation_levels = manifest["example_validation_levels"]
     validation_counts = validation_level_counts(validation_levels)

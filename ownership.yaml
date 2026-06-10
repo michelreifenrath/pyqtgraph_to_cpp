@@ -22,6 +22,29 @@ claims:
   - tests/test_proposed_issue_audit_P0_10.py
   adjuncts:
   - focused-doc-report
+- issue: P5.11
+  branch: ai/issue-168
+  status: active
+  owned_files:
+  - ownership.yaml
+  - port_manifest.yaml
+  - scripts/summarize_status
+  - include/pyqtgraph/widgets/__init__.hpp
+  - include/pyqtgraph/widgets/DataFilterWidget.hpp
+  - include/pyqtgraph/widgets/MatplotlibWidget.hpp
+  - include/pyqtgraph/widgets/PenPreviewLabel.hpp
+  - include/pyqtgraph/widgets/RemoteGraphicsView.hpp
+  - include/pyqtgraph/widgets/ValueLabel.hpp
+  - src/pyqtgraph/widgets/__init__.cpp
+  - src/pyqtgraph/widgets/DataFilterWidget.cpp
+  - src/pyqtgraph/widgets/GraphicsLayoutWidget.cpp
+  - src/pyqtgraph/widgets/MatplotlibWidget.cpp
+  - src/pyqtgraph/widgets/PenPreviewLabel.cpp
+  - src/pyqtgraph/widgets/RemoteGraphicsView.cpp
+  - src/pyqtgraph/widgets/ValueLabel.cpp
+  - tests/test_widgets_manifest_closure_P5_11.py
+  adjuncts:
+  - focused-doc-report
 manifest_ownership:
 - issue: P0.04
   section: source_files
