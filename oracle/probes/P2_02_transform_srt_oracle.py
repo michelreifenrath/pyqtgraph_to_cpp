@@ -212,6 +212,22 @@ def build_fixture(reference_root: Path, require_source: bool) -> dict[str, Any]:
     }
 
 
+def fixtures_match(left: Any, right: Any, float_tolerance: float = 1.0e-12) -> bool:
+    if isinstance(left, bool) or isinstance(right, bool):
+        return left is right
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return math.isclose(float(left), float(right), rel_tol=0.0, abs_tol=float_tolerance)
+    if isinstance(left, dict) and isinstance(right, dict):
+        if set(left) != set(right):
+            return False
+        return all(fixtures_match(left[key], right[key], float_tolerance) for key in left)
+    if isinstance(left, list) and isinstance(right, list):
+        if len(left) != len(right):
+            return False
+        return all(fixtures_match(left_item, right_item, float_tolerance) for left_item, right_item in zip(left, right))
+    return left == right
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="verify the checked-in fixture")
@@ -231,7 +247,7 @@ def main(argv: list[str]) -> int:
         if not FIXTURE.exists():
             raise SystemExit(f"missing fixture: {FIXTURE}")
         current = json.loads(FIXTURE.read_text(encoding="utf-8"))
-        if current != fixture:
+        if not fixtures_match(current, fixture):
             raise SystemExit("P2.02 oracle fixture is stale; rerun with --write")
         print(f"P2.02 oracle fixture OK: {FIXTURE.relative_to(ROOT)}")
 

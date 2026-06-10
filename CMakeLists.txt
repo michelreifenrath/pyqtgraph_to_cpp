@@ -21,7 +21,9 @@ target_compile_features(pyqtgraph_cpp_project_options INTERFACE cxx_std_20)
 
 pyqtgraph_cpp_create_warnings_target(pyqtgraph_cpp_project_warnings)
 
-find_package(Qt6 6 COMPONENTS Core Gui Widgets QUIET)
+if(NOT TARGET Qt6::Core OR NOT TARGET Qt6::Gui OR NOT TARGET Qt6::Widgets)
+    find_package(Qt6 6 COMPONENTS Core Gui Widgets QUIET)
+endif()
 set(_pyqtgraph_cpp_has_qtcore FALSE)
 if(TARGET Qt6::Core)
     set(_pyqtgraph_cpp_has_qtcore TRUE)

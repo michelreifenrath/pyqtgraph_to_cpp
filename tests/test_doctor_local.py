@@ -57,7 +57,7 @@ def write_fake_tool(bin_dir: Path, name: str, order_file: Path, marker: str) -> 
         "    print('6.6.0')\n"
         "elif name == 'pkg-config' and sys.argv[1:] == ['--modversion', 'opencv4']:\n"
         "    print('4.8.0')\n"
-        "elif name == 'pkg-config' and sys.argv[1:] == ['--modversion', 'gl']:\n"
+        "elif name == 'pkg-config' and sys.argv[1:] == ['--modversion', 'Qt6OpenGL']:\n"
         "    print('1.2')\n"
         "else:\n"
         "    print(name + ' ok')\n",
@@ -100,7 +100,7 @@ def test_doctor_local_P1_14_reports_required_checks_in_order_with_cwd_and_env(
         f"c++ --version|cwd={REPO_ROOT}|env=propagated",
         f"pkg-config --modversion Qt6Core Qt6Gui Qt6Widgets Qt6Test|cwd={REPO_ROOT}|env=propagated",
         f"pkg-config --modversion opencv4|cwd={REPO_ROOT}|env=propagated",
-        f"pkg-config --modversion gl|cwd={REPO_ROOT}|env=propagated",
+        f"pkg-config --modversion Qt6OpenGL|cwd={REPO_ROOT}|env=propagated",
     ]
     for section in ["Tools", "Compiler", "Qt", "OpenCV", "OpenGL"]:
         assert section in result.stdout

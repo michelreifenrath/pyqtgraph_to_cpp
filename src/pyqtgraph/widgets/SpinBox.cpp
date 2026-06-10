@@ -128,7 +128,10 @@ double siApply(double value, const QString& siPrefix, double unitPower = 1.0)
 
 QRegularExpression floatRegexForLocale(const QLocale& locale)
 {
-    const QString decimal = QRegularExpression::escape(QString(locale.decimalPoint()));
+    const QString localeDecimal = QRegularExpression::escape(QString(locale.decimalPoint()));
+    const QString decimal = (localeDecimal == QStringLiteral("\\.") || localeDecimal == QStringLiteral(","))
+        ? QStringLiteral("[\\.,]")
+        : QStringLiteral("(?:[\\.,]|%1)").arg(localeDecimal);
     const QString pattern = QStringLiteral(R"((?<number>[+-]?((((\d+()") + decimal
         + QStringLiteral(R"(\d*)?)|(\d*)") + decimal
         + QStringLiteral(R"(\d+))([eE][+-]?\d+)?)|((?i:nan)|(inf))))\s*((?<siPrefix>[yzafpnµmkMGTPEZYu]?)(?<suffix>\w.*))?$)");
