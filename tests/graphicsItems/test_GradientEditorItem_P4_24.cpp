@@ -601,9 +601,9 @@ bool writeInteractionReport(const GradientEditorItem& editor)
                   QJsonArray{QStringLiteral("cmake --preset dev"), QStringLiteral("cmake --build --preset dev --parallel"),
                              QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.24 --output-on-failure"),
                              QStringLiteral("python3 -m pytest -q"), QStringLiteral("git diff --check"),
-                             QStringLiteral("python3 oracle/scripts/generate_class_inventory.py --check"),
+                             QStringLiteral("scripts/run_changed_examples --dry-run SimplePlot ImageItem"),
                              QStringLiteral("git diff --name-only origin/main...HEAD")});
-    report.insert(QStringLiteral("manifest_dashboard"), QStringLiteral("updated: port_manifest.yaml generated class inventory verified"));
+    report.insert(QStringLiteral("example_manifest"), QStringLiteral("not_applicable: no example_manifest.yaml status fields changed for this focused item test"));
     report.insert(QStringLiteral("ticks"), tickListJson(editor));
     report.insert(QStringLiteral("colorMode"), editor.colorMode());
     const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_24_ARTIFACT_DIR);

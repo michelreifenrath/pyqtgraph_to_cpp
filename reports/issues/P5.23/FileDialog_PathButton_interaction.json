@@ -1,10 +1,10 @@
 {
   "issue": "P5.23",
-  "classes": ["pyqtgraph::widgets::FileDialog", "pyqtgraph::widgets::PathButton"],
+  "classes": ["cppqtgraph::widgets::FileDialog", "cppqtgraph::widgets::PathButton"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/FileDialog.py; pyqtgraph/widgets/PathButton.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/FileDialog.hpp", "src/pyqtgraph/widgets/FileDialog.cpp", "include/pyqtgraph/widgets/PathButton.hpp", "src/pyqtgraph/widgets/PathButton.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/FileDialog.hpp", "src/cppqtgraph/widgets/FileDialog.cpp", "include/cppqtgraph/widgets/PathButton.hpp", "src/cppqtgraph/widgets/PathButton.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.23 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_filedialog_pathbutton_p5_23"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.23 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_filedialog_pathbutton_p5_23"},
   "checks": ["FileDialog QFileDialog subclass and temp-dir directory/selection state", "FileDialog AcceptSave and name-filter state without modal exec", "macOS DontUseNativeDialog compatibility option", "PathButton default 30x30 size and margin 7", "PathButton pen/brush/path setters", "PathButton empty and zero-area path paint safety", "PathButton offscreen path rendering"],
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.23 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
 }

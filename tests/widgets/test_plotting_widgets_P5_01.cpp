@@ -467,7 +467,7 @@ bool writeIssueReport(const std::vector<std::pair<QString, PixelMetrics>>& caseM
             "  \"reference\": \"PyQtGraph 0.14.0 widget contracts verified through C++ wrapper-composition oracles built from previously ported dependencies\",\n"
             "  \"manifest_targets\": [\"include/cppqtgraph/widgets/PlotWidget.hpp\", \"src/cppqtgraph/widgets/PlotWidget.cpp\", \"include/cppqtgraph/widgets/GraphicsView.hpp\", \"src/cppqtgraph/widgets/GraphicsView.cpp\", \"include/cppqtgraph/widgets/GraphicsLayoutWidget.hpp\", \"include/cppqtgraph/widgets/HistogramLUTWidget.hpp\", \"src/cppqtgraph/widgets/HistogramLUTWidget.cpp\"],\n"
             "  \"shared_wiring\": [\"CMakeLists.txt\", \"tests/CMakeLists.txt\"],\n"
-            "  \"manifest_dashboard\": \"updated: port_manifest.yaml regenerated and verified with scripts/generate_manifest --check\",\n"
+            "  \"example_manifest\": \"not_applicable: no example_manifest.yaml status fields changed for this focused widget test\",\n"
             "  \"focused_proof\": {\"command\": \"QT_QPA_PLATFORM=offscreen ctest --preset visual -L P5.01 --output-on-failure\", \"exit_code\": 0, \"test_executable\": \"cppqtgraph_widgets_plotting_widgets_p5_01\"},\n"
             "  \"validation_commands\": [\"cmake --preset visual\", \"cmake --build --preset visual --parallel\", \"QT_QPA_PLATFORM=offscreen ctest --preset visual -L P5.01 --output-on-failure\", \"python3 -m pytest -q\", \"git diff --check\", \"git diff --name-only origin/main...HEAD\"],\n"
             "  \"manual_semantic_inspection\": \"actual images were opened for PlotWidget-curve, GraphicsLayoutWidget-grid, and HistogramLUTWidget-vertical; all diffs are black and metrics pass with zero changed pixels\",\n"

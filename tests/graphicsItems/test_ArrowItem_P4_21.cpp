@@ -460,7 +460,7 @@ bool writeIssueReport(const PixelMetrics& metrics, std::uint64_t referencePixels
             + QStringLiteral(
                 "},\n"
                 "  \"validation_commands\": [\"cmake --preset dev\", \"cmake --build --preset dev --parallel\", \"QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.21 --output-on-failure\", \"python3 -m pytest -q\", \"git diff --check\", \"git diff --name-only origin/main...HEAD\"],\n"
-                "  \"manifest_dashboard\": \"not_applicable: port_manifest/dashboard updates are outside P4.21 owned paths for this shard\"\n"
+                "  \"example_manifest\": \"not_applicable: no example_manifest.yaml status fields changed for this focused shard\"\n"
                 "}\n"));
     return true;
 }

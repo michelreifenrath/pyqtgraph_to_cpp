@@ -2,7 +2,7 @@
 
 - Validation class: decision-doc
 - Scope: docs-only parity decision for Jupyter embedded graphics entries
-- Policy sources: `MISSION.md`, `FACTORY_RULES.md`, and `docs/parity-contract.md`
+- Policy sources: `MISSION.md`, `examples/example_manifest.yaml`, and `docs/parity-contract.md`
 
 ## Policy basis
 

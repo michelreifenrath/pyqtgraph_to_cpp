@@ -1,36 +1,7 @@
 # SimplePlot example
 
-## Upstream provenance
+`examples/SimplePlot.cpp` is a checked-in native C++/Qt smoke slice for the plotting stack.
 
-- Upstream source: `pyqtgraph/examples/SimplePlot.py`
-- PyQtGraph ref: `pyqtgraph-0.14.0`
-- Pinned commit: `a20028b98294b9cc8770f2015a92eb342224b788`
-- Port issue: `PGEXAMPLE-001`
+The active manifest entry is in `examples/example_manifest.yaml`. Validation should use the local CTest target `cppqtgraph.examples.SimplePlot`, plus visual or numeric checks when the example behavior changes.
 
-This is a native Qt/C++ port using the current CppQtGraph public API. It creates a `cppqtgraph::widgets::PlotWidget`, applies the upstream title text to the widget window title, and adds a `cppqtgraph::graphicsItems::PlotCurveItem` containing 100 deterministic NumPy seed-0 y-values. The y-only `setData` call generates x-values `0..99`.
-
-## Build and run
-
-```sh
-cmake --preset dev
-cmake --build --preset dev --target cppqtgraph_examples_simpleplot --parallel
-./build/dev/cppqtgraph_examples_simpleplot
-```
-
-Focused smoke test:
-
-```sh
-cmake --build --preset dev --target cppqtgraph_examples_simpleplot_test --parallel
-ctest --preset dev -R cppqtgraph.examples.SimplePlot --output-on-failure
-```
-
-## Validation level
-
-`port_manifest.yaml` already lists SimplePlot as a visual-required example. Current validation for this port is limited to a native C++ smoke test plus the repository's placeholder visual gate.
-
-## Current limitations
-
-- `PlotItem` does not currently expose a title API, so the upstream title is applied to `PlotWidget::windowTitle()`.
-- `PlotWidget` does not currently expose a plotting convenience method, so the example constructs `PlotCurveItem` directly and parents it to `widget->getPlotItem()`.
-- `PlotCurveItem::paint()` is currently a no-op in the owned library code, so this port does not claim native pixel parity yet.
-- The existing `scripts/gate visual SimplePlot` path is placeholder-based in this checkout.
+This example is intentionally a focused slice, not proof of full PyQtGraph plotting parity.

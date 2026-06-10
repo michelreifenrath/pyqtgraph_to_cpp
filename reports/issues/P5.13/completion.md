@@ -19,10 +19,10 @@ Implemented native Qt/C++ `ColorMapButton` and `ColorMapMenu` with horizontal co
 
 ## Artifacts
 
-- `include/pyqtgraph/widgets/ColorMapButton.hpp`
-- `src/pyqtgraph/widgets/ColorMapButton.cpp`
-- `include/pyqtgraph/widgets/ColorMapMenu.hpp`
-- `src/pyqtgraph/widgets/ColorMapMenu.cpp`
+- `include/cppqtgraph/widgets/ColorMapButton.hpp`
+- `src/cppqtgraph/widgets/ColorMapButton.cpp`
+- `include/cppqtgraph/widgets/ColorMapMenu.hpp`
+- `src/cppqtgraph/widgets/ColorMapMenu.cpp`
 - `tests/widgets/test_ColorMapMenu_P5_13.cpp`
 - `reports/visual-diffs/ColorMapMenu/<case>/{reference.png,actual.png,diff.png,metrics.json,gpt5_vision_review.md}`
 - `reports/issues/P5.13/*`

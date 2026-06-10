@@ -4,16 +4,16 @@
         "setLabels and setColorMap",
         "deterministic visual reference-vs-actual pixels"
     ],
+    "example_manifest": "not_applicable: no example_manifest.yaml status fields changed for this focused shard",
     "focused_proof": {
         "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.25 --output-on-failure",
         "exit_code": 0,
-        "test_executable": "pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25"
+        "test_executable": "cppqtgraph_graphicsitems_gradientlegend_p4_25"
     },
     "issue": "P4.25",
-    "manifest_dashboard": "not applicable: no manifest status fields changed",
     "manifest_targets": [
-        "include/pyqtgraph/graphicsItems/GradientLegend.hpp",
-        "src/pyqtgraph/graphicsItems/GradientLegend.cpp"
+        "include/cppqtgraph/graphicsItems/GradientLegend.hpp",
+        "src/cppqtgraph/graphicsItems/GradientLegend.cpp"
     ],
     "reference": "pyqtgraph-0.14.0 a20028b98294b9cc8770f2015a92eb342224b788 pyqtgraph/graphicsItems/GradientLegend.py",
     "shared_wiring": [
@@ -21,7 +21,7 @@
         "tests/CMakeLists.txt"
     ],
     "tdd_baseline_failure": {
-        "command": "cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_gradientlegend_p4_25",
+        "command": "cmake --build --preset dev --target cppqtgraph_graphicsitems_gradientlegend_p4_25",
         "exit_code": 2,
         "expected": "compile failed before GradientLegend implementation was added"
     },

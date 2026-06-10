@@ -79,7 +79,7 @@ def require_equal(label: str, actual: Any, expected: Any) -> None:
 def validate_files(root: Path, *, repo: str | None = None) -> dict[str, str]:
     lock_path = root / "reference" / "source.lock"
     ref_path = root / "reference" / "PYQTGRAPH_REF"
-    manifest_path = root / "port_manifest.yaml"
+    manifest_path = root / "examples" / "example_manifest.yaml"
 
     lock = load_yaml(lock_path)
     if not isinstance(lock, dict):
@@ -106,9 +106,13 @@ def validate_files(root: Path, *, repo: str | None = None) -> dict[str, str]:
 
     manifest = load_yaml(manifest_path)
     if not isinstance(manifest, dict) or not isinstance(manifest.get("reference"), dict):
-        raise BootstrapError("port_manifest.yaml missing reference mapping")
+        raise BootstrapError("examples/example_manifest.yaml missing reference mapping")
     for field in ["repo", "ref", "pinned_commit", "docs_url"]:
-        require_equal(f"port_manifest.yaml reference.{field}", manifest["reference"].get(field), lock[field])
+        require_equal(
+            f"examples/example_manifest.yaml reference.{field}",
+            manifest["reference"].get(field),
+            lock[field],
+        )
 
     return {field: str(lock[field]) for field in required}
 
@@ -188,7 +192,7 @@ def write_metadata(root: Path, metadata: dict[str, str]) -> None:
     reference_dir.mkdir(parents=True, exist_ok=True)
     lock_path = reference_dir / "source.lock"
     ref_path = reference_dir / "PYQTGRAPH_REF"
-    manifest_path = root / "port_manifest.yaml"
+    manifest_path = root / "examples" / "example_manifest.yaml"
 
     lock_path.write_text(yaml.safe_dump(metadata, sort_keys=False), encoding="utf-8")
     ref_path.write_text("".join(f"{key}: {value}\n" for key, value in metadata.items()), encoding="utf-8")
@@ -198,7 +202,8 @@ def write_metadata(root: Path, metadata: dict[str, str]) -> None:
         loaded = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
         manifest = loaded if isinstance(loaded, dict) else {}
     else:
-        manifest = {}
+        manifest = {"examples": []}
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest["reference"] = {
         "repo": metadata["repo"],
         "ref": metadata["ref"],

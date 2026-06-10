@@ -1,10 +1,10 @@
 {
   "issue": "P5.17",
-  "classes": ["pyqtgraph::widgets::TableWidget", "pyqtgraph::widgets::TableWidgetItem"],
+  "classes": ["cppqtgraph::widgets::TableWidget", "cppqtgraph::widgets::TableWidgetItem"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/TableWidget.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/TableWidget.hpp", "src/pyqtgraph/widgets/TableWidget.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/TableWidget.hpp", "src/cppqtgraph/widgets/TableWidget.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.17 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_tablewidget_p5_17"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.17 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_tablewidget_p5_17"},
   "checks": ["TableWidget defaults for scrolling, selection, sorting, and editability", "setData for list-of-lists, dict-of-lists, and list-of-dicts", "setEditable with typed value conversion on edit", "value/text/index sort modes", "serialize for selection and full table"],
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.17 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
 }

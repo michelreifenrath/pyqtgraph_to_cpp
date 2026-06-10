@@ -468,7 +468,7 @@ bool writeInteractionReport()
                              QStringLiteral("QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.25 --output-on-failure"),
                              QStringLiteral("python3 -m pytest -q"), QStringLiteral("git diff --check"),
                              QStringLiteral("git diff --name-only origin/main...HEAD")});
-    report.insert(QStringLiteral("manifest_dashboard"), QStringLiteral("not applicable: no manifest status fields changed"));
+    report.insert(QStringLiteral("example_manifest"), QStringLiteral("not_applicable: no example_manifest.yaml status fields changed for this focused shard"));
 
     const QString artifactDir = QStringLiteral(CPPQTGRAPH_P4_25_ARTIFACT_DIR);
     CHECK(QDir().mkpath(artifactDir));

@@ -1,10 +1,10 @@
 {
   "issue": "P5.13",
-  "classes": ["pyqtgraph::widgets::ColorMapButton", "pyqtgraph::widgets::ColorMapMenu"],
+  "classes": ["cppqtgraph::widgets::ColorMapButton", "cppqtgraph::widgets::ColorMapMenu"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/ColorMapButton.py; ColorMapMenu.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/ColorMapButton.hpp", "src/pyqtgraph/widgets/ColorMapButton.cpp", "include/pyqtgraph/widgets/ColorMapMenu.hpp", "src/pyqtgraph/widgets/ColorMapMenu.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/ColorMapButton.hpp", "src/cppqtgraph/widgets/ColorMapButton.cpp", "include/cppqtgraph/widgets/ColorMapMenu.hpp", "src/cppqtgraph/widgets/ColorMapMenu.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.13 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_colormapmenu_p5_13"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.13 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_colormapmenu_p5_13"},
   "checks": ["ColorMapButton QWidget paints horizontal colormap strip", "left release opens ColorMapMenu", "None/user/local menu entries emit sigColorMapTriggered", "setColorMap updates button and sigColorMapChanged", "deterministic visual reference-vs-actual pixels"],
   "visual_artifacts": {"root": "reports/visual-diffs/ColorMapMenu", "cases": ["default-grey", "pal-relaxed", "pal-relaxed-bright"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
   "semantic_pixels": {"reference": 12600, "actual": 12600},

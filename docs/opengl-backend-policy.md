@@ -9,9 +9,9 @@ This document defines the local OpenGL backend policy for native C++ PyQtGraph O
 ## Source-of-truth policy
 
 - Decision-only issues are proven by a decision/equivalence document and completion report, not runtime tests, unless executable behavior changes.
-- Later OpenGL rendering issues must follow the issue-owned validation commands and the visual/oracle rules in `FACTORY_RULES.md`.
-- Validation follows the assigned issue, `FACTORY_RULES.md`, and `docs/parity-contract.md`; GitHub Actions or hosted GPU CI is not required proof unless a future issue explicitly owns that policy change.
-- Repository workflow gates and handoff rules remain under `WORKFLOW.md`; do not commit, push, merge, or create PRs from Pi implementation work.
+- Later OpenGL rendering tasks must follow the task's validation commands and the visual/oracle rules in `MISSION.md`.
+- Validation follows the current task, `MISSION.md`, and `docs/parity-contract.md`; GitHub Actions or hosted GPU CI is not required proof unless a future task explicitly owns that policy change.
+- Repository validation defaults are the local commands documented in `README.md`.
 
 ## Local OpenGL backend decision
 
@@ -57,14 +57,14 @@ P7.01 itself requires no runtime, visual, upstream-oracle, or performance artifa
 P7.01 does not implement or modify:
 
 - Renderers, shaders, widgets, items, mesh handling, or OpenGL helpers.
-- Examples, tests, CMake, CI, scripts, generated dashboards, or validation guide text.
-- `port_manifest.yaml` status, class, source, example, or dashboard entries.
+- Examples, tests, CMake, CI, scripts, or validation guide text.
+- `examples/example_manifest.yaml` entries.
 
 Those changes require later issues with owned implementation scope.
 
-## Affected manifest entries
+## Affected upstream surface
 
-This policy affects the expected validation and equivalence decisions for the following manifest entries, but P7.01 does not edit `port_manifest.yaml`:
+This policy affects the expected validation and equivalence decisions for the following upstream OpenGL files, but P7.01 does not edit the active example manifest:
 
 - `pyqtgraph/Qt/OpenGLConstants.py`
 - `pyqtgraph/Qt/OpenGLHelpers.py`

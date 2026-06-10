@@ -36,7 +36,7 @@ def run_changed_examples(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_manifest_registry_derives_simpleplot_from_port_manifest() -> None:
+def test_manifest_registry_derives_simpleplot_from_example_manifest() -> None:
     module = load_run_changed_examples_module()
 
     examples = module.manifest_examples(REPO_ROOT)

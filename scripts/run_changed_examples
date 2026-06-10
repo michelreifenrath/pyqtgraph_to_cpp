@@ -74,12 +74,12 @@ def normalize_path(path: str) -> str:
 
 
 def _manifest_path(root: Path) -> Path:
-    return root / "port_manifest.yaml"
+    return root / "examples" / "example_manifest.yaml"
 
 
 def _load_manifest(root: Path) -> dict[str, Any]:
     if yaml is None:
-        raise ManifestError("PyYAML is required to read port_manifest.yaml")
+        raise ManifestError("PyYAML is required to read examples/example_manifest.yaml")
     path = _manifest_path(root)
     try:
         loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -97,19 +97,8 @@ def _records(manifest: dict[str, Any], key: str) -> list[dict[str, Any]]:
     if records is None:
         return []
     if not isinstance(records, list):
-        raise ManifestError(f"port_manifest.yaml field {key!r} must be a list")
+        raise ManifestError(f"examples/example_manifest.yaml field {key!r} must be a list")
     return [record for record in records if isinstance(record, dict)]
-
-
-def _validation_by_identity(manifest: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
-    lookup: dict[tuple[str, str], dict[str, Any]] = {}
-    for record in _records(manifest, "example_validation_levels"):
-        name = record.get("name")
-        upstream_path = record.get("upstream_path")
-        validation = record.get("validation")
-        if isinstance(name, str) and isinstance(upstream_path, str) and isinstance(validation, dict):
-            lookup[(name, upstream_path)] = validation
-    return lookup
 
 
 def _unique_aliases(*aliases: str | None) -> tuple[str, ...]:
@@ -126,27 +115,36 @@ def _unique_aliases(*aliases: str | None) -> tuple[str, ...]:
 
 
 def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
-    """Return local example validation targets derived from port_manifest.yaml."""
+    """Return local example validation targets from examples/example_manifest.yaml."""
     root = root or repo_root()
     manifest = _load_manifest(root)
-    validations = _validation_by_identity(manifest)
     examples: list[Example] = []
 
     for record in _records(manifest, "examples"):
-        if record.get("status") != "ported" or record.get("target_presence") != "all":
+        if record.get("status") != "ported":
             continue
-        name = record.get("name")
-        target_path = record.get("target_source_path")
-        upstream_path = record.get("upstream_path")
-        if not isinstance(name, str) or not name:
-            continue
+        target_path = record.get("cpp_file")
         if not isinstance(target_path, str) or not target_path:
             continue
+        if not (root / target_path).is_file():
+            continue
+        name_value = record.get("name")
+        name = name_value if isinstance(name_value, str) and name_value else Path(target_path).stem
+        upstream_path = record.get("upstream_file")
         if not isinstance(upstream_path, str):
             upstream_path = None
-
-        validation = validations.get((name, upstream_path or ""), {})
-        aliases = _unique_aliases(name, Path(target_path).name, target_path, upstream_path)
+        validation = record.get("validation")
+        if not isinstance(validation, dict):
+            validation = {}
+        manifest_aliases = record.get("aliases")
+        aliases_from_manifest = manifest_aliases if isinstance(manifest_aliases, list) else []
+        aliases = _unique_aliases(
+            name,
+            Path(target_path).name,
+            target_path,
+            upstream_path,
+            *(alias for alias in aliases_from_manifest if isinstance(alias, str)),
+        )
         visual_required = validation.get("visual") == "required"
         examples.append(
             Example(
@@ -160,23 +158,6 @@ def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
                     if name == "SimplePlot" and visual_required
                     else None
                 ),
-            )
-        )
-
-    # P2.14 ports ImageItem as a focused example shard while the generated manifest
-    # still records the broader ImageItem source rows as pending. Let the changed-
-    # example runner select this executable without broadening the manifest update.
-    imageitem_path = root / "examples" / "ImageItem.cpp"
-    if imageitem_path.is_file() and not any(example.name == "ImageItem" for example in examples):
-        upstream_path = "pyqtgraph/examples/ImageItem.py"
-        validation = validations.get(("ImageItem", upstream_path), {})
-        examples.append(
-            Example(
-                name="ImageItem",
-                target_path="examples/ImageItem.cpp",
-                ctest_name="cppqtgraph.examples.ImageItem",
-                aliases=_unique_aliases("ImageItem", "ImageItem.cpp", "examples/ImageItem.cpp", upstream_path),
-                visual_required=validation.get("visual") == "required",
             )
         )
 

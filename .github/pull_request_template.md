@@ -6,10 +6,10 @@
 
 - [ ] `python3 -m pytest -q`
 - [ ] `git diff --check`
-- [ ] Independent review/autoreview gate completed if AI-generated
+- [ ] CMake build/CTest run when C++ behavior changed
 
-## Automation notes
+## Example-first notes
 
-Issue: Closes #
+Related example or behavior slice:
 
-Auto-merge must remain disabled unless repository policy changes explicitly.
+Reference/oracle evidence:

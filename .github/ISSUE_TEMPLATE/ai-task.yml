@@ -1,36 +1,59 @@
-name: AI-ready task
-description: Task template for Pi Symphony automation
-title: "[AI] "
-labels: ["ai:ready", "tenant:core"]
+name: Native C++ porting task
+description: Lightweight example-first CppQtGraph task
+title: "[CppQtGraph] "
+labels: []
 body:
   - type: markdown
     attributes:
       value: |
-        Use this for issues that Hermes/Pi Symphony may automate. Add `tag:docs`, `tag:parser`, or `tag:build` as appropriate.
+        Use this for small native C++/Qt porting tasks. Tie the work to one example or one directly required behavior slice.
+  - type: input
+    id: reference
+    attributes:
+      label: PyQtGraph reference
+      description: Upstream example/file and pinned reference behavior to inspect.
+      placeholder: pyqtgraph/examples/Plotting.py at pyqtgraph-0.14.0
+    validations:
+      required: true
   - type: textarea
     id: goal
     attributes:
       label: Goal
-      description: What should be changed?
-      placeholder: Describe the desired outcome.
+      description: What visible C++/Qt behavior should be added or changed?
+      placeholder: Describe the native behavior, screenshot, data, or interaction target.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Keep this to the smallest example-first slice.
+      placeholder: |
+        - Add or update examples/<Example>.cpp
+        - Add only the library behavior required by this example
+        - Do not add Python runtime dependencies
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: How should the change be proven?
+      placeholder: |
+        - Numeric fixture/oracle: ...
+        - Visual screenshot/diff: ...
+        - Interaction replay: ...
+        - Focused CTest/pytest commands: ...
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      description: How should the automation prove this is done?
+      description: What must be true before this is done?
       placeholder: |
-        - Tests pass
-        - README section updated
-        - Behavior X works
+        - Native C++ example builds and runs
+        - Visual behavior matches PyQtGraph within documented tolerance
+        - No Python runtime dependency is introduced
     validations:
       required: true
-  - type: textarea
-    id: scope
-    attributes:
-      label: Scope boundaries
-      description: What should the agent avoid changing?
-      placeholder: Do not modify unrelated files, APIs, or build settings.
-    validations:
-      required: false

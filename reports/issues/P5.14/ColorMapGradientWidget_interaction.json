@@ -1,10 +1,10 @@
 {
   "issue": "P5.14",
-  "classes": ["pyqtgraph::widgets::ColorMapWidget", "pyqtgraph::widgets::GradientWidget"],
+  "classes": ["cppqtgraph::widgets::ColorMapWidget", "cppqtgraph::widgets::GradientWidget"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/ColorMapWidget.py; GradientWidget.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/ColorMapWidget.hpp", "src/pyqtgraph/widgets/ColorMapWidget.cpp", "include/pyqtgraph/widgets/GradientWidget.hpp", "src/pyqtgraph/widgets/GradientWidget.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/ColorMapWidget.hpp", "src/cppqtgraph/widgets/ColorMapWidget.cpp", "include/cppqtgraph/widgets/GradientWidget.hpp", "src/cppqtgraph/widgets/GradientWidget.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.14 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_colormapgradientwidget_p5_14"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.14 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_colormapgradientwidget_p5_14"},
   "checks": ["GradientWidget wraps GradientEditorItem with signal forwarding and orientation sizing", "ColorMapWidget range/enum mapping with save/restore", "deterministic visual reference-vs-actual pixels"],
   "visual_artifacts": {"root": "reports/visual-diffs/ColorMapGradientWidget", "cases": ["GradientWidget", "ColorMapWidget-range"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.14 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}]

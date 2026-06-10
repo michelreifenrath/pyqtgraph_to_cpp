@@ -8,16 +8,16 @@
         "deterministic visual reference-vs-actual pixels"
     ],
     "colorMode": "rgb",
+    "example_manifest": "not_applicable: no example_manifest.yaml status fields changed for this focused item test",
     "focused_proof": {
         "command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.24 --output-on-failure",
         "exit_code": 0,
-        "test_executable": "pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24"
+        "test_executable": "cppqtgraph_graphicsitems_gradienteditoritem_p4_24"
     },
     "issue": "P4.24",
-    "manifest_dashboard": "updated: port_manifest.yaml generated class inventory verified",
     "manifest_targets": [
-        "include/pyqtgraph/graphicsItems/GradientEditorItem.hpp",
-        "src/pyqtgraph/graphicsItems/GradientEditorItem.cpp"
+        "include/cppqtgraph/graphicsItems/GradientEditorItem.hpp",
+        "src/cppqtgraph/graphicsItems/GradientEditorItem.cpp"
     ],
     "reference": "pyqtgraph-0.14.0 a20028b98294b9cc8770f2015a92eb342224b788 pyqtgraph/graphicsItems/GradientEditorItem.py",
     "shared_wiring": [
@@ -25,7 +25,7 @@
         "tests/CMakeLists.txt"
     ],
     "tdd_baseline_failure": {
-        "command": "cmake --build --preset dev --target pyqtgraph_cpp_graphicsitems_gradienteditoritem_p4_24",
+        "command": "cmake --build --preset dev --target cppqtgraph_graphicsitems_gradienteditoritem_p4_24",
         "exit_code": 2,
         "expected": "compile failed before GradientEditorItem implementation was added"
     },
@@ -51,7 +51,7 @@
         "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P4.24 --output-on-failure",
         "python3 -m pytest -q",
         "git diff --check",
-        "python3 oracle/scripts/generate_class_inventory.py --check",
+        "scripts/run_changed_examples --dry-run SimplePlot ImageItem",
         "git diff --name-only origin/main...HEAD"
     ],
     "visual_artifacts": {

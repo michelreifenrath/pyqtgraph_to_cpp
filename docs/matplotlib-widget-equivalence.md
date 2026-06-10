@@ -8,30 +8,14 @@ Validation class: `decision-doc`
 
 This document applies the full-port parity policy in `docs/parity-contract.md` to `pyqtgraph/widgets/MatplotlibWidget.py`. The parity contract explicitly lists Matplotlib embedding/export integration as Python-ecosystem bridge scope and records `pyqtgraph/widgets/MatplotlibWidget.py` and class `MatplotlibWidget` as default non-port entries. It also states that decision-only parity questions are proven by a decision/equivalence document rather than runtime tests unless executable behavior changes.
 
-For this decision-only issue, the decision artifact records the conservative default, rationale, affected manifest entries, accepted C++ equivalence or explicit non-port decision, and follow-up issue links for disputed or out-of-scope behavior, consistent with `FACTORY_RULES.md`.
+For this decision-only issue, the decision artifact records the conservative default, rationale, accepted C++ equivalence or explicit non-port decision, and follow-up issue links for disputed or out-of-scope behavior, consistent with `MISSION.md`.
 
-## Affected manifest entries
-
-Source entry in `port_manifest.yaml`:
+## Affected upstream surface
 
 - upstream: `pyqtgraph/widgets/MatplotlibWidget.py`
-- target header: `include/cppqtgraph/widgets/MatplotlibWidget.hpp`
-- target source: `src/cppqtgraph/widgets/MatplotlibWidget.cpp`
-- subsystem: `widgets`
-- current manifest status: `not_started`
-- current manifest completion: `missing`
-
-Class entry in `port_manifest.yaml`:
-
 - class: `MatplotlibWidget`
-- upstream: `pyqtgraph/widgets/MatplotlibWidget.py`
-- target header: `include/cppqtgraph/widgets/MatplotlibWidget.hpp`
-- target source: `src/cppqtgraph/widgets/MatplotlibWidget.cpp`
-- subsystem: `widgets`
-- base class: `QtWidgets.QWidget`
-- upstream line: `11`
-- current manifest status: `not_started`
-- current manifest completion: `missing`
+- upstream base class: `QtWidgets.QWidget`
+- C++ non-port decision: no `include/cppqtgraph/widgets/MatplotlibWidget.hpp` or `src/cppqtgraph/widgets/MatplotlibWidget.cpp` is required unless a future example-first task identifies native Qt/C++ behavior that needs it.
 
 ## Decision
 
@@ -52,7 +36,7 @@ No runtime test, C++ source file, CMake target, or visual artifact is required f
 
 Visual validation is not applicable: this decision does not change rendering code, image output, screenshots, widget behavior, or exporter output.
 
-Manifest/dashboard updates are not made in this slice. The manifest entries above remain recorded inventory, while this document supplies the policy-backed equivalence/non-port decision for P5.09.
+Example-manifest updates are not made in this slice. This document supplies the policy-backed equivalence/non-port decision for P5.09.
 
 ## Follow-up links
 

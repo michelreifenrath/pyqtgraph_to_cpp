@@ -1,10 +1,10 @@
 {
   "issue": "P5.24",
-  "classes": ["pyqtgraph::widgets::ProgressDialog"],
+  "classes": ["cppqtgraph::widgets::ProgressDialog"],
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/ProgressDialog.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/ProgressDialog.hpp", "src/pyqtgraph/widgets/ProgressDialog.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/ProgressDialog.hpp", "src/cppqtgraph/widgets/ProgressDialog.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_progressdialog_p5_24"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_progressdialog_p5_24"},
   "checks": ["ProgressDialog API shape", "minimum duration and WindowModal constructor state", "initial minimum value", "operator+= increment and finish auto-reset", "cancel and wasCanceled", "no-cancel mode", "disabled no-op behavior", "busy-cursor begin/finish lifecycle"],
   "validation_commands": [{"command": "cmake --preset dev", "exit_code": 0}, {"command": "cmake --build --preset dev --parallel", "exit_code": 0}, {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.24 --output-on-failure", "exit_code": 0}, {"command": "python3 -m pytest -q", "exit_code": 0}, {"command": "git diff --check", "exit_code": 0}, {"command": "git diff --name-only origin/main...HEAD", "exit_code": 0}]
 }

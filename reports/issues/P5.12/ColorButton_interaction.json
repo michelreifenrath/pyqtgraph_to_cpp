@@ -1,10 +1,10 @@
 {
   "issue": "P5.12",
-  "class": "pyqtgraph::widgets::ColorButton",
+  "class": "cppqtgraph::widgets::ColorButton",
   "reference": "pyqtgraph-0.14.0 pyqtgraph/widgets/ColorButton.py",
-  "manifest_targets": ["include/pyqtgraph/widgets/ColorButton.hpp", "src/pyqtgraph/widgets/ColorButton.cpp"],
+  "manifest_targets": ["include/cppqtgraph/widgets/ColorButton.hpp", "src/cppqtgraph/widgets/ColorButton.cpp"],
   "shared_wiring": ["CMakeLists.txt", "tests/CMakeLists.txt"],
-  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure", "exit_code": 0, "test_executable": "pyqtgraph_cpp_widgets_colorbutton_p5_12"},
+  "focused_proof": {"command": "QT_QPA_PLATFORM=offscreen ctest --preset dev -L P5.12 --output-on-failure", "exit_code": 0, "test_executable": "cppqtgraph_widgets_colorbutton_p5_12"},
   "checks": ["QPushButton subclass with default gray swatch", "setColor finished/changing signals", "saveState/restoreState RGBA bytes", "dialog slot rollback and accept behavior", "deterministic visual reference-vs-actual pixels"],
   "visual_artifacts": {"root": "reports/visual-diffs/ColorButton", "cases": ["default-gray", "alpha-cyan", "opaque-orange"], "per_case_files": ["reference.png", "actual.png", "diff.png", "metrics.json", "gpt5_vision_review.md"]},
   "semantic_pixels": {"reference": 7272, "actual": 7272},
