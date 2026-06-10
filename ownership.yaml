@@ -28,6 +28,7 @@ claims:
   owned_files:
   - ownership.yaml
   - port_manifest.yaml
+  - scripts/summarize_status
   - include/pyqtgraph/widgets/__init__.hpp
   - include/pyqtgraph/widgets/DataFilterWidget.hpp
   - include/pyqtgraph/widgets/MatplotlibWidget.hpp
