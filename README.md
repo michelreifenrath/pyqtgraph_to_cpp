@@ -150,6 +150,8 @@ ctest --preset dev --output-on-failure
 git diff --check
 ```
 
+`scripts/validate_local` runs the full baseline (pytest, configure, build, ctest, `git diff --check`) as one command; CI runs the same script with `--preset ci-linux`.
+
 Use `.venv/bin/python -m pytest -q` if the system Python does not have pytest installed.
 
 ## Lightweight contribution flow

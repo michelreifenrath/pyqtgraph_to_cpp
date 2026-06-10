@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Run the AGENTS.md local validation baseline as one command."""
+
+from __future__ import annotations
+
+import argparse
+import shlex
+import subprocess
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def validation_steps(preset: str) -> list[tuple[str, list[str]]]:
+    return [
+        ("pytest", [sys.executable, "-m", "pytest", "-q"]),
+        ("configure", ["cmake", "--preset", preset]),
+        ("build", ["cmake", "--build", "--preset", preset, "--parallel"]),
+        ("ctest", ["ctest", "--preset", preset, "--output-on-failure"]),
+        ("git-diff-check", ["git", "diff", "--check"]),
+    ]
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run the full local validation baseline: pytest, CMake configure, "
+            "build, ctest, and git diff --check."
+        ),
+    )
+    parser.add_argument(
+        "--preset",
+        default="dev",
+        help="CMake configure/build/test preset to validate (default: dev).",
+    )
+    parser.add_argument(
+        "--list-steps",
+        action="store_true",
+        help="Print the validation steps without running them.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    steps = validation_steps(args.preset)
+
+    if args.list_steps:
+        for name, command in steps:
+            print(f"{name}: {shlex.join(command)}")
+        return 0
+
+    for name, command in steps:
+        print(f"[validate_local] {name}: {shlex.join(command)}", flush=True)
+        result = subprocess.run(command, cwd=REPO_ROOT)
+        if result.returncode != 0:
+            print(
+                f"[validate_local] FAILED at step '{name}' "
+                f"(exit code {result.returncode})",
+                file=sys.stderr,
+            )
+            return result.returncode
+
+    print(f"[validate_local] all {len(steps)} steps passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

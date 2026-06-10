@@ -49,6 +49,8 @@ ctest --preset dev --output-on-failure
 git diff --check
 ```
 
+- `scripts/validate_local` runs this baseline in one command; use `--preset ci-linux` in CI environments.
+
 ## Reference and oracle policy
 
 - The pinned PyQtGraph reference is `pyqtgraph-0.14.0` at commit `a20028b98294b9cc8770f2015a92eb342224b788`.
