@@ -10,6 +10,7 @@ import pytest
 import yaml
 
 SCRIPT = Path("scripts/generate_manifest")
+SUMMARIZE_STATUS = Path("scripts/summarize_status")
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WIDGETS_SUBSYSTEM = "widgets"
 EXPECTED_WIDGET_SOURCE_FILES = 33
@@ -18,6 +19,15 @@ EXPECTED_WIDGET_SOURCE_FILES = 33
 def run_cli(*args: str, root: Path | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, str((REPO_ROOT / SCRIPT).resolve()), *args],
+        cwd=root or REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+
+def run_summarize_status(root: Path | None = None) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str((REPO_ROOT / SUMMARIZE_STATUS).resolve())],
         cwd=root or REPO_ROOT,
         text=True,
         capture_output=True,
@@ -85,6 +95,10 @@ def test_P5_11_widgets_manifest_dashboard_reports_complete_coverage() -> None:
     assert counts["ported"] == EXPECTED_WIDGET_SOURCE_FILES
     assert counts["target_presence_all"] == EXPECTED_WIDGET_SOURCE_FILES
     assert widgets_dashboard_line(counts) == "widgets: 33/33 complete"
+
+    dashboard = run_summarize_status()
+    assert dashboard.returncode == 0, dashboard.stderr
+    assert widgets_dashboard_line(counts) in dashboard.stdout
 
     widget_rows = [
         row

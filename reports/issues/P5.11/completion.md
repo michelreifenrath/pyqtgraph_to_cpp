@@ -26,14 +26,14 @@ Failure: `test_P5_11_widgets_manifest_dashboard_reports_complete_coverage` obser
 | `python3 -m pytest -q tests -k P5_11` | 0 | `5 passed, 293 deselected in 23.82s` |
 | `scripts/check_manifest_ownership --manifest port_manifest.yaml --ownership ownership.yaml` | 0 | pass |
 | `scripts/check_changed_file_ownership --base origin/main` | 0 | pass |
-| `python3 scripts/summarize_status` | 0 | pass (`source_files complete=33/213`) |
+| `python3 scripts/summarize_status` | 0 | pass (`widgets: 33/33 complete`) |
 | `python3 scripts/generate_manifest --check` | 0 | pass |
 | `python3 -m pytest -q` | 0 | `287 passed, 11 skipped in 83.85s` |
 | `git diff --check` | 0 | pass |
 
 ## Dashboard outcome
 
-Generated manifest widgets selector:
+`scripts/summarize_status` widgets subsystem summary:
 
 `widgets: 33/33 complete`
 
