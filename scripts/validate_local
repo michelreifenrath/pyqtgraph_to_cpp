@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shlex
 import subprocess
 import sys
@@ -12,11 +13,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def validation_steps(preset: str) -> list[tuple[str, list[str]]]:
+def validation_steps(preset: str, jobs: int) -> list[tuple[str, list[str]]]:
     return [
         ("pytest", [sys.executable, "-m", "pytest", "-q"]),
         ("configure", ["cmake", "--preset", preset]),
-        ("build", ["cmake", "--build", "--preset", preset, "--parallel"]),
+        ("build", ["cmake", "--build", "--preset", preset, "--parallel", str(jobs)]),
         ("ctest", ["ctest", "--preset", preset, "--output-on-failure"]),
         ("git-diff-check", ["git", "diff", "--check"]),
     ]
@@ -35,6 +36,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="CMake configure/build/test preset to validate (default: dev).",
     )
     parser.add_argument(
+        "--jobs",
+        type=int,
+        default=os.cpu_count() or 2,
+        help=(
+            "Bounded build parallelism (default: CPU count). An unbounded "
+            "`cmake --build --parallel` can exhaust memory on CI runners."
+        ),
+    )
+    parser.add_argument(
         "--list-steps",
         action="store_true",
         help="Print the validation steps without running them.",
@@ -44,7 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    steps = validation_steps(args.preset)
+    steps = validation_steps(args.preset, args.jobs)
 
     if args.list_steps:
         for name, command in steps:

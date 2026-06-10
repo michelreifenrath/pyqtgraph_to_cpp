@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -29,11 +30,19 @@ def test_list_steps_matches_agents_baseline_order() -> None:
     assert names == ["pytest", "configure", "build", "ctest", "git-diff-check"]
 
     commands = dict(line.split(": ", 1) for line in lines)
+    default_jobs = os.cpu_count() or 2
     assert commands["pytest"].endswith("-m pytest -q")
     assert commands["configure"] == "cmake --preset dev"
-    assert commands["build"] == "cmake --build --preset dev --parallel"
+    assert commands["build"] == f"cmake --build --preset dev --parallel {default_jobs}"
     assert commands["ctest"] == "ctest --preset dev --output-on-failure"
     assert commands["git-diff-check"] == "git diff --check"
+
+
+def test_build_parallelism_is_always_bounded() -> None:
+    result = run_validate("--list-steps", "--jobs", "3")
+
+    assert result.returncode == 0
+    assert "cmake --build --preset dev --parallel 3" in result.stdout
 
 
 def test_list_steps_applies_requested_preset() -> None:
@@ -41,7 +50,7 @@ def test_list_steps_applies_requested_preset() -> None:
 
     assert result.returncode == 0
     assert "cmake --preset ci-linux" in result.stdout
-    assert "cmake --build --preset ci-linux --parallel" in result.stdout
+    assert "cmake --build --preset ci-linux --parallel " in result.stdout
     assert "ctest --preset ci-linux --output-on-failure" in result.stdout
 
 
