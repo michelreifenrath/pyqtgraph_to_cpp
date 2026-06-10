@@ -1,0 +1,20 @@
+{
+  "issue": "P5.11",
+  "validation_class": "manifest-infra",
+  "dashboard": "widgets: 33/33 complete",
+  "upstream_widget_files": 33,
+  "complete_widget_source_files": 33,
+  "evidence_sources": [
+    "port_manifest.yaml completion_evidence",
+    "reports/issues/P5.01/plotting_widgets.json",
+    "reports/issues/P5.07/pixel_image_buffer.json",
+    "reports/issues/P5.12 through P5.25 interaction proofs",
+    "docs/matplotlib-widget-equivalence.md",
+    "docs/parity-contract.md",
+    "reports/issues/P5.11/deferred_widgets.json"
+  ],
+  "focused_proof": {
+    "command": "python3 -m pytest -q tests -k P5_11",
+    "artifact": "tests/test_widgets_manifest_closure_P5_11.py"
+  }
+}

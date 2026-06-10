@@ -1,0 +1,34 @@
+{
+  "issue": "P5.11",
+  "validation_class": "manifest-infra",
+  "deferred_to": "P5.01",
+  "widgets": [
+    {
+      "upstream_path": "pyqtgraph/widgets/DataFilterWidget.py",
+      "manifest_targets": [
+        "include/pyqtgraph/widgets/DataFilterWidget.hpp",
+        "src/pyqtgraph/widgets/DataFilterWidget.cpp"
+      ],
+      "decision": "manifest_closure_placeholder",
+      "rationale": "P5.11 closes widgets manifest coverage with approved-equivalence placeholders; widget behavior remains owned by P5.01."
+    },
+    {
+      "upstream_path": "pyqtgraph/widgets/ValueLabel.py",
+      "manifest_targets": [
+        "include/pyqtgraph/widgets/ValueLabel.hpp",
+        "src/pyqtgraph/widgets/ValueLabel.cpp"
+      ],
+      "decision": "manifest_closure_placeholder",
+      "rationale": "P5.11 closes widgets manifest coverage with approved-equivalence placeholders; widget behavior remains owned by P5.01."
+    },
+    {
+      "upstream_path": "pyqtgraph/widgets/PenPreviewLabel.py",
+      "manifest_targets": [
+        "include/pyqtgraph/widgets/PenPreviewLabel.hpp",
+        "src/pyqtgraph/widgets/PenPreviewLabel.cpp"
+      ],
+      "decision": "manifest_closure_placeholder",
+      "rationale": "P5.11 closes widgets manifest coverage with approved-equivalence placeholders; widget behavior remains owned by P5.01."
+    }
+  ]
+}
