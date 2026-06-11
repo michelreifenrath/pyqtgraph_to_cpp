@@ -405,6 +405,11 @@ if(_cppqtgraph_has_graphicsitem)
     )
     set_tests_properties(cppqtgraph.graphicsItems.ViewBox.transforms_autorange PROPERTIES LABELS P3.05)
     cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_viewbox_interaction_robustness
+        graphicsItems/test_ViewBox_interaction_robustness.cpp
+        cppqtgraph.graphicsItems.ViewBox.interaction_robustness
+    )
+    cppqtgraph_add_cpp_test(
         cppqtgraph_graphicsitems_viewbox_interaction_linking
         graphicsItems/test_ViewBox_interaction_linking.cpp
         cppqtgraph.graphicsItems.ViewBox.interaction_linking

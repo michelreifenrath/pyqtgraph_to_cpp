@@ -142,6 +142,12 @@ protected:
     QVariant itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value) override;
 
 private:
+    bool applyInteractiveRange(std::optional<AxisRange> xRange,
+                               std::optional<AxisRange> yRange,
+                               qreal padding = 0.0,
+                               bool disableAutoRange = true);
+    void scaleByInteractive(std::optional<qreal> x, std::optional<qreal> y, std::optional<QPointF> center);
+    void translateByInteractive(std::optional<qreal> x, std::optional<qreal> y);
     bool applyAutoRange(std::optional<qreal> padding, const std::array<bool, 2>& axes, bool disableAutoRange = false);
     void updateViewRange(bool forceX = false, bool forceY = false);
     void updateMatrix();
