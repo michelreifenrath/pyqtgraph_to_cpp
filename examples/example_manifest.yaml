@@ -45,12 +45,17 @@ examples:
     title: Command-line usage
     upstream_file: pyqtgraph/examples/CLIexample.py
     cpp_file: examples/CLIexample.cpp
-    status: planned
+    status: ported
+    aliases:
+      - CLIexample.cpp
+      - pyqtgraph/examples/CLIexample.py
     validation:
       smoke: required
       numeric: required
       visual: required
       interaction: not_applicable
+    ctest:
+      normal: cppqtgraph.examples.CLIexample
 
   - order: 2
     name: Plotting
