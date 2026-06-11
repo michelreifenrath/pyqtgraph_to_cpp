@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 45
     env:
       QT_QPA_PLATFORM: offscreen
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_DIR: /home/runner/.ccache
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +28,16 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             qt6-base-dev \
             libopencv-dev \
-            pkg-config
+            pkg-config \
+            ccache
+
+      - name: Restore compiler cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.ccache
+          key: ccache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ runner.os }}-
 
       - uses: actions/setup-python@v5
         with:
