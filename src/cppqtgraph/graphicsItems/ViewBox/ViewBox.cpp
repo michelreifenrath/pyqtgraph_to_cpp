@@ -760,11 +760,15 @@ void ViewBox::setRange(std::optional<AxisRange> xRange,
     targetRange_ = nextTargetRange;
 
     if (disableAutoRange) {
+        const auto previousAutoRange = autoRange_;
         if (xRange.has_value()) {
             autoRange_[xAxis] = false;
         }
         if (yRange.has_value()) {
             autoRange_[yAxis] = false;
+        }
+        if (previousAutoRange != autoRange_) {
+            emit sigStateChanged(this);
         }
     }
 
@@ -1036,8 +1040,12 @@ void ViewBox::autoRange(std::optional<qreal> padding)
         throw std::invalid_argument("padding must be finite");
     }
     applyAutoRange(padding, std::array<bool, 2>{{true, true}}, true);
+    const auto previousAutoRange = autoRange_;
     autoRange_[xAxis] = false;
     autoRange_[yAxis] = false;
+    if (previousAutoRange != autoRange_) {
+        emit sigStateChanged(this);
+    }
 }
 
 void ViewBox::enableAutoRange(int axis, bool enable)
@@ -1045,6 +1053,8 @@ void ViewBox::enableAutoRange(int axis, bool enable)
     if (!axisIsValid(axis)) {
         throw std::invalid_argument("axis must be XAxis, YAxis, or XYAxes");
     }
+
+    const auto previousAutoRange = autoRange_;
 
     if (!enable) {
         const std::array<bool, 2> axes{{
@@ -1066,6 +1076,10 @@ void ViewBox::enableAutoRange(int axis, bool enable)
 
     if (shouldAutoRange) {
         applyAutoRange(defaultPadding_, autoRange_);
+    }
+
+    if (previousAutoRange != autoRange_) {
+        emit sigStateChanged(this);
     }
 }
 
@@ -1500,11 +1514,15 @@ bool ViewBox::applyInteractiveRange(std::optional<AxisRange> xRange,
     targetRange_ = nextTargetRange;
 
     if (disableAutoRange) {
+        const auto previousAutoRange = autoRange_;
         if (xRange.has_value()) {
             autoRange_[xAxis] = false;
         }
         if (yRange.has_value()) {
             autoRange_[yAxis] = false;
+        }
+        if (previousAutoRange != autoRange_) {
+            emit sigStateChanged(this);
         }
     }
 

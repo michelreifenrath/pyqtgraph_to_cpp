@@ -579,6 +579,11 @@ if(_cppqtgraph_has_graphicsitem)
         graphicsItems/test_PlotItem_menu_config_P4_14.cpp
         cppqtgraph.graphicsItems.PlotItem.menu_config.P4_14
     )
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_plotitem_autorange_button
+        graphicsItems/test_PlotItem_autorange_button.cpp
+        cppqtgraph.graphicsItems.PlotItem.autorange_button
+    )
     target_compile_definitions(cppqtgraph_graphicsitems_plotitem_menu_config_p4_14
         PRIVATE
             CPPQTGRAPH_P4_14_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.14"
