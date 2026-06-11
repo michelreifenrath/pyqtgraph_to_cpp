@@ -6,10 +6,11 @@
 #include <QtCore/QVector>
 
 #include <any>
+#include <functional>
+#include <memory>
 #include <optional>
-#include <vector>
 
-class QWidget;
+class QProcess;
 
 namespace cppqtgraph::examples {
 
@@ -40,21 +41,35 @@ struct ExampleEntry {
     ValidationLevels validation{};
 };
 
-struct LaunchedExample {
-    std::vector<QWidget*> windows;
-    std::any holder;
+enum class LaunchResult {
+    Started,
+    MissingExecutable,
+    StartFailed,
+};
 
-    void showAll() const;
+struct LaunchedExample {
+    std::shared_ptr<QProcess> process;
+    QString executablePath;
+    LaunchResult result = LaunchResult::Started;
+    QString errorMessage;
 };
 
 class ExampleRegistry {
 public:
     static const QVector<ExampleEntry>& entries();
     static bool canLaunch(const QString& name);
+    static QString executableFileName(const QString& name);
+    static QString resolveExecutablePath(const QString& name);
     static std::optional<LaunchedExample> launch(const QString& name);
     static QString formatMetadata(const ExampleEntry& entry);
     static QString statusLabel(ExampleStatus status);
     static QString validationLevelLabel(ValidationLevel level);
+
+    using LaunchHook = std::function<std::optional<LaunchedExample>(const QString& name)>;
+    static void setLaunchHookForTesting(LaunchHook hook);
+    static void clearLaunchHookForTesting();
+    static void setExecutableSearchDirectoryForTesting(const QString& directory);
+    static void clearExecutableSearchDirectoryForTesting();
 };
 
 } // namespace cppqtgraph::examples

@@ -3,7 +3,10 @@
 #include "ExampleApp.hpp"
 #include "ExampleRegistry.hpp"
 
+#include <QtCore/QProcess>
 #include <QtWidgets/QApplication>
+
+#include <algorithm>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
@@ -22,6 +25,14 @@ QString listItemLabel(const ExampleEntry& entry)
     const QString status = entry.status == ExampleStatus::Ported ? QStringLiteral("runnable")
                                                                  : QStringLiteral("pending");
     return QStringLiteral("%1 (%2)").arg(entry.title, status);
+}
+
+QString formatProcessFailureNotice(const QString& name, int exitCode, QProcess::ExitStatus status)
+{
+    if (status == QProcess::CrashExit) {
+        return QStringLiteral("Example '%1' crashed.").arg(name);
+    }
+    return QStringLiteral("Example '%1' exited with code %2.").arg(name).arg(exitCode);
 }
 
 } // namespace
@@ -56,6 +67,12 @@ ExampleAppWindow::ExampleAppWindow(QWidget* parent)
     splitter->setStretchFactor(1, 2);
 
     rootLayout->addWidget(splitter, 1);
+
+    statusNotice_ = new QLabel(central);
+    statusNotice_->setObjectName(QStringLiteral("example_status_notice"));
+    statusNotice_->setWordWrap(true);
+    statusNotice_->hide();
+    rootLayout->addWidget(statusNotice_);
 
     runButton_ = new QPushButton(QStringLiteral("Run"), central);
     runButton_->setObjectName(QStringLiteral("example_run_button"));
@@ -94,6 +111,11 @@ QLabel* ExampleAppWindow::metadataPreviewLabel() const
     return metadataPreview_;
 }
 
+QLabel* ExampleAppWindow::statusNoticeLabel() const
+{
+    return statusNotice_;
+}
+
 QPushButton* ExampleAppWindow::runButton() const
 {
     return runButton_;
@@ -128,6 +150,53 @@ bool ExampleAppWindow::activateSelectedExampleForTesting()
     return activateSelectedExample();
 }
 
+void ExampleAppWindow::showStatusNotice(const QString& message)
+{
+    statusNotice_->setText(message);
+    statusNotice_->show();
+}
+
+void ExampleAppWindow::handleLaunchedExample(const QString& name, std::shared_ptr<LaunchedExample> launched)
+{
+    if (launched->result == LaunchResult::MissingExecutable || launched->result == LaunchResult::StartFailed) {
+        showStatusNotice(launched->errorMessage);
+        activeLaunches_.push_back(launched);
+        return;
+    }
+
+    if (launched->process == nullptr) {
+        showStatusNotice(QStringLiteral("Example '%1' could not be launched.").arg(name));
+        activeLaunches_.push_back(launched);
+        return;
+    }
+
+    QProcess* process = launched->process.get();
+    connect(process, &QProcess::errorOccurred, this, [this, name, launched](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart) {
+            showStatusNotice(QStringLiteral("Failed to start example '%1': %2")
+                                 .arg(name, launched->process->errorString()));
+        } else {
+            showStatusNotice(QStringLiteral("Example '%1' failed: %2")
+                                 .arg(name, launched->process->errorString()));
+        }
+        activeLaunches_.erase(std::remove(activeLaunches_.begin(), activeLaunches_.end(), launched),
+                              activeLaunches_.end());
+    });
+    connect(process,
+            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this,
+            [this, name, launched](int exitCode, QProcess::ExitStatus status) {
+                if (status == QProcess::CrashExit || exitCode != 0) {
+                    showStatusNotice(formatProcessFailureNotice(name, exitCode, status));
+                }
+                activeLaunches_.erase(
+                    std::remove(activeLaunches_.begin(), activeLaunches_.end(), launched),
+                    activeLaunches_.end());
+            });
+
+    activeLaunches_.push_back(launched);
+}
+
 bool ExampleAppWindow::activateSelectedExample()
 {
     const QString name = selectedExampleName();
@@ -145,8 +214,7 @@ bool ExampleAppWindow::activateSelectedExample()
     }
 
     auto holder = std::make_shared<LaunchedExample>(std::move(*launched));
-    holder->showAll();
-    activeLaunches_.push_back(holder);
+    handleLaunchedExample(name, holder);
     return true;
 }
 

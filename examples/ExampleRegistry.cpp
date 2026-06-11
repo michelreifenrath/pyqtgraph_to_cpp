@@ -2,16 +2,10 @@
 
 #include "ExampleRegistry.hpp"
 
-#include <QtWidgets/QWidget>
-
-#define CPPQTGRAPH_SIMPLEPLOT_NO_MAIN
-#include "SimplePlot.cpp"
-#define CPPQTGRAPH_IMAGEITEM_NO_MAIN
-#include "ImageItem.cpp"
-#define CPPQTGRAPH_CLIEXAMPLE_NO_MAIN
-#include "CLIexample.cpp"
-#define CPPQTGRAPH_PLOTTING_NO_MAIN
-#include "Plotting.cpp"
+#include <QtCore/QCoreApplication>
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
+#include <QtCore/QProcess>
 
 namespace cppqtgraph::examples {
 
@@ -143,16 +137,42 @@ QVector<ExampleEntry> makeEntries()
     };
 }
 
-} // namespace
+ExampleRegistry::LaunchHook gLaunchHook;
+QString gExecutableSearchDirectory;
 
-void LaunchedExample::showAll() const
+QString searchDirectory()
 {
-    for (QWidget* window : windows) {
-        if (window != nullptr) {
-            window->show();
-        }
+    if (!gExecutableSearchDirectory.isEmpty()) {
+        return gExecutableSearchDirectory;
     }
+    if (QCoreApplication::instance() != nullptr) {
+        return QCoreApplication::applicationDirPath();
+    }
+    return {};
 }
+
+QString resolveExistingExecutablePath(const QString& fileName, const QString& directory)
+{
+    if (directory.isEmpty()) {
+        return {};
+    }
+
+    const QString directPath = QDir(directory).filePath(fileName);
+    if (QFileInfo::exists(directPath)) {
+        return directPath;
+    }
+
+#if defined(Q_OS_WIN)
+    const QString windowsPath = QDir(directory).filePath(fileName + QStringLiteral(".exe"));
+    if (QFileInfo::exists(windowsPath)) {
+        return windowsPath;
+    }
+#endif
+
+    return {};
+}
+
+} // namespace
 
 const QVector<ExampleEntry>& ExampleRegistry::entries()
 {
@@ -212,49 +232,75 @@ bool ExampleRegistry::canLaunch(const QString& name)
     return false;
 }
 
+QString ExampleRegistry::executableFileName(const QString& name)
+{
+    return QStringLiteral("cppqtgraph_examples_%1").arg(name.toLower());
+}
+
+QString ExampleRegistry::resolveExecutablePath(const QString& name)
+{
+    return resolveExistingExecutablePath(executableFileName(name), searchDirectory());
+}
+
 std::optional<LaunchedExample> ExampleRegistry::launch(const QString& name)
 {
     if (!canLaunch(name)) {
         return std::nullopt;
     }
 
-    if (name == QStringLiteral("SimplePlot")) {
-        auto example = std::make_shared<SimplePlotExample>(createSimplePlotExample());
-        LaunchedExample launched{
-            .windows = {example->widget.get()},
-            .holder = example,
-        };
-        return launched;
+    if (gLaunchHook) {
+        return gLaunchHook(name);
     }
 
-    if (name == QStringLiteral("ImageItem")) {
-        auto example = std::make_shared<ImageItemExample>(createImageItemExample());
-        LaunchedExample launched{
-            .windows = {example->widget.get()},
-            .holder = example,
+    const QString fileName = executableFileName(name);
+    const QString executablePath = resolveExistingExecutablePath(fileName, searchDirectory());
+    if (executablePath.isEmpty()) {
+        return LaunchedExample{
+            .process = nullptr,
+            .executablePath = fileName,
+            .result = LaunchResult::MissingExecutable,
+            .errorMessage = QStringLiteral("Example executable not found: %1").arg(fileName),
         };
-        return launched;
     }
 
-    if (name == QStringLiteral("CLIexample")) {
-        auto example = std::make_shared<CLIexample>(createCLIexample());
-        LaunchedExample launched{
-            .windows = {example->plotWidget.get(), example->imageWidget.get()},
-            .holder = example,
+    auto process = std::make_shared<QProcess>();
+    process->setProgram(executablePath);
+    process->start();
+    if (process->state() == QProcess::NotRunning && process->error() != QProcess::UnknownError) {
+        return LaunchedExample{
+            .process = process,
+            .executablePath = executablePath,
+            .result = LaunchResult::StartFailed,
+            .errorMessage = QStringLiteral("Failed to start example: %1").arg(process->errorString()),
         };
-        return launched;
     }
 
-    if (name == QStringLiteral("Plotting")) {
-        auto example = std::make_shared<PlottingExample>(createPlottingExample());
-        LaunchedExample launched{
-            .windows = {example->widget.get()},
-            .holder = example,
-        };
-        return launched;
-    }
+    return LaunchedExample{
+        .process = process,
+        .executablePath = executablePath,
+        .result = LaunchResult::Started,
+        .errorMessage = {},
+    };
+}
 
-    return std::nullopt;
+void ExampleRegistry::setLaunchHookForTesting(LaunchHook hook)
+{
+    gLaunchHook = std::move(hook);
+}
+
+void ExampleRegistry::clearLaunchHookForTesting()
+{
+    gLaunchHook = {};
+}
+
+void ExampleRegistry::setExecutableSearchDirectoryForTesting(const QString& directory)
+{
+    gExecutableSearchDirectory = directory;
+}
+
+void ExampleRegistry::clearExecutableSearchDirectoryForTesting()
+{
+    gExecutableSearchDirectory.clear();
 }
 
 } // namespace cppqtgraph::examples

@@ -1056,6 +1056,18 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.examples.ExampleApp
     )
     target_link_libraries(cppqtgraph_examples_exampleapp_test PRIVATE Qt6::Test)
+    add_dependencies(cppqtgraph_examples_exampleapp
+        cppqtgraph_examples_simpleplot
+        cppqtgraph_examples_imageitem
+        cppqtgraph_examples_cliexample
+        cppqtgraph_examples_plotting
+    )
+    add_dependencies(cppqtgraph_examples_exampleapp_test
+        cppqtgraph_examples_simpleplot
+        cppqtgraph_examples_imageitem
+        cppqtgraph_examples_cliexample
+        cppqtgraph_examples_plotting
+    )
     set_tests_properties(cppqtgraph.examples.ExampleApp PROPERTIES LABELS "interaction")
     add_test(
         NAME P3.72.visual.Plotting
