@@ -887,6 +887,8 @@ if(_cppqtgraph_has_graphicsitem)
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_simpleplot)
     add_executable(cppqtgraph_examples_imageitem "${PROJECT_SOURCE_DIR}/examples/ImageItem.cpp")
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_imageitem)
+    add_executable(cppqtgraph_examples_cliexample "${PROJECT_SOURCE_DIR}/examples/CLIexample.cpp")
+    cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_cliexample)
 
     cppqtgraph_add_cpp_test(
         cppqtgraph_visual_plotcurveitem_bounds
@@ -1002,6 +1004,12 @@ if(_cppqtgraph_has_graphicsitem)
             CPPQTGRAPH_P2_14_VISUAL_DIFF_DIR="${PROJECT_BINARY_DIR}/reports/visual-diffs/ImageItem-example"
     )
     set_tests_properties(cppqtgraph.examples.ImageItem PROPERTIES LABELS "visual;P2.14")
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_examples_cliexample_test
+        examples/test_CLIexample.cpp
+        cppqtgraph.examples.CLIexample
+    )
+    set_tests_properties(cppqtgraph.examples.CLIexample PROPERTIES LABELS "visual")
     cppqtgraph_add_cpp_test(cppqtgraph_hierarchy_cpp hierarchy/test_cpp_hierarchy.cpp cppqtgraph.hierarchy.cpp)
 endif()
 

@@ -165,9 +165,25 @@ def test_unknown_manifest_example_selection_fails_closed_without_git() -> None:
     assert "Traceback" not in result.stderr
 
 
-def test_planned_manifest_example_selection_fails_closed_without_git() -> None:
+def test_manifest_registry_derives_cliexample_ctest_metadata() -> None:
+    module = load_run_changed_examples_module()
+
+    examples = module.manifest_examples(REPO_ROOT)
+    cliexample = [example for example in examples if example.name == "CLIexample"]
+
+    assert len(cliexample) == 1
+    example = cliexample[0]
+    assert example.target_path == "examples/CLIexample.cpp"
+    assert example.ctest_name == "cppqtgraph.examples.CLIexample"
+    assert example.visual_ctest_name is None
+    assert example.visual_required is True
+    assert "pyqtgraph/examples/CLIexample.py" in example.aliases
+
+
+def test_cliexample_dry_run_emits_manifest_ctest_command() -> None:
     result = run_changed_examples("CLIexample", "--dry-run")
 
-    assert result.returncode == 2
-    assert "unknown example selection: CLIexample" in result.stderr
-    assert "Traceback" not in result.stderr
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        "ctest --preset dev -R '^cppqtgraph\\.examples\\.CLIexample$' --output-on-failure"
+    ]
