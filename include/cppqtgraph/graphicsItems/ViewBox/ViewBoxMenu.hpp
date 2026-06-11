@@ -7,6 +7,9 @@
 
 #include <QtWidgets/QMenu>
 
+class QAction;
+class QActionGroup;
+
 namespace cppqtgraph::graphicsItems {
 
 class ViewBox;
@@ -24,9 +27,22 @@ public:
     ViewBoxMenu& operator=(ViewBoxMenu&&) = delete;
 
     [[nodiscard]] ViewBox* view() const noexcept;
+    void updateState();
+
+private slots:
+    void onViewAll();
+    void onXAutoRangeToggled(bool checked);
+    void onYAutoRangeToggled(bool checked);
+    void onMouseModeTriggered(QAction* action);
 
 private:
     ViewBox* view_ = nullptr;
+    QAction* viewAllAction_ = nullptr;
+    QAction* xAutoRangeAction_ = nullptr;
+    QAction* yAutoRangeAction_ = nullptr;
+    QAction* panModeAction_ = nullptr;
+    QAction* rectModeAction_ = nullptr;
+    QActionGroup* mouseModeGroup_ = nullptr;
 };
 
 } // namespace cppqtgraph::graphicsItems

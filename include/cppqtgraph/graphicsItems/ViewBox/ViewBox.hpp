@@ -9,6 +9,7 @@
 
 #include <QtCore/QMetaObject>
 #include <QtCore/QObject>
+#include <QtCore/QPoint>
 #include <QtCore/QPointF>
 #include <QtCore/QPointer>
 #include <QtCore/QRectF>
@@ -23,10 +24,13 @@
 #include <QtWidgets/QGraphicsSceneWheelEvent>
 
 #include <array>
+#include <memory>
 #include <optional>
 #include <vector>
 
 namespace cppqtgraph::graphicsItems {
+
+class ViewBoxMenu;
 
 class ViewBox : public GraphicsWidget {
     Q_OBJECT
@@ -104,6 +108,13 @@ public:
     [[nodiscard]] std::array<bool, 2> autoRangeEnabled() const;
     void setDefaultPadding(qreal padding = 0.02);
 
+    [[nodiscard]] ViewBoxMenu* menu() noexcept;
+    [[nodiscard]] const ViewBoxMenu* menu() const noexcept;
+    void setMenuEnabled(bool enable = true);
+    [[nodiscard]] bool menuEnabled() const noexcept;
+    void raiseContextMenu(const QPoint& globalPos);
+    [[nodiscard]] int contextMenuRaiseCount() const noexcept;
+
     void setAspectLocked(bool lock = true, std::optional<qreal> ratio = 1.0);
     void invertX(bool inverted = true);
     void invertY(bool inverted = true);
@@ -157,6 +168,8 @@ private:
     void pruneAddedItems() const;
     void emitRangeChanges(const std::array<bool, 2>& changed);
     void notifyLinkedViews(const std::array<bool, 2>& changed);
+    void ensureMenu();
+    [[nodiscard]] int dragThresholdPixels() const;
     [[nodiscard]] QRectF screenGeometry() const;
     [[nodiscard]] qreal currentAspectRatio() const;
 
@@ -175,10 +188,15 @@ private:
     int mouseMode_ = PanMode;
     qreal wheelScaleFactor_ = -1.0 / 8.0;
     bool dragActive_ = false;
+    bool rightDragExceededThreshold_ = false;
     Qt::MouseButton dragButton_ = Qt::NoButton;
     QPointF dragLastPos_;
     QPointF dragButtonDownPos_;
     QPoint dragLastScreenPos_;
+    QPoint dragButtonDownScreenPos_;
+    std::unique_ptr<ViewBoxMenu> menu_;
+    bool menuEnabled_ = true;
+    int contextMenuRaiseCount_ = 0;
     std::array<QPointer<ViewBox>, 2> linkedViews_{{nullptr, nullptr}};
     std::array<std::array<QMetaObject::Connection, 2>, 2> linkConnections_{};
     bool linksBlocked_ = false;

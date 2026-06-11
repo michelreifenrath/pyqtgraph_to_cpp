@@ -159,6 +159,8 @@ if(_cppqtgraph_has_graphicsitem)
             src/cppqtgraph/graphicsItems/VTickGroup.cpp
             include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp
             src/cppqtgraph/graphicsItems/ViewBox/ViewBox.cpp
+            include/cppqtgraph/graphicsItems/ViewBox/ViewBoxMenu.hpp
+            src/cppqtgraph/graphicsItems/ViewBox/ViewBoxMenu.cpp
             include/cppqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.hpp
             src/cppqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.cpp
             src/cppqtgraph/graphicsItems/PlotItem/PlotItem.cpp
