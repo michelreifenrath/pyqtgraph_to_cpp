@@ -1,0 +1,33 @@
+{
+  "description": "Pinned Plotting p5 axis parity expectations for AxisItem SI prefix and log ticks.",
+  "source": {
+    "id": "pyqtgraph-0.14.0",
+    "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+    "upstream_files": [
+      "pyqtgraph/graphicsItems/AxisItem.py",
+      "pyqtgraph/functions.py",
+      "pyqtgraph/examples/Plotting.py"
+    ],
+    "native_seed": "0x504C5454",
+    "native_reference": "examples/Plotting.cpp p5 data and label/log configuration"
+  },
+  "ranges": {
+    "bottom_log_x": [-7.388271382801615, -4.509981088978167],
+    "left_linear_y": [1.02795, 1.0679]
+  },
+  "si_prefix": {
+    "bottom": {"prefix": "µ", "scale": 1000000.0},
+    "left": {"prefix": "", "scale": 1.0}
+  },
+  "bottom_log_ticks": {
+    "axis_pixels": 340.0,
+    "major_values": [-7.0, -6.0, -5.0],
+    "major_strings": ["0.1", "1", "10¹"],
+    "minor_contains": -5.698970004336018
+  },
+  "left_linear_ticks": {
+    "axis_pixels": 240.0,
+    "major_values": [1.03, 1.04, 1.05, 1.06],
+    "major_strings": ["1.03", "1.04", "1.05", "1.06"]
+  }
+}

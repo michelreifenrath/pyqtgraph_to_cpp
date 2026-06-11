@@ -370,6 +370,12 @@ if(_cppqtgraph_has_graphicsitem)
     )
     set_tests_properties(cppqtgraph.graphicsItems.AxisItem PROPERTIES LABELS "visual;P3.07")
     cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_axisitem_p5_parity
+        graphicsItems/test_AxisItem_p5_parity.cpp
+        cppqtgraph.graphicsItems.AxisItem.p5_parity
+    )
+    set_tests_properties(cppqtgraph.graphicsItems.AxisItem.p5_parity PROPERTIES LABELS "P388")
+    cppqtgraph_add_cpp_test(
         cppqtgraph_graphicsitems_dateaxisitem_p3_08
         graphicsItems/test_DateAxisItem_P3_08.cpp
         cppqtgraph.graphicsItems.DateAxisItem.P3_08
