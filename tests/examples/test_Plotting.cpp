@@ -88,8 +88,13 @@ bool testPlottingData(cppqtgraph::examples::PlottingExample& example)
     CHECK(example.p2RedCurve->pen().color() == QColor(255, 0, 0));
     CHECK(example.p2GreenCurve->pen().color() == QColor(0, 255, 0));
     CHECK(example.p2BlueCurve->pen().color() == QColor(0, 0, 255));
+    CHECK(example.plots[1]->legend() == nullptr);
 
     CHECK(example.p3Curve->pen().color() == QColor(200, 200, 200));
+    CHECK(example.p3Curve->symbolsVisible());
+    CHECK(example.p3Curve->symbol() == QStringLiteral("o"));
+    CHECK(example.p3Curve->symbolBrush().color() == QColor(255, 0, 0));
+    CHECK(example.p3Curve->symbolPen().color() == QColor(255, 255, 255));
 
     CHECK(example.plots[3]->gridState().x);
     CHECK(example.plots[3]->gridState().y);

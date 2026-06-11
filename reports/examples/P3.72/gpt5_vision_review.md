@@ -16,12 +16,14 @@ blocking_findings: []
 non_blocking_findings:
   - Minor Qt/font rasterization and multi-panel layout deltas remain within deterministic visual tolerance for a nine-plot grid.
 summary: >-
-  The committed Plotting reference and native C++ screenshots both show a
-  1000x600 GraphicsLayoutWidget with nine titled plot panels arranged in three
-  rows: basic array, multi-curve, point drawing, parametric grid, log-scatter
-  with labels, updating curve, filled plot with hidden bottom axis, region
-  selection, and zoom-linked detail plot. The diff image is consistent with
-  bounded native Qt rasterization/styling differences rather than missing,
-  blank, placeholder, or mis-scaled plotted content. P3.72 deterministic reruns
-  write fresh visual-diff and example-report artifacts under the build directory;
+  The committed Plotting reference is rendered from pinned PyQtGraph oracle
+  semantics (no p2 legend, p3 point symbols with red brush and white pen) and
+  the native C++ screenshot shows the same 1000x600 GraphicsLayoutWidget with
+  nine titled plot panels arranged in three rows: basic array, multi-curve,
+  point drawing, parametric grid, log-scatter with labels, updating curve,
+  filled plot with hidden bottom axis, region selection, and zoom-linked detail
+  plot. The diff image is consistent with bounded native Qt rasterization and
+  deterministic-data styling differences rather than missing, blank,
+  placeholder, or mis-scaled plotted content. P3.72 deterministic reruns write
+  fresh visual-diff and example-report artifacts under the build directory;
   the reviewed committed inputs above remain stable PR evidence.

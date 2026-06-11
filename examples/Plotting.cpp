@@ -107,7 +107,7 @@ struct PlottingExample {
     graphicsItems::PlotCurveItem* p2RedCurve = nullptr;
     graphicsItems::PlotCurveItem* p2GreenCurve = nullptr;
     graphicsItems::PlotCurveItem* p2BlueCurve = nullptr;
-    graphicsItems::PlotCurveItem* p3Curve = nullptr;
+    graphicsItems::PlotDataItem* p3Curve = nullptr;
     graphicsItems::PlotDataItem* p5Scatter = nullptr;
     graphicsItems::PlotCurveItem* p6Curve = nullptr;
     graphicsItems::PlotCurveItem* p7Curve = nullptr;
@@ -224,7 +224,6 @@ PlottingExample createPlottingExample()
 
     auto* p2 = example.widget->addPlot();
     p2->setTitle(QStringLiteral("Multiple curves"));
-    p2->addLegend();
     example.p2RedCurve = p2->plot(example.state->p2Red, QStringLiteral("Red curve"));
     example.p2RedCurve->setPen(makeRgbPen(255, 0, 0));
     example.p2GreenCurve = p2->plot(example.state->p2Green, QStringLiteral("Green curve"));
@@ -235,8 +234,13 @@ PlottingExample createPlottingExample()
 
     auto* p3 = example.widget->addPlot();
     p3->setTitle(QStringLiteral("Drawing with points"));
-    example.p3Curve = p3->plot(example.state->p3Y);
-    example.p3Curve->setPen(makeRgbPen(200, 200, 200));
+    auto* p3Data = new graphicsItems::PlotDataItem(example.state->p3Y);
+    p3Data->setPen(makeRgbPen(200, 200, 200));
+    p3Data->setSymbol(QStringLiteral("o"));
+    p3Data->setSymbolBrush(QBrush(QColor(255, 0, 0)));
+    p3Data->setSymbolPen(QPen(Qt::white));
+    p3->addItem(p3Data);
+    example.p3Curve = p3Data;
     example.plots[2] = p3;
 
     example.widget->nextRow();
