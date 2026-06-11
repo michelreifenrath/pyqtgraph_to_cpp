@@ -8,7 +8,9 @@
 #include "GraphicsWidget.hpp"
 
 #include <QtCore/QLineF>
+#include <QtCore/QPointer>
 #include <QtCore/QRectF>
+#include <QtCore/QPointF>
 #include <QtCore/QString>
 #include <QtCore/Qt>
 #include <QtGui/QFont>
@@ -21,13 +23,17 @@
 #include <utility>
 #include <vector>
 
+class QGraphicsSceneMouseEvent;
 class QGraphicsSceneResizeEvent;
+class QGraphicsSceneWheelEvent;
 class QPainter;
 class QStyleOptionGraphicsItem;
 class QVariant;
 class QWidget;
 
 namespace cppqtgraph::graphicsItems {
+
+class ViewBox;
 
 class AxisItem : public GraphicsWidget {
 public:
@@ -147,16 +153,32 @@ public:
     void show();
     void hide();
 
+    void linkToView(ViewBox* view);
+    void unlinkFromView();
+    [[nodiscard]] ViewBox* linkedView() const noexcept;
+
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
     void resizeEvent(QGraphicsSceneResizeEvent* event) override;
+    void wheelEvent(QGraphicsSceneWheelEvent* event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
+    [[nodiscard]] int linkedAxisIndex() const noexcept;
+    [[nodiscard]] bool shouldIgnoreLinkedViewEvent(const QPointF& scenePos) const;
+
     void updateSize();
     void updateLabelPosition();
 
     struct Private;
     std::unique_ptr<Private> d_;
+
+    QPointer<ViewBox> linkedView_;
+    bool dragActive_ = false;
+    Qt::MouseButton dragButton_ = Qt::NoButton;
+    QPointF dragLastPos_;
 };
 
 } // namespace cppqtgraph::graphicsItems
