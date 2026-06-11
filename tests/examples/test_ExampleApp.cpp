@@ -73,6 +73,21 @@ std::optional<cppqtgraph::examples::LaunchedExample> makeFalseBinaryLaunch(const
     };
 }
 
+std::optional<cppqtgraph::examples::LaunchedExample> makeAsyncStartFailureLaunch(const QString& name)
+{
+    auto process = std::make_shared<QProcess>();
+    const QString missingPath = QStringLiteral("/nonexistent/cppqtgraph_examples_%1").arg(name);
+    process->setProgram(missingPath);
+    process->start();
+
+    return cppqtgraph::examples::LaunchedExample{
+        .process = process,
+        .executablePath = missingPath,
+        .result = cppqtgraph::examples::LaunchResult::Started,
+        .errorMessage = {},
+    };
+}
+
 bool testRegistryOrderAndStatus()
 {
     const QVector<cppqtgraph::examples::ExampleEntry>& entries = cppqtgraph::examples::ExampleRegistry::entries();
@@ -264,6 +279,32 @@ bool testMissingBinaryShowsNotice()
     return true;
 }
 
+bool testAsyncStartFailureShowsNotice()
+{
+    cppqtgraph::examples::ExampleAppWindow window;
+    QListWidget* list = window.exampleListWidget();
+
+    cppqtgraph::examples::ExampleRegistry::setLaunchHookForTesting(makeAsyncStartFailureLaunch);
+
+    list->setCurrentRow(findListRowByName(list, QStringLiteral("SimplePlot")));
+    CHECK(window.runSelectedExample());
+
+    for (int attempt = 0; attempt < 100; ++attempt) {
+        QCoreApplication::processEvents();
+        if (window.statusNoticeLabel()->isVisible()
+            && window.statusNoticeLabel()->text().contains(QStringLiteral("Failed to start"))) {
+            break;
+        }
+        QTest::qWait(10);
+    }
+
+    CHECK(window.statusNoticeLabel()->text().contains(QStringLiteral("Failed to start")));
+    CHECK(window.isRunEnabled());
+
+    cppqtgraph::examples::ExampleRegistry::clearLaunchHookForTesting();
+    return true;
+}
+
 bool testFailingChildKeepsLauncherAlive()
 {
     cppqtgraph::examples::ExampleAppWindow window;
@@ -337,6 +378,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testMissingBinaryShowsNotice()) {
+        return 1;
+    }
+    if (!testAsyncStartFailureShowsNotice()) {
         return 1;
     }
     if (!testFailingChildKeepsLauncherAlive()) {

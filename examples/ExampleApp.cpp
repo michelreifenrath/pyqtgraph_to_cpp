@@ -171,6 +171,17 @@ void ExampleAppWindow::handleLaunchedExample(const QString& name, std::shared_pt
     }
 
     QProcess* process = launched->process.get();
+    connect(process, &QProcess::errorOccurred, this, [this, name, launched](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart) {
+            showStatusNotice(QStringLiteral("Failed to start example '%1': %2")
+                                 .arg(name, launched->process->errorString()));
+        } else {
+            showStatusNotice(QStringLiteral("Example '%1' failed: %2")
+                                 .arg(name, launched->process->errorString()));
+        }
+        activeLaunches_.erase(std::remove(activeLaunches_.begin(), activeLaunches_.end(), launched),
+                              activeLaunches_.end());
+    });
     connect(process,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
