@@ -187,6 +187,221 @@ AxisRange ensureQuantizedRange(AxisRange range)
     return range;
 }
 
+std::optional<qreal> safeStableCenter(const AxisRange& range)
+{
+    const qreal span = range[1] - range[0];
+    if (isFinite(span)) {
+        const qreal center = range[0] + span / 2.0;
+        if (isFinite(center)) {
+            return center;
+        }
+    }
+
+    const qreal center = range[0] / 2.0 + range[1] / 2.0;
+    if (!isFinite(center)) {
+        return std::nullopt;
+    }
+    return center;
+}
+
+std::optional<AxisRange> safeRangeAroundCenter(qreal center, qreal halfSpan)
+{
+    if (auto range = expandedAroundCenter(center, halfSpan)) {
+        return *range;
+    }
+
+    const qreal quantizedHalfSpan = quantizationLimit(center);
+    if (auto range = expandedAroundCenter(center, quantizedHalfSpan)) {
+        return *range;
+    }
+
+    if (auto range = expandedAroundCenter(center, 0.5)) {
+        return *range;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<AxisRange> safeExpandCollapsedRange(qreal center, const AxisRange& previous)
+{
+    if (!isFinite(center)) {
+        return std::nullopt;
+    }
+
+    const qreal previousSpan = previous[1] - previous[0];
+    if (isFinite(previousSpan) && previousSpan > 0.0) {
+        if (auto range = expandedAroundCenter(center, previousSpan / 2.0)) {
+            return *range;
+        }
+    }
+
+    return safeRangeAroundCenter(center, 0.0);
+}
+
+std::optional<AxisRange> safeEnsureQuantizedRange(AxisRange range)
+{
+    if (!rangeIsFinite(range) || range[1] <= range[0]) {
+        return std::nullopt;
+    }
+
+    const qreal span = range[1] - range[0];
+    if (!isFinite(span)) {
+        return std::nullopt;
+    }
+
+    const auto center = safeStableCenter(range);
+    if (!center.has_value()) {
+        return std::nullopt;
+    }
+
+    const qreal limit = quantizationLimit(*center);
+    if (limit > 0.0 && span < 2.0 * limit) {
+        return safeRangeAroundCenter(*center, limit);
+    }
+
+    return range;
+}
+
+std::optional<AxisRange> safeNormalizeRequestedRange(AxisRange requested, AxisRange previous, qreal padding)
+{
+    if (!isFinite(requested[0]) || !isFinite(requested[1]) || !isFinite(padding)) {
+        return std::nullopt;
+    }
+
+    if (requested[1] < requested[0]) {
+        std::swap(requested[0], requested[1]);
+    }
+
+    qreal span = requested[1] - requested[0];
+    bool preservingPreviousSpan = false;
+    if (span == 0.0) {
+        const auto center = safeStableCenter(requested);
+        if (!center.has_value()) {
+            return std::nullopt;
+        }
+        const auto expanded = safeExpandCollapsedRange(*center, previous);
+        if (!expanded.has_value()) {
+            return std::nullopt;
+        }
+        requested = *expanded;
+        preservingPreviousSpan = true;
+    } else {
+        const auto quantized = safeEnsureQuantizedRange(requested);
+        if (!quantized.has_value()) {
+            return std::nullopt;
+        }
+        requested = *quantized;
+    }
+
+    if (padding != 0.0 && !preservingPreviousSpan) {
+        span = requested[1] - requested[0];
+        if (!isFinite(span)) {
+            return std::nullopt;
+        }
+        const qreal expansion = span * padding;
+        if (!isFinite(expansion)) {
+            return std::nullopt;
+        }
+        requested[0] -= expansion;
+        requested[1] += expansion;
+        if (!rangeIsFinite(requested)) {
+            return std::nullopt;
+        }
+        if (requested[0] == requested[1]) {
+            const auto center = safeStableCenter(requested);
+            if (!center.has_value()) {
+                return std::nullopt;
+            }
+            const auto expanded = safeExpandCollapsedRange(*center, previous);
+            if (!expanded.has_value()) {
+                return std::nullopt;
+            }
+            requested = *expanded;
+        } else if (requested[1] < requested[0]) {
+            return std::nullopt;
+        }
+    }
+
+    return safeEnsureQuantizedRange(requested);
+}
+
+std::optional<AxisRange> safeClampAxisToLimits(AxisRange range,
+                                               const std::optional<qreal>& lowerLimit,
+                                               const std::optional<qreal>& upperLimit,
+                                               const std::optional<qreal>& minSpanLimit,
+                                               const std::optional<qreal>& maxSpanLimit)
+{
+    if (!rangeIsFinite(range) || range[1] <= range[0]) {
+        return std::nullopt;
+    }
+
+    const auto center = safeStableCenter(range);
+    if (!center.has_value()) {
+        return std::nullopt;
+    }
+
+    qreal span = range[1] - range[0];
+
+    if (maxSpanLimit.has_value() && span > *maxSpanLimit) {
+        span = *maxSpanLimit;
+        const auto bounded = safeRangeAroundCenter(*center, span / 2.0);
+        if (!bounded.has_value()) {
+            return std::nullopt;
+        }
+        range = *bounded;
+    }
+    if (minSpanLimit.has_value() && span < *minSpanLimit) {
+        span = *minSpanLimit;
+        const auto bounded = safeRangeAroundCenter(*center, span / 2.0);
+        if (!bounded.has_value()) {
+            return std::nullopt;
+        }
+        range = *bounded;
+    }
+
+    if (lowerLimit.has_value() && upperLimit.has_value()) {
+        const qreal boundedSpan = *upperLimit - *lowerLimit;
+        span = range[1] - range[0];
+        if (span >= boundedSpan) {
+            AxisRange boundedRange{*lowerLimit, *upperLimit};
+            if (!rangeIsFinite(boundedRange) || boundedRange[1] <= boundedRange[0]) {
+                return std::nullopt;
+            }
+            return boundedRange;
+        }
+    }
+
+    if (lowerLimit.has_value() && range[0] < *lowerLimit) {
+        const qreal delta = *lowerLimit - range[0];
+        range[0] += delta;
+        range[1] += delta;
+    }
+    if (upperLimit.has_value() && range[1] > *upperLimit) {
+        const qreal delta = range[1] - *upperLimit;
+        range[0] -= delta;
+        range[1] -= delta;
+    }
+    if (lowerLimit.has_value() && range[0] < *lowerLimit) {
+        range[0] = *lowerLimit;
+    }
+    if (upperLimit.has_value() && range[1] > *upperLimit) {
+        range[1] = *upperLimit;
+    }
+
+    if (!rangeIsFinite(range) || range[1] <= range[0]) {
+        return std::nullopt;
+    }
+    return range;
+}
+
+std::optional<AxisRange> safeClampAxisToLimits(AxisRange range, const Limits& limits, int axis)
+{
+    if (axis == xAxis) {
+        return safeClampAxisToLimits(range, limits.xMin, limits.xMax, limits.minXRange, limits.maxXRange);
+    }
+    return safeClampAxisToLimits(range, limits.yMin, limits.yMax, limits.minYRange, limits.maxYRange);
+}
+
 void validateFiniteOptional(const std::optional<qreal>& value, const char* name)
 {
     if (value.has_value() && !isFinite(*value)) {
@@ -814,6 +1029,10 @@ void ViewBox::blockLink(bool block)
 
 void ViewBox::autoRange(std::optional<qreal> padding)
 {
+    const qreal effectivePadding = padding.value_or(defaultPadding_);
+    if (!isFinite(effectivePadding)) {
+        throw std::invalid_argument("padding must be finite");
+    }
     applyAutoRange(padding, std::array<bool, 2>{{true, true}}, true);
     autoRange_[xAxis] = false;
     autoRange_[yAxis] = false;
@@ -1042,9 +1261,9 @@ void ViewBox::wheelEvent(QGraphicsSceneWheelEvent* event)
 
     const qreal scale = std::pow(1.02, static_cast<qreal>(event->delta()) * wheelScaleFactor_);
     const QPointF center = mapToView(event->pos());
-    scaleBy(mask[xAxis] ? std::optional<qreal>{scale} : std::nullopt,
-            mask[yAxis] ? std::optional<qreal>{scale} : std::nullopt,
-            center);
+    scaleByInteractive(mask[xAxis] ? std::optional<qreal>{scale} : std::nullopt,
+                       mask[yAxis] ? std::optional<qreal>{scale} : std::nullopt,
+                       center);
     event->accept();
     emit sigRangeChangedManually(mask);
 }
@@ -1083,8 +1302,8 @@ void ViewBox::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
         const QTransform inverse = childTransform().inverted();
         const QPointF mapped = inverse.map(QPointF(mask[xAxis] ? diff.x() : 0.0, mask[yAxis] ? diff.y() : 0.0)) - inverse.map(QPointF(0.0, 0.0));
         if (mask[xAxis] || mask[yAxis]) {
-            translateBy(mask[xAxis] ? std::optional<qreal>{mapped.x()} : std::nullopt,
-                        mask[yAxis] ? std::optional<qreal>{mapped.y()} : std::nullopt);
+            translateByInteractive(mask[xAxis] ? std::optional<qreal>{mapped.x()} : std::nullopt,
+                                   mask[yAxis] ? std::optional<qreal>{mapped.y()} : std::nullopt);
             emit sigRangeChangedManually(mask);
         }
         dragLastPos_ = event->pos();
@@ -1107,7 +1326,7 @@ void ViewBox::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
         const std::optional<qreal> xScale = mask[xAxis] ? std::optional<qreal>{std::pow(1.02, xExponent)} : std::nullopt;
         const std::optional<qreal> yScale = mask[yAxis] ? std::optional<qreal>{std::pow(1.02, yExponent)} : std::nullopt;
         if (xScale.has_value() || yScale.has_value()) {
-            scaleBy(xScale, yScale, mapToView(dragButtonDownPos_));
+            scaleByInteractive(xScale, yScale, mapToView(dragButtonDownPos_));
             emit sigRangeChangedManually(mask);
         }
         dragLastPos_ = event->pos();
@@ -1125,7 +1344,9 @@ void ViewBox::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         if (dragButton_ == Qt::LeftButton && mouseMode_ == RectMode) {
             const QRectF zoomRect = QRectF(mapToView(dragButtonDownPos_), mapToView(event->pos())).normalized();
             if (!zoomRect.isEmpty()) {
-                setRange(zoomRect, 0.0);
+                applyInteractiveRange(AxisRange{zoomRect.left(), zoomRect.right()},
+                                      AxisRange{zoomRect.top(), zoomRect.bottom()},
+                                      0.0);
                 emit sigRangeChangedManually(mouseEnabled_);
             }
         }
@@ -1161,6 +1382,116 @@ QVariant ViewBox::itemChange(QGraphicsItem::GraphicsItemChange change, const QVa
     return result;
 }
 
+bool ViewBox::applyInteractiveRange(std::optional<AxisRange> xRange,
+                                    std::optional<AxisRange> yRange,
+                                    qreal padding,
+                                    bool disableAutoRange)
+{
+    if (!xRange.has_value() && !yRange.has_value()) {
+        return false;
+    }
+
+    Range2D nextTargetRange = targetRange_;
+    bool applied = false;
+
+    if (xRange.has_value()) {
+        if (const auto normalized = safeNormalizeRequestedRange(*xRange, targetRange_[xAxis], padding)) {
+            if (const auto clamped = safeClampAxisToLimits(*normalized, limits_, xAxis)) {
+                nextTargetRange[xAxis] = *clamped;
+                applied = true;
+            }
+        }
+    }
+    if (yRange.has_value()) {
+        if (const auto normalized = safeNormalizeRequestedRange(*yRange, targetRange_[yAxis], padding)) {
+            if (const auto clamped = safeClampAxisToLimits(*normalized, limits_, yAxis)) {
+                nextTargetRange[yAxis] = *clamped;
+                applied = true;
+            }
+        }
+    }
+
+    if (!applied || !rangeIsFinite(nextTargetRange[xAxis]) || !rangeIsFinite(nextTargetRange[yAxis])
+        || nextTargetRange[xAxis][1] <= nextTargetRange[xAxis][0]
+        || nextTargetRange[yAxis][1] <= nextTargetRange[yAxis][0]) {
+        return false;
+    }
+
+    const Range2D previousTargetRange = targetRange_;
+    targetRange_ = nextTargetRange;
+
+    if (disableAutoRange) {
+        if (xRange.has_value()) {
+            autoRange_[xAxis] = false;
+        }
+        if (yRange.has_value()) {
+            autoRange_[yAxis] = false;
+        }
+    }
+
+    const bool lockX = xRange.has_value() && !yRange.has_value();
+    const bool lockY = yRange.has_value() && !xRange.has_value();
+    try {
+        updateViewRange(lockX, lockY);
+    } catch (...) {
+        targetRange_ = previousTargetRange;
+        return false;
+    }
+    return true;
+}
+
+void ViewBox::scaleByInteractive(std::optional<qreal> x, std::optional<qreal> y, std::optional<QPointF> center)
+{
+    if (!x.has_value() && !y.has_value()) {
+        return;
+    }
+    if ((x.has_value() && !isFinite(*x)) || (y.has_value() && !isFinite(*y))) {
+        return;
+    }
+    if (center.has_value() && (!isFinite(center->x()) || !isFinite(center->y()))) {
+        return;
+    }
+
+    const QRectF rect = targetRect();
+    const QPointF scale{x.value_or(1.0), y.value_or(1.0)};
+    const QPointF scaleCenter = center.value_or(rect.center());
+    const QPointF topLeft = scaleCenter
+        + QPointF((rect.left() - scaleCenter.x()) * scale.x(), (rect.top() - scaleCenter.y()) * scale.y());
+    const QPointF bottomRight = scaleCenter
+        + QPointF((rect.right() - scaleCenter.x()) * scale.x(), (rect.bottom() - scaleCenter.y()) * scale.y());
+
+    if (!isFinite(topLeft.x()) || !isFinite(topLeft.y()) || !isFinite(bottomRight.x()) || !isFinite(bottomRight.y())) {
+        return;
+    }
+
+    if (x.has_value() && y.has_value()) {
+        applyInteractiveRange(AxisRange{topLeft.x(), bottomRight.x()}, AxisRange{topLeft.y(), bottomRight.y()}, 0.0);
+    } else if (x.has_value()) {
+        applyInteractiveRange(AxisRange{topLeft.x(), bottomRight.x()}, std::nullopt, 0.0);
+    } else {
+        applyInteractiveRange(std::nullopt, AxisRange{topLeft.y(), bottomRight.y()}, 0.0);
+    }
+}
+
+void ViewBox::translateByInteractive(std::optional<qreal> x, std::optional<qreal> y)
+{
+    if (!x.has_value() && !y.has_value()) {
+        return;
+    }
+    if ((x.has_value() && !isFinite(*x)) || (y.has_value() && !isFinite(*y))) {
+        return;
+    }
+
+    const QRectF rect = targetRect();
+    const std::optional<AxisRange> xRange = x.has_value()
+        ? std::optional<AxisRange>{AxisRange{rect.left() + *x, rect.right() + *x}}
+        : std::nullopt;
+    const std::optional<AxisRange> yRange = y.has_value()
+        ? std::optional<AxisRange>{AxisRange{rect.top() + *y, rect.bottom() + *y}}
+        : std::nullopt;
+    applyInteractiveRange(xRange, yRange, 0.0);
+}
+
 bool ViewBox::applyAutoRange(std::optional<qreal> padding, const std::array<bool, 2>& axes, bool disableAutoRange)
 {
     const auto bounds = childrenBounds();
@@ -1171,8 +1502,7 @@ bool ViewBox::applyAutoRange(std::optional<qreal> padding, const std::array<bool
         return false;
     }
 
-    setRange(xRange, yRange, padding.value_or(defaultPadding_), true, disableAutoRange);
-    return true;
+    return applyInteractiveRange(xRange, yRange, padding.value_or(defaultPadding_), disableAutoRange);
 }
 
 void ViewBox::updateViewRange(bool forceX, bool forceY)
