@@ -250,6 +250,7 @@ void PlotDataItem::updateItems()
     static constexpr std::span<const double> empty;
 
     if (curve_ != nullptr) {
+        curve_->setPen(pen_);
         if (hasData_ && lineVisible_) {
             curve_->setData(xData_, yData_);
             curve_->show();

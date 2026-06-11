@@ -109,6 +109,8 @@ bool testTypeShapeAndDefaultState()
     CHECK(item.lineVisible());
     CHECK(item.pen().color() == QColor(200, 200, 200));
     CHECK(item.pen().isCosmetic());
+    CHECK(item.curve()->pen().color() == QColor(200, 200, 200));
+    CHECK(item.curve()->pen().isCosmetic());
 
     return true;
 }
@@ -202,6 +204,7 @@ bool testPenStateControlsLineVisibilityWithoutDroppingData()
 
     CHECK(item.lineVisible());
     CHECK(item.pen().color() == QColor(255, 0, 0));
+    CHECK(item.curve()->pen().color() == QColor(255, 0, 0));
     CHECK(item.curve()->isVisible());
     CHECK(spanEquals(item.curve()->yData(), y));
 
