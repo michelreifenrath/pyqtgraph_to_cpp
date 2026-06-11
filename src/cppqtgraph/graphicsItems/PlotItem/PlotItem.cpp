@@ -355,6 +355,13 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu
     autoPixmap.fill(QColor(60, 60, 60, 200));
     autoBtn_ = new ButtonItem(autoPixmap, 14.0, this);
     autoBtn_->hide();
+    QObject::connect(autoBtn_, &ButtonItem::clicked, vb_, [this](ButtonItem*) {
+        vb_->enableAutoRange(ViewBox::XYAxes, true);
+        updateAutoButtonVisibility();
+    });
+    QObject::connect(vb_, &ViewBox::sigStateChanged, vb_, [this](ViewBox*) {
+        updateAutoButtonVisibility();
+    });
 
     setupConfigMenu(enableMenu);
 
@@ -395,6 +402,7 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu
     connectAxisRanges();
     syncAxisRanges();
     initialized_ = true;
+    updateAutoButtonVisibility();
 }
 
 PlotItem::~PlotItem() = default;
@@ -739,6 +747,26 @@ void PlotItem::hideButtons()
 void PlotItem::showButtons()
 {
     buttonsHidden_ = false;
+    updateAutoButtonVisibility();
+}
+
+void PlotItem::updateAutoButtonVisibility()
+{
+    if (autoBtn_ == nullptr || vb_ == nullptr) {
+        return;
+    }
+    if (buttonsHidden_) {
+        autoBtn_->hide();
+        return;
+    }
+
+    const auto autoRange = vb_->autoRangeEnabled();
+    const bool showButton = !autoRange[ViewBox::XAxis] || !autoRange[ViewBox::YAxis];
+    if (showButton) {
+        autoBtn_->show();
+    } else {
+        autoBtn_->hide();
+    }
 }
 
 bool PlotItem::buttonsHidden() const noexcept
