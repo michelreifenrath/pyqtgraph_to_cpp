@@ -9,6 +9,8 @@
 #include "PlotCurveItem.hpp"
 
 #include <QtCore/QRectF>
+#include <QtCore/QString>
+#include <QtGui/QBrush>
 #include <QtGui/QPen>
 #include <QtWidgets/QGraphicsItem>
 
@@ -21,6 +23,8 @@ class QStyleOptionGraphicsItem;
 class QWidget;
 
 namespace cppqtgraph::graphicsItems {
+
+class ScatterPlotItem;
 
 class PlotDataItem : public GraphicsObject {
 public:
@@ -47,6 +51,25 @@ public:
     [[nodiscard]] PlotCurveItem* curve() noexcept;
     [[nodiscard]] const PlotCurveItem* curve() const noexcept;
 
+    [[nodiscard]] ScatterPlotItem* scatter() noexcept;
+    [[nodiscard]] const ScatterPlotItem* scatter() const noexcept;
+
+    void setSymbol(const QString& symbol);
+    void setSymbol(std::nullptr_t);
+    [[nodiscard]] QString symbol() const;
+    [[nodiscard]] bool symbolsVisible() const noexcept;
+
+    void setSymbolSize(qreal size);
+    [[nodiscard]] qreal symbolSize() const noexcept;
+
+    void setSymbolPen(const QPen& pen);
+    void setSymbolPen(std::nullptr_t);
+    [[nodiscard]] QPen symbolPen() const;
+
+    void setSymbolBrush(const QBrush& brush);
+    void setSymbolBrush(std::nullptr_t);
+    [[nodiscard]] QBrush symbolBrush() const;
+
     void setPen(const QPen& pen);
     void setPen(std::nullptr_t);
     [[nodiscard]] QPen pen() const;
@@ -59,11 +82,17 @@ private:
     void updateItems();
 
     PlotCurveItem* curve_ = nullptr;
+    ScatterPlotItem* scatter_ = nullptr;
     std::vector<double> xData_;
     std::vector<double> yData_;
     bool hasData_ = false;
     bool lineVisible_ = true;
+    bool symbolsVisible_ = false;
     QPen pen_;
+    QString symbol_;
+    qreal symbolSize_ = 7.0;
+    QPen symbolPen_;
+    QBrush symbolBrush_;
 };
 
 } // namespace cppqtgraph::graphicsItems

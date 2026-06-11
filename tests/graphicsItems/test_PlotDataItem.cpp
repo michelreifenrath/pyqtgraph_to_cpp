@@ -1,9 +1,14 @@
 #include <cppqtgraph/graphicsItems/PlotDataItem.hpp>
 #include <cppqtgraph/graphicsItems/GraphicsObject.hpp>
 #include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/ScatterPlotItem.hpp>
 
 #include <QtCore/QPointer>
+#include <QtCore/QString>
+#include <QtGui/QBrush>
 #include <QtGui/QColor>
+#include <QtGui/QImage>
+#include <QtGui/QPainter>
 #include <QtGui/QPen>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGraphicsItem>
@@ -93,6 +98,9 @@ bool testTypeShapeAndDefaultState()
     CHECK(item.flags().testFlag(QGraphicsItem::ItemHasNoContents));
     CHECK(item.curve() != nullptr);
     CHECK(item.curve()->parentItem() == &item);
+    CHECK(item.scatter() != nullptr);
+    CHECK(item.scatter()->parentItem() == &item);
+    CHECK(!item.symbolsVisible());
     CHECK(item.hasData() == false);
     CHECK(item.xData().empty());
     CHECK(item.yData().empty());
@@ -213,6 +221,79 @@ bool testPenStateControlsLineVisibilityWithoutDroppingData()
     return true;
 }
 
+bool testSymbolOptionsForwardToScatterAndControlVisibility()
+{
+    cppqtgraph::graphicsItems::PlotDataItem item;
+    const std::vector<double> y{2.0, -1.0, 4.0};
+    const QPen symbolPen(QColor(10, 20, 30));
+    const QBrush symbolBrush(QColor(40, 50, 60));
+
+    item.setData(y);
+    item.setSymbol(QStringLiteral("t"));
+    item.setSymbolSize(9.0);
+    item.setSymbolPen(symbolPen);
+    item.setSymbolBrush(symbolBrush);
+
+    CHECK(item.symbolsVisible());
+    CHECK(item.symbol() == QStringLiteral("t"));
+    CHECK(item.symbolSize() == 9.0);
+    CHECK(item.symbolPen().color() == QColor(10, 20, 30));
+    CHECK(item.symbolBrush().color() == QColor(40, 50, 60));
+    CHECK(item.scatter()->isVisible());
+    CHECK(item.scatter()->symbol() == QStringLiteral("t"));
+    CHECK(item.scatter()->size() == 9.0);
+    CHECK(spanEquals(item.scatter()->xData(), {0.0, 1.0, 2.0}));
+    CHECK(spanEquals(item.scatter()->yData(), y));
+
+    item.setSymbol(nullptr);
+    CHECK(!item.symbolsVisible());
+    CHECK(item.symbol().isEmpty());
+    CHECK(!item.scatter()->isVisible());
+    CHECK(item.hasData());
+    CHECK(spanEquals(item.yData(), y));
+
+    return true;
+}
+
+bool testNullPenKeepsSymbolsVisibleWhenEnabled()
+{
+    cppqtgraph::graphicsItems::PlotDataItem item;
+    const std::vector<double> y{2.0, -1.0, 4.0};
+
+    item.setData(y);
+    item.setSymbol(QStringLiteral("o"));
+    item.setPen(nullptr);
+
+    CHECK(!item.lineVisible());
+    CHECK(!item.curve()->isVisible());
+    CHECK(item.symbolsVisible());
+    CHECK(item.scatter()->isVisible());
+    CHECK(spanEquals(item.scatter()->yData(), y));
+
+    return true;
+}
+
+bool testClearAndDataUpdatesKeepScatterInSync()
+{
+    cppqtgraph::graphicsItems::PlotDataItem item;
+    const std::vector<double> firstY{1.0, 2.0};
+    const std::vector<double> secondY{3.0, 4.0, 5.0};
+
+    item.setData(firstY);
+    item.setSymbol(QStringLiteral("s"));
+    CHECK(spanEquals(item.scatter()->yData(), firstY));
+
+    item.setData(secondY);
+    CHECK(spanEquals(item.scatter()->yData(), secondY));
+    CHECK(item.scatter()->isVisible());
+
+    item.clear();
+    CHECK(!item.scatter()->hasData());
+    CHECK(!item.scatter()->isVisible());
+
+    return true;
+}
+
 bool testCurveLifetimeIsOwnedByPlotDataItem()
 {
     QPointer<cppqtgraph::graphicsItems::PlotCurveItem> curve;
@@ -255,6 +336,15 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPenStateControlsLineVisibilityWithoutDroppingData()) {
+        return 1;
+    }
+    if (!testSymbolOptionsForwardToScatterAndControlVisibility()) {
+        return 1;
+    }
+    if (!testNullPenKeepsSymbolsVisibleWhenEnabled()) {
+        return 1;
+    }
+    if (!testClearAndDataUpdatesKeepScatterInSync()) {
         return 1;
     }
     if (!testCurveLifetimeIsOwnedByPlotDataItem()) {
