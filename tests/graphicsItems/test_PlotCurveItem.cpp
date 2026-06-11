@@ -6,8 +6,11 @@
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
 #include <QtCore/QtGlobal>
+#include <QtGui/QBrush>
+#include <QtGui/QColor>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
+#include <QtGui/QPen>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsObject>
@@ -136,6 +139,42 @@ bool testPaintNoOpSmoke()
     return true;
 }
 
+bool testFillPaintSmokeWithNoPenStroke()
+{
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
+    const std::vector<double> x{0.0, 1.0, 2.0};
+    const std::vector<double> y{1.0, 3.0, 2.0};
+
+    curve.setData(x, y);
+    curve.setPen(nullptr);
+    curve.setFillLevel(0.0);
+    curve.setFillBrush(QBrush(QColor(120, 80, 200, 180)));
+
+    QImage image(64, 64, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    QStyleOptionGraphicsItem option;
+    curve.paint(&painter, &option, nullptr);
+    painter.end();
+
+    bool foundFillColor = false;
+    for (int row = 0; row < image.height(); ++row) {
+        for (int column = 0; column < image.width(); ++column) {
+            const QColor pixel = QColor::fromRgba(image.pixel(column, row));
+            if (pixel.alpha() > 0) {
+                foundFillColor = true;
+                break;
+            }
+        }
+        if (foundFillColor) {
+            break;
+        }
+    }
+    CHECK(foundFillColor);
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -153,6 +192,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPaintNoOpSmoke()) {
+        return 1;
+    }
+    if (!testFillPaintSmokeWithNoPenStroke()) {
         return 1;
     }
 

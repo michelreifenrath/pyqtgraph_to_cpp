@@ -8,9 +8,11 @@
 #include "GraphicsObject.hpp"
 
 #include <QtCore/QRectF>
+#include <QtGui/QBrush>
 #include <QtGui/QPen>
 #include <QtWidgets/QGraphicsItem>
 
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -59,6 +61,14 @@ public:
     void setAntialias(bool enabled);
     [[nodiscard]] bool antialias() const noexcept;
 
+    void setFillLevel(double level);
+    void clearFillLevel();
+    [[nodiscard]] std::optional<double> fillLevel() const noexcept;
+
+    void setFillBrush(const QBrush& brush);
+    void setFillBrush(std::nullptr_t);
+    [[nodiscard]] QBrush fillBrush() const;
+
     [[nodiscard]] std::span<const double> xData() const noexcept;
     [[nodiscard]] std::span<const double> yData() const noexcept;
 
@@ -75,6 +85,8 @@ private:
     ConnectMode connectMode_ = ConnectMode::All;
     StepMode stepMode_ = StepMode::None;
     bool antialias_ = false;
+    std::optional<double> fillLevel_;
+    QBrush fillBrush_;
 };
 
 } // namespace cppqtgraph::graphicsItems

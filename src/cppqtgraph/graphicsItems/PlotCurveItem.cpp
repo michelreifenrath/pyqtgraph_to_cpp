@@ -123,19 +123,77 @@ qreal penMargin(const QPen& pen)
     return width / 2.0;
 }
 
-QRectF computeBounds(std::span<const double> x, std::span<const double> y, PlotCurveItem::StepMode stepMode, const QPen& pen)
+bool fillIsActive(const QBrush& fillBrush, const std::optional<double>& fillLevel)
+{
+    return fillBrush.style() != Qt::NoBrush && fillLevel.has_value();
+}
+
+QRectF computeBounds(
+    std::span<const double> x,
+    std::span<const double> y,
+    PlotCurveItem::StepMode stepMode,
+    const QPen& pen,
+    const QBrush& fillBrush,
+    const std::optional<double>& fillLevel)
 {
     auto [boundsXData, boundsYData] = generateStepModeData(stepMode, x, y);
     const auto xBounds = finiteBounds(boundsXData);
-    const auto yBounds = finiteBounds(boundsYData);
+    auto yBounds = finiteBounds(boundsYData);
     if (!xBounds.has_value() || !yBounds.has_value()) {
         return QRectF{};
+    }
+
+    if (fillIsActive(fillBrush, fillLevel)) {
+        if (fillLevel.value() < yBounds->minimum) {
+            yBounds->minimum = fillLevel.value();
+        }
+        if (fillLevel.value() > yBounds->maximum) {
+            yBounds->maximum = fillLevel.value();
+        }
     }
 
     const qreal margin = penMargin(pen);
     const QRectF dataBounds(xBounds->minimum, yBounds->minimum, xBounds->maximum - xBounds->minimum,
         yBounds->maximum - yBounds->minimum);
     return dataBounds.adjusted(-margin, -margin, margin, margin);
+}
+
+std::optional<std::pair<QPointF, QPointF>> firstAndLastFinitePoints(std::span<const double> x, std::span<const double> y)
+{
+    std::optional<QPointF> first;
+    std::optional<QPointF> last;
+    for (std::size_t index = 0; index < x.size() && index < y.size(); ++index) {
+        if (!isFinitePoint(x[index], y[index])) {
+            continue;
+        }
+        const QPointF point(x[index], y[index]);
+        if (!first.has_value()) {
+            first = point;
+        }
+        last = point;
+    }
+    if (!first.has_value() || !last.has_value()) {
+        return std::nullopt;
+    }
+    return std::pair{first.value(), last.value()};
+}
+
+QPainterPath fillPathForLevel(
+    const QPainterPath& curvePath,
+    std::span<const double> x,
+    std::span<const double> y,
+    double fillLevel)
+{
+    const auto endpoints = firstAndLastFinitePoints(x, y);
+    if (!endpoints.has_value() || curvePath.isEmpty()) {
+        return {};
+    }
+
+    QPainterPath fillPath = curvePath;
+    fillPath.lineTo(QPointF(endpoints->second.x(), fillLevel));
+    fillPath.lineTo(QPointF(endpoints->first.x(), fillLevel));
+    fillPath.closeSubpath();
+    return fillPath;
 }
 
 void appendAllPath(QPainterPath& path, std::span<const double> x, std::span<const double> y)
@@ -267,7 +325,7 @@ void PlotCurveItem::setData(std::span<const double> x, std::span<const double> y
     std::vector<double> newX(x.begin(), x.end());
     std::vector<double> newY(y.begin(), y.end());
 
-    const QRectF newBounds = computeBounds(newX, newY, stepMode_, pen_);
+    const QRectF newBounds = computeBounds(newX, newY, stepMode_, pen_, fillBrush_, fillLevel_);
     if (newBounds != bounds_) {
         prepareGeometryChange();
     }
@@ -341,6 +399,51 @@ bool PlotCurveItem::antialias() const noexcept
     return antialias_;
 }
 
+void PlotCurveItem::setFillLevel(double level)
+{
+    if (fillLevel_.has_value() && fillLevel_.value() == level) {
+        return;
+    }
+    fillLevel_ = level;
+    refreshBounds();
+    update();
+}
+
+void PlotCurveItem::clearFillLevel()
+{
+    if (!fillLevel_.has_value()) {
+        return;
+    }
+    fillLevel_.reset();
+    refreshBounds();
+    update();
+}
+
+std::optional<double> PlotCurveItem::fillLevel() const noexcept
+{
+    return fillLevel_;
+}
+
+void PlotCurveItem::setFillBrush(const QBrush& brush)
+{
+    if (fillBrush_ == brush) {
+        return;
+    }
+    fillBrush_ = brush;
+    refreshBounds();
+    update();
+}
+
+void PlotCurveItem::setFillBrush(std::nullptr_t)
+{
+    setFillBrush(QBrush(Qt::NoBrush));
+}
+
+QBrush PlotCurveItem::fillBrush() const
+{
+    return fillBrush_;
+}
+
 std::span<const double> PlotCurveItem::xData() const noexcept
 {
     return xData_;
@@ -361,7 +464,13 @@ void PlotCurveItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    if (xData_.empty() || yData_.empty() || pen_.style() == Qt::NoPen) {
+    if (xData_.empty() || yData_.empty()) {
+        return;
+    }
+
+    const bool hasStroke = pen_.style() != Qt::NoPen;
+    const bool hasFill = fillIsActive(fillBrush_, fillLevel_);
+    if (!hasStroke && !hasFill) {
         return;
     }
 
@@ -371,14 +480,24 @@ void PlotCurveItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
     }
 
     painter->setRenderHint(QPainter::Antialiasing, antialias_);
-    painter->setPen(pen_);
-    painter->setBrush(Qt::NoBrush);
-    painter->drawPath(path);
+
+    if (hasFill) {
+        const QPainterPath fillPath = fillPathForLevel(path, xData_, yData_, fillLevel_.value());
+        if (!fillPath.isEmpty()) {
+            painter->fillPath(fillPath, fillBrush_);
+        }
+    }
+
+    if (hasStroke) {
+        painter->setPen(pen_);
+        painter->setBrush(Qt::NoBrush);
+        painter->drawPath(path);
+    }
 }
 
 void PlotCurveItem::refreshBounds()
 {
-    const QRectF newBounds = computeBounds(xData_, yData_, stepMode_, pen_);
+    const QRectF newBounds = computeBounds(xData_, yData_, stepMode_, pen_, fillBrush_, fillLevel_);
     if (newBounds != bounds_) {
         prepareGeometryChange();
         bounds_ = newBounds;

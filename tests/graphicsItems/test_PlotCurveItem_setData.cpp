@@ -1,6 +1,8 @@
 #include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
 
 #include <QtCore/QRectF>
+#include <QtGui/QBrush>
+#include <QtGui/QColor>
 #include <QtWidgets/QApplication>
 
 #include <cmath>
@@ -252,6 +254,40 @@ bool testAllNonFiniteAxisClearsBounds()
     return true;
 }
 
+bool testFillLevelExpandsBoundsBelowCurve()
+{
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
+    const std::vector<double> x{0.0, 1.0, 2.0};
+    const std::vector<double> y{2.0, 4.0, 3.0};
+
+    curve.setData(x, y);
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, 2.0, 2.0, 2.0)));
+
+    curve.setFillLevel(0.0);
+    curve.setFillBrush(QBrush(QColor(100, 100, 255, 120)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, 0.0, 2.0, 4.0)));
+
+    curve.clearFillLevel();
+    curve.setFillBrush(nullptr);
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, 2.0, 2.0, 2.0)));
+
+    return true;
+}
+
+bool testFillLevelExpandsBoundsAboveCurve()
+{
+    cppqtgraph::graphicsItems::PlotCurveItem curve;
+    const std::vector<double> x{0.0, 1.0, 2.0};
+    const std::vector<double> y{-2.0, -4.0, -3.0};
+
+    curve.setData(x, y);
+    curve.setFillLevel(0.0);
+    curve.setFillBrush(QBrush(QColor(100, 100, 255, 120)));
+    CHECK(rectNearlyEqual(curve.boundingRect(), expandedForCurvePen(0.0, -4.0, 2.0, 4.0)));
+
+    return true;
+}
+
 bool testMismatchedLengthsThrowAndLeaveDataUnchanged()
 {
     cppqtgraph::graphicsItems::PlotCurveItem curve;
@@ -310,6 +346,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testAllNonFiniteAxisClearsBounds()) {
+        return 1;
+    }
+    if (!testFillLevelExpandsBoundsBelowCurve()) {
+        return 1;
+    }
+    if (!testFillLevelExpandsBoundsAboveCurve()) {
         return 1;
     }
     if (!testMismatchedLengthsThrowAndLeaveDataUnchanged()) {
