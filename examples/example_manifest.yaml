@@ -19,6 +19,9 @@ examples:
       numeric: required
       visual: required
       interaction: not_applicable
+    ctest:
+      normal: cppqtgraph.examples.SimplePlot
+      visual: P3.13.visual.SimplePlot
 
   - order: 0
     name: ImageItem
@@ -34,6 +37,8 @@ examples:
       numeric: required
       visual: required
       interaction: not_applicable
+    ctest:
+      normal: cppqtgraph.examples.ImageItem
 
   - order: 1
     name: CLIexample

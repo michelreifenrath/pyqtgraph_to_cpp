@@ -101,6 +101,27 @@ def _records(manifest: dict[str, Any], key: str) -> list[dict[str, Any]]:
     return [record for record in records if isinstance(record, dict)]
 
 
+def _parse_ctest_metadata(record: dict[str, Any], name: str) -> tuple[str, str | None]:
+    ctest = record.get("ctest")
+    if ctest is None:
+        return f"cppqtgraph.examples.{name}", None
+    if not isinstance(ctest, dict):
+        raise ManifestError(f"example {name!r} field 'ctest' must be a mapping")
+    normal = ctest.get("normal")
+    if normal is None:
+        normal_name = f"cppqtgraph.examples.{name}"
+    elif not isinstance(normal, str) or not normal.strip():
+        raise ManifestError(f"example {name!r} ctest.normal must be a non-empty string")
+    else:
+        normal_name = normal.strip()
+    visual = ctest.get("visual")
+    if visual is None:
+        return normal_name, None
+    if not isinstance(visual, str) or not visual.strip():
+        raise ManifestError(f"example {name!r} ctest.visual must be a non-empty string when set")
+    return normal_name, visual.strip()
+
+
 def _unique_aliases(*aliases: str | None) -> tuple[str, ...]:
     seen: set[str] = set()
     result: list[str] = []
@@ -146,18 +167,15 @@ def manifest_examples(root: Path | None = None) -> tuple[Example, ...]:
             *(alias for alias in aliases_from_manifest if isinstance(alias, str)),
         )
         visual_required = validation.get("visual") == "required"
+        ctest_name, visual_ctest_name = _parse_ctest_metadata(record, name)
         examples.append(
             Example(
                 name=name,
                 target_path=normalize_path(target_path),
-                ctest_name=f"cppqtgraph.examples.{name}",
+                ctest_name=ctest_name,
                 aliases=aliases,
                 visual_required=visual_required,
-                visual_ctest_name=(
-                    "P3.13.visual.SimplePlot"
-                    if name == "SimplePlot" and visual_required
-                    else None
-                ),
+                visual_ctest_name=visual_ctest_name,
             )
         )
 
