@@ -414,6 +414,11 @@ if(_cppqtgraph_has_graphicsitem)
         graphicsItems/test_ViewBox_interaction_linking.cpp
         cppqtgraph.graphicsItems.ViewBox.interaction_linking
     )
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_viewbox_context_menu
+        graphicsItems/test_ViewBox_context_menu.cpp
+        cppqtgraph.graphicsItems.ViewBox.context_menu
+    )
     target_compile_definitions(cppqtgraph_graphicsitems_viewbox_interaction_linking
         PRIVATE
             CPPQTGRAPH_P3_06_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P3.06"

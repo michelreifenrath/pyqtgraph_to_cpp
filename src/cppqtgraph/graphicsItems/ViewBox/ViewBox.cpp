@@ -4,10 +4,12 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 #include "../../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
+#include "../../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBoxMenu.hpp"
 #include "../../../../include/cppqtgraph/GraphicsScene/GraphicsScene.hpp"
 
 #include <QtCore/QList>
 #include <QtCore/QObject>
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
 #include <QtWidgets/QGraphicsSceneResizeEvent>
@@ -1077,6 +1079,63 @@ std::array<bool, 2> ViewBox::autoRangeEnabled() const
     return autoRange_;
 }
 
+ViewBoxMenu* ViewBox::menu() noexcept
+{
+    return menu_.get();
+}
+
+const ViewBoxMenu* ViewBox::menu() const noexcept
+{
+    return menu_.get();
+}
+
+void ViewBox::setMenuEnabled(bool enable)
+{
+    menuEnabled_ = enable;
+    if (!enable) {
+        menu_.reset();
+    }
+}
+
+bool ViewBox::menuEnabled() const noexcept
+{
+    return menuEnabled_;
+}
+
+void ViewBox::raiseContextMenu(const QPoint& globalPos)
+{
+    if (!menuEnabled_) {
+        return;
+    }
+    ensureMenu();
+    if (menu_ == nullptr) {
+        return;
+    }
+    ++contextMenuRaiseCount_;
+    menu_->updateState();
+    menu_->popup(globalPos);
+}
+
+int ViewBox::contextMenuRaiseCount() const noexcept
+{
+    return contextMenuRaiseCount_;
+}
+
+void ViewBox::ensureMenu()
+{
+    if (menu_ == nullptr && menuEnabled_) {
+        menu_ = std::make_unique<ViewBoxMenu>(this);
+    }
+}
+
+int ViewBox::dragThresholdPixels() const
+{
+    if (QApplication::instance() != nullptr) {
+        return QApplication::startDragDistance();
+    }
+    return 10;
+}
+
 void ViewBox::setDefaultPadding(qreal padding)
 {
     if (!isFinite(padding)) {
@@ -1283,9 +1342,11 @@ void ViewBox::mousePressEvent(QGraphicsSceneMouseEvent* event)
 
     dragActive_ = true;
     dragButton_ = button;
+    rightDragExceededThreshold_ = false;
     dragLastPos_ = event->pos();
     dragButtonDownPos_ = event->buttonDownPos(button).isNull() ? event->pos() : event->buttonDownPos(button);
     dragLastScreenPos_ = event->screenPos();
+    dragButtonDownScreenPos_ = event->buttonDownScreenPos(button).isNull() ? event->screenPos() : event->buttonDownScreenPos(button);
     event->accept();
 }
 
@@ -1320,6 +1381,15 @@ void ViewBox::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
     }
 
     if (dragButton_ == Qt::RightButton) {
+        if (!rightDragExceededThreshold_) {
+            const QPoint totalDelta = event->screenPos() - dragButtonDownScreenPos_;
+            if (totalDelta.manhattanLength() < dragThresholdPixels()) {
+                event->accept();
+                return;
+            }
+            rightDragExceededThreshold_ = true;
+        }
+
         const QPoint screenDelta = event->screenPos() - dragLastScreenPos_;
         const qreal xExponent = -static_cast<qreal>(screenDelta.x());
         const qreal yExponent = static_cast<qreal>(screenDelta.y());
@@ -1341,6 +1411,14 @@ void ViewBox::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 void ViewBox::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
     if (dragActive_ && event->button() == dragButton_) {
+        if (dragButton_ == Qt::RightButton && !rightDragExceededThreshold_ && menuEnabled_) {
+            raiseContextMenu(event->screenPos());
+            dragActive_ = false;
+            dragButton_ = Qt::NoButton;
+            rightDragExceededThreshold_ = false;
+            event->accept();
+            return;
+        }
         if (dragButton_ == Qt::LeftButton && mouseMode_ == RectMode) {
             const QRectF zoomRect = QRectF(mapToView(dragButtonDownPos_), mapToView(event->pos())).normalized();
             if (!zoomRect.isEmpty()) {
@@ -1352,6 +1430,7 @@ void ViewBox::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         }
         dragActive_ = false;
         dragButton_ = Qt::NoButton;
+        rightDragExceededThreshold_ = false;
         event->accept();
         return;
     }
