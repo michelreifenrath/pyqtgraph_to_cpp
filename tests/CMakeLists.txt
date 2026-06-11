@@ -889,6 +889,8 @@ if(_cppqtgraph_has_graphicsitem)
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_imageitem)
     add_executable(cppqtgraph_examples_cliexample "${PROJECT_SOURCE_DIR}/examples/CLIexample.cpp")
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_cliexample)
+    add_executable(cppqtgraph_examples_plotting "${PROJECT_SOURCE_DIR}/examples/Plotting.cpp")
+    cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_plotting)
 
     cppqtgraph_add_cpp_test(
         cppqtgraph_visual_plotcurveitem_bounds
@@ -1010,6 +1012,24 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.examples.CLIexample
     )
     set_tests_properties(cppqtgraph.examples.CLIexample PROPERTIES LABELS "visual")
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_examples_plotting_test
+        examples/test_Plotting.cpp
+        cppqtgraph.examples.Plotting
+    )
+    set_tests_properties(cppqtgraph.examples.Plotting PROPERTIES LABELS "visual;interaction")
+    add_test(
+        NAME P3.72.visual.Plotting
+        COMMAND "${Python3_EXECUTABLE}" -m pytest -q
+            "${PROJECT_SOURCE_DIR}/tests/examples/test_Plotting_P372_visual.py"
+    )
+    set_tests_properties(
+        P3.72.visual.Plotting
+        PROPERTIES
+            LABELS "visual;P3.72"
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_P372_VISUAL_RENDERER=$<TARGET_FILE:cppqtgraph_visual_render_example>;PG_P372_VISUAL_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/visual-diffs;PG_P372_EXAMPLES_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/examples/P3.72;PG_P372_VISUAL_REVIEW_REPORT=${PROJECT_SOURCE_DIR}/reports/examples/P3.72/gpt5_vision_review.md"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    )
     cppqtgraph_add_cpp_test(cppqtgraph_hierarchy_cpp hierarchy/test_cpp_hierarchy.cpp cppqtgraph.hierarchy.cpp)
 endif()
 

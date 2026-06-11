@@ -62,12 +62,18 @@ examples:
     title: Basic Plotting
     upstream_file: pyqtgraph/examples/Plotting.py
     cpp_file: examples/Plotting.cpp
-    status: planned
+    status: ported
+    aliases:
+      - Plotting.cpp
+      - pyqtgraph/examples/Plotting.py
     validation:
       smoke: required
       numeric: required
       visual: required
       interaction: required
+    ctest:
+      normal: cppqtgraph.examples.Plotting
+      visual: P3.72.visual.Plotting
 
   - order: 3
     name: ImageView
