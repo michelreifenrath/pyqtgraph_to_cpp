@@ -26,7 +26,7 @@ namespace cppqtgraph::examples {
 
 namespace {
 
-constexpr std::uint32_t kDeterministicSeed = 0x504C5454U;
+constexpr std::uint32_t kPlottingDeterministicSeed = 0x504C5454U;
 constexpr int kTimerIntervalMs = 50;
 constexpr std::size_t kUpdateRowCount = 10;
 constexpr std::size_t kUpdateColumnCount = 1000;
@@ -148,7 +148,7 @@ PlottingExample createPlottingExample()
     setConfigOptions({{"antialias", true}});
 
     auto state = std::make_shared<PlottingState>();
-    std::mt19937 generator(kDeterministicSeed);
+    std::mt19937 generator(kPlottingDeterministicSeed);
 
     state->p1Y = makeNormalVector(100, generator);
     state->p2Red = makeNormalVector(100, generator);
