@@ -3,6 +3,9 @@
 #define CPPQTGRAPH_EXAMPLEAPP_NO_MAIN
 #include "../../examples/ExampleApp.cpp"
 
+#include <QtCore/QCoreApplication>
+#include <QtCore/QFileInfo>
+#include <QtCore/QProcess>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QLineEdit>
@@ -53,6 +56,23 @@ int findListRowByName(QListWidget* list, const QString& name)
     return -1;
 }
 
+std::optional<cppqtgraph::examples::LaunchedExample> makeFalseBinaryLaunch(const QString& /*name*/)
+{
+    auto process = std::make_shared<QProcess>();
+    process->setProgram(QStringLiteral("/bin/false"));
+    process->start();
+    if (!process->waitForStarted(3000)) {
+        return std::nullopt;
+    }
+
+    return cppqtgraph::examples::LaunchedExample{
+        .process = process,
+        .executablePath = QStringLiteral("/bin/false"),
+        .result = cppqtgraph::examples::LaunchResult::Started,
+        .errorMessage = {},
+    };
+}
+
 bool testRegistryOrderAndStatus()
 {
     const QVector<cppqtgraph::examples::ExampleEntry>& entries = cppqtgraph::examples::ExampleRegistry::entries();
@@ -76,7 +96,7 @@ bool testRegistryOrderAndStatus()
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageView")));
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("unknown")));
 
-  return true;
+    return true;
 }
 
 bool testRegistryLaunchPendingFailsClosed()
@@ -86,21 +106,69 @@ bool testRegistryLaunchPendingFailsClosed()
     return true;
 }
 
-bool testRegistryLaunchesPortedExamples()
+bool testRegistryResolvesBuiltExecutables()
 {
     for (const cppqtgraph::examples::ExampleEntry& entry : cppqtgraph::examples::ExampleRegistry::entries()) {
         if (entry.status != cppqtgraph::examples::ExampleStatus::Ported) {
             continue;
         }
 
+        const QString path = cppqtgraph::examples::ExampleRegistry::resolveExecutablePath(entry.name);
+        CHECK(!path.isEmpty());
+        CHECK(QFileInfo::exists(path));
+        CHECK(path.endsWith(cppqtgraph::examples::ExampleRegistry::executableFileName(entry.name)));
+    }
+
+    return true;
+}
+
+bool testRegistryLaunchesPortedExamplesViaHook()
+{
+    int hookCalls = 0;
+    cppqtgraph::examples::ExampleRegistry::setLaunchHookForTesting(
+        [&hookCalls](const QString& name) -> std::optional<cppqtgraph::examples::LaunchedExample> {
+            ++hookCalls;
+            return cppqtgraph::examples::LaunchedExample{
+                .process = std::make_shared<QProcess>(),
+                .executablePath = QStringLiteral("mock://%1").arg(name),
+                .result = cppqtgraph::examples::LaunchResult::Started,
+                .errorMessage = {},
+            };
+        });
+
+    int portedCount = 0;
+    for (const cppqtgraph::examples::ExampleEntry& entry : cppqtgraph::examples::ExampleRegistry::entries()) {
+        if (entry.status != cppqtgraph::examples::ExampleStatus::Ported) {
+            continue;
+        }
+
+        ++portedCount;
         std::optional<cppqtgraph::examples::LaunchedExample> launched =
             cppqtgraph::examples::ExampleRegistry::launch(entry.name);
         CHECK(launched.has_value());
-        CHECK(!launched->windows.empty());
-        for (QWidget* window : launched->windows) {
-            CHECK(window != nullptr);
-        }
+        CHECK(launched->result == cppqtgraph::examples::LaunchResult::Started);
+        CHECK(launched->executablePath.contains(entry.name));
     }
+
+    CHECK(portedCount == 4);
+    CHECK(hookCalls == 4);
+
+    cppqtgraph::examples::ExampleRegistry::clearLaunchHookForTesting();
+    return true;
+}
+
+bool testRegistryLaunchMissingExecutable()
+{
+    cppqtgraph::examples::ExampleRegistry::setExecutableSearchDirectoryForTesting(
+        QStringLiteral("/nonexistent/example/search/path"));
+
+    std::optional<cppqtgraph::examples::LaunchedExample> launched =
+        cppqtgraph::examples::ExampleRegistry::launch(QStringLiteral("SimplePlot"));
+    CHECK(launched.has_value());
+    CHECK(launched->result == cppqtgraph::examples::LaunchResult::MissingExecutable);
+    CHECK(launched->errorMessage.contains(QStringLiteral("not found")));
+
+    cppqtgraph::examples::ExampleRegistry::clearExecutableSearchDirectoryForTesting();
     return true;
 }
 
@@ -179,6 +247,49 @@ bool testLaunchDispatchViaHook()
     return true;
 }
 
+bool testMissingBinaryShowsNotice()
+{
+    cppqtgraph::examples::ExampleAppWindow window;
+    QListWidget* list = window.exampleListWidget();
+
+    cppqtgraph::examples::ExampleRegistry::setExecutableSearchDirectoryForTesting(
+        QStringLiteral("/nonexistent/example/search/path"));
+
+    list->setCurrentRow(findListRowByName(list, QStringLiteral("SimplePlot")));
+    CHECK(window.runSelectedExample());
+    CHECK(window.statusNoticeLabel()->text().contains(QStringLiteral("not found")));
+    CHECK(window.isRunEnabled());
+
+    cppqtgraph::examples::ExampleRegistry::clearExecutableSearchDirectoryForTesting();
+    return true;
+}
+
+bool testFailingChildKeepsLauncherAlive()
+{
+    cppqtgraph::examples::ExampleAppWindow window;
+    QListWidget* list = window.exampleListWidget();
+
+    cppqtgraph::examples::ExampleRegistry::setLaunchHookForTesting(makeFalseBinaryLaunch);
+
+    list->setCurrentRow(findListRowByName(list, QStringLiteral("SimplePlot")));
+    CHECK(window.runSelectedExample());
+
+    const std::vector<std::shared_ptr<cppqtgraph::examples::LaunchedExample>>& launches =
+        window.activeLaunchesForTesting();
+    CHECK(!launches.empty());
+    CHECK(launches.back()->process != nullptr);
+    CHECK(launches.back()->process->waitForFinished(5000));
+
+    QCoreApplication::processEvents();
+
+    CHECK(window.statusNoticeLabel()->text().contains(QStringLiteral("exited with code")));
+    CHECK(window.isRunEnabled());
+    CHECK(window.runSelectedExample());
+
+    cppqtgraph::examples::ExampleRegistry::clearLaunchHookForTesting();
+    return true;
+}
+
 bool testFilterNarrowsList()
 {
     cppqtgraph::examples::ExampleAppWindow window;
@@ -207,7 +318,13 @@ int main(int argc, char** argv)
     if (!testRegistryLaunchPendingFailsClosed()) {
         return 1;
     }
-    if (!testRegistryLaunchesPortedExamples()) {
+    if (!testRegistryResolvesBuiltExecutables()) {
+        return 1;
+    }
+    if (!testRegistryLaunchesPortedExamplesViaHook()) {
+        return 1;
+    }
+    if (!testRegistryLaunchMissingExecutable()) {
         return 1;
     }
     if (!testExampleAppListAndMetadata()) {
@@ -217,6 +334,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testLaunchDispatchViaHook()) {
+        return 1;
+    }
+    if (!testMissingBinaryShowsNotice()) {
+        return 1;
+    }
+    if (!testFailingChildKeepsLauncherAlive()) {
         return 1;
     }
     if (!testFilterNarrowsList()) {
