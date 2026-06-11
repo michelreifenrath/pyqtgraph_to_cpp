@@ -15,6 +15,9 @@
 #define CPPQTGRAPH_SIMPLEPLOT_NO_MAIN
 #include "../../examples/SimplePlot.cpp"
 
+#define CPPQTGRAPH_PLOTTING_NO_MAIN
+#include "../../examples/Plotting.cpp"
+
 namespace {
 
 struct Options {
@@ -26,7 +29,7 @@ struct Options {
 
 void printUsage(const char* program)
 {
-    std::cerr << "usage: " << program << " SimplePlot --output PATH [--width N] [--height N]\n";
+    std::cerr << "usage: " << program << " <SimplePlot|Plotting> --output PATH [--width N] [--height N]\n";
 }
 
 bool parsePositiveInt(const std::string& text, int& value)
@@ -52,7 +55,7 @@ bool parseOptions(int argc, char** argv, Options& options)
     }
 
     options.example = QString::fromLocal8Bit(argv[1]);
-    if (options.example != QStringLiteral("SimplePlot")) {
+    if (options.example != QStringLiteral("SimplePlot") && options.example != QStringLiteral("Plotting")) {
         std::cerr << "error: unsupported example: " << argv[1] << "\n";
         return false;
     }
@@ -122,6 +125,33 @@ bool renderSimplePlot(const Options& options)
     return true;
 }
 
+bool renderPlotting(const Options& options)
+{
+    auto example = cppqtgraph::examples::createPlottingExample();
+    example.widget->resize(options.width, options.height);
+    example.widget->show();
+    processEvents();
+
+    QFileInfo outputInfo(options.output);
+    if (!outputInfo.dir().exists() && !QDir().mkpath(outputInfo.dir().absolutePath())) {
+        std::cerr << "error: failed to create output directory\n";
+        return false;
+    }
+
+    const QPixmap pixmap = example.widget->grab(QRect(0, 0, options.width, options.height));
+    if (pixmap.isNull()) {
+        std::cerr << "error: failed to grab Plotting widget\n";
+        return false;
+    }
+
+    const QImage image = pixmap.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    if (!image.save(options.output, "PNG")) {
+        std::cerr << "error: failed to write output PNG\n";
+        return false;
+    }
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -134,7 +164,9 @@ int main(int argc, char** argv)
     QApplication application(argc, argv);
     application.setQuitOnLastWindowClosed(false);
 
-    if (!renderSimplePlot(options)) {
+    const bool rendered = options.example == QStringLiteral("SimplePlot") ? renderSimplePlot(options)
+                                                                          : renderPlotting(options);
+    if (!rendered) {
         return 1;
     }
 

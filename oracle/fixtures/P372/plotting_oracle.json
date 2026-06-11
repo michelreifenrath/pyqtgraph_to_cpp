@@ -1,0 +1,19 @@
+{
+  "description": "Deterministic numeric anchors for examples/Plotting.cpp generated with std::mt19937 seed 0x504C5454.",
+  "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+  "pyqtgraph_ref": "pyqtgraph-0.14.0",
+  "seed": 134671188,
+  "values": {
+    "p1_y_0": 0.51725299714285011,
+    "p1_y_99": -0.44365542819507126,
+    "p2_green_y_0": 6.6289257928958225,
+    "p5_filtered_count_min": 400,
+    "sinc_y_400": 0.044045117356285558,
+    "sinc_y_700": 0.016059964565486425,
+    "region_initial": [400.0, 700.0],
+    "timer_interval_ms": 50,
+    "update_rows": 10,
+    "update_columns": 1000,
+    "window_size": [1000, 600]
+  }
+}
