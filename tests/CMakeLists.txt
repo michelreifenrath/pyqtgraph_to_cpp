@@ -891,6 +891,11 @@ if(_cppqtgraph_has_graphicsitem)
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_cliexample)
     add_executable(cppqtgraph_examples_plotting "${PROJECT_SOURCE_DIR}/examples/Plotting.cpp")
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_plotting)
+    add_executable(cppqtgraph_examples_exampleapp
+        "${PROJECT_SOURCE_DIR}/examples/ExampleRegistry.cpp"
+        "${PROJECT_SOURCE_DIR}/examples/ExampleApp.cpp"
+    )
+    cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_exampleapp)
 
     cppqtgraph_add_cpp_test(
         cppqtgraph_visual_plotcurveitem_bounds
@@ -1018,6 +1023,13 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.examples.Plotting
     )
     set_tests_properties(cppqtgraph.examples.Plotting PROPERTIES LABELS "visual;interaction")
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_examples_exampleapp_test
+        examples/test_ExampleApp.cpp
+        cppqtgraph.examples.ExampleApp
+    )
+    target_link_libraries(cppqtgraph_examples_exampleapp_test PRIVATE Qt6::Test)
+    set_tests_properties(cppqtgraph.examples.ExampleApp PROPERTIES LABELS "interaction")
     add_test(
         NAME P3.72.visual.Plotting
         COMMAND "${Python3_EXECUTABLE}" -m pytest -q

@@ -23,11 +23,11 @@ namespace {
 
 constexpr std::size_t kPlotPointCount = 1000;
 constexpr std::size_t kImageSize = 500;
-constexpr std::uint32_t kDeterministicSeed = 0x434C49U;
+constexpr std::uint32_t kCLIexampleDeterministicSeed = 0x434C49U;
 
 std::vector<double> makeDeterministicPlotData()
 {
-    std::mt19937 generator(kDeterministicSeed);
+    std::mt19937 generator(kCLIexampleDeterministicSeed);
     std::normal_distribution<double> distribution(0.0, 1.0);
 
     std::vector<double> y;
@@ -40,7 +40,7 @@ std::vector<double> makeDeterministicPlotData()
 
 std::vector<float> makeDeterministicImageData()
 {
-    std::mt19937 generator(kDeterministicSeed);
+    std::mt19937 generator(kCLIexampleDeterministicSeed);
     std::normal_distribution<double> distribution(0.0, 1.0);
 
     for (std::size_t index = 0; index < kPlotPointCount; ++index) {
