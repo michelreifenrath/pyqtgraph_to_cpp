@@ -1029,6 +1029,10 @@ void ViewBox::blockLink(bool block)
 
 void ViewBox::autoRange(std::optional<qreal> padding)
 {
+    const qreal effectivePadding = padding.value_or(defaultPadding_);
+    if (!isFinite(effectivePadding)) {
+        throw std::invalid_argument("padding must be finite");
+    }
     applyAutoRange(padding, std::array<bool, 2>{{true, true}}, true);
     autoRange_[xAxis] = false;
     autoRange_[yAxis] = false;

@@ -3,7 +3,9 @@
 #include <cppqtgraph/widgets/PlotWidget.hpp>
 
 #include <QtCore/QPointF>
+#include <QtGui/QPen>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QGraphicsRectItem>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
 #include <QtWidgets/QGraphicsSceneWheelEvent>
@@ -300,6 +302,35 @@ bool testProgrammaticInvalidInputStillThrows()
     return true;
 }
 
+bool testAutoRangeNonFinitePaddingThrowsAndPreservesState()
+{
+    QGraphicsScene scene;
+    ViewBox viewBox;
+    scene.addItem(&viewBox);
+    viewBox.resize(100.0, 100.0);
+    viewBox.setDefaultPadding(0.0);
+    viewBox.setRange(QRectF(0.0, 0.0, 10.0, 10.0), 0.0);
+
+    auto item = std::make_unique<QGraphicsRectItem>(QRectF(1.0, 2.0, 3.0, 4.0));
+    item->setPen(QPen(Qt::NoPen));
+    viewBox.addItem(item.get());
+
+    const auto beforeRange = viewBox.viewRange();
+    const auto beforeAutoRange = viewBox.autoRangeEnabled();
+
+    bool threw = false;
+    try {
+        viewBox.autoRange(std::numeric_limits<qreal>::infinity());
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    CHECK(threw);
+    CHECK(viewBox.viewRange() == beforeRange);
+    CHECK(viewBox.autoRangeEnabled() == beforeAutoRange);
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -323,6 +354,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testProgrammaticInvalidInputStillThrows()) {
+        return 1;
+    }
+    if (!testAutoRangeNonFinitePaddingThrowsAndPreservesState()) {
         return 1;
     }
 
