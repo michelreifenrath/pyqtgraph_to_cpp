@@ -399,6 +399,12 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu
     showAxis(QStringLiteral("top"), false);
     showAxis(QStringLiteral("right"), false);
 
+    for (AxisItem* axisItem : axes_) {
+        if (axisItem != nullptr) {
+            axisItem->linkToView(vb_);
+        }
+    }
+
     connectAxisRanges();
     syncAxisRanges();
     initialized_ = true;

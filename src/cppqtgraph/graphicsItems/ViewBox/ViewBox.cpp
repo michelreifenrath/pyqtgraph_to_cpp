@@ -1326,18 +1326,47 @@ void ViewBox::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, Q
 
 void ViewBox::wheelEvent(QGraphicsSceneWheelEvent* event)
 {
-    const std::array<bool, 2> mask = mouseEnabled_;
+    wheelEventForAxis(event, XYAxes);
+}
+
+void ViewBox::wheelEventForAxis(QGraphicsSceneWheelEvent* event, int axis)
+{
+    std::array<bool, 2> mask = mouseEnabled_;
+    if (axis == XAxis || axis == YAxis) {
+        mask[axis == XAxis ? YAxis : XAxis] = false;
+    }
     if (!mask[xAxis] && !mask[yAxis]) {
         event->ignore();
         return;
     }
 
     const qreal scale = std::pow(1.02, static_cast<qreal>(event->delta()) * wheelScaleFactor_);
-    const QPointF center = mapToView(event->pos());
+    const QPointF center = mapToView(mapFromScene(event->scenePos()));
     scaleByInteractive(mask[xAxis] ? std::optional<qreal>{scale} : std::nullopt,
                        mask[yAxis] ? std::optional<qreal>{scale} : std::nullopt,
                        center);
     event->accept();
+    emit sigRangeChangedManually(mask);
+}
+
+void ViewBox::translateByAxisDrag(const QPointF& itemDiff, int axis)
+{
+    if (axis != XAxis && axis != YAxis) {
+        return;
+    }
+    if (!mouseEnabled_[axis]) {
+        return;
+    }
+
+    const QPointF maskedDiff(axis == XAxis ? itemDiff.x() : 0.0, axis == YAxis ? itemDiff.y() : 0.0);
+    const QPointF diff = maskedDiff * -1.0;
+    const QTransform inverse = childTransform().inverted();
+    const QPointF mapped = inverse.map(diff) - inverse.map(QPointF(0.0, 0.0));
+
+    std::array<bool, 2> mask{{false, false}};
+    mask[axis] = true;
+    translateByInteractive(axis == XAxis ? std::optional<qreal>{mapped.x()} : std::nullopt,
+                           axis == YAxis ? std::optional<qreal>{mapped.y()} : std::nullopt);
     emit sigRangeChangedManually(mask);
 }
 

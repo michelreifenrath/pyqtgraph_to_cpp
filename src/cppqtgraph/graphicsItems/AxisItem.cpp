@@ -5,6 +5,8 @@
 
 #include "../../../include/cppqtgraph/graphicsItems/AxisItem.hpp"
 
+#include "../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
+
 #include <QtCore/QPointF>
 #include <QtCore/QSizeF>
 #include <QtCore/QtGlobal>
@@ -14,7 +16,9 @@
 #include <QtGui/QFontMetricsF>
 #include <QtGui/QPainter>
 #include <QtGui/QTransform>
+#include <QtWidgets/QGraphicsSceneMouseEvent>
 #include <QtWidgets/QGraphicsSceneResizeEvent>
+#include <QtWidgets/QGraphicsSceneWheelEvent>
 #include <QtWidgets/QGraphicsTextItem>
 #include <QtWidgets/QStyleOptionGraphicsItem>
 
@@ -292,6 +296,8 @@ AxisItem::AxisItem(Orientation orientation, QGraphicsItem* parent, Qt::WindowFla
     setPen(QPen(Qt::white));
     setTextPen(QPen(Qt::white));
     setTickPen(std::nullopt);
+    setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+    setAcceptHoverEvents(true);
 }
 
 AxisItem::AxisItem(const QString& orientation, QGraphicsItem* parent, Qt::WindowFlags flags)
@@ -1164,6 +1170,103 @@ void AxisItem::resizeEvent(QGraphicsSceneResizeEvent* event)
 {
     GraphicsWidget::resizeEvent(event);
     updateLabelPosition();
+}
+
+void AxisItem::linkToView(ViewBox* view)
+{
+    unlinkFromView();
+    linkedView_ = view;
+}
+
+void AxisItem::unlinkFromView()
+{
+    linkedView_.clear();
+}
+
+ViewBox* AxisItem::linkedView() const noexcept
+{
+    return linkedView_.data();
+}
+
+int AxisItem::linkedAxisIndex() const noexcept
+{
+    return isVertical(d_->orientation) ? ViewBox::YAxis : ViewBox::XAxis;
+}
+
+bool AxisItem::shouldIgnoreLinkedViewEvent(const QPointF& scenePos) const
+{
+    ViewBox* view = linkedView();
+    return view != nullptr && view->sceneBoundingRect().contains(scenePos);
+}
+
+void AxisItem::wheelEvent(QGraphicsSceneWheelEvent* event)
+{
+    ViewBox* view = linkedView();
+    if (view == nullptr) {
+        event->ignore();
+        return;
+    }
+    if (shouldIgnoreLinkedViewEvent(event->scenePos())) {
+        event->ignore();
+        return;
+    }
+
+    view->wheelEventForAxis(event, linkedAxisIndex());
+    event->accept();
+}
+
+void AxisItem::mousePressEvent(QGraphicsSceneMouseEvent* event)
+{
+    ViewBox* view = linkedView();
+    if (view == nullptr) {
+        event->ignore();
+        return;
+    }
+    const Qt::MouseButton button = event->button();
+    if (shouldIgnoreLinkedViewEvent(event->buttonDownScenePos(button))) {
+        event->ignore();
+        return;
+    }
+
+    if (button != Qt::LeftButton && button != Qt::MiddleButton && button != Qt::RightButton) {
+        GraphicsWidget::mousePressEvent(event);
+        return;
+    }
+
+    dragActive_ = true;
+    dragButton_ = button;
+    dragLastPos_ = event->pos();
+    event->accept();
+}
+
+void AxisItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
+{
+    ViewBox* view = linkedView();
+    if (!dragActive_ || view == nullptr) {
+        event->ignore();
+        return;
+    }
+
+    if (dragButton_ == Qt::LeftButton || dragButton_ == Qt::MiddleButton) {
+        const QPointF diff = event->pos() - dragLastPos_;
+        view->translateByAxisDrag(diff, linkedAxisIndex());
+        dragLastPos_ = event->pos();
+        event->accept();
+        return;
+    }
+
+    event->ignore();
+}
+
+void AxisItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (dragActive_ && event->button() == dragButton_) {
+        dragActive_ = false;
+        dragButton_ = Qt::NoButton;
+        event->accept();
+        return;
+    }
+    GraphicsWidget::mouseReleaseEvent(event);
 }
 
 } // namespace cppqtgraph::graphicsItems

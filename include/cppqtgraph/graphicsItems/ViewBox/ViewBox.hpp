@@ -95,6 +95,9 @@ public:
     void setWheelScaleFactor(qreal factor);
     [[nodiscard]] qreal wheelScaleFactor() const;
 
+    void wheelEventForAxis(QGraphicsSceneWheelEvent* event, int axis);
+    void translateByAxisDrag(const QPointF& itemDiff, int axis);
+
     void setXLink(ViewBox* view);
     void setYLink(ViewBox* view);
     void linkView(int axis, ViewBox* view);
