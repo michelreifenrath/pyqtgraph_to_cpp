@@ -273,6 +273,11 @@ QString InfiniteLine::name() const
     return name_;
 }
 
+std::optional<QRectF> InfiniteLine::autoRangeBoundsRect() const
+{
+    return std::nullopt;
+}
+
 QRectF InfiniteLine::boundingRect() const
 {
     QRectF view = fallbackViewRect();
@@ -557,6 +562,11 @@ bool LinearRegionItem::mouseHovering() const noexcept
     return mouseHovering_;
 }
 
+std::optional<QRectF> LinearRegionItem::autoRangeBoundsRect() const
+{
+    return std::nullopt;
+}
+
 QRectF LinearRegionItem::boundingRect() const
 {
     QRectF view = fallbackViewRect();
@@ -819,6 +829,11 @@ void TargetItem::setMouseHover(bool hover)
 bool TargetItem::mouseHovering() const noexcept
 {
     return mouseHovering_;
+}
+
+std::optional<QRectF> TargetItem::autoRangeBoundsRect() const
+{
+    return std::nullopt;
 }
 
 QPainterPath TargetItem::shape() const

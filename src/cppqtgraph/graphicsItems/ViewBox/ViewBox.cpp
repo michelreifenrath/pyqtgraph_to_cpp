@@ -3,6 +3,7 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
+#include "../../../../include/cppqtgraph/graphicsItems/GraphicsObject.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBoxMenu.hpp"
 #include "../../../../include/cppqtgraph/GraphicsScene/GraphicsScene.hpp"
@@ -1265,12 +1266,20 @@ std::array<std::optional<AxisRange>, 2> ViewBox::childrenBounds() const
             continue;
         }
 
-        const QRectF localBounds = item->boundingRect();
-        if (localBounds.isNull()) {
+        std::optional<QRectF> localBounds;
+        if (auto* graphicsObject = dynamic_cast<GraphicsObject*>(item)) {
+            localBounds = graphicsObject->autoRangeBoundsRect();
+        } else {
+            const QRectF bounds = item->boundingRect();
+            if (!bounds.isNull()) {
+                localBounds = bounds;
+            }
+        }
+        if (!localBounds.has_value()) {
             continue;
         }
 
-        const QRectF itemBounds = childGroup_.mapFromItem(item, localBounds).boundingRect();
+        const QRectF itemBounds = childGroup_.mapFromItem(item, localBounds.value()).boundingRect();
         if (!isFinite(itemBounds.left()) || !isFinite(itemBounds.right()) || !isFinite(itemBounds.top()) || !isFinite(itemBounds.bottom())) {
             continue;
         }

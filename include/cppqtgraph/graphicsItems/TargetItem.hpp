@@ -58,6 +58,7 @@ public:
     void setMouseHover(bool hover);
     [[nodiscard]] bool mouseHovering() const noexcept;
 
+    [[nodiscard]] std::optional<QRectF> autoRangeBoundsRect() const override;
     [[nodiscard]] QPainterPath shape() const override;
     [[nodiscard]] QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;

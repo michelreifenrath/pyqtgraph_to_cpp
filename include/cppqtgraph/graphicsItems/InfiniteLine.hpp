@@ -77,6 +77,7 @@ public:
     void setName(const QString& name);
     [[nodiscard]] QString name() const;
 
+    [[nodiscard]] std::optional<QRectF> autoRangeBoundsRect() const override;
     [[nodiscard]] QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
 
