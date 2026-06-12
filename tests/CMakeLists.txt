@@ -113,6 +113,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME cppqtgraph.oracle.P413.ImageViewRoiPlot
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P413_imageview_roi_plot_oracle.py" --check
+)
+set_tests_properties(
+    cppqtgraph.oracle.P413.ImageViewRoiPlot
+    PROPERTIES
+        LABELS P413
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME cppqtgraph.oracle.P2_09
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/scripts/generate_P2_09_widgetgroup_oracle.py" --check
 )
@@ -902,6 +913,18 @@ if(_cppqtgraph_has_graphicsitem)
     set_target_properties(cppqtgraph_widgets_imageview_p412 PROPERTIES AUTOMOC ON)
     target_link_libraries(cppqtgraph_widgets_imageview_p412 PRIVATE Qt6::Test Qt6::Widgets)
     set_tests_properties(cppqtgraph.widgets.ImageView.P412 PROPERTIES LABELS P412)
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_widgets_imageview_p413
+        widgets/test_ImageView_P413_roi_plot.cpp
+        cppqtgraph.widgets.ImageView.P413
+    )
+    set_target_properties(cppqtgraph_widgets_imageview_p413 PROPERTIES AUTOMOC ON)
+    target_link_libraries(cppqtgraph_widgets_imageview_p413 PRIVATE Qt6::Test Qt6::Widgets)
+    target_compile_definitions(cppqtgraph_widgets_imageview_p413
+        PRIVATE
+            CPPQTGRAPH_P413_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P413/imageview_roi_plot_oracle.json"
+    )
+    set_tests_properties(cppqtgraph.widgets.ImageView.P413 PROPERTIES LABELS P413)
     cppqtgraph_add_cpp_test(
         cppqtgraph_widgets_scatterplotwidget_p5_08
         widgets/test_ScatterPlotWidget_P5_08.cpp

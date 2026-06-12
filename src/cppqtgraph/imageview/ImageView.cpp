@@ -8,6 +8,8 @@
 #include "../../../include/cppqtgraph/graphicsItems/AxisItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/HistogramLUTItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/InfiniteLine.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/PlotCurveItem.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/ROI.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
 #include "../../../include/cppqtgraph/widgets/GraphicsView.hpp"
 #include "../../../include/cppqtgraph/widgets/HistogramLUTWidget.hpp"
@@ -18,6 +20,8 @@
 #include <QtGui/QColor>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QPen>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QSplitter>
 #include <QtWidgets/QVBoxLayout>
 
 #include <algorithm>
@@ -207,9 +211,29 @@ ImageView::ImageView(QWidget* parent, const QString& levelMode, bool discreteTim
             this,
             &ImageView::timeLineChanged);
 
+    roi_ = new graphicsItems::ROI(QPointF(0.0, 0.0), QPointF(10.0, 10.0));
+    roi_->addScaleHandle(QPointF(1.0, 1.0), QPointF(0.0, 0.0));
+    roi_->addRotateHandle(QPointF(0.0, 0.0), QPointF(0.5, 0.5));
+    roi_->setZValue(20.0);
+    viewBox_->addItem(roi_);
+    roi_->hide();
+    connect(roi_, &graphicsItems::ROI::sigRegionChanged, this, &ImageView::roiChanged);
+
+    if (ui_.roiBtn != nullptr) {
+        connect(ui_.roiBtn, &QPushButton::clicked, this, &ImageView::roiClicked);
+    }
+
+    if (ui_.splitter != nullptr) {
+        ui_.splitter->handle(1)->setEnabled(false);
+        ui_.splitter->setStyleSheet(QStringLiteral("QSplitter::handle{background-color: grey}"));
+        ui_.splitter->setHandleWidth(2);
+    }
+
     setFocusPolicy(Qt::StrongFocus);
     playTimer_.setParent(this);
     connect(&playTimer_, &QTimer::timeout, this, &ImageView::playbackTimeout);
+
+    applyRoiPlotVisibility();
 }
 
 ImageView::~ImageView() = default;
@@ -309,6 +333,7 @@ void ImageView::setImageImpl(core::ArrayView<const T, Rank> image,
 
     syncTimelineBounds();
     updateDisplayedFrame(autoLevels, autoRange);
+    applyRoiPlotVisibility();
 }
 
 template <typename T>
@@ -359,6 +384,7 @@ void ImageView::setImageTimeRgbImpl(core::ArrayView<const T, 4> image,
 
     syncTimelineBounds();
     updateDisplayedFrame(autoLevels, autoRange);
+    applyRoiPlotVisibility();
 }
 
 void ImageView::clearImage()
@@ -374,12 +400,7 @@ void ImageView::clearImage()
     xvals_.clear();
     rgbDisplayBuffer_.clear();
     imageItem_->clearImage();
-    if (roiPlot_ != nullptr) {
-        roiPlot_->setVisible(false);
-    }
-    if (timeLine_ != nullptr) {
-        timeLine_->hide();
-    }
+    applyRoiPlotVisibility();
 }
 
 void ImageView::setCurrentIndex(int index)
@@ -714,6 +735,46 @@ bool ImageView::discreteTimeLine() const noexcept
     return discreteTimeLine_;
 }
 
+QPushButton* ImageView::roiButton() noexcept
+{
+    return ui_.roiBtn;
+}
+
+const QPushButton* ImageView::roiButton() const noexcept
+{
+    return ui_.roiBtn;
+}
+
+graphicsItems::ROI* ImageView::roi() noexcept
+{
+    return roi_;
+}
+
+const graphicsItems::ROI* ImageView::roi() const noexcept
+{
+    return roi_;
+}
+
+std::size_t ImageView::roiCurveCount() const noexcept
+{
+    return roiCurves_.size();
+}
+
+graphicsItems::PlotCurveItem* ImageView::roiCurve(std::size_t index) noexcept
+{
+    return index < roiCurves_.size() ? roiCurves_[index] : nullptr;
+}
+
+const graphicsItems::PlotCurveItem* ImageView::roiCurve(std::size_t index) const noexcept
+{
+    return index < roiCurves_.size() ? roiCurves_[index] : nullptr;
+}
+
+void ImageView::roiClicked()
+{
+    applyRoiPlotVisibility();
+}
+
 bool ImageView::hasTimeAxis() const noexcept
 {
     if (!hasImage()) {
@@ -762,9 +823,6 @@ std::pair<int, double> ImageView::timeIndexFor(double time) const
 void ImageView::syncTimelineBounds()
 {
     if (!hasTimeAxis() || roiPlot_ == nullptr || timeLine_ == nullptr) {
-        if (roiPlot_ != nullptr) {
-            roiPlot_->setVisible(false);
-        }
         if (timeLine_ != nullptr) {
             timeLine_->hide();
         }
@@ -778,9 +836,6 @@ void ImageView::syncTimelineBounds()
     const double minimum = *std::min_element(xvals_.begin(), xvals_.end());
     const double maximum = *std::max_element(xvals_.begin(), xvals_.end());
     roiPlot_->setXRange(minimum, maximum);
-    roiPlot_->setMouseEnabled(false, false);
-    roiPlot_->setVisible(true);
-    timeLine_->show();
 
     double start = 0.0;
     double stop = 1.0;
@@ -793,6 +848,174 @@ void ImageView::syncTimelineBounds()
     }
     timeLine_->setBounds({start, stop});
     timeLine_->setValue(0.0);
+    timeLine_->show();
+}
+
+void ImageView::applyRoiPlotVisibility()
+{
+    if (roiPlot_ == nullptr) {
+        return;
+    }
+
+    const bool roiChecked = ui_.roiBtn != nullptr && ui_.roiBtn->isChecked();
+    bool showRoiPlot = roiChecked;
+
+    if (roi_ != nullptr) {
+        if (roiChecked) {
+            roi_->show();
+            roiPlot_->setMouseEnabled(true, true);
+            for (auto* curve : roiCurves_) {
+                if (curve != nullptr) {
+                    curve->show();
+                }
+            }
+            roiPlot_->showAxis(QStringLiteral("left"));
+            if (roiChecked) {
+                roiChanged();
+            }
+        } else {
+            roi_->hide();
+            roiPlot_->setMouseEnabled(false, false);
+            for (auto* curve : roiCurves_) {
+                if (curve != nullptr) {
+                    curve->hide();
+                }
+            }
+            roiPlot_->hideAxis(QStringLiteral("left"));
+        }
+    }
+
+    if (hasTimeAxis()) {
+        showRoiPlot = true;
+        if (!xvals_.empty()) {
+            const double minimum = *std::min_element(xvals_.begin(), xvals_.end());
+            const double maximum = *std::max_element(xvals_.begin(), xvals_.end());
+            roiPlot_->setXRange(minimum, maximum);
+        }
+        if (timeLine_ != nullptr) {
+            timeLine_->show();
+        }
+        if (ui_.splitter != nullptr) {
+            if (roiChecked) {
+                ui_.splitter->setSizes({static_cast<int>(height() * 0.6), static_cast<int>(height() * 0.4)});
+                ui_.splitter->handle(1)->setEnabled(true);
+            } else {
+                ui_.splitter->setSizes({height() - 35, 35});
+                ui_.splitter->handle(1)->setEnabled(false);
+            }
+        }
+    } else if (timeLine_ != nullptr) {
+        timeLine_->hide();
+    }
+
+    roiPlot_->setVisible(showRoiPlot);
+}
+
+void ImageView::roiChanged()
+{
+    if (!hasImage() || roi_ == nullptr || imageItem_ == nullptr || roiPlot_ == nullptr) {
+        return;
+    }
+    if (ui_.roiBtn != nullptr && !ui_.roiBtn->isChecked()) {
+        return;
+    }
+
+    if (dataKind_ == DataKind::FloatRank4TimeRgb || dataKind_ == DataKind::DoubleRank4TimeRgb) {
+        updateRoiCurvesFromTimeRgb();
+    }
+}
+
+void ImageView::updateRoiCurvesFromTimeRgb()
+{
+    const std::size_t frames = shape_[0];
+    const std::size_t height = shape_[1];
+    const std::size_t width = shape_[2];
+    const std::size_t channels = shape_[3];
+    if (frames == 0 || height == 0 || width == 0 || channels == 0) {
+        return;
+    }
+
+    roiCurveXBuffer_.assign(xvals_.begin(), xvals_.end());
+    roiCurveYBuffers_.assign(channels, std::vector<double>(frames, 0.0));
+
+    std::vector<float> channelSlice;
+    std::vector<double> channelSliceDouble;
+    for (std::size_t frame = 0; frame < frames; ++frame) {
+        for (std::size_t channel = 0; channel < channels; ++channel) {
+            double sum = 0.0;
+            std::size_t count = 0;
+
+            if (dataKind_ == DataKind::FloatRank4TimeRgb) {
+                channelSlice.resize(height * width);
+                for (std::size_t axis1 = 0; axis1 < height; ++axis1) {
+                    for (std::size_t axis2 = 0; axis2 < width; ++axis2) {
+                        const std::size_t index = ((frame * height + axis1) * width + axis2) * channels + channel;
+                        channelSlice[axis1 * width + axis2] = floatData_[index];
+                    }
+                }
+                const auto region = roi_->getArrayRegion(
+                    core::ArrayView<const float, 2>(channelSlice.data(), {height, width}), *imageItem_);
+                for (const double value : region.values) {
+                    sum += value;
+                    ++count;
+                }
+            } else {
+                channelSliceDouble.resize(height * width);
+                for (std::size_t axis1 = 0; axis1 < height; ++axis1) {
+                    for (std::size_t axis2 = 0; axis2 < width; ++axis2) {
+                        const std::size_t index = ((frame * height + axis1) * width + axis2) * channels + channel;
+                        channelSliceDouble[axis1 * width + axis2] = doubleData_[index];
+                    }
+                }
+                const auto region = roi_->getArrayRegion(
+                    core::ArrayView<const double, 2>(channelSliceDouble.data(), {height, width}), *imageItem_);
+                for (const double value : region.values) {
+                    sum += value;
+                    ++count;
+                }
+            }
+
+            if (count > 0) {
+                roiCurveYBuffers_[channel][frame] = sum / static_cast<double>(count);
+            }
+        }
+    }
+
+    static const std::array<QColor, 4> channelColors{
+        QColor(255, 0, 0),
+        QColor(0, 255, 0),
+        QColor(0, 0, 255),
+        QColor(255, 255, 255),
+    };
+
+    while (roiCurves_.size() > channels) {
+        auto* curve = roiCurves_.back();
+        roiCurves_.pop_back();
+        if (curve != nullptr) {
+            roiPlot_->removeItem(curve);
+            delete curve;
+        }
+    }
+    while (roiCurves_.size() < channels) {
+        auto* curve = roiPlot_->plot(std::span<const double>{}, std::span<const double>{});
+        roiCurves_.push_back(curve);
+    }
+
+    for (std::size_t channel = 0; channel < channels; ++channel) {
+        auto* curve = roiCurves_[channel];
+        if (curve == nullptr) {
+            continue;
+        }
+        curve->setData(roiCurveXBuffer_, roiCurveYBuffers_[channel]);
+        QPen pen(channelColors[std::min(channel, channelColors.size() - 1)]);
+        pen.setWidthF(1.0);
+        curve->setPen(pen);
+        if (ui_.roiBtn != nullptr && ui_.roiBtn->isChecked()) {
+            curve->show();
+        } else {
+            curve->hide();
+        }
+    }
 }
 
 void ImageView::timeLineChanged()
