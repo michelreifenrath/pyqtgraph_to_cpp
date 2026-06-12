@@ -166,6 +166,8 @@ ImageView::ImageView(QWidget* parent, bool levelMode)
     imageItem_ = new graphicsItems::ImageItem();
     viewBox_->addItem(imageItem_);
     graphicsView_->setCentralItem(viewBox_);
+    viewBox_->setAspectLocked(true);
+    viewBox_->invertY(true);
 
     if (levelMode_) {
         histogram_ = new graphicsItems::HistogramLUTItem(imageItem_);
@@ -489,8 +491,7 @@ void ImageView::updateDisplayedFrame(bool autoLevels, bool autoRange)
     }
 
     if (autoRange && viewBox_ != nullptr && imageItem_->hasImage()) {
-        const QRectF bounds(0.0, 0.0, static_cast<qreal>(imageItem_->width()), static_cast<qreal>(imageItem_->height()));
-        viewBox_->setRange(bounds, 0.0, true, true);
+        viewBox_->autoRange();
     }
 
     if (histogram_ != nullptr) {
@@ -519,8 +520,7 @@ void ImageView::updateDisplayedRgbFrame(bool autoLevels, bool autoRange)
     }
 
     if (autoRange && viewBox_ != nullptr && imageItem_->hasImage()) {
-        const QRectF bounds(0.0, 0.0, static_cast<qreal>(imageItem_->width()), static_cast<qreal>(imageItem_->height()));
-        viewBox_->setRange(bounds, 0.0, true, true);
+        viewBox_->autoRange();
     }
 
     if (histogram_ != nullptr) {

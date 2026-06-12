@@ -91,6 +91,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME cppqtgraph.oracle.P409.ImageViewView
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P409_imageview_view_oracle.py" --check
+)
+set_tests_properties(
+    cppqtgraph.oracle.P409.ImageViewView
+    PROPERTIES
+        LABELS P409
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME cppqtgraph.oracle.P2_09
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/scripts/generate_P2_09_widgetgroup_oracle.py" --check
 )
@@ -841,6 +852,18 @@ if(_cppqtgraph_has_graphicsitem)
     )
     set_tests_properties(cppqtgraph.widgets.ImageView_4D.P408 PROPERTIES LABELS P408)
     cppqtgraph_add_cpp_test(
+        cppqtgraph_widgets_imageview_p409
+        widgets/test_ImageView_P409_view.cpp
+        cppqtgraph.widgets.ImageView.P409
+    )
+    set_target_properties(cppqtgraph_widgets_imageview_p409 PROPERTIES AUTOMOC ON)
+    target_link_libraries(cppqtgraph_widgets_imageview_p409 PRIVATE Qt6::Widgets)
+    target_compile_definitions(cppqtgraph_widgets_imageview_p409
+        PRIVATE
+            CPPQTGRAPH_P409_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P409/imageview_view_oracle.json"
+    )
+    set_tests_properties(cppqtgraph.widgets.ImageView.P409 PROPERTIES LABELS P409)
+    cppqtgraph_add_cpp_test(
         cppqtgraph_widgets_scatterplotwidget_p5_08
         widgets/test_ScatterPlotWidget_P5_08.cpp
         cppqtgraph.widgets.ScatterPlotWidget.P5_08
@@ -1126,6 +1149,18 @@ if(_cppqtgraph_has_graphicsitem)
         PROPERTIES
             LABELS "visual;P3.72"
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_P372_VISUAL_RENDERER=$<TARGET_FILE:cppqtgraph_visual_render_example>;PG_P372_VISUAL_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/visual-diffs;PG_P372_EXAMPLES_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/examples/P3.72;PG_P372_VISUAL_REVIEW_REPORT=${PROJECT_SOURCE_DIR}/reports/examples/P3.72/gpt5_vision_review.md"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    )
+    add_test(
+        NAME P409.visual.ImageView
+        COMMAND "${Python3_EXECUTABLE}" -m pytest -q
+            "${PROJECT_SOURCE_DIR}/tests/visual/test_P409_imageview_visual.py"
+    )
+    set_tests_properties(
+        P409.visual.ImageView
+        PROPERTIES
+            LABELS "visual;P409"
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PG_CPP_P409_VISUAL_RENDERER=$<TARGET_FILE:cppqtgraph_visual_render_example>;PG_P409_VISUAL_REPORTS_ROOT=${PROJECT_BINARY_DIR}/reports/visual-diffs/P409"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     )
     cppqtgraph_add_cpp_test(cppqtgraph_hierarchy_cpp hierarchy/test_cpp_hierarchy.cpp cppqtgraph.hierarchy.cpp)
