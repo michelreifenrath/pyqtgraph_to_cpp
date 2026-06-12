@@ -23,6 +23,11 @@ namespace cppqtgraph::graphicsItems {
 
 namespace {
 
+QString defaultPlotDataSymbol()
+{
+    return QStringLiteral("o");
+}
+
 double mapLogAxisValue(double value)
 {
     if (!(value > 0.0) || !std::isfinite(value)) {
@@ -38,6 +43,16 @@ QPen defaultPlotDataPen()
     return pen;
 }
 
+QPen defaultPlotDataSymbolPen()
+{
+    return QPen(QColor(200, 200, 200), 1.0);
+}
+
+QBrush defaultPlotDataSymbolBrush()
+{
+    return QBrush(QColor(50, 50, 150));
+}
+
 } // namespace
 
 PlotDataItem::PlotDataItem(QGraphicsItem* parent)
@@ -45,6 +60,8 @@ PlotDataItem::PlotDataItem(QGraphicsItem* parent)
     , curve_(new PlotCurveItem(this))
     , scatter_(new ScatterPlotItem(this))
     , pen_(defaultPlotDataPen())
+    , symbolPen_(defaultPlotDataSymbolPen())
+    , symbolBrush_(defaultPlotDataSymbolBrush())
 {
     setFlag(QGraphicsItem::ItemHasNoContents);
     updateItems();
@@ -176,8 +193,12 @@ bool PlotDataItem::symbolsVisible() const noexcept
 
 void PlotDataItem::setSymbolSize(qreal size)
 {
-    scatter_->setSize(size);
     symbolSize_ = size;
+    if (symbol_.isEmpty()) {
+        symbol_ = defaultPlotDataSymbol();
+        symbolsVisible_ = true;
+    }
+    updateItems();
 }
 
 qreal PlotDataItem::symbolSize() const noexcept
@@ -187,14 +208,22 @@ qreal PlotDataItem::symbolSize() const noexcept
 
 void PlotDataItem::setSymbolPen(const QPen& pen)
 {
-    scatter_->setPen(pen);
     symbolPen_ = pen;
+    if (symbol_.isEmpty()) {
+        symbol_ = defaultPlotDataSymbol();
+        symbolsVisible_ = true;
+    }
+    updateItems();
 }
 
 void PlotDataItem::setSymbolPen(std::nullptr_t)
 {
-    scatter_->setPen(nullptr);
     symbolPen_ = QPen(Qt::NoPen);
+    if (symbol_.isEmpty()) {
+        symbol_ = defaultPlotDataSymbol();
+        symbolsVisible_ = true;
+    }
+    updateItems();
 }
 
 QPen PlotDataItem::symbolPen() const
@@ -204,14 +233,22 @@ QPen PlotDataItem::symbolPen() const
 
 void PlotDataItem::setSymbolBrush(const QBrush& brush)
 {
-    scatter_->setBrush(brush);
     symbolBrush_ = brush;
+    if (symbol_.isEmpty()) {
+        symbol_ = defaultPlotDataSymbol();
+        symbolsVisible_ = true;
+    }
+    updateItems();
 }
 
 void PlotDataItem::setSymbolBrush(std::nullptr_t)
 {
-    scatter_->setBrush(nullptr);
     symbolBrush_ = QBrush(Qt::NoBrush);
+    if (symbol_.isEmpty()) {
+        symbol_ = defaultPlotDataSymbol();
+        symbolsVisible_ = true;
+    }
+    updateItems();
 }
 
 QBrush PlotDataItem::symbolBrush() const
@@ -366,6 +403,10 @@ void PlotDataItem::updateItems()
     }
 
     if (hasData_ && symbolsVisible_) {
+        scatter_->setSymbol(symbol_);
+        scatter_->setSize(symbolSize_);
+        scatter_->setPen(symbolPen_);
+        scatter_->setBrush(symbolBrush_);
         scatter_->setData(displayX, displayY);
         scatter_->show();
         return;

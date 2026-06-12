@@ -245,6 +245,8 @@ bool testSymbolOptionsForwardToScatterAndControlVisibility()
     CHECK(item.scatter()->isVisible());
     CHECK(item.scatter()->symbol() == QStringLiteral("t"));
     CHECK(item.scatter()->size() == 9.0);
+    CHECK(item.scatter()->pen().color() == QColor(10, 20, 30));
+    CHECK(item.scatter()->brush().color() == QColor(40, 50, 60));
     CHECK(spanEquals(item.scatter()->xData(), {0.0, 1.0, 2.0}));
     CHECK(spanEquals(item.scatter()->yData(), y));
 
@@ -293,6 +295,49 @@ bool testClearAndDataUpdatesKeepScatterInSync()
     item.clear();
     CHECK(!item.scatter()->hasData());
     CHECK(!item.scatter()->isVisible());
+
+    return true;
+}
+
+bool testSymbolStyleBeforeDataAutoEnablesCircleAndForwards()
+{
+    cppqtgraph::graphicsItems::PlotDataItem item;
+    const std::vector<double> y{2.0, -1.0, 4.0};
+    const QPen symbolPen(Qt::white);
+    const QBrush symbolBrush(QColor(255, 0, 0));
+
+    item.setSymbolBrush(symbolBrush);
+    item.setSymbolPen(symbolPen);
+    CHECK(item.symbolsVisible());
+    CHECK(item.symbol() == QStringLiteral("o"));
+    CHECK(!item.hasData());
+
+    item.setData(y);
+    CHECK(item.scatter()->isVisible());
+    CHECK(item.scatter()->symbol() == QStringLiteral("o"));
+    CHECK(item.scatter()->pen().color() == QColor(255, 255, 255));
+    CHECK(item.scatter()->brush().color() == QColor(255, 0, 0));
+    CHECK(spanEquals(item.scatter()->yData(), y));
+
+    return true;
+}
+
+bool testSymbolStyleAfterDataUpdatesScatterPenAndBrush()
+{
+    cppqtgraph::graphicsItems::PlotDataItem item;
+    const std::vector<double> y{2.0, -1.0, 4.0};
+
+    item.setData(y);
+    item.setSymbol(QStringLiteral("o"));
+    item.setSymbolPen(QPen(Qt::white));
+    item.setSymbolBrush(QBrush(QColor(255, 0, 0)));
+
+    CHECK(item.scatter()->pen().color() == QColor(255, 255, 255));
+    CHECK(item.scatter()->brush().color() == QColor(255, 0, 0));
+
+    item.setData(y);
+    CHECK(item.scatter()->pen().color() == QColor(255, 255, 255));
+    CHECK(item.scatter()->brush().color() == QColor(255, 0, 0));
 
     return true;
 }
@@ -348,6 +393,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testClearAndDataUpdatesKeepScatterInSync()) {
+        return 1;
+    }
+    if (!testSymbolStyleBeforeDataAutoEnablesCircleAndForwards()) {
+        return 1;
+    }
+    if (!testSymbolStyleAfterDataUpdatesScatterPenAndBrush()) {
         return 1;
     }
     if (!testCurveLifetimeIsOwnedByPlotDataItem()) {

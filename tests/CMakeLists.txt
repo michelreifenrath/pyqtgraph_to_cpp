@@ -846,6 +846,11 @@ if(_cppqtgraph_has_graphicsitem)
     )
     set_tests_properties(cppqtgraph.graphicsItems.PlotDataItem PROPERTIES LABELS P3.10)
     cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_scatterplotitem
+        graphicsItems/test_ScatterPlotItem.cpp
+        cppqtgraph.graphicsItems.ScatterPlotItem
+    )
+    cppqtgraph_add_cpp_test(
         cppqtgraph_graphicsitems_plotdataitem_logmode
         graphicsItems/test_PlotDataItem_logMode.cpp
         cppqtgraph.graphicsItems.PlotDataItem.logMode

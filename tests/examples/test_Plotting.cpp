@@ -300,6 +300,59 @@ bool testPlottingP5LogMappedAutorangeAndRender(cppqtgraph::examples::PlottingExa
     return true;
 }
 
+bool testPlottingP3AutorangeAndSymbolRender(cppqtgraph::examples::PlottingExample& example)
+{
+    constexpr double kP3DataYMin = -2.1174059170159678;
+    constexpr double kP3DataYMax = 1.7818839591633955;
+    constexpr double kP3DataYSpan = kP3DataYMax - kP3DataYMin;
+
+    example.widget->show();
+    QApplication::processEvents();
+
+    auto* p3 = example.plots[2];
+    const auto viewRange = p3->viewRange();
+    const auto yRange = viewRange[cppqtgraph::graphicsItems::ViewBox::YAxis];
+    CHECK(std::isfinite(yRange[0]));
+    CHECK(std::isfinite(yRange[1]));
+    CHECK(yRange[1] > yRange[0]);
+    CHECK((yRange[1] - yRange[0]) < 8.0);
+
+    const auto mappedBounds = example.p3Curve->autoRangeBoundsRect();
+    CHECK(mappedBounds.has_value());
+    CHECK(nearlyEqual(mappedBounds->top(), kP3DataYMin, 1.0e-6));
+    CHECK(nearlyEqual(mappedBounds->bottom(), kP3DataYMax, 1.0e-6));
+    CHECK(nearlyEqual(mappedBounds->height(), kP3DataYSpan, 1.0e-6));
+
+    auto* scatter = example.p3Curve->scatter();
+    CHECK(scatter->symbol() == QStringLiteral("o"));
+    CHECK(scatter->pen().color() == QColor(255, 255, 255));
+    CHECK(scatter->brush().color() == QColor(255, 0, 0));
+
+    const auto scatterAutoBounds = scatter->autoRangeBoundsRect();
+    CHECK(scatterAutoBounds.has_value());
+    CHECK(nearlyEqual(scatterAutoBounds->height(), kP3DataYSpan, 1.0e-6));
+    CHECK(nearlyEqual(scatterAutoBounds->height(), scatter->boundingRect().height(), 1.0e-6));
+
+    const QImage symbolImage = cppqtgraph::graphicsItems::renderSymbol(
+        QStringLiteral("o"), scatter->size(), scatter->pen(), scatter->brush(), 1.0);
+    CHECK(!symbolImage.isNull());
+    bool foundRenderedPixel = false;
+    for (int row = 0; row < symbolImage.height(); ++row) {
+        for (int column = 0; column < symbolImage.width(); ++column) {
+            if (QColor::fromRgba(symbolImage.pixel(column, row)).alpha() > 0) {
+                foundRenderedPixel = true;
+                break;
+            }
+        }
+        if (foundRenderedPixel) {
+            break;
+        }
+    }
+    CHECK(foundRenderedPixel);
+
+    return true;
+}
+
 bool testPlottingGrab(cppqtgraph::examples::PlottingExample& example)
 {
     example.widget->show();
@@ -339,6 +392,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPlottingP5LogMappedAutorangeAndRender(example)) {
+        return 1;
+    }
+    if (!testPlottingP3AutorangeAndSymbolRender(example)) {
         return 1;
     }
     if (!testPlottingGrab(example)) {
