@@ -6,8 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,22 +31,46 @@ def require_pinned_sources() -> None:
         raise SystemExit("reference/source.lock does not match the P408 pinned PyQtGraph ref/commit")
 
 
-def build_data() -> tuple[list[float], list[float]]:
-    pinned_root = ROOT / "reference" / "pyqtgraph"
-    if str(pinned_root) not in sys.path:
-        sys.path.insert(0, str(pinned_root))
-
+def gaussian_filter(data, sigma: float | tuple[float, ...]):
+    """Pinned pyqtgraph.functions.gaussianFilter (numpy path, no Qt binding)."""
     import numpy as np
 
-    import pyqtgraph as pg
+    if np.isscalar(sigma):
+        sigma = (sigma,) * data.ndim
+    baseline = data.mean()
+    filtered = data - baseline
+    for ax in range(data.ndim):
+        s = sigma[ax]
+        if s == 0:
+            continue
+        ksize = int(s * 6)
+        x = np.arange(-ksize, ksize)
+        kernel = np.exp(-x**2 / (2 * s**2))
+        kshape = [1] * data.ndim
+        kshape[ax] = len(kernel)
+        kernel = kernel.reshape(kshape)
+        shape = data.shape[ax] + ksize
+        scale = 1.0 / (abs(s) * (2 * np.pi) ** 0.5)
+        filtered = scale * np.fft.irfft(
+            np.fft.rfft(filtered, shape, axis=ax) * np.fft.rfft(kernel, shape, axis=ax),
+            axis=ax,
+        )
+        sl = [slice(None)] * data.ndim
+        sl[ax] = slice(filtered.shape[ax] - data.shape[ax], None, None)
+        filtered = filtered[tuple(sl)]
+    return filtered + baseline
+
+
+def build_data() -> tuple[list[float], list[float]]:
+    import numpy as np
 
     np.random.seed(0)
     data_red = np.ones((FRAMES, HEIGHT, WIDTH)) * np.linspace(90, 150, FRAMES)[:, np.newaxis, np.newaxis]
-    data_red += pg.gaussianFilter(np.random.normal(size=(HEIGHT, WIDTH)), (5, 5)) * 100
+    data_red += gaussian_filter(np.random.normal(size=(HEIGHT, WIDTH)), (5, 5)) * 100
     data_grn = np.ones((FRAMES, HEIGHT, WIDTH)) * np.linspace(90, 180, FRAMES)[:, np.newaxis, np.newaxis]
-    data_grn += pg.gaussianFilter(np.random.normal(size=(HEIGHT, WIDTH)), (5, 5)) * 100
+    data_grn += gaussian_filter(np.random.normal(size=(HEIGHT, WIDTH)), (5, 5)) * 100
     data_blu = np.ones((FRAMES, HEIGHT, WIDTH)) * np.linspace(180, 90, FRAMES)[:, np.newaxis, np.newaxis]
-    data_blu += pg.gaussianFilter(np.random.normal(size=(HEIGHT, WIDTH)), (5, 5)) * 100
+    data_blu += gaussian_filter(np.random.normal(size=(HEIGHT, WIDTH)), (5, 5)) * 100
     data = np.concatenate(
         (
             data_red[:, :, :, np.newaxis],
@@ -122,6 +144,8 @@ def check_fixture(path: Path) -> None:
     assert len(xvals) == FRAMES
     assert math.isclose(xvals[0], 1.0)
     assert math.isclose(xvals[-1], 3.0)
+    expected_flat, expected_xvals = build_data()
+    assert xvals == expected_xvals
     flat_data = data["data"]
     assert len(flat_data) == FRAMES * HEIGHT * WIDTH * 3
 
@@ -131,6 +155,9 @@ def check_fixture(path: Path) -> None:
         rgb = probe["rgb"]
         assert rgb == probe_rgb(flat_data, shape, probe)
         assert probe["display_rgb"] == [display_channel(value) for value in rgb]
+        expected_rgb = probe_rgb(expected_flat, shape, probe)
+        assert rgb == expected_rgb
+        assert probe["display_rgb"] == [display_channel(value) for value in expected_rgb]
 
 
 def main() -> int:
