@@ -22,6 +22,10 @@ HEIGHT = 3
 WIDTH = 3
 
 
+def source_paths_available() -> bool:
+    return all(path.exists() for path in (SOURCE_LOCK, EXAMPLE, IMAGEVIEW, FUNCTIONS))
+
+
 def require_pinned_sources() -> None:
     missing = [path for path in (SOURCE_LOCK, EXAMPLE, IMAGEVIEW, FUNCTIONS) if not path.exists()]
     if missing:
@@ -132,7 +136,7 @@ def probe_rgb(flat_data: list[float], shape: list[int], probe: dict[str, object]
     return flat_data[base : base + channels]
 
 
-def check_fixture(path: Path) -> None:
+def check_fixture(path: Path, verify_against_source: bool = True) -> None:
     data = json.loads(path.read_text(encoding="utf-8"))
     source = data.get("source", {})
     assert source.get("id") == PINNED_REF
@@ -143,8 +147,6 @@ def check_fixture(path: Path) -> None:
     assert len(xvals) == FRAMES
     assert math.isclose(xvals[0], 1.0)
     assert math.isclose(xvals[-1], 3.0)
-    expected_flat, expected_xvals = build_data()
-    assert xvals == expected_xvals
     flat_data = data["data"]
     assert len(flat_data) == FRAMES * HEIGHT * WIDTH * 3
 
@@ -154,8 +156,16 @@ def check_fixture(path: Path) -> None:
         rgb = probe["rgb"]
         assert rgb == probe_rgb(flat_data, shape, probe)
         assert probe["display_rgb"] == [display_channel(value) for value in rgb]
+
+    if not verify_against_source:
+        return
+
+    expected_flat, expected_xvals = build_data()
+    assert xvals == expected_xvals
+    for name in ("first_frame", "last_frame"):
+        probe = probes[name]
         expected_rgb = probe_rgb(expected_flat, shape, probe)
-        assert rgb == expected_rgb
+        assert probe["rgb"] == expected_rgb
         assert probe["display_rgb"] == [display_channel(value) for value in expected_rgb]
 
 
@@ -163,9 +173,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="validate the pinned fixture")
     parser.add_argument("--write", action="store_true", help="rewrite the pinned fixture")
+    parser.add_argument(
+        "--require-source",
+        action="store_true",
+        help="fail if the optional pinned PyQtGraph checkout is absent",
+    )
     args = parser.parse_args()
 
-    require_pinned_sources()
+    verify_against_source = args.require_source or not args.check or source_paths_available()
+    if verify_against_source:
+        require_pinned_sources()
     if args.write:
         FIXTURE.parent.mkdir(parents=True, exist_ok=True)
         FIXTURE.write_text(json.dumps(build_fixture(), indent=2) + "\n", encoding="utf-8")
@@ -173,7 +190,7 @@ def main() -> int:
         return 0
 
     if args.check:
-        check_fixture(FIXTURE)
+        check_fixture(FIXTURE, verify_against_source=verify_against_source)
         print(f"P408 ImageView 4D oracle fixture ok: {PINNED_REF} {PINNED_COMMIT} ({FIXTURE})")
         return 0
 

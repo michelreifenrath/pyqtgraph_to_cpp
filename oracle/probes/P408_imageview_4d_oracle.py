@@ -26,8 +26,10 @@ def main() -> int:
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
-    module.require_pinned_sources()
-    module.check_fixture(module.FIXTURE)
+    verify_against_source = module.source_paths_available()
+    if verify_against_source:
+        module.require_pinned_sources()
+    module.check_fixture(module.FIXTURE, verify_against_source=verify_against_source)
     print(
         "P408 ImageView 4D oracle fixture ok: "
         f"{module.PINNED_REF} {module.PINNED_COMMIT} ({module.FIXTURE})"
