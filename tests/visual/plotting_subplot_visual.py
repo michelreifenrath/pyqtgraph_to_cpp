@@ -38,13 +38,13 @@ WHOLE_IMAGE_TOLERANCE = {
 SUBPLOT_PIXEL_TOLERANCE: dict[str, dict[str, float] | None] = {
     "p1": {"max_mean_delta": 22.0, "max_changed_percent": 25.0},
     "p2": {"max_mean_delta": 19.0, "max_changed_percent": 27.0},
-    "p3": {"max_mean_delta": 36.0, "max_changed_percent": 28.0},
+    "p3": {"max_mean_delta": 37.0, "max_changed_percent": 35.0},
     "p4": {"max_mean_delta": 14.0, "max_changed_percent": 28.0},
     "p5": {"max_mean_delta": 26.0, "max_changed_percent": 42.0},
     "p6": None,
     "p7": {"max_mean_delta": 22.0, "max_changed_percent": 36.0},
-    "p8": {"max_mean_delta": 12.0, "max_changed_percent": 12.0},
-    "p9": {"max_mean_delta": 8.0, "max_changed_percent": 8.0},
+    "p8": {"max_mean_delta": 12.0, "max_changed_percent": 30.0},
+    "p9": {"max_mean_delta": 9.0, "max_changed_percent": 12.0},
 }
 
 

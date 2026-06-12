@@ -131,6 +131,8 @@ def render_deterministic_plotting(
 
     update()
 
+    win.nextRow()
+
     p7 = win.addPlot(title="Filled plot, axis disabled")
     p7.plot(
         np.asarray(arrays["p7_y"]),
@@ -138,8 +140,6 @@ def render_deterministic_plotting(
         brush=(50, 50, 200, 100),
     )
     p7.showAxis("bottom", False)
-
-    win.nextRow()
 
     sinc_data = np.asarray(arrays["sinc_data"])
     p8 = win.addPlot(title="Region Selection")
