@@ -83,12 +83,17 @@ examples:
     title: ImageView
     upstream_file: pyqtgraph/examples/ImageView.py
     cpp_file: examples/ImageView.cpp
-    status: planned
+    status: ported
+    aliases:
+      - ImageView.cpp
+      - pyqtgraph/examples/ImageView.py
     validation:
       smoke: required
       numeric: required
       visual: required
       interaction: required
+    ctest:
+      normal: cppqtgraph.examples.ImageView
 
   - order: 4
     name: parametertree

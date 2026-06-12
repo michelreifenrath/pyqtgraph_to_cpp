@@ -52,7 +52,7 @@ QVector<ExampleEntry> makeEntries()
          .title = QStringLiteral("ImageView"),
          .upstreamFile = QStringLiteral("pyqtgraph/examples/ImageView.py"),
          .cppFile = QStringLiteral("examples/ImageView.cpp"),
-         .status = ExampleStatus::Planned,
+         .status = ExampleStatus::Ported,
          .validation = {.smoke = ValidationLevel::Required,
                         .numeric = ValidationLevel::Required,
                         .visual = ValidationLevel::Required,

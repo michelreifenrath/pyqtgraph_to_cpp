@@ -100,7 +100,7 @@ bool testRegistryOrderAndStatus()
     CHECK(entries[2].name == QStringLiteral("Plotting"));
     CHECK(entries[2].status == cppqtgraph::examples::ExampleStatus::Ported);
     CHECK(entries[3].name == QStringLiteral("ImageView"));
-    CHECK(entries[3].status == cppqtgraph::examples::ExampleStatus::Planned);
+    CHECK(entries[3].status == cppqtgraph::examples::ExampleStatus::Ported);
     CHECK(entries[10].name == QStringLiteral("DateAxisItem"));
     CHECK(entries[10].status == cppqtgraph::examples::ExampleStatus::Planned);
 
@@ -108,7 +108,7 @@ bool testRegistryOrderAndStatus()
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("SimplePlot")));
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageItem")));
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("Plotting")));
-    CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageView")));
+    CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageView")));
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("unknown")));
 
     return true;
@@ -116,7 +116,6 @@ bool testRegistryOrderAndStatus()
 
 bool testRegistryLaunchPendingFailsClosed()
 {
-    CHECK(!cppqtgraph::examples::ExampleRegistry::launch(QStringLiteral("ImageView")).has_value());
     CHECK(!cppqtgraph::examples::ExampleRegistry::launch(QStringLiteral("parametertree")).has_value());
     return true;
 }
@@ -165,8 +164,8 @@ bool testRegistryLaunchesPortedExamplesViaHook()
         CHECK(launched->executablePath.contains(entry.name));
     }
 
-    CHECK(portedCount == 3);
-    CHECK(hookCalls == 3);
+    CHECK(portedCount == 4);
+    CHECK(hookCalls == 4);
 
     cppqtgraph::examples::ExampleRegistry::clearLaunchHookForTesting();
     return true;
@@ -201,8 +200,8 @@ bool testExampleAppListAndMetadata()
 
     const int imageViewRow = findListRowByName(list, QStringLiteral("ImageView"));
     CHECK(imageViewRow >= 0);
-    CHECK(list->item(imageViewRow)->text().contains(QStringLiteral("pending")));
-    CHECK((list->item(imageViewRow)->flags() & Qt::ItemIsEnabled) == 0);
+    CHECK(list->item(imageViewRow)->text().contains(QStringLiteral("runnable")));
+    CHECK((list->item(imageViewRow)->flags() & Qt::ItemIsEnabled) != 0);
 
     list->setCurrentRow(imageItemRow);
     CHECK(window.selectedExampleName() == QStringLiteral("ImageItem"));
@@ -227,8 +226,7 @@ bool testRunButtonState()
     CHECK(window.isRunEnabled());
 
     list->setCurrentRow(findListRowByName(list, QStringLiteral("ImageView")));
-    CHECK(!window.isRunEnabled());
-    CHECK(!window.runSelectedExample());
+    CHECK(window.isRunEnabled());
 
     return true;
 }
@@ -258,7 +256,13 @@ bool testLaunchDispatchViaHook()
 
     window.clearLaunchHookForTesting();
     list->setCurrentRow(findListRowByName(list, QStringLiteral("ImageView")));
-    CHECK(!window.runSelectedExample());
+    window.setLaunchHookForTesting([&hookedName](const QString& name) {
+        hookedName = name;
+        return true;
+    });
+    CHECK(window.runSelectedExample());
+    CHECK(hookedName == QStringLiteral("ImageView"));
+    window.clearLaunchHookForTesting();
 
     return true;
 }
