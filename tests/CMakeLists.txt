@@ -933,6 +933,8 @@ if(_cppqtgraph_has_graphicsitem)
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_cliexample)
     add_executable(cppqtgraph_examples_plotting "${PROJECT_SOURCE_DIR}/examples/Plotting.cpp")
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_plotting)
+    add_executable(cppqtgraph_examples_imageview "${PROJECT_SOURCE_DIR}/examples/ImageView.cpp")
+    cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_imageview)
     add_executable(cppqtgraph_examples_exampleapp
         "${PROJECT_SOURCE_DIR}/examples/ExampleRegistry.cpp"
         "${PROJECT_SOURCE_DIR}/examples/ExampleApp.cpp"
@@ -1066,6 +1068,11 @@ if(_cppqtgraph_has_graphicsitem)
     )
     set_tests_properties(cppqtgraph.examples.Plotting PROPERTIES LABELS "visual;interaction")
     cppqtgraph_add_cpp_test(
+        cppqtgraph_examples_imageview_test
+        examples/test_ImageView.cpp
+        cppqtgraph.examples.ImageView
+    )
+    cppqtgraph_add_cpp_test(
         cppqtgraph_examples_exampleapp_test
         examples/test_ExampleApp.cpp
         cppqtgraph.examples.ExampleApp
@@ -1076,12 +1083,14 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_imageitem
         cppqtgraph_examples_cliexample
         cppqtgraph_examples_plotting
+        cppqtgraph_examples_imageview
     )
     add_dependencies(cppqtgraph_examples_exampleapp_test
         cppqtgraph_examples_simpleplot
         cppqtgraph_examples_imageitem
         cppqtgraph_examples_cliexample
         cppqtgraph_examples_plotting
+        cppqtgraph_examples_imageview
     )
     set_tests_properties(cppqtgraph.examples.ExampleApp PROPERTIES LABELS "interaction")
     add_test(
