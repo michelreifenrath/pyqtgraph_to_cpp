@@ -845,6 +845,16 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.graphicsItems.PlotDataItem
     )
     set_tests_properties(cppqtgraph.graphicsItems.PlotDataItem PROPERTIES LABELS P3.10)
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_plotdataitem_logmode
+        graphicsItems/test_PlotDataItem_logMode.cpp
+        cppqtgraph.graphicsItems.PlotDataItem.logMode
+    )
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_plotitem_logmode
+        graphicsItems/test_PlotItem_logMode.cpp
+        cppqtgraph.graphicsItems.PlotItem.logMode
+    )
 
     cppqtgraph_add_cpp_test(
         cppqtgraph_graphicsitems_graphitem_curvepoint_p4_03

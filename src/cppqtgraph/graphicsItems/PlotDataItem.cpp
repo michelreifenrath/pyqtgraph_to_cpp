@@ -13,6 +13,8 @@
 #include <QtWidgets/QStyleOptionGraphicsItem>
 #include <QtWidgets/QWidget>
 
+#include <cmath>
+#include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -20,6 +22,14 @@
 namespace cppqtgraph::graphicsItems {
 
 namespace {
+
+double mapLogAxisValue(double value)
+{
+    if (!(value > 0.0) || !std::isfinite(value)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return std::log10(value);
+}
 
 QPen defaultPlotDataPen()
 {
@@ -233,6 +243,91 @@ bool PlotDataItem::lineVisible() const noexcept
     return lineVisible_;
 }
 
+void PlotDataItem::setLogMode(bool xEnabled, bool yEnabled)
+{
+    if (logMode_[0] == xEnabled && logMode_[1] == yEnabled) {
+        return;
+    }
+    logMode_ = {xEnabled, yEnabled};
+    updateItems();
+}
+
+std::array<bool, 2> PlotDataItem::logMode() const noexcept
+{
+    return logMode_;
+}
+
+void PlotDataItem::updateMappedData()
+{
+    if (!hasData_) {
+        displayX_.clear();
+        displayY_.clear();
+        return;
+    }
+
+    displayX_.assign(xData_.begin(), xData_.end());
+    displayY_.assign(yData_.begin(), yData_.end());
+    if (logMode_[0]) {
+        for (double& value : displayX_) {
+            value = mapLogAxisValue(value);
+        }
+    }
+    if (logMode_[1]) {
+        for (double& value : displayY_) {
+            value = mapLogAxisValue(value);
+        }
+    }
+}
+
+std::optional<QRectF> PlotDataItem::autoRangeBoundsRect() const
+{
+    if (!hasData_ || (!lineVisible_ && !symbolsVisible_)) {
+        return std::nullopt;
+    }
+
+    bool havePoint = false;
+    double xMin = 0.0;
+    double xMax = 0.0;
+    double yMin = 0.0;
+    double yMax = 0.0;
+
+    const std::size_t count = std::min(xData_.size(), yData_.size());
+    for (std::size_t index = 0; index < count; ++index) {
+        double x = xData_[index];
+        double y = yData_[index];
+        if (logMode_[0]) {
+            x = mapLogAxisValue(x);
+        }
+        if (logMode_[1]) {
+            y = mapLogAxisValue(y);
+        }
+        if (!std::isfinite(x) || !std::isfinite(y)) {
+            continue;
+        }
+        if (!havePoint) {
+            xMin = xMax = x;
+            yMin = yMax = y;
+            havePoint = true;
+            continue;
+        }
+        xMin = std::min(xMin, x);
+        xMax = std::max(xMax, x);
+        yMin = std::min(yMin, y);
+        yMax = std::max(yMax, y);
+    }
+
+    if (!havePoint) {
+        return std::nullopt;
+    }
+
+    constexpr double kMinimumBoundsSpan = 1.0e-12;
+    const double width = std::max(xMax - xMin, kMinimumBoundsSpan);
+    const double height = std::max(yMax - yMin, kMinimumBoundsSpan);
+    const double xCenter = (xMin + xMax) * 0.5;
+    const double yCenter = (yMin + yMax) * 0.5;
+    return QRectF(xCenter - width * 0.5, yCenter - height * 0.5, width, height);
+}
+
 QRectF PlotDataItem::boundingRect() const
 {
     return QRectF{};
@@ -249,10 +344,14 @@ void PlotDataItem::updateItems()
 {
     static constexpr std::span<const double> empty;
 
+    updateMappedData();
+    const std::span<const double> displayX = displayX_;
+    const std::span<const double> displayY = displayY_;
+
     if (curve_ != nullptr) {
         curve_->setPen(pen_);
         if (hasData_ && lineVisible_) {
-            curve_->setData(xData_, yData_);
+            curve_->setData(displayX, displayY);
             curve_->show();
         } else {
             if (!hasData_) {
@@ -267,7 +366,7 @@ void PlotDataItem::updateItems()
     }
 
     if (hasData_ && symbolsVisible_) {
-        scatter_->setData(xData_, yData_);
+        scatter_->setData(displayX, displayY);
         scatter_->show();
         return;
     }
