@@ -15,15 +15,20 @@ VISUAL_TESTS = ROOT / "tests" / "visual"
 if str(VISUAL_TESTS) not in sys.path:
     sys.path.insert(0, str(VISUAL_TESTS))
 
+from plotting_subplot_visual import (  # noqa: E402
+    WHOLE_IMAGE_TOLERANCE,
+    assert_all_subplots_nonempty,
+    blank_subplot,
+    compare_subplots,
+    degenerate_axis_subplots,
+)
 from test_P1_08_cpp_visual_renderer import _assert_semantic_plot_image  # noqa: E402
 
 REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "Plotting.reference.png"
 CHECK_VISUAL_ARTIFACTS = ROOT / "scripts" / "check_visual_artifacts"
 DEFAULT_REVIEW = ROOT / "reports" / "examples" / "P3.72" / "gpt5_vision_review.md"
-PYQTGRAPH_REF = (
-    "/home/michel/.cache/pgcpp-opensrc/repos/github.com/pyqtgraph/pyqtgraph/"
-    "pyqtgraph-0.14.0"
-)
+PYQTGRAPH_REF = ROOT / "reference" / "pyqtgraph"
+PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
 
 
 def _renderer() -> Path:
@@ -83,12 +88,14 @@ def _run_renderer(renderer: Path, output: Path) -> dict[str, Any]:
     assert Path(str(status["output"])).resolve() == output.resolve()
     assert output.is_file()
     _assert_semantic_plot_image(output, width=1000, height=600)
+    assert_all_subplots_nonempty(output)
     return status
 
 
 def _check_visual_artifacts(
     *, actual: Path, reports_root: Path, review_source: Path
 ) -> dict[str, Any]:
+    tolerance = WHOLE_IMAGE_TOLERANCE
     result = subprocess.run(
         [
             sys.executable,
@@ -106,13 +113,13 @@ def _check_visual_artifacts(
             "--review-report",
             str(review_source),
             "--max-mean-delta",
-            "14",
+            str(tolerance["max_mean_delta"]),
             "--max-pixel-delta",
-            "255",
+            str(tolerance["max_pixel_delta"]),
             "--max-changed-percent",
-            "21",
+            str(tolerance["max_changed_percent"]),
             "--min-ssim",
-            "0.47",
+            str(tolerance["min_ssim"]),
         ],
         cwd=ROOT,
         text=True,
@@ -129,6 +136,15 @@ def _check_visual_artifacts(
     assert metrics["semantic_review"]["recommendation"] == "merge_ok"
     assert metrics["semantic_review"]["accepted"] is True
     assert metrics["failed_checks"] == []
+
+    subplot_metrics = compare_subplots(
+        REFERENCE,
+        actual,
+        reports_dir=reports_root / "Plotting" / "subplots",
+    )
+    assert subplot_metrics["passed"] is True, subplot_metrics["failed_cells"]
+    metrics["subplot_metrics"] = subplot_metrics
+
     for artifact_name in (
         "reference.png",
         "actual.png",
@@ -160,22 +176,24 @@ def _write_example_report(example_root: Path, metrics: dict[str, Any]) -> None:
                 "pass": True,
                 "not_applicable": {},
                 "manual_agent_image_inspection": (
-                    "Reference and C++ actual images show the same 1000x600 "
-                    "3x3 GraphicsLayoutWidget with nine titled plot panels, grid/log/"
-                    "scatter/fill/region/zoom content, and no blank or placeholder panes."
+                    "Reference comes from pinned PyQtGraph rendering with data arrays "
+                    "from examples/Plotting.cpp (seed 0x504C5454). Whole-image "
+                    "thresholds are looser than the retired gate; tightening is "
+                    "per-subplot pixel gates for p1-p5/p7-p9 plus per-cell "
+                    "non-emptiness for all nine panels (p6 skips pixel compare)."
                 ),
             }
         ],
         "pyqtgraph_reference": {
             "ref": "pyqtgraph-0.14.0",
-            "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+            "pinned_commit": PINNED_COMMIT,
             "files": [
                 "pyqtgraph/examples/Plotting.py",
                 "pyqtgraph/widgets/GraphicsLayoutWidget.py",
                 "pyqtgraph/graphicsItems/PlotItem/PlotItem.py",
                 "pyqtgraph/graphicsItems/LinearRegionItem.py",
             ],
-            "path": PYQTGRAPH_REF,
+            "path": str(PYQTGRAPH_REF),
         },
     }
     (example_root / "report.json").write_text(
@@ -193,6 +211,47 @@ def _write_example_report(example_root: Path, metrics: dict[str, Any]) -> None:
         "- Status: pass.\n",
         encoding="utf-8",
     )
+
+
+def _assert_visual_gate_fails(actual: Path, tmp_path: Path) -> None:
+    tolerance = WHOLE_IMAGE_TOLERANCE
+    reports_root = tmp_path / "negative-reports"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(CHECK_VISUAL_ARTIFACTS),
+            "--case",
+            "Plotting-negative",
+            "--reference",
+            str(REFERENCE),
+            "--actual",
+            str(actual),
+            "--reports-root",
+            str(reports_root),
+            "--gpt-visual-review",
+            "not_applicable",
+            "--max-mean-delta",
+            str(tolerance["max_mean_delta"]),
+            "--max-pixel-delta",
+            str(tolerance["max_pixel_delta"]),
+            "--max-changed-percent",
+            str(tolerance["max_changed_percent"]),
+            "--min-ssim",
+            str(tolerance["min_ssim"]),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    whole_failed = result.returncode != 0
+    subplot_metrics = compare_subplots(REFERENCE, actual)
+    nonempty_failed = False
+    try:
+        assert_all_subplots_nonempty(actual)
+    except AssertionError:
+        nonempty_failed = True
+    assert whole_failed or not subplot_metrics["passed"] or nonempty_failed
 
 
 def test_P372_plotting_builds_renders_and_writes_example_report(tmp_path: Path) -> None:
@@ -215,3 +274,29 @@ def test_P372_plotting_builds_renders_and_writes_example_report(tmp_path: Path) 
     assert report["owned_examples"][0]["validation_level"]["interaction"] == "required"
     assert report["owned_examples"][0]["pass"] is True
     assert (example_root / "README.md").is_file()
+
+
+def test_P372_plotting_blank_p5_fixture_fails_visual_gate(tmp_path: Path) -> None:
+    renderer = _renderer()
+    actual = tmp_path / "Plotting.actual.png"
+    _run_renderer(renderer, actual)
+
+    blanked = tmp_path / "Plotting.blank_p5.png"
+    blank_subplot(actual, blanked, col=1, row=1)
+    _assert_visual_gate_fails(blanked, tmp_path)
+
+
+def test_P372_plotting_runaway_axis_fixture_fails_visual_gate(tmp_path: Path) -> None:
+    renderer = _renderer()
+    actual = tmp_path / "Plotting.actual.png"
+    _run_renderer(renderer, actual)
+
+    runaway = tmp_path / "Plotting.runaway_axis.png"
+    degenerate_axis_subplots(actual, runaway, reference=REFERENCE)
+
+    subplot_metrics = compare_subplots(REFERENCE, runaway)
+    assert "p8" in subplot_metrics["failed_cells"]
+    assert "p9" in subplot_metrics["failed_cells"]
+    assert "p5" not in subplot_metrics["failed_cells"]
+    assert_all_subplots_nonempty(runaway)
+    _assert_visual_gate_fails(runaway, tmp_path)
