@@ -222,6 +222,27 @@ void ImageItem::clearCompositionMode()
 void ImageItem::setLevels(std::optional<ImageLevelRange> levels)
 {
     levels_ = levels;
+    if (levels.has_value()) {
+        channelLevels_.reset();
+    }
+    markRenderRequired();
+    update();
+}
+
+void ImageItem::setChannelLevels(const std::vector<ImageLevelRange>& levels)
+{
+    channelLevels_ = levels;
+    levels_.reset();
+    markRenderRequired();
+    update();
+}
+
+void ImageItem::clearChannelLevels()
+{
+    if (!channelLevels_.has_value()) {
+        return;
+    }
+    channelLevels_.reset();
     markRenderRequired();
     update();
 }
@@ -229,6 +250,115 @@ void ImageItem::setLevels(std::optional<ImageLevelRange> levels)
 std::optional<ImageLevelRange> ImageItem::getLevels() const noexcept
 {
     return levels_;
+}
+
+std::optional<std::vector<ImageLevelRange>> ImageItem::getChannelLevels() const noexcept
+{
+    return channelLevels_;
+}
+
+std::pair<std::vector<double>, std::vector<double>> ImageItem::getHistogram(int channel) const
+{
+    std::vector<double> values;
+    if (!hasImage()) {
+        return {};
+    }
+
+    const std::size_t step = std::max<std::size_t>(1, std::max(shape_[0], shape_[1]) / 200);
+    switch (dataKind_) {
+    case DataKind::UInt8Rank2:
+        for (std::size_t row = 0; row < shape_[0]; row += step) {
+            for (std::size_t col = 0; col < shape_[1]; col += step) {
+                values.push_back(static_cast<double>(uint8Data_[row * shape_[1] + col]));
+            }
+        }
+        break;
+    case DataKind::UInt8Rank3: {
+        const std::size_t channels = shape_[2];
+        if (channel < 0) {
+            for (std::size_t row = 0; row < shape_[0]; row += step) {
+                for (std::size_t col = 0; col < shape_[1]; col += step) {
+                    for (std::size_t ch = 0; ch < channels; ++ch) {
+                        values.push_back(static_cast<double>(
+                            uint8Data_[(row * shape_[1] + col) * channels + ch]));
+                    }
+                }
+            }
+        } else if (static_cast<std::size_t>(channel) < channels) {
+            for (std::size_t row = 0; row < shape_[0]; row += step) {
+                for (std::size_t col = 0; col < shape_[1]; col += step) {
+                    values.push_back(static_cast<double>(
+                        uint8Data_[(row * shape_[1] + col) * channels + static_cast<std::size_t>(channel)]));
+                }
+            }
+        }
+        break;
+    }
+    case DataKind::UInt16Rank2:
+        for (std::size_t row = 0; row < shape_[0]; row += step) {
+            for (std::size_t col = 0; col < shape_[1]; col += step) {
+                values.push_back(static_cast<double>(uint16Data_[row * shape_[1] + col]));
+            }
+        }
+        break;
+    case DataKind::UInt16Rank3: {
+        const std::size_t channels = shape_[2];
+        if (channel < 0) {
+            for (std::size_t row = 0; row < shape_[0]; row += step) {
+                for (std::size_t col = 0; col < shape_[1]; col += step) {
+                    for (std::size_t ch = 0; ch < channels; ++ch) {
+                        values.push_back(static_cast<double>(
+                            uint16Data_[(row * shape_[1] + col) * channels + ch]));
+                    }
+                }
+            }
+        } else if (static_cast<std::size_t>(channel) < channels) {
+            for (std::size_t row = 0; row < shape_[0]; row += step) {
+                for (std::size_t col = 0; col < shape_[1]; col += step) {
+                    values.push_back(static_cast<double>(
+                        uint16Data_[(row * shape_[1] + col) * channels + static_cast<std::size_t>(channel)]));
+                }
+            }
+        }
+        break;
+    }
+    case DataKind::FloatRank2:
+        for (std::size_t row = 0; row < shape_[0]; row += step) {
+            for (std::size_t col = 0; col < shape_[1]; col += step) {
+                values.push_back(static_cast<double>(floatData_[row * shape_[1] + col]));
+            }
+        }
+        break;
+    case DataKind::None:
+        break;
+    }
+
+    if (values.empty()) {
+        return {};
+    }
+
+    const auto minValue = *std::min_element(values.begin(), values.end());
+    const auto maxValue = *std::max_element(values.begin(), values.end());
+    constexpr std::size_t kBins = 256;
+    const double span = maxValue - minValue;
+    const double binWidth = span <= 0.0 ? 1.0 : span / static_cast<double>(kBins);
+
+    std::vector<double> counts(kBins, 0.0);
+    std::vector<double> edges(kBins);
+    for (std::size_t index = 0; index < kBins; ++index) {
+        edges[index] = minValue + static_cast<double>(index) * binWidth;
+    }
+
+    for (double value : values) {
+        std::size_t bin = 0;
+        if (span > 0.0) {
+            bin = static_cast<std::size_t>((value - minValue) / span * static_cast<double>(kBins - 1));
+            bin = std::min(bin, kBins - 1);
+        }
+        counts[bin] += 1.0;
+    }
+
+    return {edges, counts};
 }
 
 void ImageItem::setLookupTable(ImageLookupTable lut)
@@ -323,7 +453,11 @@ bool ImageItem::render()
     scalarOptions.lut = lookupTableView();
 
     TryMakeQImageOptions colorOptions;
-    colorOptions.levels = levels_;
+    if (channelLevels_.has_value()) {
+        colorOptions.channelLevels = channelLevels_;
+    } else {
+        colorOptions.levels = levels_;
+    }
 
     std::optional<QImage> rendered;
     switch (dataKind_) {
@@ -335,8 +469,9 @@ bool ImageItem::render()
         if (shape_[2] == 1) {
             rendered = cppqtgraph::tryMakeQImage(displayView(singleChannelView(input), axisOrder_), scalarOptions);
         } else {
-            rendered = levels_.has_value() ? cppqtgraph::tryMakeQImage(displayView(input, axisOrder_), colorOptions)
-                                           : cppqtgraph::tryMakeQImage(displayView(input, axisOrder_));
+            rendered = (levels_.has_value() || channelLevels_.has_value())
+                             ? cppqtgraph::tryMakeQImage(displayView(input, axisOrder_), colorOptions)
+                             : cppqtgraph::tryMakeQImage(displayView(input, axisOrder_));
         }
         break;
     }

@@ -62,13 +62,15 @@ ImageViewExample createImageViewExample()
     window->resize(800, 800);
     window->setWindowTitle(QStringLiteral("pyqtgraph example: ImageView"));
 
-    auto* imageView = new imageview::ImageView(window.get());
+    auto* imageView = new imageview::ImageView(window.get(), QStringLiteral("rgba"));
     window->setCentralWidget(imageView);
+    imageView->setHistogramLabel(QStringLiteral("Histogram label goes here"));
 
     const std::vector<float> data = makeExampleImageData();
     const std::vector<double> xvals = makeExampleXValues();
     imageView->setImage(core::ArrayView<const float, 4>(data.data(), {kFrames, kHeight, kWidth, kChannels}),
-                        core::ArrayView<const double, 1>(xvals.data(), {xvals.size()}));
+                        core::ArrayView<const double, 1>(xvals.data(), {xvals.size()}),
+                        true);
 
     return {.window = std::move(window), .imageView = imageView};
 }

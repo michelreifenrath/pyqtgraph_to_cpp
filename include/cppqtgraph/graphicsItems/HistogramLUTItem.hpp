@@ -14,6 +14,7 @@
 #include <QtCore/QPointer>
 #include <QtCore/QString>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -22,7 +23,11 @@
 
 namespace cppqtgraph::graphicsItems {
 
+class AxisItem;
+class GradientEditorItem;
 class ImageItem;
+class PlotCurveItem;
+class ViewBox;
 
 class HistogramLUTItem : public GraphicsWidget {
     Q_OBJECT
@@ -55,8 +60,10 @@ public:
     [[nodiscard]] QString gradientPosition() const;
 
     [[nodiscard]] std::pair<double, double> getLevels() const;
+    [[nodiscard]] std::vector<std::pair<double, double>> getChannelLevels() const;
     void setLevels(double minimum, double maximum);
     void setLevels(const std::pair<double, double>& levels);
+    void setChannelLevels(const std::vector<std::pair<double, double>>& levels);
 
     void setColorMap(const ColorMap& colorMap);
     void setColorMap(const QString& name);
@@ -66,6 +73,14 @@ public:
 
     [[nodiscard]] LinearRegionItem* levelRegion() noexcept;
     [[nodiscard]] const LinearRegionItem* levelRegion() const noexcept;
+    [[nodiscard]] AxisItem* axis() noexcept;
+    [[nodiscard]] const AxisItem* axis() const noexcept;
+    [[nodiscard]] GradientEditorItem* gradient() noexcept;
+    [[nodiscard]] const GradientEditorItem* gradient() const noexcept;
+    [[nodiscard]] ViewBox* viewBox() noexcept;
+    [[nodiscard]] const ViewBox* viewBox() const noexcept;
+    [[nodiscard]] LinearRegionItem* channelRegion(std::size_t channelIndex) noexcept;
+    [[nodiscard]] const LinearRegionItem* channelRegion(std::size_t channelIndex) const noexcept;
 
 public slots:
     void gradientChanged();
@@ -83,8 +98,16 @@ private:
     void setImageLookupTable();
     void applyImageLevels();
     void rebuildLookupTable(std::size_t rows, bool alpha) const;
+    void showRegions();
+    void fillHistogramPlots(bool autoLevel);
+    void loadGreyGradientPreset();
 
     QPointer<ImageItem> imageItem_;
+    ViewBox* viewBox_ = nullptr;
+    AxisItem* axis_ = nullptr;
+    GradientEditorItem* gradient_ = nullptr;
+    std::array<LinearRegionItem*, 5> regions_{{}};
+    std::array<PlotCurveItem*, 5> plots_{{}};
     LinearRegionItem* region_ = nullptr;
     QString levelMode_;
     Orientation orientation_ = Orientation::Vertical;

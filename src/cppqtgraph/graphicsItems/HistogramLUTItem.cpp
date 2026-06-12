@@ -5,11 +5,18 @@
 
 #include "../../../include/cppqtgraph/graphicsItems/HistogramLUTItem.hpp"
 
+#include "../../../include/cppqtgraph/graphicsItems/AxisItem.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/GradientEditorItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ImageItem.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/PlotCurveItem.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
 
 #include <QtCore/QObject>
+#include <QtGui/QBrush>
+#include <QtGui/QPen>
 #include <QtWidgets/QGraphicsGridLayout>
 
+#include <cmath>
 #include <stdexcept>
 #include <utility>
 
@@ -25,6 +32,33 @@ LinearRegionItem::Orientation regionOrientationFor(HistogramLUTItem::Orientation
 {
     return orientation == HistogramLUTItem::Orientation::Vertical ? LinearRegionItem::Orientation::Horizontal
                                                                  : LinearRegionItem::Orientation::Vertical;
+}
+
+QString axisOrientationFor(const QString& gradientPosition)
+{
+    if (gradientPosition == QStringLiteral("left")) {
+        return QStringLiteral("right");
+    }
+    if (gradientPosition == QStringLiteral("right")) {
+        return QStringLiteral("left");
+    }
+    if (gradientPosition == QStringLiteral("top")) {
+        return QStringLiteral("bottom");
+    }
+    return QStringLiteral("top");
+}
+
+void styleRegion(LinearRegionItem* region, const QColor& penColor, const QColor& brushColor, qreal spanMin, qreal spanMax)
+{
+    const QPen pen(penColor);
+    if (region->line(0) != nullptr) {
+        region->line(0)->setPen(pen);
+    }
+    if (region->line(1) != nullptr) {
+        region->line(1)->setPen(pen);
+    }
+    region->setBrush(QBrush(brushColor));
+    region->setSpan(spanMin, spanMax);
 }
 
 } // namespace
@@ -52,11 +86,84 @@ HistogramLUTItem::HistogramLUTItem(ImageItem* image,
     layout->setSpacing(0.0);
     setLayout(layout);
 
-    region_ = new LinearRegionItem(std::make_pair(0.0, 1.0), regionOrientationFor(orientation_), true, std::nullopt, this);
-    region_->setSwapMode(LinearRegionItem::SwapMode::Block);
-    region_->setZValue(1000.0);
-    QObject::connect(region_, &LinearRegionItem::sigRegionChanged, this, [this](LinearRegionItem*) { regionChanging(); });
-    QObject::connect(region_, &LinearRegionItem::sigRegionChangeFinished, this, [this](LinearRegionItem*) { regionChanged(); });
+    viewBox_ = new ViewBox(this);
+    if (orientation_ == Orientation::Vertical) {
+        viewBox_->setMaximumWidth(152);
+        viewBox_->setMinimumWidth(45);
+        viewBox_->setMouseEnabled(false, true);
+    } else {
+        viewBox_->setMaximumHeight(152);
+        viewBox_->setMinimumHeight(45);
+        viewBox_->setMouseEnabled(true, false);
+    }
+
+    gradient_ = new GradientEditorItem(gradientPosition_, true, true, this);
+    loadGreyGradientPreset();
+
+    const auto regionOrientation = regionOrientationFor(orientation_);
+    regions_[0] = new LinearRegionItem(std::make_pair(0.0, 1.0), regionOrientation, true, std::nullopt, viewBox_);
+    styleRegion(regions_[0], QColor(200, 200, 200), QColor(100, 100, 200, 100), 0.0, 1.0);
+    regions_[1] = new LinearRegionItem(std::make_pair(0.0, 1.0), regionOrientation, true, std::nullopt, viewBox_);
+    styleRegion(regions_[1], QColor(255, 50, 50), QColor(255, 50, 50, 50), 0.0, 1.0 / 3.0);
+    regions_[2] = new LinearRegionItem(std::make_pair(0.0, 1.0), regionOrientation, true, std::nullopt, viewBox_);
+    styleRegion(regions_[2], QColor(50, 255, 50), QColor(50, 255, 50, 50), 1.0 / 3.0, 2.0 / 3.0);
+    regions_[3] = new LinearRegionItem(std::make_pair(0.0, 1.0), regionOrientation, true, std::nullopt, viewBox_);
+    styleRegion(regions_[3], QColor(50, 50, 255), QColor(50, 50, 255, 80), 2.0 / 3.0, 1.0);
+    regions_[4] = new LinearRegionItem(std::make_pair(0.0, 1.0), regionOrientation, true, std::nullopt, viewBox_);
+    styleRegion(regions_[4], QColor(255, 255, 255), QColor(255, 255, 255, 50), 2.0 / 3.0, 1.0);
+    region_ = regions_[0];
+
+    for (LinearRegionItem* region : regions_) {
+        region->setZValue(1000.0);
+        region->setSwapMode(LinearRegionItem::SwapMode::Block);
+        viewBox_->addItem(region);
+        QObject::connect(region, &LinearRegionItem::sigRegionChanged, this, [this](LinearRegionItem*) { regionChanging(); });
+        QObject::connect(region, &LinearRegionItem::sigRegionChangeFinished, this, [this](LinearRegionItem*) { regionChanged(); });
+    }
+
+    axis_ = new AxisItem(axisOrientationFor(gradientPosition_), this);
+    axis_->setTickLength(-10.0);
+    axis_->linkToView(viewBox_);
+
+    const std::array<int, 3> avg = (gradientPosition_ == QStringLiteral("right") || gradientPosition_ == QStringLiteral("bottom"))
+                                       ? std::array<int, 3>{0, 1, 2}
+                                       : std::array<int, 3>{2, 1, 0};
+    if (orientation_ == Orientation::Vertical) {
+        layout->addItem(axis_, 0, avg[0]);
+        layout->addItem(viewBox_, 0, avg[1]);
+        layout->addItem(gradient_, 0, avg[2]);
+    } else {
+        layout->addItem(axis_, avg[0], 0);
+        layout->addItem(viewBox_, avg[1], 0);
+        layout->addItem(gradient_, avg[2], 0);
+    }
+
+    gradient_->setFlag(QGraphicsItem::ItemStacksBehindParent);
+    viewBox_->setFlag(QGraphicsItem::ItemStacksBehindParent);
+
+    QObject::connect(gradient_, &GradientEditorItem::sigGradientChanged, this, [this](GradientEditorItem*) { gradientChanged(); });
+    QObject::connect(viewBox_, &ViewBox::sigRangeChanged, this, [this](ViewBox*, ViewBox::Range2D, std::array<bool, 2>) { update(); });
+
+    plots_[0] = new PlotCurveItem(viewBox_);
+    plots_[0]->setPen(QPen(QColor(200, 200, 200, 100)));
+    plots_[1] = new PlotCurveItem(viewBox_);
+    plots_[1]->setPen(QPen(QColor(255, 0, 0, 100)));
+    plots_[2] = new PlotCurveItem(viewBox_);
+    plots_[2]->setPen(QPen(QColor(0, 255, 0, 100)));
+    plots_[3] = new PlotCurveItem(viewBox_);
+    plots_[3]->setPen(QPen(QColor(0, 0, 255, 100)));
+    plots_[4] = new PlotCurveItem(viewBox_);
+    plots_[4]->setPen(QPen(QColor(200, 200, 200, 100)));
+
+    for (PlotCurveItem* plot : plots_) {
+        if (orientation_ == Orientation::Vertical) {
+            plot->setRotation(90.0);
+        }
+        viewBox_->addItem(plot);
+    }
+
+    viewBox_->enableAutoRange(ViewBox::XYAxes, true);
+    showRegions();
 
     if (image != nullptr) {
         setImageItem(image);
@@ -79,8 +186,10 @@ void HistogramLUTItem::setImageItem(ImageItem* image)
     if (imageItem_ != nullptr) {
         imageChangedConnection_ = QObject::connect(imageItem_.data(), &ImageItem::sigImageChanged, this, [this] { imageChanged(false, false); });
         setImageLookupTable();
-        regionChanged();
-        imageChanged(true, false);
+        if (imageItem_->hasImage()) {
+            regionChanged();
+            imageChanged(true, false);
+        }
     }
 }
 
@@ -102,9 +211,40 @@ void HistogramLUTItem::setLevelMode(const QString& mode)
     if (mode == levelMode_) {
         return;
     }
+
+    const auto oldLevels = levelMode_ == QStringLiteral("mono") ? std::vector<std::pair<double, double>>{getLevels()}
+                                                                : getChannelLevels();
     levelMode_ = mode;
+    showRegions();
+
+    if (mode == QStringLiteral("mono")) {
+        double minimum = 0.0;
+        double maximum = 1.0;
+        if (!oldLevels.empty()) {
+            double sumMin = 0.0;
+            double sumMax = 0.0;
+            for (const auto& level : oldLevels) {
+                sumMin += level.first;
+                sumMax += level.second;
+            }
+            const double count = static_cast<double>(oldLevels.size());
+            minimum = sumMin / count;
+            maximum = sumMax / count;
+        }
+        setLevels(minimum, maximum);
+    } else {
+        std::vector<std::pair<double, double>> levels = oldLevels;
+        if (levels.size() == 1) {
+            levels.assign(4, levels.front());
+        }
+        setChannelLevels(levels);
+    }
+
     setImageLookupTable();
-    applyImageLevels();
+    if (imageItem_ != nullptr) {
+        applyImageLevels();
+    }
+    fillHistogramPlots(false);
     update();
 }
 
@@ -129,6 +269,21 @@ std::pair<double, double> HistogramLUTItem::getLevels() const
     return {region.first, region.second};
 }
 
+std::vector<std::pair<double, double>> HistogramLUTItem::getChannelLevels() const
+{
+    std::size_t channelCount = 3;
+    if (imageItem_ != nullptr && imageItem_->channels() > 0) {
+        channelCount = imageItem_->channels();
+    }
+    std::vector<std::pair<double, double>> levels;
+    levels.reserve(channelCount);
+    for (std::size_t index = 1; index <= channelCount; ++index) {
+        const auto region = regions_[index]->getRegion();
+        levels.emplace_back(region.first, region.second);
+    }
+    return levels;
+}
+
 void HistogramLUTItem::setLevels(double minimum, double maximum)
 {
     setLevels(std::make_pair(minimum, maximum));
@@ -140,6 +295,16 @@ void HistogramLUTItem::setLevels(const std::pair<double, double>& levels)
         throw std::invalid_argument("HistogramLUTItem C++ P4.06 slice supports scalar levels in mono mode");
     }
     region_->setRegion(levels);
+}
+
+void HistogramLUTItem::setChannelLevels(const std::vector<std::pair<double, double>>& levels)
+{
+    if (levelMode_ != QStringLiteral("rgba")) {
+        throw std::invalid_argument("HistogramLUTItem channel levels require rgba mode");
+    }
+    for (std::size_t index = 0; index < levels.size() && index + 1 < regions_.size(); ++index) {
+        regions_[index + 1]->setRegion(levels[index]);
+    }
 }
 
 void HistogramLUTItem::setColorMap(const ColorMap& colorMap)
@@ -193,6 +358,52 @@ const LinearRegionItem* HistogramLUTItem::levelRegion() const noexcept
     return region_;
 }
 
+AxisItem* HistogramLUTItem::axis() noexcept
+{
+    return axis_;
+}
+
+const AxisItem* HistogramLUTItem::axis() const noexcept
+{
+    return axis_;
+}
+
+GradientEditorItem* HistogramLUTItem::gradient() noexcept
+{
+    return gradient_;
+}
+
+const GradientEditorItem* HistogramLUTItem::gradient() const noexcept
+{
+    return gradient_;
+}
+
+ViewBox* HistogramLUTItem::viewBox() noexcept
+{
+    return viewBox_;
+}
+
+const ViewBox* HistogramLUTItem::viewBox() const noexcept
+{
+    return viewBox_;
+}
+
+LinearRegionItem* HistogramLUTItem::channelRegion(std::size_t channelIndex) noexcept
+{
+    if (channelIndex + 1 >= regions_.size()) {
+        return nullptr;
+    }
+    return regions_[channelIndex + 1];
+}
+
+const LinearRegionItem* HistogramLUTItem::channelRegion(std::size_t channelIndex) const noexcept
+{
+    if (channelIndex + 1 >= regions_.size()) {
+        return nullptr;
+    }
+    return regions_[channelIndex + 1];
+}
+
 void HistogramLUTItem::gradientChanged()
 {
     if (imageItem_ != nullptr) {
@@ -220,8 +431,12 @@ void HistogramLUTItem::imageChanged(bool autoLevel, bool autoRange)
     if (imageItem_ == nullptr) {
         return;
     }
-    if (autoLevel && !imageItem_->getLevels().has_value()) {
+    fillHistogramPlots(autoLevel);
+    if (autoLevel) {
         applyImageLevels();
+    } else if (levelMode_ == QStringLiteral("mono") && !imageItem_->getLevels().has_value()) {
+        const auto levels = getLevels();
+        region_->setRegion(levels);
     }
 }
 
@@ -254,11 +469,22 @@ void HistogramLUTItem::setImageLookupTable()
 
 void HistogramLUTItem::applyImageLevels()
 {
-    if (imageItem_ == nullptr || levelMode_ != QStringLiteral("mono")) {
+    if (imageItem_ == nullptr) {
         return;
     }
-    const auto levels = getLevels();
-    imageItem_->setLevels(ImageLevelRange{levels.first, levels.second});
+    if (levelMode_ == QStringLiteral("mono")) {
+        const auto levels = getLevels();
+        imageItem_->setLevels(ImageLevelRange{levels.first, levels.second});
+        return;
+    }
+
+    const auto channelLevels = getChannelLevels();
+    std::vector<ImageLevelRange> levels;
+    levels.reserve(channelLevels.size());
+    for (const auto& level : channelLevels) {
+        levels.push_back(ImageLevelRange{level.first, level.second});
+    }
+    imageItem_->setChannelLevels(levels);
 }
 
 void HistogramLUTItem::rebuildLookupTable(std::size_t rows, bool alpha) const
@@ -273,6 +499,94 @@ void HistogramLUTItem::rebuildLookupTable(std::size_t rows, bool alpha) const
     lookupTableBytes_ = table.bytes;
     lookupTableRows_ = table.rows();
     lookupTableChannels_ = table.channels;
+}
+
+void HistogramLUTItem::showRegions()
+{
+    for (LinearRegionItem* region : regions_) {
+        if (region != nullptr) {
+            region->setVisible(false);
+        }
+    }
+
+    if (levelMode_ == QStringLiteral("rgba")) {
+        std::size_t channelCount = 3;
+        if (imageItem_ != nullptr && imageItem_->channels() > 0) {
+            channelCount = imageItem_->channels();
+        }
+        const qreal channelWidth = 1.0 / static_cast<qreal>(channelCount);
+        for (std::size_t index = 1; index <= channelCount; ++index) {
+            regions_[index]->setVisible(true);
+            regions_[index]->setSpan(static_cast<qreal>(index - 1) * channelWidth, static_cast<qreal>(index) * channelWidth);
+        }
+        gradient_->hide();
+    } else if (levelMode_ == QStringLiteral("mono")) {
+        regions_[0]->setVisible(true);
+        gradient_->show();
+    }
+}
+
+void HistogramLUTItem::fillHistogramPlots(bool autoLevel)
+{
+    if (!fillHistogram_ || imageItem_ == nullptr) {
+        return;
+    }
+
+    if (levelMode_ == QStringLiteral("mono")) {
+        for (std::size_t index = 1; index < plots_.size(); ++index) {
+            plots_[index]->setVisible(false);
+        }
+        plots_[0]->setVisible(true);
+        const auto histogram = imageItem_->getHistogram();
+        if (histogram.first.empty()) {
+            return;
+        }
+        plots_[0]->setData(histogram.first, histogram.second);
+        if (!autoLevel) {
+            if (const auto levels = imageItem_->getLevels(); levels.has_value()) {
+                region_->setRegion(std::make_pair(levels->minimum, levels->maximum));
+            }
+        }
+        return;
+    }
+
+    plots_[0]->setVisible(false);
+    std::size_t channelCount = imageItem_->channels();
+    if (channelCount == 0) {
+        channelCount = 3;
+    }
+    showRegions();
+    for (std::size_t channel = 0; channel < 4; ++channel) {
+        if (channel < channelCount) {
+            const auto histogram = imageItem_->getHistogram(static_cast<int>(channel));
+            if (histogram.first.empty()) {
+                plots_[channel + 1]->setVisible(false);
+                continue;
+            }
+            plots_[channel + 1]->setVisible(true);
+            plots_[channel + 1]->setData(histogram.first, histogram.second);
+            if (autoLevel && !histogram.first.empty()) {
+                const double minimum = histogram.first.front();
+                const double maximum = histogram.first.back();
+                regions_[channel + 1]->setRegion(std::make_pair(minimum, maximum));
+            } else if (const auto channelLevels = imageItem_->getChannelLevels();
+                       channelLevels.has_value() && channel < channelLevels->size()) {
+                const auto& level = (*channelLevels)[channel];
+                regions_[channel + 1]->setRegion(std::make_pair(level.minimum, level.maximum));
+            }
+        } else {
+            plots_[channel + 1]->setVisible(false);
+        }
+    }
+}
+
+void HistogramLUTItem::loadGreyGradientPreset()
+{
+    while (gradient_->tickCount() > 0) {
+        gradient_->removeTick(gradient_->tickAt(0), false);
+    }
+    gradient_->addTick(0.0, QColor(0, 0, 0), true, false);
+    gradient_->addTick(1.0, QColor(255, 255, 255), true, true);
 }
 
 } // namespace cppqtgraph::graphicsItems

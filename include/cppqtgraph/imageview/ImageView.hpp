@@ -10,6 +10,7 @@
 #include "cppqtgraph/functions.hpp"
 #include "cppqtgraph/graphicsItems/ImageItem.hpp"
 
+#include <QtCore/QString>
 #include <QtWidgets/QWidget>
 
 #include <array>
@@ -27,6 +28,7 @@ class ViewBox;
 
 namespace cppqtgraph::widgets {
 class GraphicsView;
+class HistogramLUTWidget;
 } // namespace cppqtgraph::widgets
 
 namespace cppqtgraph::imageview {
@@ -35,7 +37,7 @@ class ImageView : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ImageView(QWidget* parent = nullptr, bool levelMode = false);
+    explicit ImageView(QWidget* parent = nullptr, const QString& levelMode = QStringLiteral("mono"));
     ~ImageView() override;
 
     ImageView(const ImageView&) = delete;
@@ -79,6 +81,10 @@ public:
     [[nodiscard]] const graphicsItems::ImageItem* getImageItem() const noexcept;
     [[nodiscard]] graphicsItems::HistogramLUTItem* getHistogram() noexcept;
     [[nodiscard]] const graphicsItems::HistogramLUTItem* getHistogram() const noexcept;
+    [[nodiscard]] widgets::HistogramLUTWidget* getHistogramWidget() noexcept;
+    [[nodiscard]] const widgets::HistogramLUTWidget* getHistogramWidget() const noexcept;
+
+    void setHistogramLabel(const QString& text = QString{});
 
     [[nodiscard]] bool hasImage() const noexcept;
 
@@ -114,9 +120,11 @@ private:
     void updateDisplayedRgbFrame(bool autoLevels, bool autoRange);
     void applyAutoLevels();
     [[nodiscard]] std::optional<ImageLevelRange> computeAutoLevels() const;
+    [[nodiscard]] std::vector<ImageLevelRange> computeRgbaAutoLevels() const;
+    void syncRgbaHistogramLevels(const std::vector<ImageLevelRange>& channelLevels);
 
     Ui_Form ui_;
-    bool levelMode_ = false;
+    QString levelMode_;
     DataKind dataKind_ = DataKind::None;
     int currentIndex_ = 0;
     std::array<std::size_t, 4> shape_{};
@@ -131,6 +139,7 @@ private:
     widgets::GraphicsView* graphicsView_ = nullptr;
     graphicsItems::ViewBox* viewBox_ = nullptr;
     graphicsItems::ImageItem* imageItem_ = nullptr;
+    widgets::HistogramLUTWidget* histogramWidget_ = nullptr;
     graphicsItems::HistogramLUTItem* histogram_ = nullptr;
 };
 
