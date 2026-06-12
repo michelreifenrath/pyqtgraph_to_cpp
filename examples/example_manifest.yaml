@@ -11,6 +11,9 @@ examples:
     upstream_file: pyqtgraph/examples/SimplePlot.py
     cpp_file: examples/SimplePlot.cpp
     status: ported
+    # Upstream's example browser classifies SimplePlot.py as trivial (subsumed
+    # into Plotting.py), so the native ExampleApp launcher does not list it.
+    browser_listed: false
     aliases:
       - SimplePlot.cpp
       - pyqtgraph/examples/SimplePlot.py
