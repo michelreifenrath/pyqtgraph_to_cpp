@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import math
 from pathlib import Path
@@ -12,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE_LOCK = ROOT / "reference" / "source.lock"
 EXAMPLE = ROOT / "reference" / "pyqtgraph" / "pyqtgraph" / "examples" / "ImageView.py"
 IMAGEVIEW = ROOT / "reference" / "pyqtgraph" / "pyqtgraph" / "imageview" / "ImageView.py"
+FUNCTIONS = ROOT / "reference" / "pyqtgraph" / "pyqtgraph" / "functions.py"
 FIXTURE = ROOT / "oracle" / "fixtures" / "P408" / "imageview_4d_oracle.json"
 PINNED_REF = "pyqtgraph-0.14.0"
 PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
@@ -21,7 +23,7 @@ WIDTH = 3
 
 
 def require_pinned_sources() -> None:
-    missing = [path for path in (SOURCE_LOCK, EXAMPLE, IMAGEVIEW) if not path.exists()]
+    missing = [path for path in (SOURCE_LOCK, EXAMPLE, IMAGEVIEW, FUNCTIONS) if not path.exists()]
     if missing:
         names = ", ".join(str(path.relative_to(ROOT)) for path in missing)
         raise SystemExit(f"Pinned PyQtGraph checkout is unavailable; missing {names}")
@@ -31,39 +33,36 @@ def require_pinned_sources() -> None:
         raise SystemExit("reference/source.lock does not match the P408 pinned PyQtGraph ref/commit")
 
 
-def gaussian_filter(data, sigma: float | tuple[float, ...]):
-    """Pinned pyqtgraph.functions.gaussianFilter (numpy path, no Qt binding)."""
+def load_pinned_gaussian_filter():
     import numpy as np
 
-    if np.isscalar(sigma):
-        sigma = (sigma,) * data.ndim
-    baseline = data.mean()
-    filtered = data - baseline
-    for ax in range(data.ndim):
-        s = sigma[ax]
-        if s == 0:
-            continue
-        ksize = int(s * 6)
-        x = np.arange(-ksize, ksize)
-        kernel = np.exp(-x**2 / (2 * s**2))
-        kshape = [1] * data.ndim
-        kshape[ax] = len(kernel)
-        kernel = kernel.reshape(kshape)
-        shape = data.shape[ax] + ksize
-        scale = 1.0 / (abs(s) * (2 * np.pi) ** 0.5)
-        filtered = scale * np.fft.irfft(
-            np.fft.rfft(filtered, shape, axis=ax) * np.fft.rfft(kernel, shape, axis=ax),
-            axis=ax,
-        )
-        sl = [slice(None)] * data.ndim
-        sl[ax] = slice(filtered.shape[ax] - data.shape[ax], None, None)
-        filtered = filtered[tuple(sl)]
-    return filtered + baseline
+    def getCupy():
+        return None
+
+    source_path = FUNCTIONS.resolve()
+    tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    func_node = next(
+        (
+            node
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "gaussianFilter"
+        ),
+        None,
+    )
+    if func_node is None:
+        raise RuntimeError("missing PyQtGraph reference function gaussianFilter")
+
+    module = ast.Module(body=[func_node], type_ignores=[])
+    ast.fix_missing_locations(module)
+    namespace = {"np": np, "getCupy": getCupy}
+    exec(compile(module, str(source_path), "exec"), namespace)
+    return namespace["gaussianFilter"]
 
 
 def build_data() -> tuple[list[float], list[float]]:
     import numpy as np
 
+    gaussian_filter = load_pinned_gaussian_filter()
     np.random.seed(0)
     data_red = np.ones((FRAMES, HEIGHT, WIDTH)) * np.linspace(90, 150, FRAMES)[:, np.newaxis, np.newaxis]
     data_red += gaussian_filter(np.random.normal(size=(HEIGHT, WIDTH)), (5, 5)) * 100
