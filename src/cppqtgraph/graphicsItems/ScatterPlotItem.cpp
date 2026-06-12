@@ -668,8 +668,28 @@ std::pair<qreal, qreal> ScatterPlotItem::dataBounds(int axis) const
         const qreal quietNaN = std::numeric_limits<qreal>::quiet_NaN();
         return {quietNaN, quietNaN};
     }
+    if (pxMode_) {
+        return {minimum, maximum};
+    }
     const qreal pad = maxSpotWidth_ * spotDiagonalPadding;
     return {minimum - pad, maximum + pad};
+}
+
+std::optional<QRectF> ScatterPlotItem::autoRangeBoundsRect() const
+{
+    const auto [xMin, xMax] = dataBounds(0);
+    const auto [yMin, yMax] = dataBounds(1);
+    if (!std::isfinite(static_cast<double>(xMin)) || !std::isfinite(static_cast<double>(xMax))
+        || !std::isfinite(static_cast<double>(yMin)) || !std::isfinite(static_cast<double>(yMax))) {
+        return std::nullopt;
+    }
+
+    constexpr qreal kMinimumBoundsSpan = 1.0e-12;
+    const qreal width = std::max(xMax - xMin, kMinimumBoundsSpan);
+    const qreal height = std::max(yMax - yMin, kMinimumBoundsSpan);
+    const qreal xCenter = (xMin + xMax) * 0.5;
+    const qreal yCenter = (yMin + yMax) * 0.5;
+    return QRectF(xCenter - width * 0.5, yCenter - height * 0.5, width, height);
 }
 
 QRectF ScatterPlotItem::boundingRect() const
@@ -829,10 +849,22 @@ void ScatterPlotItem::refreshBounds()
     } else {
         const auto [xMin, xMax] = dataBounds(0);
         const auto [yMin, yMax] = dataBounds(1);
-        const qreal pxPad = pixelPadding();
         if (std::isfinite(static_cast<double>(xMin)) && std::isfinite(static_cast<double>(xMax))
             && std::isfinite(static_cast<double>(yMin)) && std::isfinite(static_cast<double>(yMax))) {
-            newBounds = QRectF(QPointF(xMin - pxPad, yMin - pxPad), QPointF(xMax + pxPad, yMax + pxPad)).normalized();
+            if (pxMode_) {
+                newBounds = QRectF(QPointF(xMin, yMin), QPointF(xMax, yMax)).normalized();
+                if (newBounds.width() <= 0.0 || newBounds.height() <= 0.0) {
+                    constexpr qreal kPointBoundsSpan = 1.0e-12;
+                    const qreal xCenter = (xMin + xMax) * 0.5;
+                    const qreal yCenter = (yMin + yMax) * 0.5;
+                    newBounds = QRectF(xCenter - kPointBoundsSpan * 0.5, yCenter - kPointBoundsSpan * 0.5,
+                        kPointBoundsSpan, kPointBoundsSpan);
+                }
+            } else {
+                const qreal pxPad = pixelPadding();
+                newBounds = QRectF(QPointF(xMin - pxPad, yMin - pxPad), QPointF(xMax + pxPad, yMax + pxPad))
+                                .normalized();
+            }
         } else {
             newBounds = QRectF();
         }

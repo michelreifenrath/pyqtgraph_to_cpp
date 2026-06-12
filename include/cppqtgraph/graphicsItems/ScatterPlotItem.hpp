@@ -150,6 +150,7 @@ public:
 
     [[nodiscard]] qreal pixelPadding() const noexcept;
     [[nodiscard]] std::pair<qreal, qreal> dataBounds(int axis) const;
+    [[nodiscard]] std::optional<QRectF> autoRangeBoundsRect() const override;
 
     [[nodiscard]] QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
