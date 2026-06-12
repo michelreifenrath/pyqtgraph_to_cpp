@@ -1,4 +1,3 @@
-#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
 #include <cppqtgraph/graphicsItems/InfiniteLine.hpp>
 #include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 #include <cppqtgraph/imageview/ImageView.hpp>
@@ -8,8 +7,6 @@
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QGraphicsSceneMouseEvent>
-
 #include <cmath>
 #include <iostream>
 #include <memory>
@@ -193,26 +190,6 @@ bool testNonMonotonicXValsSelectLastMatchingIndex()
     return true;
 }
 
-std::unique_ptr<QGraphicsSceneMouseEvent> timelineSceneMouseEvent(cppqtgraph::graphicsItems::InfiniteLine* timeLine,
-                                                                 QEvent::Type type,
-                                                                 const QPointF& scenePos,
-                                                                 const QPointF& lastScenePos,
-                                                                 Qt::MouseButton button,
-                                                                 Qt::MouseButtons buttons,
-                                                                 const QPointF& buttonDownScenePos)
-{
-    auto event = std::make_unique<QGraphicsSceneMouseEvent>(type);
-    event->setScenePos(scenePos);
-    event->setLastScenePos(lastScenePos);
-    event->setPos(timeLine->mapFromScene(scenePos));
-    event->setLastPos(timeLine->mapFromScene(lastScenePos));
-    event->setButton(button);
-    event->setButtons(buttons);
-    event->setButtonDownScenePos(button, buttonDownScenePos);
-    event->setButtonDownPos(button, timeLine->mapFromScene(buttonDownScenePos));
-    return event;
-}
-
 bool testTimelineDragUpdatesIndex()
 {
     const auto imageView = makeTimelineImageView(false);
@@ -232,26 +209,15 @@ bool testTimelineDragUpdatesIndex()
     const double viewY = viewBox->mapSceneToView(startScene).y();
     const QPointF endScene = viewBox->mapViewToScene(QPointF(3.5, viewY));
 
-    auto press = timelineSceneMouseEvent(
-        timeLine, QEvent::GraphicsSceneMousePress, startScene, startScene, Qt::LeftButton, Qt::LeftButton, startScene);
-    auto moveStart = timelineSceneMouseEvent(
-        timeLine, QEvent::GraphicsSceneMouseMove, startScene, startScene, Qt::LeftButton, Qt::LeftButton, startScene);
+    QWidget* viewport = roiPlot->viewport();
+    const QPoint start = roiPlot->mapFromScene(startScene);
+    const QPoint end = roiPlot->mapFromScene(endScene);
 
-    cppqtgraph::GraphicsScene::MouseDragEvent dragBegin(
-        moveStart.get(), press.get(), nullptr, true, false);
-    dragBegin.setCurrentItem(timeLine);
-    timeLine->mouseDragEvent(&dragBegin);
-    CHECK(dragBegin.isAccepted());
-
-    QTest::qWait(50);
-
-    auto moveEnd = timelineSceneMouseEvent(
-        timeLine, QEvent::GraphicsSceneMouseMove, endScene, startScene, Qt::LeftButton, Qt::LeftButton, startScene);
-    cppqtgraph::GraphicsScene::MouseDragEvent dragFinish(
-        moveEnd.get(), press.get(), moveStart.get(), false, true);
-    dragFinish.setCurrentItem(timeLine);
-    timeLine->mouseDragEvent(&dragFinish);
-    CHECK(dragFinish.isAccepted());
+    QTest::mouseMove(viewport, start);
+    QTest::mousePress(viewport, Qt::LeftButton, Qt::NoModifier, start);
+    QTest::qWait(600);
+    QTest::mouseMove(viewport, end);
+    QTest::mouseRelease(viewport, Qt::LeftButton, Qt::NoModifier, end);
     QTest::qWait(0);
     CHECK(imageView->currentIndex() == 2);
     CHECK(spy.size() >= 1);

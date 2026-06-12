@@ -197,6 +197,7 @@ ImageView::ImageView(QWidget* parent, const QString& levelMode, bool discreteTim
     timeLine_ = new graphicsItems::InfiniteLine(0.0, 90.0, true);
     timeLine_->setPen(QPen(QColor(255, 255, 0, 200)));
     timeLine_->setZValue(1.0);
+    timeLine_->setAcceptedMouseButtons(Qt::NoButton);
     roiPlot_->addItem(timeLine_);
     timeLine_->hide();
 
@@ -606,6 +607,7 @@ void ImageView::syncTimelineBounds()
     const double minimum = *std::min_element(xvals_.begin(), xvals_.end());
     const double maximum = *std::max_element(xvals_.begin(), xvals_.end());
     roiPlot_->setXRange(minimum, maximum);
+    roiPlot_->setMouseEnabled(false, false);
     roiPlot_->setVisible(true);
     timeLine_->show();
 
