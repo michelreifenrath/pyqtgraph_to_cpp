@@ -677,32 +677,10 @@ std::pair<qreal, qreal> ScatterPlotItem::dataBounds(int axis) const
 
 std::optional<QRectF> ScatterPlotItem::autoRangeBoundsRect() const
 {
-    if (xData_.empty() || yData_.empty()) {
-        return std::nullopt;
-    }
-
-    bool havePoint = false;
-    qreal xMin = 0.0;
-    qreal xMax = 0.0;
-    qreal yMin = 0.0;
-    qreal yMax = 0.0;
-    for (std::size_t index = 0; index < xData_.size() && index < yData_.size(); ++index) {
-        if (!isFinitePoint(xData_[index], yData_[index])) {
-            continue;
-        }
-        if (!havePoint) {
-            xMin = xMax = xData_[index];
-            yMin = yMax = yData_[index];
-            havePoint = true;
-            continue;
-        }
-        xMin = std::min(xMin, static_cast<qreal>(xData_[index]));
-        xMax = std::max(xMax, static_cast<qreal>(xData_[index]));
-        yMin = std::min(yMin, static_cast<qreal>(yData_[index]));
-        yMax = std::max(yMax, static_cast<qreal>(yData_[index]));
-    }
-
-    if (!havePoint) {
+    const auto [xMin, xMax] = dataBounds(0);
+    const auto [yMin, yMax] = dataBounds(1);
+    if (!std::isfinite(static_cast<double>(xMin)) || !std::isfinite(static_cast<double>(xMax))
+        || !std::isfinite(static_cast<double>(yMin)) || !std::isfinite(static_cast<double>(yMax))) {
         return std::nullopt;
     }
 

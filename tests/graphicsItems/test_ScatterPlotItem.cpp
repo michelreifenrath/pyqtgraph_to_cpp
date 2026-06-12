@@ -129,6 +129,32 @@ bool testRenderRedCircleWhiteOutline()
     return true;
 }
 
+bool testNonPxModeAutoRangeBoundsUseDataBoundsPadding()
+{
+    cppqtgraph::graphicsItems::ScatterPlotItem item;
+    const std::vector<double> x{0.0, 10.0};
+    const std::vector<double> y{-2.0, 3.0};
+
+    item.setPxMode(false);
+    item.setSize(10.0);
+    item.setPen(QPen(Qt::white, 2.0));
+    item.setData(x, y);
+
+    const auto [xMin, xMax] = item.dataBounds(0);
+    const auto [yMin, yMax] = item.dataBounds(1);
+    CHECK(yMin < -2.0);
+    CHECK(yMax > 3.0);
+
+    const auto autoBounds = item.autoRangeBoundsRect();
+    CHECK(autoBounds.has_value());
+    CHECK(nearlyEqual(autoBounds->left(), xMin));
+    CHECK(nearlyEqual(autoBounds->right(), xMax));
+    CHECK(nearlyEqual(autoBounds->top(), yMin));
+    CHECK(nearlyEqual(autoBounds->bottom(), yMax));
+
+    return true;
+}
+
 bool testAutoRangeBoundsRectIgnoresNonFinitePoints()
 {
     cppqtgraph::graphicsItems::ScatterPlotItem item;
@@ -157,6 +183,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testRenderRedCircleWhiteOutline()) {
+        return 1;
+    }
+    if (!testNonPxModeAutoRangeBoundsUseDataBoundsPadding()) {
         return 1;
     }
     if (!testAutoRangeBoundsRectIgnoresNonFinitePoints()) {
