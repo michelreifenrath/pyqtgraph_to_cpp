@@ -11,14 +11,17 @@
 #include "cppqtgraph/graphicsItems/ImageItem.hpp"
 
 #include <QtCore/QString>
+#include <QtCore/QTimer>
 #include <QtWidgets/QWidget>
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <span>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -70,6 +73,8 @@ public:
     [[nodiscard]] int currentIndex() const noexcept;
     [[nodiscard]] std::span<const double> xValues() const noexcept;
 
+    void play(std::optional<double> rate = std::nullopt);
+
     void setLevels(std::optional<ImageLevelRange> levels);
     void autoLevels();
     void setLookupTable(ImageLookupTable lut);
@@ -102,8 +107,13 @@ public:
 signals:
     void sigTimeChanged(int index, double time);
 
+protected:
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
+
 private slots:
     void timeLineChanged();
+    void playbackTimeout();
 
 private:
     enum class DataKind {
@@ -143,6 +153,11 @@ private:
     [[nodiscard]] int frameCount() const noexcept;
     [[nodiscard]] std::pair<int, double> timeIndexFor(double time) const;
     void syncTimelineBounds();
+    void togglePause();
+    void jumpFrames(int frameDelta);
+    void evalKeyState();
+    [[nodiscard]] static double playbackClockSeconds();
+    [[nodiscard]] bool isNoRepeatKey(int key) const noexcept;
 
     Ui_Form ui_;
     QString levelMode_;
@@ -166,6 +181,13 @@ private:
     graphicsItems::HistogramLUTItem* histogram_ = nullptr;
     widgets::PlotWidget* roiPlot_ = nullptr;
     graphicsItems::InfiniteLine* timeLine_ = nullptr;
+
+    QTimer playTimer_;
+    double playRate_ = 0.0;
+    std::optional<double> pausedPlayRate_;
+    double fps_ = 1.0;
+    double lastPlayTime_ = 0.0;
+    std::unordered_set<int> keysPressed_;
 };
 
 } // namespace cppqtgraph::imageview

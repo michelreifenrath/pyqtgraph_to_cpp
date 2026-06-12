@@ -82,6 +82,7 @@ int main(int argc, char** argv)
 {
     QApplication application(argc, argv);
     auto example = cppqtgraph::examples::createImageViewExample();
+    example.imageView->play(10.0);
     example.window->show();
     return QApplication::exec();
 }
