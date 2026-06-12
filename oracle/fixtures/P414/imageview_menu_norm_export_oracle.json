@@ -1,0 +1,43 @@
+{
+  "pinned_ref": "pyqtgraph-0.14.0",
+  "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+  "frames": 4,
+  "height": 8,
+  "width": 8,
+  "xvals": [
+    0.0,
+    1.0,
+    2.0,
+    3.0
+  ],
+  "menu_actions": [
+    "Normalization",
+    "Export"
+  ],
+  "norm_group_visible": true,
+  "normalized_sample_pixel": 1.0,
+  "startup_curves": [
+    {
+      "channel": 0,
+      "x": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "y": [
+        0.64,
+        0.64,
+        0.64,
+        0.64
+      ]
+    }
+  ],
+  "export_file_count": 4,
+  "export_hashes": [
+    "ed482f2ca2c8b1845f5996ae1dfb146fba0854ee2ecab83f10eb53e66606060f",
+    "ed482f2ca2c8b1845f5996ae1dfb146fba0854ee2ecab83f10eb53e66606060f",
+    "ed482f2ca2c8b1845f5996ae1dfb146fba0854ee2ecab83f10eb53e66606060f",
+    "ed482f2ca2c8b1845f5996ae1dfb146fba0854ee2ecab83f10eb53e66606060f"
+  ]
+}

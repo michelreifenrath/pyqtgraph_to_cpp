@@ -925,6 +925,27 @@ if(_cppqtgraph_has_graphicsitem)
             CPPQTGRAPH_P413_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P413/imageview_roi_plot_oracle.json"
     )
     set_tests_properties(cppqtgraph.widgets.ImageView.P413 PROPERTIES LABELS P413)
+    add_test(
+        NAME cppqtgraph.oracle.P414.ImageViewMenuNormExport
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P414_imageview_menu_norm_export_oracle.py" --check
+    )
+    set_tests_properties(
+        cppqtgraph.oracle.P414.ImageViewMenuNormExport
+        PROPERTIES
+        LABELS P414
+    )
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_widgets_imageview_p414
+        widgets/test_ImageView_P414_menu_norm_export.cpp
+        cppqtgraph.widgets.ImageView.P414
+    )
+    set_target_properties(cppqtgraph_widgets_imageview_p414 PROPERTIES AUTOMOC ON)
+    target_link_libraries(cppqtgraph_widgets_imageview_p414 PRIVATE Qt6::Test Qt6::Widgets)
+    target_compile_definitions(cppqtgraph_widgets_imageview_p414
+        PRIVATE
+            CPPQTGRAPH_P414_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P414/imageview_menu_norm_export_oracle.json"
+    )
+    set_tests_properties(cppqtgraph.widgets.ImageView.P414 PROPERTIES LABELS P414)
     cppqtgraph_add_cpp_test(
         cppqtgraph_widgets_scatterplotwidget_p5_08
         widgets/test_ScatterPlotWidget_P5_08.cpp

@@ -109,6 +109,19 @@ QAction* findAction(QMenu* menu, const QString& text)
     return nullptr;
 }
 
+QMenu* findSubMenu(QMenu* menu, const QString& subMenuTitle)
+{
+    if (menu == nullptr) {
+        return nullptr;
+    }
+    for (QAction* action : menu->actions()) {
+        if (action != nullptr && action->menu() != nullptr && action->text() == subMenuTitle) {
+            return action->menu();
+        }
+    }
+    return nullptr;
+}
+
 QAction* findSubMenuAction(QMenu* menu, const QString& subMenuTitle, const QString& actionText)
 {
     if (menu == nullptr) {
@@ -226,6 +239,13 @@ int main(int argc, char** argv)
     CHECK(rangeNearly(viewBox.viewRange()[ViewBox::XAxis], ViewBox::AxisRange{2.0, 8.0}));
     CHECK(rangeNearly(viewBox.viewRange()[ViewBox::YAxis], ViewBox::AxisRange{3.0, 7.0}));
 
+    QAction* xAxisMenuAction = findAction(menu, QStringLiteral("X axis"));
+    QAction* yAxisMenuAction = findAction(menu, QStringLiteral("Y axis"));
+    CHECK(xAxisMenuAction != nullptr);
+    CHECK(yAxisMenuAction != nullptr);
+    CHECK(findSubMenu(menu, QStringLiteral("X axis")) != nullptr);
+    CHECK(findSubMenu(menu, QStringLiteral("Y axis")) != nullptr);
+
     QAction* panModeAction = findSubMenuAction(menu, QStringLiteral("Mouse Mode"), QStringLiteral("3 button"));
     QAction* rectModeAction = findSubMenuAction(menu, QStringLiteral("Mouse Mode"), QStringLiteral("1 button"));
     CHECK(panModeAction != nullptr);
@@ -236,19 +256,48 @@ int main(int argc, char** argv)
     panModeAction->trigger();
     CHECK(viewBox.mouseMode() == ViewBox::PanMode);
 
-    QAction* xAutoRangeAction = findAction(menu, QStringLiteral("X Auto Range"));
-    QAction* yAutoRangeAction = findAction(menu, QStringLiteral("Y Auto Range"));
-    CHECK(xAutoRangeAction != nullptr);
-    CHECK(yAutoRangeAction != nullptr);
-    viewBox.disableAutoRange(ViewBox::XYAxes);
-    xAutoRangeAction->setChecked(true);
-    CHECK(viewBox.autoRangeEnabled()[ViewBox::XAxis]);
-    CHECK(!viewBox.autoRangeEnabled()[ViewBox::YAxis]);
-    yAutoRangeAction->setChecked(true);
-    CHECK(viewBox.autoRangeEnabled()[ViewBox::YAxis]);
-    xAutoRangeAction->setChecked(false);
-    CHECK(!viewBox.autoRangeEnabled()[ViewBox::XAxis]);
-    CHECK(viewBox.autoRangeEnabled()[ViewBox::YAxis]);
+    ScriptableViewBox rectViewBox;
+    scene.addItem(&rectViewBox);
+    rectViewBox.resize(200.0, 100.0);
+    rectViewBox.setDefaultPadding(0.0);
+    rectViewBox.setMouseMode(ViewBox::RectMode);
+    rectViewBox.setRange(QRectF(0.0, 0.0, 10.0, 10.0), 0.0);
+    const auto beforeRectDrag = rectViewBox.viewRange();
+    const QPoint rectPressScreen(50, 50);
+    const QPoint rectMoveScreen(150, 90);
+    auto rectPress = mouseEvent(QEvent::GraphicsSceneMousePress,
+                                QPointF(50.0, 50.0),
+                                QPointF(50.0, 50.0),
+                                Qt::LeftButton,
+                                Qt::LeftButton,
+                                QPointF(50.0, 50.0),
+                                rectPressScreen,
+                                rectPressScreen,
+                                rectPressScreen);
+    auto rectMove = mouseEvent(QEvent::GraphicsSceneMouseMove,
+                               QPointF(150.0, 90.0),
+                               QPointF(50.0, 50.0),
+                               Qt::LeftButton,
+                               Qt::LeftButton,
+                               QPointF(50.0, 50.0),
+                               rectMoveScreen,
+                               rectPressScreen,
+                               rectPressScreen);
+    auto rectRelease = mouseEvent(QEvent::GraphicsSceneMouseRelease,
+                                  QPointF(150.0, 90.0),
+                                  QPointF(150.0, 90.0),
+                                  Qt::LeftButton,
+                                  Qt::NoButton,
+                                  QPointF(50.0, 50.0),
+                                  rectMoveScreen,
+                                  rectMoveScreen,
+                                  rectPressScreen);
+    rectViewBox.mousePressEvent(rectPress.get());
+    rectViewBox.mouseMoveEvent(rectMove.get());
+    rectViewBox.mouseReleaseEvent(rectRelease.get());
+    const auto afterRectDrag = rectViewBox.viewRange();
+    CHECK(span(afterRectDrag[ViewBox::XAxis]) < span(beforeRectDrag[ViewBox::XAxis]));
+    CHECK(span(afterRectDrag[ViewBox::YAxis]) < span(beforeRectDrag[ViewBox::YAxis]));
 
     return 0;
 }

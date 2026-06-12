@@ -5,8 +5,12 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
+class QCheckBox;
+class QGroupBox;
 class QHBoxLayout;
+class QLabel;
 class QPushButton;
+class QRadioButton;
 class QSplitter;
 class QVBoxLayout;
 class QWidget;
@@ -20,6 +24,14 @@ public:
     QWidget* graphicsContainer = nullptr;
     QWidget* histogramContainer = nullptr;
     QPushButton* roiBtn = nullptr;
+    QPushButton* menuBtn = nullptr;
+    QGroupBox* normGroup = nullptr;
+    QRadioButton* normSubtractRadio = nullptr;
+    QRadioButton* normDivideRadio = nullptr;
+    QRadioButton* normOffRadio = nullptr;
+    QCheckBox* normROICheck = nullptr;
+    QCheckBox* normFrameCheck = nullptr;
+    QCheckBox* normTimeRangeCheck = nullptr;
     QWidget* roiPlotContainer = nullptr;
     QSplitter* splitter = nullptr;
     QHBoxLayout* horizontalLayout = nullptr;

@@ -14,6 +14,7 @@
 #include <QtCore/QTimer>
 #include <QtWidgets/QWidget>
 
+class QMenu;
 class QPushButton;
 
 #include <array>
@@ -30,6 +31,7 @@ class QPushButton;
 namespace cppqtgraph::graphicsItems {
 class HistogramLUTItem;
 class InfiniteLine;
+class LinearRegionItem;
 class PlotCurveItem;
 class ROI;
 class ViewBox;
@@ -110,14 +112,29 @@ public:
 
     [[nodiscard]] QPushButton* roiButton() noexcept;
     [[nodiscard]] const QPushButton* roiButton() const noexcept;
+    [[nodiscard]] QPushButton* menuButton() noexcept;
+    [[nodiscard]] const QPushButton* menuButton() const noexcept;
+    [[nodiscard]] QWidget* normGroup() noexcept;
+    [[nodiscard]] const QWidget* normGroup() const noexcept;
     [[nodiscard]] graphicsItems::ROI* roi() noexcept;
     [[nodiscard]] const graphicsItems::ROI* roi() const noexcept;
+    [[nodiscard]] graphicsItems::ROI* normRoi() noexcept;
+    [[nodiscard]] const graphicsItems::ROI* normRoi() const noexcept;
+    void exportImage(const QString& fileName);
+    [[nodiscard]] QMenu* menu();
+    [[nodiscard]] const QMenu* menu() const;
+    [[nodiscard]] double normalizedSamplePixel(int frame, int row, int col) const;
     [[nodiscard]] std::size_t roiCurveCount() const noexcept;
     [[nodiscard]] graphicsItems::PlotCurveItem* roiCurve(std::size_t index) noexcept;
     [[nodiscard]] const graphicsItems::PlotCurveItem* roiCurve(std::size_t index) const noexcept;
 
 public slots:
     void roiClicked();
+    void menuClicked();
+    void exportClicked();
+    void normToggled(bool enabled);
+    void normRadioChanged();
+    void updateNorm();
 
 signals:
     void sigTimeChanged(int index, double time);
@@ -171,6 +188,15 @@ private:
     void syncTimelineBounds();
     void applyRoiPlotVisibility();
     void updateRoiCurvesFromTimeRgb();
+    void updateRoiCurvesFromFrameStack();
+    void buildMenu();
+    void invalidateProcessedImage();
+    [[nodiscard]] bool normalizationEnabled() const noexcept;
+    [[nodiscard]] const std::vector<float>& processedFloatData() const;
+    [[nodiscard]] core::ArrayView<const float, 3> processedFloatStackView() const;
+    void normalizeFloatStack(std::vector<float>& output) const;
+    void refreshProcessedImage() const;
+    bool saveCurrentImageItem(const QString& fileName) const;
     void togglePause();
     void jumpFrames(int frameDelta);
     void evalKeyState();
@@ -189,6 +215,8 @@ private:
     std::vector<float> floatData_;
     std::vector<double> doubleData_;
     std::vector<double> xvals_;
+    std::vector<float> mutable processedFloatData_;
+    mutable bool processedFloatDirty_ = true;
     std::vector<std::uint8_t> rgbDisplayBuffer_;
     graphicsItems::ImageItem::AxisOrder axisOrder_ = graphicsItems::ImageItem::AxisOrder::ColMajor;
 
@@ -200,6 +228,11 @@ private:
     widgets::PlotWidget* roiPlot_ = nullptr;
     graphicsItems::InfiniteLine* timeLine_ = nullptr;
     graphicsItems::ROI* roi_ = nullptr;
+    graphicsItems::ROI* normRoi_ = nullptr;
+    graphicsItems::LinearRegionItem* normRgn_ = nullptr;
+    QMenu* menu_ = nullptr;
+    class QAction* normAction_ = nullptr;
+    class QAction* exportAction_ = nullptr;
     std::vector<graphicsItems::PlotCurveItem*> roiCurves_;
     std::vector<double> roiCurveXBuffer_;
     std::vector<std::vector<double>> roiCurveYBuffers_;
