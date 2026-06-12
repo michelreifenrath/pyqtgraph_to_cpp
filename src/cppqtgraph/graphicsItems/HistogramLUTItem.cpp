@@ -116,6 +116,7 @@ HistogramLUTItem::HistogramLUTItem(ImageItem* image,
     for (LinearRegionItem* region : regions_) {
         region->setZValue(1000.0);
         region->setSwapMode(LinearRegionItem::SwapMode::Block);
+        viewBox_->addItem(region);
         QObject::connect(region, &LinearRegionItem::sigRegionChanged, this, [this](LinearRegionItem*) { regionChanging(); });
         QObject::connect(region, &LinearRegionItem::sigRegionChangeFinished, this, [this](LinearRegionItem*) { regionChanged(); });
     }
@@ -211,8 +212,8 @@ void HistogramLUTItem::setLevelMode(const QString& mode)
         return;
     }
 
-    const auto oldLevels = mode == QStringLiteral("mono") ? std::vector<std::pair<double, double>>{getLevels()}
-                                                          : getChannelLevels();
+    const auto oldLevels = levelMode_ == QStringLiteral("mono") ? std::vector<std::pair<double, double>>{getLevels()}
+                                                                : getChannelLevels();
     levelMode_ = mode;
     showRegions();
 
@@ -220,12 +221,15 @@ void HistogramLUTItem::setLevelMode(const QString& mode)
         double minimum = 0.0;
         double maximum = 1.0;
         if (!oldLevels.empty()) {
-            minimum = oldLevels.front().first;
-            maximum = oldLevels.front().second;
+            double sumMin = 0.0;
+            double sumMax = 0.0;
             for (const auto& level : oldLevels) {
-                minimum = std::min(minimum, level.first);
-                maximum = std::max(maximum, level.second);
+                sumMin += level.first;
+                sumMax += level.second;
             }
+            const double count = static_cast<double>(oldLevels.size());
+            minimum = sumMin / count;
+            maximum = sumMax / count;
         }
         setLevels(minimum, maximum);
     } else {
