@@ -887,6 +887,14 @@ if(_cppqtgraph_has_graphicsitem)
     )
     set_tests_properties(cppqtgraph.widgets.ImageView.P410 PROPERTIES LABELS P410)
     cppqtgraph_add_cpp_test(
+        cppqtgraph_widgets_imageview_p411
+        widgets/test_ImageView_P411_timeline.cpp
+        cppqtgraph.widgets.ImageView.P411
+    )
+    set_target_properties(cppqtgraph_widgets_imageview_p411 PROPERTIES AUTOMOC ON)
+    target_link_libraries(cppqtgraph_widgets_imageview_p411 PRIVATE Qt6::Test Qt6::Widgets)
+    set_tests_properties(cppqtgraph.widgets.ImageView.P411 PROPERTIES LABELS P411)
+    cppqtgraph_add_cpp_test(
         cppqtgraph_widgets_scatterplotwidget_p5_08
         widgets/test_ScatterPlotWidget_P5_08.cpp
         cppqtgraph.widgets.ScatterPlotWidget.P5_08

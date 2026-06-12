@@ -7,11 +7,15 @@
 
 #include "../../../include/cppqtgraph/graphicsItems/AxisItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/HistogramLUTItem.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/InfiniteLine.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
 #include "../../../include/cppqtgraph/widgets/GraphicsView.hpp"
 #include "../../../include/cppqtgraph/widgets/HistogramLUTWidget.hpp"
+#include "../../../include/cppqtgraph/widgets/PlotWidget.hpp"
 
 #include <QtCore/QRectF>
+#include <QtGui/QColor>
+#include <QtGui/QPen>
 #include <QtWidgets/QVBoxLayout>
 
 #include <algorithm>
@@ -151,9 +155,10 @@ template <typename T>
 
 } // namespace
 
-ImageView::ImageView(QWidget* parent, const QString& levelMode)
+ImageView::ImageView(QWidget* parent, const QString& levelMode, bool discreteTimeLine)
     : QWidget(parent)
     , levelMode_(levelMode)
+    , discreteTimeLine_(discreteTimeLine)
 {
     ui_.setupUi(this);
 
@@ -179,6 +184,25 @@ ImageView::ImageView(QWidget* parent, const QString& levelMode)
     histogram_ = histogramWidget_->item();
     ui_.histogramContainer->setMinimumWidth(135);
     ui_.histogramContainer->show();
+
+    auto* roiPlotLayout = new QVBoxLayout(ui_.roiPlotContainer);
+    roiPlotLayout->setContentsMargins(0, 0, 0, 0);
+    roiPlotLayout->setSpacing(0);
+    roiPlot_ = new widgets::PlotWidget(ui_.roiPlotContainer);
+    roiPlotLayout->addWidget(roiPlot_);
+    roiPlot_->hideAxis(QStringLiteral("left"));
+    roiPlot_->setVisible(false);
+
+    timeLine_ = new graphicsItems::InfiniteLine(0.0, 90.0, true);
+    timeLine_->setPen(QPen(QColor(255, 255, 0, 200)));
+    timeLine_->setZValue(1.0);
+    roiPlot_->addItem(timeLine_);
+    timeLine_->hide();
+
+    connect(timeLine_,
+            &graphicsItems::InfiniteLine::sigPositionChanged,
+            this,
+            &ImageView::timeLineChanged);
 }
 
 ImageView::~ImageView() = default;
@@ -276,6 +300,7 @@ void ImageView::setImageImpl(core::ArrayView<const T, Rank> image,
         currentIndex_ = 0;
     }
 
+    syncTimelineBounds();
     updateDisplayedFrame(autoLevels, autoRange);
 }
 
@@ -325,6 +350,7 @@ void ImageView::setImageTimeRgbImpl(core::ArrayView<const T, 4> image,
         assignDefaultXValues(xvals_, shape_[0]);
     }
 
+    syncTimelineBounds();
     updateDisplayedFrame(autoLevels, autoRange);
 }
 
@@ -340,22 +366,40 @@ void ImageView::clearImage()
     xvals_.clear();
     rgbDisplayBuffer_.clear();
     imageItem_->clearImage();
+    if (roiPlot_ != nullptr) {
+        roiPlot_->setVisible(false);
+    }
+    if (timeLine_ != nullptr) {
+        timeLine_->hide();
+    }
 }
 
 void ImageView::setCurrentIndex(int index)
 {
-    if (!hasImage()) {
+    if (!hasImage() || !hasTimeAxis()) {
         return;
     }
-    const bool timeRgbStack = dataKind_ == DataKind::FloatRank4TimeRgb || dataKind_ == DataKind::DoubleRank4TimeRgb;
-    if (!isFrameStackShape(shape_) && !timeRgbStack) {
+
+    const int frameCountValue = frameCount();
+    if (frameCountValue <= 0) {
         return;
     }
-    if (index < 0 || static_cast<std::size_t>(index) >= shape_[0]) {
-        return;
-    }
-    currentIndex_ = index;
+
+    const int clipped = std::clamp(index, 0, frameCountValue - 1);
+    currentIndex_ = clipped;
     updateDisplayedFrame(false, true);
+
+    if (timeLine_ == nullptr) {
+        return;
+    }
+
+    ignoreTimeLine_ = true;
+    if (!xvals_.empty()) {
+        timeLine_->setValue(xvals_[static_cast<std::size_t>(clipped)]);
+    } else {
+        timeLine_->setValue(static_cast<double>(clipped));
+    }
+    ignoreTimeLine_ = false;
 }
 
 int ImageView::currentIndex() const noexcept
@@ -470,6 +514,138 @@ void ImageView::setHistogramLabel(const QString& text)
 bool ImageView::hasImage() const noexcept
 {
     return dataKind_ != DataKind::None;
+}
+
+widgets::PlotWidget* ImageView::getRoiPlot() noexcept
+{
+    return roiPlot_;
+}
+
+const widgets::PlotWidget* ImageView::getRoiPlot() const noexcept
+{
+    return roiPlot_;
+}
+
+graphicsItems::InfiniteLine* ImageView::timeLine() noexcept
+{
+    return timeLine_;
+}
+
+const graphicsItems::InfiniteLine* ImageView::timeLine() const noexcept
+{
+    return timeLine_;
+}
+
+bool ImageView::discreteTimeLine() const noexcept
+{
+    return discreteTimeLine_;
+}
+
+bool ImageView::hasTimeAxis() const noexcept
+{
+    if (!hasImage()) {
+        return false;
+    }
+    const bool timeRgbStack = dataKind_ == DataKind::FloatRank4TimeRgb || dataKind_ == DataKind::DoubleRank4TimeRgb;
+    return timeRgbStack || isFrameStackShape(shape_);
+}
+
+int ImageView::frameCount() const noexcept
+{
+    if (!hasTimeAxis()) {
+        return 0;
+    }
+    return static_cast<int>(shape_[0]);
+}
+
+std::pair<int, double> ImageView::timeIndexFor(double time) const
+{
+    if (!hasTimeAxis()) {
+        return {0, 0.0};
+    }
+
+    if (xvals_.empty()) {
+        return {static_cast<int>(time), time};
+    }
+
+    if (xvals_.size() < 2) {
+        return {0, 0.0};
+    }
+
+    int lastIndex = -1;
+    for (std::size_t index = 0; index < xvals_.size(); ++index) {
+        if (xvals_[index] <= time) {
+            lastIndex = static_cast<int>(index);
+        } else {
+            break;
+        }
+    }
+
+    if (lastIndex < 0) {
+        return {0, time};
+    }
+
+    return {lastIndex, time};
+}
+
+void ImageView::syncTimelineBounds()
+{
+    if (!hasTimeAxis() || roiPlot_ == nullptr || timeLine_ == nullptr) {
+        if (roiPlot_ != nullptr) {
+            roiPlot_->setVisible(false);
+        }
+        if (timeLine_ != nullptr) {
+            timeLine_->hide();
+        }
+        return;
+    }
+
+    if (xvals_.empty()) {
+        assignDefaultXValues(xvals_, shape_[0]);
+    }
+
+    const double minimum = *std::min_element(xvals_.begin(), xvals_.end());
+    const double maximum = *std::max_element(xvals_.begin(), xvals_.end());
+    roiPlot_->setXRange(minimum, maximum);
+    roiPlot_->setVisible(true);
+    timeLine_->show();
+
+    double start = 0.0;
+    double stop = 1.0;
+    if (xvals_.size() > 1) {
+        start = minimum;
+        stop = maximum + std::abs(xvals_.back() - xvals_.front()) * 0.02;
+    } else if (xvals_.size() == 1) {
+        start = xvals_.front() - 0.5;
+        stop = xvals_.front() + 0.5;
+    }
+    timeLine_->setBounds({start, stop});
+    timeLine_->setValue(0.0);
+}
+
+void ImageView::timeLineChanged()
+{
+    if (ignoreTimeLine_ || timeLine_ == nullptr || !hasTimeAxis()) {
+        return;
+    }
+
+    const auto [index, time] = timeIndexFor(timeLine_->value());
+    if (index != currentIndex_) {
+        currentIndex_ = index;
+        updateDisplayedFrame(false, true);
+    }
+
+    if (discreteTimeLine_) {
+        ignoreTimeLine_ = true;
+        if (!xvals_.empty()) {
+            timeLine_->setPos(xvals_[static_cast<std::size_t>(index)]);
+        } else {
+            timeLine_->setPos(static_cast<double>(index));
+        }
+        ignoreTimeLine_ = false;
+    }
+
+    emit sigTimeChanged(index, time);
 }
 
 void ImageView::updateDisplayedFrame(bool autoLevels, bool autoRange)
