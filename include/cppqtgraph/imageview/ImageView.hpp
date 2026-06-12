@@ -19,16 +19,19 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace cppqtgraph::graphicsItems {
 class HistogramLUTItem;
+class InfiniteLine;
 class ViewBox;
 } // namespace cppqtgraph::graphicsItems
 
 namespace cppqtgraph::widgets {
 class GraphicsView;
 class HistogramLUTWidget;
+class PlotWidget;
 } // namespace cppqtgraph::widgets
 
 namespace cppqtgraph::imageview {
@@ -37,7 +40,9 @@ class ImageView : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ImageView(QWidget* parent = nullptr, const QString& levelMode = QStringLiteral("mono"));
+    explicit ImageView(QWidget* parent = nullptr,
+                       const QString& levelMode = QStringLiteral("mono"),
+                       bool discreteTimeLine = false);
     ~ImageView() override;
 
     ImageView(const ImageView&) = delete;
@@ -88,6 +93,18 @@ public:
 
     [[nodiscard]] bool hasImage() const noexcept;
 
+    [[nodiscard]] widgets::PlotWidget* getRoiPlot() noexcept;
+    [[nodiscard]] const widgets::PlotWidget* getRoiPlot() const noexcept;
+    [[nodiscard]] graphicsItems::InfiniteLine* timeLine() noexcept;
+    [[nodiscard]] const graphicsItems::InfiniteLine* timeLine() const noexcept;
+    [[nodiscard]] bool discreteTimeLine() const noexcept;
+
+signals:
+    void sigTimeChanged(int index, double time);
+
+private slots:
+    void timeLineChanged();
+
 private:
     enum class DataKind {
         None,
@@ -122,9 +139,15 @@ private:
     [[nodiscard]] std::optional<ImageLevelRange> computeAutoLevels() const;
     [[nodiscard]] std::vector<ImageLevelRange> computeRgbaAutoLevels() const;
     void syncRgbaHistogramLevels(const std::vector<ImageLevelRange>& channelLevels);
+    [[nodiscard]] bool hasTimeAxis() const noexcept;
+    [[nodiscard]] int frameCount() const noexcept;
+    [[nodiscard]] std::pair<int, double> timeIndexFor(double time) const;
+    void syncTimelineBounds();
 
     Ui_Form ui_;
     QString levelMode_;
+    bool discreteTimeLine_ = false;
+    bool ignoreTimeLine_ = false;
     DataKind dataKind_ = DataKind::None;
     int currentIndex_ = 0;
     std::array<std::size_t, 4> shape_{};
@@ -141,6 +164,8 @@ private:
     graphicsItems::ImageItem* imageItem_ = nullptr;
     widgets::HistogramLUTWidget* histogramWidget_ = nullptr;
     graphicsItems::HistogramLUTItem* histogram_ = nullptr;
+    widgets::PlotWidget* roiPlot_ = nullptr;
+    graphicsItems::InfiniteLine* timeLine_ = nullptr;
 };
 
 } // namespace cppqtgraph::imageview
