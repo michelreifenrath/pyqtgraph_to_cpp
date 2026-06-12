@@ -90,6 +90,7 @@ def _check_visual_artifacts(
         work_dir=compare_dir,
     )
     assert metrics["passed"] is True, metrics
+    assert metrics["deterministic_verdict"] == "pass", metrics
     assert metrics["geometry_metrics"]["passed"] is True, metrics["geometry_metrics"]
     return metrics
 
@@ -97,9 +98,7 @@ def _check_visual_artifacts(
 def _assert_visual_gate_fails(actual_crop: Path, tmp_path: Path) -> None:
     work_dir = tmp_path / "negative-compare"
     metrics = compare_image_area(REFERENCE, actual_crop, work_dir=work_dir)
-    geometry_failed = not metrics["geometry_metrics"]["passed"]
-    pixel_failed = metrics.get("deterministic_verdict") == "fail"
-    assert geometry_failed or pixel_failed
+    assert metrics["passed"] is False, metrics
 
 
 def test_P409_imageview_image_area_matches_reference(tmp_path: Path) -> None:
@@ -115,6 +114,7 @@ def test_P409_imageview_image_area_matches_reference(tmp_path: Path) -> None:
         reports_root=_reports_root(tmp_path),
         image_crop=image_crop,
     )
+    assert metrics["deterministic_verdict"] == "pass"
     assert metrics["geometry_metrics"]["passed"] is True
 
 

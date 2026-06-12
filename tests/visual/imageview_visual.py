@@ -148,15 +148,6 @@ def crop_content_area(source: Path, destination: Path) -> tuple[int, int]:
     return crop_width, crop_height
 
 
-def assert_image_area_nonempty(image_path: Path) -> None:
-    width, height, rgba = read_png_rgba(image_path)
-    assert width > 0 and height > 0
-    rgb_pixels = [(rgba[index], rgba[index + 1], rgba[index + 2]) for index in range(0, len(rgba), 4)]
-    unique_colors = set(rgb_pixels)
-    assert len(unique_colors) >= 2, "image area is blank"
-    assert (90, 90, 180) in unique_colors, "image area is missing the first-frame RGB fill"
-
-
 def dominant_content_color(rgba: bytes, width: int, height: int) -> tuple[int, int, int]:
     x0, y0, x1, y1 = content_bounds(rgba, width, height)
     counts: dict[tuple[int, int, int], int] = {}
@@ -167,6 +158,17 @@ def dominant_content_color(rgba: bytes, width: int, height: int) -> tuple[int, i
             color = (rgba[offset], rgba[offset + 1], rgba[offset + 2])
             counts[color] = counts.get(color, 0) + 1
     return max(counts, key=counts.get)
+
+
+def assert_image_area_nonempty(image_path: Path, *, reference: Path = REFERENCE) -> None:
+    width, height, rgba = read_png_rgba(image_path)
+    assert width > 0 and height > 0
+    rgb_pixels = [(rgba[index], rgba[index + 1], rgba[index + 2]) for index in range(0, len(rgba), 4)]
+    unique_colors = set(rgb_pixels)
+    assert len(unique_colors) >= 2, "image area is blank"
+    ref_width, ref_height, ref_rgba = read_png_rgba(reference)
+    expected_color = dominant_content_color(ref_rgba, ref_width, ref_height)
+    assert expected_color in unique_colors, "image area is missing the first-frame display fill"
 
 
 def compare_image_area(
@@ -198,11 +200,12 @@ def compare_image_area(
     ref_fill = (ref_content_width * ref_content_height) / (ref_width * ref_height)
     act_fill = (act_content_width * act_content_height) / (act_width * act_height)
 
+    reference_color = dominant_content_color(ref_rgba, ref_width, ref_height)
     actual_color = dominant_content_color(act_rgba, act_width, act_height)
     geometry_passed = (
         abs(ref_aspect - act_aspect) <= 0.05
         and abs(ref_fill - act_fill) <= 0.08
-        and actual_color == (90, 90, 180)
+        and actual_color == reference_color
     )
 
     actual_width, actual_height, _ = read_png_rgba(actual_content)
@@ -223,7 +226,7 @@ def compare_image_area(
             "max_changed_percent": tolerance["max_changed_percent"],
         },
     )
-    passed = geometry_passed or pixel_metrics["passed"]
+    passed = pixel_metrics["passed"] and geometry_passed
     metrics = {
         **pixel_metrics,
         "passed": passed,

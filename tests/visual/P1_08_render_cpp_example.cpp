@@ -137,6 +137,9 @@ bool renderImageView(const Options& options, QJsonObject* imageCrop)
 {
     auto example = cppqtgraph::examples::createImageViewExample();
     example.window->resize(options.width, options.height);
+    if (example.imageView != nullptr) {
+        example.imageView->autoLevels();
+    }
     example.window->show();
     processEvents();
 
@@ -160,7 +163,7 @@ bool renderImageView(const Options& options, QJsonObject* imageCrop)
 
     if (imageCrop != nullptr && example.imageView != nullptr && example.imageView->getView() != nullptr) {
         auto* graphicsView = example.imageView->getView();
-        const QPoint topLeft = graphicsView->mapTo(example.window.get(), QPoint(0, 0));
+        const QPoint topLeft = graphicsView->mapTo(example.window->centralWidget(), QPoint(0, 0));
         imageCrop->insert(QStringLiteral("x"), topLeft.x());
         imageCrop->insert(QStringLiteral("y"), topLeft.y());
         imageCrop->insert(QStringLiteral("width"), graphicsView->width());
