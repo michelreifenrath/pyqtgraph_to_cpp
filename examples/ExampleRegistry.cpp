@@ -14,16 +14,9 @@ namespace {
 QVector<ExampleEntry> makeEntries()
 {
     return {
-        {.order = 0,
-         .name = QStringLiteral("SimplePlot"),
-         .title = QStringLiteral("Simple Plot smoke slice"),
-         .upstreamFile = QStringLiteral("pyqtgraph/examples/SimplePlot.py"),
-         .cppFile = QStringLiteral("examples/SimplePlot.cpp"),
-         .status = ExampleStatus::Ported,
-         .validation = {.smoke = ValidationLevel::Required,
-                        .numeric = ValidationLevel::Required,
-                        .visual = ValidationLevel::Required,
-                        .interaction = ValidationLevel::NotApplicable}},
+        // SimplePlot stays ported (manifest, binary, tests) but is not listed here:
+        // upstream's example browser classifies SimplePlot.py as trivial/subsumed
+        // into Plotting.py (pyqtgraph/examples/utils.py), so the launcher matches.
         {.order = 0,
          .name = QStringLiteral("ImageItem"),
          .title = QStringLiteral("ImageItem smoke slice"),

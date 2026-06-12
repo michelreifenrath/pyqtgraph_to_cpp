@@ -91,22 +91,22 @@ std::optional<cppqtgraph::examples::LaunchedExample> makeAsyncStartFailureLaunch
 bool testRegistryOrderAndStatus()
 {
     const QVector<cppqtgraph::examples::ExampleEntry>& entries = cppqtgraph::examples::ExampleRegistry::entries();
-    CHECK(entries.size() == 12);
+    CHECK(entries.size() == 11);
 
-    CHECK(entries[0].name == QStringLiteral("SimplePlot"));
+    CHECK(entries[0].name == QStringLiteral("ImageItem"));
     CHECK(entries[0].status == cppqtgraph::examples::ExampleStatus::Ported);
-    CHECK(entries[1].name == QStringLiteral("ImageItem"));
+    CHECK(entries[1].name == QStringLiteral("CLIexample"));
     CHECK(entries[1].status == cppqtgraph::examples::ExampleStatus::Ported);
-    CHECK(entries[2].name == QStringLiteral("CLIexample"));
+    CHECK(entries[2].name == QStringLiteral("Plotting"));
     CHECK(entries[2].status == cppqtgraph::examples::ExampleStatus::Ported);
-    CHECK(entries[3].name == QStringLiteral("Plotting"));
-    CHECK(entries[3].status == cppqtgraph::examples::ExampleStatus::Ported);
-    CHECK(entries[4].name == QStringLiteral("ImageView"));
-    CHECK(entries[4].status == cppqtgraph::examples::ExampleStatus::Planned);
-    CHECK(entries[11].name == QStringLiteral("DateAxisItem"));
-    CHECK(entries[11].status == cppqtgraph::examples::ExampleStatus::Planned);
+    CHECK(entries[3].name == QStringLiteral("ImageView"));
+    CHECK(entries[3].status == cppqtgraph::examples::ExampleStatus::Planned);
+    CHECK(entries[10].name == QStringLiteral("DateAxisItem"));
+    CHECK(entries[10].status == cppqtgraph::examples::ExampleStatus::Planned);
 
-    CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("SimplePlot")));
+    // SimplePlot is intentionally unlisted (upstream browser marks it trivial).
+    CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("SimplePlot")));
+    CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageItem")));
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("Plotting")));
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageView")));
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("unknown")));
@@ -165,8 +165,8 @@ bool testRegistryLaunchesPortedExamplesViaHook()
         CHECK(launched->executablePath.contains(entry.name));
     }
 
-    CHECK(portedCount == 4);
-    CHECK(hookCalls == 4);
+    CHECK(portedCount == 3);
+    CHECK(hookCalls == 3);
 
     cppqtgraph::examples::ExampleRegistry::clearLaunchHookForTesting();
     return true;
@@ -178,7 +178,7 @@ bool testRegistryLaunchMissingExecutable()
         QStringLiteral("/nonexistent/example/search/path"));
 
     std::optional<cppqtgraph::examples::LaunchedExample> launched =
-        cppqtgraph::examples::ExampleRegistry::launch(QStringLiteral("SimplePlot"));
+        cppqtgraph::examples::ExampleRegistry::launch(QStringLiteral("Plotting"));
     CHECK(launched.has_value());
     CHECK(launched->result == cppqtgraph::examples::LaunchResult::MissingExecutable);
     CHECK(launched->errorMessage.contains(QStringLiteral("not found")));
@@ -192,24 +192,25 @@ bool testExampleAppListAndMetadata()
     cppqtgraph::examples::ExampleAppWindow window;
     QListWidget* list = window.exampleListWidget();
     CHECK(list != nullptr);
-    CHECK(list->count() == 12);
+    CHECK(list->count() == 11);
+    CHECK(findListRowByName(list, QStringLiteral("SimplePlot")) < 0);
 
-    const int simplePlotRow = findListRowByName(list, QStringLiteral("SimplePlot"));
-    CHECK(simplePlotRow >= 0);
-    CHECK(list->item(simplePlotRow)->text().contains(QStringLiteral("runnable")));
+    const int imageItemRow = findListRowByName(list, QStringLiteral("ImageItem"));
+    CHECK(imageItemRow >= 0);
+    CHECK(list->item(imageItemRow)->text().contains(QStringLiteral("runnable")));
 
     const int imageViewRow = findListRowByName(list, QStringLiteral("ImageView"));
     CHECK(imageViewRow >= 0);
     CHECK(list->item(imageViewRow)->text().contains(QStringLiteral("pending")));
     CHECK((list->item(imageViewRow)->flags() & Qt::ItemIsEnabled) == 0);
 
-    list->setCurrentRow(simplePlotRow);
-    CHECK(window.selectedExampleName() == QStringLiteral("SimplePlot"));
+    list->setCurrentRow(imageItemRow);
+    CHECK(window.selectedExampleName() == QStringLiteral("ImageItem"));
 
     const QString metadata = window.metadataPreviewLabel()->text();
-    CHECK(metadata.contains(QStringLiteral("Simple Plot smoke slice")));
-    CHECK(metadata.contains(QStringLiteral("pyqtgraph/examples/SimplePlot.py")));
-    CHECK(metadata.contains(QStringLiteral("examples/SimplePlot.cpp")));
+    CHECK(metadata.contains(QStringLiteral("ImageItem smoke slice")));
+    CHECK(metadata.contains(QStringLiteral("pyqtgraph/examples/ImageItem.py")));
+    CHECK(metadata.contains(QStringLiteral("examples/ImageItem.cpp")));
     CHECK(metadata.contains(QStringLiteral("Status: ported")));
     CHECK(metadata.contains(QStringLiteral("smoke=required")));
     CHECK(metadata.contains(QStringLiteral("interaction=not_applicable")));
@@ -222,7 +223,7 @@ bool testRunButtonState()
     cppqtgraph::examples::ExampleAppWindow window;
     QListWidget* list = window.exampleListWidget();
 
-    list->setCurrentRow(findListRowByName(list, QStringLiteral("SimplePlot")));
+    list->setCurrentRow(findListRowByName(list, QStringLiteral("ImageItem")));
     CHECK(window.isRunEnabled());
 
     list->setCurrentRow(findListRowByName(list, QStringLiteral("ImageView")));
@@ -270,7 +271,7 @@ bool testMissingBinaryShowsNotice()
     cppqtgraph::examples::ExampleRegistry::setExecutableSearchDirectoryForTesting(
         QStringLiteral("/nonexistent/example/search/path"));
 
-    list->setCurrentRow(findListRowByName(list, QStringLiteral("SimplePlot")));
+    list->setCurrentRow(findListRowByName(list, QStringLiteral("ImageItem")));
     CHECK(window.runSelectedExample());
     CHECK(window.statusNoticeLabel()->text().contains(QStringLiteral("not found")));
     CHECK(window.isRunEnabled());
@@ -286,7 +287,7 @@ bool testAsyncStartFailureShowsNotice()
 
     cppqtgraph::examples::ExampleRegistry::setLaunchHookForTesting(makeAsyncStartFailureLaunch);
 
-    list->setCurrentRow(findListRowByName(list, QStringLiteral("SimplePlot")));
+    list->setCurrentRow(findListRowByName(list, QStringLiteral("ImageItem")));
     CHECK(window.runSelectedExample());
 
     for (int attempt = 0; attempt < 100; ++attempt) {
@@ -312,7 +313,7 @@ bool testFailingChildKeepsLauncherAlive()
 
     cppqtgraph::examples::ExampleRegistry::setLaunchHookForTesting(makeFalseBinaryLaunch);
 
-    list->setCurrentRow(findListRowByName(list, QStringLiteral("SimplePlot")));
+    list->setCurrentRow(findListRowByName(list, QStringLiteral("ImageItem")));
     CHECK(window.runSelectedExample());
 
     const std::vector<std::shared_ptr<cppqtgraph::examples::LaunchedExample>>& launches =
@@ -337,10 +338,9 @@ bool testFilterNarrowsList()
     QListWidget* list = window.exampleListWidget();
     QLineEdit* filter = window.filterLineEdit();
 
-    CHECK(list->count() == 12);
+    CHECK(list->count() == 11);
     filter->setText(QStringLiteral("plot"));
-    CHECK(list->count() < 12);
-    CHECK(findListRowByName(list, QStringLiteral("SimplePlot")) >= 0);
+    CHECK(list->count() < 11);
     CHECK(findListRowByName(list, QStringLiteral("Plotting")) >= 0);
     CHECK(findListRowByName(list, QStringLiteral("ImageItem")) < 0);
 
