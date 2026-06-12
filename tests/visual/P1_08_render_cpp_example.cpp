@@ -1,8 +1,12 @@
+#include <cppqtgraph/imageview/ImageView.hpp>
+#include <cppqtgraph/widgets/GraphicsView.hpp>
+
 #include <QtCore/QDir>
 #include <QtCore/QEventLoop>
 #include <QtCore/QFileInfo>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
+#include <QtCore/QPoint>
 #include <QtCore/QRect>
 #include <QtCore/QString>
 #include <QtGui/QImage>
@@ -18,6 +22,9 @@
 #define CPPQTGRAPH_PLOTTING_NO_MAIN
 #include "../../examples/Plotting.cpp"
 
+#define CPPQTGRAPH_IMAGEVIEW_NO_MAIN
+#include "../../examples/ImageView.cpp"
+
 namespace {
 
 struct Options {
@@ -29,7 +36,7 @@ struct Options {
 
 void printUsage(const char* program)
 {
-    std::cerr << "usage: " << program << " <SimplePlot|Plotting> --output PATH [--width N] [--height N]\n";
+    std::cerr << "usage: " << program << " <SimplePlot|Plotting|ImageView> --output PATH [--width N] [--height N]\n";
 }
 
 bool parsePositiveInt(const std::string& text, int& value)
@@ -55,7 +62,8 @@ bool parseOptions(int argc, char** argv, Options& options)
     }
 
     options.example = QString::fromLocal8Bit(argv[1]);
-    if (options.example != QStringLiteral("SimplePlot") && options.example != QStringLiteral("Plotting")) {
+    if (options.example != QStringLiteral("SimplePlot") && options.example != QStringLiteral("Plotting")
+        && options.example != QStringLiteral("ImageView")) {
         std::cerr << "error: unsupported example: " << argv[1] << "\n";
         return false;
     }
@@ -125,6 +133,45 @@ bool renderSimplePlot(const Options& options)
     return true;
 }
 
+bool renderImageView(const Options& options, QJsonObject* imageCrop)
+{
+    auto example = cppqtgraph::examples::createImageViewExample();
+    example.window->resize(options.width, options.height);
+    if (example.imageView != nullptr) {
+        example.imageView->autoLevels();
+    }
+    example.window->show();
+    processEvents();
+
+    QFileInfo outputInfo(options.output);
+    if (!outputInfo.dir().exists() && !QDir().mkpath(outputInfo.dir().absolutePath())) {
+        std::cerr << "error: failed to create output directory\n";
+        return false;
+    }
+
+    const QPixmap pixmap = example.window->grab(QRect(0, 0, options.width, options.height));
+    if (pixmap.isNull()) {
+        std::cerr << "error: failed to grab ImageView widget\n";
+        return false;
+    }
+
+    const QImage image = pixmap.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    if (!image.save(options.output, "PNG")) {
+        std::cerr << "error: failed to write output PNG\n";
+        return false;
+    }
+
+    if (imageCrop != nullptr && example.imageView != nullptr && example.imageView->getView() != nullptr) {
+        auto* graphicsView = example.imageView->getView();
+        const QPoint topLeft = graphicsView->mapTo(example.window->centralWidget(), QPoint(0, 0));
+        imageCrop->insert(QStringLiteral("x"), topLeft.x());
+        imageCrop->insert(QStringLiteral("y"), topLeft.y());
+        imageCrop->insert(QStringLiteral("width"), graphicsView->width());
+        imageCrop->insert(QStringLiteral("height"), graphicsView->height());
+    }
+    return true;
+}
+
 bool renderPlotting(const Options& options)
 {
     auto example = cppqtgraph::examples::createPlottingExample();
@@ -164,8 +211,11 @@ int main(int argc, char** argv)
     QApplication application(argc, argv);
     application.setQuitOnLastWindowClosed(false);
 
-    const bool rendered = options.example == QStringLiteral("SimplePlot") ? renderSimplePlot(options)
-                                                                          : renderPlotting(options);
+    QJsonObject imageCrop;
+    const bool rendered = options.example == QStringLiteral("SimplePlot")
+                              ? renderSimplePlot(options)
+                              : options.example == QStringLiteral("Plotting") ? renderPlotting(options)
+                                                                              : renderImageView(options, &imageCrop);
     if (!rendered) {
         return 1;
     }
@@ -173,6 +223,9 @@ int main(int argc, char** argv)
     QJsonObject dimensions;
     dimensions.insert(QStringLiteral("width"), options.width);
     dimensions.insert(QStringLiteral("height"), options.height);
+    if (!imageCrop.isEmpty()) {
+        dimensions.insert(QStringLiteral("image_crop"), imageCrop);
+    }
 
     QJsonObject status;
     status.insert(QStringLiteral("example"), options.example);
