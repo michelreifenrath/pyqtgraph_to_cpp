@@ -197,6 +197,24 @@ bool testPageAndVerticalKeysSetPlaybackRates()
     return true;
 }
 
+bool testUnmatchedNoRepeatKeyReleaseStopsPlayback()
+{
+    const auto imageView = makePlaybackImageView();
+    imageView->setCurrentIndex(5);
+
+    QTest::keyPress(imageView.get(), Qt::Key_Right);
+    QTest::qWait(100);
+    const int afterPress = imageView->currentIndex();
+    CHECK(afterPress > 5);
+
+    QTest::keyRelease(imageView.get(), Qt::Key_Left);
+    QTest::qWait(0);
+    const int afterUnmatchedRelease = imageView->currentIndex();
+    QTest::qWait(200);
+    CHECK(imageView->currentIndex() == afterUnmatchedRelease);
+    return true;
+}
+
 bool testBoundaryStopMatchesUpstreamSemantics()
 {
     const auto imageView = makePlaybackImageView();
@@ -233,7 +251,8 @@ int main(int argc, char** argv)
 
     if (!testPlayAdvancesFrames() || !testSpaceTogglesPauseResume() || !testHomeEndJumpBoundariesAndPause()
         || !testArrowKeysJumpAndSetDirection() || !testPageAndVerticalKeysSetPlaybackRates()
-        || !testBoundaryStopMatchesUpstreamSemantics() || !testSetCurrentIndexClipsDuringPlayback()) {
+        || !testUnmatchedNoRepeatKeyReleaseStopsPlayback() || !testBoundaryStopMatchesUpstreamSemantics()
+        || !testSetCurrentIndexClipsDuringPlayback()) {
         return 1;
     }
 

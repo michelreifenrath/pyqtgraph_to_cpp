@@ -576,7 +576,9 @@ void ImageView::keyReleaseEvent(QKeyEvent* event)
         if (event->isAutoRepeat()) {
             return;
         }
-        keysPressed_.erase(event->key());
+        if (keysPressed_.erase(event->key()) == 0) {
+            keysPressed_.clear();
+        }
         evalKeyState();
     } else {
         QWidget::keyReleaseEvent(event);
