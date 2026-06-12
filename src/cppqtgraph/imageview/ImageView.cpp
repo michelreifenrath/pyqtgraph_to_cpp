@@ -16,6 +16,7 @@
 #include <QtCore/QRectF>
 #include <QtCore/QSignalBlocker>
 #include <QtGui/QColor>
+#include <QtGui/QKeyEvent>
 #include <QtGui/QPen>
 #include <QtWidgets/QVBoxLayout>
 
@@ -205,6 +206,10 @@ ImageView::ImageView(QWidget* parent, const QString& levelMode, bool discreteTim
             &graphicsItems::InfiniteLine::sigPositionChanged,
             this,
             &ImageView::timeLineChanged);
+
+    setFocusPolicy(Qt::StrongFocus);
+    playTimer_.setParent(this);
+    connect(&playTimer_, &QTimer::timeout, this, &ImageView::playbackTimeout);
 }
 
 ImageView::~ImageView() = default;
@@ -358,6 +363,7 @@ void ImageView::setImageTimeRgbImpl(core::ArrayView<const T, 4> image,
 
 void ImageView::clearImage()
 {
+    play(0.0);
     dataKind_ = DataKind::None;
     shape_ = {};
     currentIndex_ = 0;
@@ -412,6 +418,171 @@ int ImageView::currentIndex() const noexcept
 std::span<const double> ImageView::xValues() const noexcept
 {
     return xvals_;
+}
+
+void ImageView::play(std::optional<double> rate)
+{
+    double resolvedRate = rate.value_or(pausedPlayRate_.value_or(fps_));
+    if (resolvedRate == 0.0 && playRate_ != 0.0) {
+        pausedPlayRate_ = playRate_;
+    }
+    playRate_ = resolvedRate;
+
+    if (resolvedRate == 0.0) {
+        playTimer_.stop();
+        return;
+    }
+
+    lastPlayTime_ = playbackClockSeconds();
+    if (!playTimer_.isActive()) {
+        playTimer_.start(std::abs(static_cast<int>(1000.0 / resolvedRate)));
+    }
+}
+
+void ImageView::togglePause()
+{
+    if (playTimer_.isActive()) {
+        play(0.0);
+    } else if (playRate_ == 0.0) {
+        double resumeRate = 0.0;
+        if (pausedPlayRate_.has_value()) {
+            resumeRate = *pausedPlayRate_;
+        } else if (!xvals_.empty() && xvals_.size() > 1) {
+            resumeRate = static_cast<double>(frameCount() - 1) / (xvals_.back() - xvals_.front());
+        } else {
+            resumeRate = fps_;
+        }
+        play(resumeRate);
+    } else {
+        play(playRate_);
+    }
+}
+
+void ImageView::jumpFrames(int frameDelta)
+{
+    if (!hasTimeAxis()) {
+        return;
+    }
+    setCurrentIndex(currentIndex_ + frameDelta);
+}
+
+void ImageView::evalKeyState()
+{
+    if (keysPressed_.size() == 1) {
+        const int key = *keysPressed_.begin();
+        if (key == Qt::Key_Right) {
+            play(20.0);
+            jumpFrames(1);
+            lastPlayTime_ = playbackClockSeconds() + 0.2;
+        } else if (key == Qt::Key_Left) {
+            play(-20.0);
+            jumpFrames(-1);
+            lastPlayTime_ = playbackClockSeconds() + 0.2;
+        } else if (key == Qt::Key_Up) {
+            play(-100.0);
+        } else if (key == Qt::Key_Down) {
+            play(100.0);
+        } else if (key == Qt::Key_PageUp) {
+            play(-1000.0);
+        } else if (key == Qt::Key_PageDown) {
+            play(1000.0);
+        }
+    } else {
+        play(0.0);
+    }
+}
+
+double ImageView::playbackClockSeconds()
+{
+    return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+bool ImageView::isNoRepeatKey(int key) const noexcept
+{
+    switch (key) {
+    case Qt::Key_Right:
+    case Qt::Key_Left:
+    case Qt::Key_Up:
+    case Qt::Key_Down:
+    case Qt::Key_PageUp:
+    case Qt::Key_PageDown:
+        return true;
+    default:
+        return false;
+    }
+}
+
+void ImageView::playbackTimeout()
+{
+    const double now = playbackClockSeconds();
+    const double dt = now - lastPlayTime_;
+    if (dt < 0.0) {
+        return;
+    }
+
+    const int frameStep = static_cast<int>(playRate_ * dt);
+    if (frameStep == 0) {
+        return;
+    }
+
+    lastPlayTime_ += static_cast<double>(frameStep) / playRate_;
+    if (currentIndex_ + frameStep > frameCount()) {
+        play(0.0);
+    }
+    jumpFrames(frameStep);
+}
+
+void ImageView::keyPressEvent(QKeyEvent* event)
+{
+    if (!hasTimeAxis()) {
+        QWidget::keyPressEvent(event);
+        return;
+    }
+
+    if (event->key() == Qt::Key_Space) {
+        togglePause();
+        event->accept();
+    } else if (event->key() == Qt::Key_Home) {
+        setCurrentIndex(0);
+        play(0.0);
+        event->accept();
+    } else if (event->key() == Qt::Key_End) {
+        setCurrentIndex(frameCount() - 1);
+        play(0.0);
+        event->accept();
+    } else if (isNoRepeatKey(event->key())) {
+        event->accept();
+        if (event->isAutoRepeat()) {
+            return;
+        }
+        keysPressed_.insert(event->key());
+        evalKeyState();
+    } else {
+        QWidget::keyPressEvent(event);
+    }
+}
+
+void ImageView::keyReleaseEvent(QKeyEvent* event)
+{
+    if (!hasTimeAxis()) {
+        QWidget::keyReleaseEvent(event);
+        return;
+    }
+
+    if (event->key() == Qt::Key_Space || event->key() == Qt::Key_Home || event->key() == Qt::Key_End) {
+        event->accept();
+    } else if (isNoRepeatKey(event->key())) {
+        event->accept();
+        if (event->isAutoRepeat()) {
+            return;
+        }
+        if (keysPressed_.erase(event->key()) == 0) {
+            keysPressed_.clear();
+        }
+        evalKeyState();
+    } else {
+        QWidget::keyReleaseEvent(event);
+    }
 }
 
 void ImageView::setLevels(std::optional<ImageLevelRange> levels)
@@ -628,6 +799,10 @@ void ImageView::timeLineChanged()
 {
     if (timeLine_ == nullptr || !hasTimeAxis()) {
         return;
+    }
+
+    if (!ignoreTimeLine_) {
+        play(0.0);
     }
 
     const auto [index, time] = timeIndexFor(timeLine_->value());
