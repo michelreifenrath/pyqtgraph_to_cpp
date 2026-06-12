@@ -243,8 +243,8 @@ void ViewBoxMenu::onXAutoClicked()
         return;
     }
     const qreal padding = axisCtrls_[static_cast<std::size_t>(kXAxis)].ui.autoPercentSpin->value() / 100.0;
+    view_->setDefaultPadding(padding);
     view_->enableAutoRange(ViewBox::XAxis, true);
-    view_->autoRange(padding);
     updateState();
 }
 
@@ -254,8 +254,8 @@ void ViewBoxMenu::onYAutoClicked()
         return;
     }
     const qreal padding = axisCtrls_[static_cast<std::size_t>(kYAxis)].ui.autoPercentSpin->value() / 100.0;
+    view_->setDefaultPadding(padding);
     view_->enableAutoRange(ViewBox::YAxis, true);
-    view_->autoRange(padding);
     updateState();
 }
 
@@ -265,8 +265,8 @@ void ViewBoxMenu::onXAutoSpinChanged(int value)
         return;
     }
     axisCtrls_[static_cast<std::size_t>(kXAxis)].ui.autoRadio->setChecked(true);
+    view_->setDefaultPadding(value / 100.0);
     view_->enableAutoRange(ViewBox::XAxis, true);
-    view_->autoRange(value / 100.0);
     updateState();
 }
 
@@ -276,8 +276,8 @@ void ViewBoxMenu::onYAutoSpinChanged(int value)
         return;
     }
     axisCtrls_[static_cast<std::size_t>(kYAxis)].ui.autoRadio->setChecked(true);
+    view_->setDefaultPadding(value / 100.0);
     view_->enableAutoRange(ViewBox::YAxis, true);
-    view_->autoRange(value / 100.0);
     updateState();
 }
 

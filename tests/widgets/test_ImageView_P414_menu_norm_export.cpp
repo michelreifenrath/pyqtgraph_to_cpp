@@ -86,9 +86,12 @@ std::vector<float> makeFixtureData()
 {
     std::vector<float> data(kFrames * kHeight * kWidth);
     for (std::size_t frame = 0; frame < kFrames; ++frame) {
-        const float value = 100.0F + 10.0F * static_cast<float>(frame);
-        for (std::size_t pixel = 0; pixel < kHeight * kWidth; ++pixel) {
-            data[frame * kHeight * kWidth + pixel] = value;
+        for (std::size_t row = 0; row < kHeight; ++row) {
+            for (std::size_t col = 0; col < kWidth; ++col) {
+                const std::size_t index = ((frame * kHeight + row) * kWidth) + col;
+                data[index] = 100.0F + 10.0F * static_cast<float>(frame) + static_cast<float>(row)
+                              + static_cast<float>(col);
+            }
         }
     }
     return data;
@@ -183,14 +186,21 @@ int main(int argc, char** argv)
 
     auto* divideRadio = imageView->normGroup()->findChild<QRadioButton*>(QStringLiteral("normDivideRadio"));
     auto* frameCheck = imageView->normGroup()->findChild<QCheckBox*>(QStringLiteral("normFrameCheck"));
+    auto* timeRangeCheck = imageView->normGroup()->findChild<QCheckBox*>(QStringLiteral("normTimeRangeCheck"));
     CHECK(divideRadio != nullptr);
     CHECK(frameCheck != nullptr);
+    CHECK(timeRangeCheck != nullptr);
     divideRadio->setChecked(true);
     frameCheck->setChecked(true);
     imageView->normRadioChanged();
 
     const double expectedPixel = fixture.value(QStringLiteral("normalized_sample_pixel")).toDouble();
     CHECK(nearlyEqual(imageView->normalizedSamplePixel(0, 1, 1), expectedPixel));
+
+    timeRangeCheck->setChecked(true);
+    imageView->normRadioChanged();
+    const double expectedCombinedPixel = fixture.value(QStringLiteral("combined_normalized_sample_pixel")).toDouble();
+    CHECK(nearlyEqual(imageView->normalizedSamplePixel(0, 1, 1), expectedCombinedPixel));
 
     imageView->roiButton()->setChecked(true);
     imageView->roiClicked();

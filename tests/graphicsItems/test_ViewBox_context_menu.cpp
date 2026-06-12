@@ -9,6 +9,8 @@
 #include <QtWidgets/QGraphicsRectItem>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
+#include <QtWidgets/QRadioButton>
+#include <QtWidgets/QWidgetAction>
 
 #include <cmath>
 #include <cstdlib>
@@ -135,6 +137,28 @@ QAction* findSubMenuAction(QMenu* menu, const QString& subMenuTitle, const QStri
             if (subAction != nullptr && subAction->text() == actionText) {
                 return subAction;
             }
+        }
+    }
+    return nullptr;
+}
+
+QRadioButton* findAxisAutoRadio(QMenu* menu, const QString& subMenuTitle)
+{
+    QMenu* subMenu = findSubMenu(menu, subMenuTitle);
+    if (subMenu == nullptr) {
+        return nullptr;
+    }
+    for (QAction* action : subMenu->actions()) {
+        auto* widgetAction = qobject_cast<QWidgetAction*>(action);
+        if (widgetAction == nullptr) {
+            continue;
+        }
+        QWidget* widget = widgetAction->defaultWidget();
+        if (widget == nullptr) {
+            continue;
+        }
+        if (auto* autoRadio = widget->findChild<QRadioButton*>(QStringLiteral("autoRadio")); autoRadio != nullptr) {
+            return autoRadio;
         }
     }
     return nullptr;
@@ -298,6 +322,26 @@ int main(int argc, char** argv)
     const auto afterRectDrag = rectViewBox.viewRange();
     CHECK(span(afterRectDrag[ViewBox::XAxis]) < span(beforeRectDrag[ViewBox::XAxis]));
     CHECK(span(afterRectDrag[ViewBox::YAxis]) < span(beforeRectDrag[ViewBox::YAxis]));
+
+    ScriptableViewBox autoViewBox;
+    scene.addItem(&autoViewBox);
+    autoViewBox.resize(200.0, 100.0);
+    autoViewBox.setDefaultPadding(0.0);
+    autoViewBox.disableAutoRange(ViewBox::XYAxes);
+    autoViewBox.setRange(QRectF(0.0, 0.0, 10.0, 10.0), 0.0);
+    autoViewBox.raiseContextMenu(QPoint(0, 0));
+    ViewBoxMenu* autoMenu = autoViewBox.menu();
+    CHECK(autoMenu != nullptr);
+    QRadioButton* xAutoRadio = findAxisAutoRadio(autoMenu, QStringLiteral("X axis"));
+    QRadioButton* yAutoRadio = findAxisAutoRadio(autoMenu, QStringLiteral("Y axis"));
+    CHECK(xAutoRadio != nullptr);
+    CHECK(yAutoRadio != nullptr);
+    xAutoRadio->click();
+    CHECK(autoViewBox.autoRangeEnabled()[ViewBox::XAxis]);
+    CHECK(!autoViewBox.autoRangeEnabled()[ViewBox::YAxis]);
+    yAutoRadio->click();
+    CHECK(autoViewBox.autoRangeEnabled()[ViewBox::XAxis]);
+    CHECK(autoViewBox.autoRangeEnabled()[ViewBox::YAxis]);
 
     return 0;
 }

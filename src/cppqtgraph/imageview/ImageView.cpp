@@ -1531,7 +1531,7 @@ void ImageView::normalizeFloatStack(std::vector<float>& output) const
         for (std::size_t frame = 0; frame < frames; ++frame) {
             double sum = 0.0;
             for (std::size_t pixel = 0; pixel < height * width; ++pixel) {
-                sum += static_cast<double>(output[frame * height * width + pixel]);
+                sum += static_cast<double>(floatData_[frame * height * width + pixel]);
             }
             const double mean = sum / static_cast<double>(height * width);
             applyFactor(frame, mean);

@@ -56,7 +56,9 @@ def build_fixture_data() -> tuple[Any, Any]:
 
     data = np.zeros((FRAMES, HEIGHT, WIDTH), dtype=np.float32)
     for frame in range(FRAMES):
-        data[frame, :, :] = 100.0 + 10.0 * frame
+        for row in range(HEIGHT):
+            for col in range(WIDTH):
+                data[frame, row, col] = 100.0 + 10.0 * frame + row + col
     xvals = np.array([0.0, 1.5, 3.0, 5.0], dtype=np.float64)
     return data, xvals
 
@@ -120,6 +122,17 @@ def render_oracle() -> dict[str, Any]:
     processed = imv.getProcessedImage()
     sample_pixel = float(processed[0, 1, 1])
 
+    imv.ui.normTimeRangeCheck.setChecked(True)
+    imv.normRadioChanged()
+    for _ in range(5):
+        app.processEvents()
+    combined_sample_pixel = float(imv.getProcessedImage()[0, 1, 1])
+
+    imv.ui.normTimeRangeCheck.setChecked(False)
+    imv.normRadioChanged()
+    for _ in range(5):
+        app.processEvents()
+
     imv.ui.roiBtn.setChecked(True)
     imv.roiClicked()
     imv.roiChanged()
@@ -143,6 +156,7 @@ def render_oracle() -> dict[str, Any]:
         "menu_actions": menu_actions,
         "norm_group_visible": norm_group_visible,
         "normalized_sample_pixel": sample_pixel,
+        "combined_normalized_sample_pixel": combined_sample_pixel,
         "startup_curves": startup_curves,
         "export_file_count": len(export_hashes),
         "export_hashes": export_hashes,
@@ -182,6 +196,7 @@ def check_fixture(path: Path, *, verify_against_source: bool) -> None:
         "menu_actions",
         "norm_group_visible",
         "normalized_sample_pixel",
+        "combined_normalized_sample_pixel",
         "startup_curves",
         "export_file_count",
         "export_hashes",
@@ -204,6 +219,14 @@ def check_fixture(path: Path, *, verify_against_source: bool) -> None:
         raise SystemExit(
             "normalized sample pixel mismatch: "
             f"expected {payload['normalized_sample_pixel']}, got {rendered['normalized_sample_pixel']}"
+        )
+    if not nearly_equal(
+        rendered["combined_normalized_sample_pixel"], payload["combined_normalized_sample_pixel"]
+    ):
+        raise SystemExit(
+            "combined normalized sample pixel mismatch: "
+            f"expected {payload['combined_normalized_sample_pixel']}, "
+            f"got {rendered['combined_normalized_sample_pixel']}"
         )
     check_curves(rendered["startup_curves"], payload["startup_curves"])
     if rendered["export_file_count"] != payload["export_file_count"]:
