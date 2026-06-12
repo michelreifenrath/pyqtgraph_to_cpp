@@ -80,6 +80,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME cppqtgraph.oracle.P408.ImageView4D
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P408_imageview_4d_oracle.py" --check
+)
+set_tests_properties(
+    cppqtgraph.oracle.P408.ImageView4D
+    PROPERTIES
+        LABELS P408
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME cppqtgraph.oracle.P2_09
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/scripts/generate_P2_09_widgetgroup_oracle.py" --check
 )
@@ -817,6 +828,18 @@ if(_cppqtgraph_has_graphicsitem)
             CPPQTGRAPH_P5_07_REPOSITORY_REPORT_DIR="${PROJECT_SOURCE_DIR}/reports/issues/P5.07"
     )
     set_tests_properties(cppqtgraph.widgets.ImageView_RawImageWidget.P5_07 PROPERTIES LABELS P5.07)
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_widgets_imageview_4d_p408
+        widgets/test_ImageView_4D_P408.cpp
+        cppqtgraph.widgets.ImageView_4D.P408
+    )
+    set_target_properties(cppqtgraph_widgets_imageview_4d_p408 PROPERTIES AUTOMOC ON)
+    target_link_libraries(cppqtgraph_widgets_imageview_4d_p408 PRIVATE Qt6::Widgets)
+    target_compile_definitions(cppqtgraph_widgets_imageview_4d_p408
+        PRIVATE
+            CPPQTGRAPH_P408_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P408/imageview_4d_oracle.json"
+    )
+    set_tests_properties(cppqtgraph.widgets.ImageView_4D.P408 PROPERTIES LABELS P408)
     cppqtgraph_add_cpp_test(
         cppqtgraph_widgets_scatterplotwidget_p5_08
         widgets/test_ScatterPlotWidget_P5_08.cpp

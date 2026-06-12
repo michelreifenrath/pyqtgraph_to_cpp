@@ -8,9 +8,48 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
+#include <cmath>
+#include <cstddef>
 #include <memory>
+#include <vector>
 
 namespace cppqtgraph::examples {
+namespace {
+
+constexpr std::size_t kFrames = 100;
+constexpr std::size_t kHeight = 200;
+constexpr std::size_t kWidth = 200;
+constexpr std::size_t kChannels = 3;
+
+std::vector<float> makeExampleImageData()
+{
+    std::vector<float> data(kFrames * kHeight * kWidth * kChannels);
+    for (std::size_t frame = 0; frame < kFrames; ++frame) {
+        const double redBase = 90.0 + (150.0 - 90.0) * static_cast<double>(frame) / static_cast<double>(kFrames - 1);
+        const double greenBase = 90.0 + (180.0 - 90.0) * static_cast<double>(frame) / static_cast<double>(kFrames - 1);
+        const double blueBase = 180.0 + (90.0 - 180.0) * static_cast<double>(frame) / static_cast<double>(kFrames - 1);
+        for (std::size_t y = 0; y < kHeight; ++y) {
+            for (std::size_t x = 0; x < kWidth; ++x) {
+                const std::size_t base = ((frame * kHeight + y) * kWidth + x) * kChannels;
+                data[base + 0] = static_cast<float>(redBase);
+                data[base + 1] = static_cast<float>(greenBase);
+                data[base + 2] = static_cast<float>(blueBase);
+            }
+        }
+    }
+    return data;
+}
+
+std::vector<double> makeExampleXValues()
+{
+    std::vector<double> xvals(kFrames);
+    for (std::size_t frame = 0; frame < kFrames; ++frame) {
+        xvals[frame] = 1.0 + (2.0 * static_cast<double>(frame) / static_cast<double>(kFrames - 1));
+    }
+    return xvals;
+}
+
+} // namespace
 
 struct ImageViewExample {
     std::unique_ptr<QMainWindow> window;
@@ -25,6 +64,11 @@ ImageViewExample createImageViewExample()
 
     auto* imageView = new imageview::ImageView(window.get());
     window->setCentralWidget(imageView);
+
+    const std::vector<float> data = makeExampleImageData();
+    const std::vector<double> xvals = makeExampleXValues();
+    imageView->setImage(core::ArrayView<const float, 4>(data.data(), {kFrames, kHeight, kWidth, kChannels}),
+                        core::ArrayView<const double, 1>(xvals.data(), {xvals.size()}));
 
     return {.window = std::move(window), .imageView = imageView};
 }
