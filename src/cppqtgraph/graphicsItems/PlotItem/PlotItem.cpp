@@ -9,6 +9,7 @@
 #include "../../../../include/cppqtgraph/graphicsItems/ButtonItem.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/LegendItem.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/PlotCurveItem.hpp"
+#include "../../../../include/cppqtgraph/graphicsItems/PlotDataItem.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/PlotItem/plotConfigTemplate_generic.hpp"
 
 #include <QtCore/QObject>
@@ -436,6 +437,9 @@ void PlotItem::addItem(QGraphicsItem* item, bool ignoreBounds, const QString& na
     {
         ScopedBool guard(forwardingChild_);
         vb_->addItem(item, ignoreBounds);
+    }
+    if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
+        plotData->setLogMode(logMode_[0], logMode_[1]);
     }
     if (legend_ != nullptr && !name.isEmpty()) {
         legend_->addItem(item, name);
@@ -986,10 +990,19 @@ void PlotItem::updateLogMode()
         return;
     }
     logMode_ = {ctrl_->logXCheck->isChecked(), ctrl_->logYCheck->isChecked()};
+    for (QGraphicsItem* item : items_) {
+        if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
+            plotData->setLogMode(logMode_[0], logMode_[1]);
+        }
+    }
     for (AxisItem* axisItem : axes_) {
         if (axisItem != nullptr) {
             axisItem->setLogMode(logMode_[0], logMode_[1]);
         }
+    }
+    if (initialized_ && vb_ != nullptr) {
+        vb_->enableAutoRange(ViewBox::XYAxes, true);
+        syncAxisRanges();
     }
     update();
 }

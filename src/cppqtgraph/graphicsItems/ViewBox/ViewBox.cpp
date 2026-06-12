@@ -1262,12 +1262,12 @@ std::array<std::optional<AxisRange>, 2> ViewBox::childrenBounds() const
         if (item == nullptr || !item->isVisible() || item->scene() != scene()) {
             continue;
         }
-        if (item->flags().testFlag(QGraphicsItem::GraphicsItemFlag::ItemHasNoContents)) {
-            continue;
-        }
-
         std::optional<QRectF> localBounds;
-        if (auto* graphicsObject = dynamic_cast<GraphicsObject*>(item)) {
+        if (item->flags().testFlag(QGraphicsItem::GraphicsItemFlag::ItemHasNoContents)) {
+            if (auto* graphicsObject = dynamic_cast<GraphicsObject*>(item)) {
+                localBounds = graphicsObject->autoRangeBoundsRect();
+            }
+        } else if (auto* graphicsObject = dynamic_cast<GraphicsObject*>(item)) {
             localBounds = graphicsObject->autoRangeBoundsRect();
         } else {
             const QRectF bounds = item->boundingRect();

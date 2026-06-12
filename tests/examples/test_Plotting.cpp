@@ -2,10 +2,12 @@
 #include "../../examples/Plotting.cpp"
 
 #include <cppqtgraph/graphicsItems/AxisItem.hpp>
+#include <cppqtgraph/graphicsItems/ScatterPlotItem.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
 #include <QtCore/QSize>
+#include <QtGui/QImage>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QApplication>
 
@@ -233,6 +235,73 @@ bool testPlottingDeterminism()
     return true;
 }
 
+bool testPlottingP5LogMappedAutorangeAndRender(cppqtgraph::examples::PlottingExample& example)
+{
+    constexpr double kP5LogXMin = -7.388271382801615;
+    constexpr double kP5LogXMax = -4.509981088978167;
+    constexpr double kP5LinearYMin = 1.02795;
+    constexpr double kP5LinearYMax = 1.0679;
+
+    example.widget->show();
+    QApplication::processEvents();
+    example.plots[4]->autoRange();
+    QApplication::processEvents();
+
+    auto* p5 = example.plots[4];
+    const auto viewRange = p5->viewRange();
+    const auto xRange = viewRange[cppqtgraph::graphicsItems::ViewBox::XAxis];
+    const auto yRange = viewRange[cppqtgraph::graphicsItems::ViewBox::YAxis];
+
+    CHECK(std::isfinite(xRange[0]));
+    CHECK(std::isfinite(xRange[1]));
+    CHECK(std::isfinite(yRange[0]));
+    CHECK(std::isfinite(yRange[1]));
+    CHECK(nearlyEqual(xRange[0], kP5LogXMin, 0.15));
+    CHECK(nearlyEqual(xRange[1], kP5LogXMax, 0.15));
+    CHECK(nearlyEqual(yRange[0], kP5LinearYMin, 0.05));
+    CHECK(nearlyEqual(yRange[1], kP5LinearYMax, 0.05));
+
+    const auto scatterX = example.p5Scatter->scatter()->xData();
+    CHECK(!scatterX.empty());
+    for (double value : scatterX) {
+        CHECK(std::isfinite(value));
+        CHECK(value >= kP5LogXMin - 0.2);
+        CHECK(value <= kP5LogXMax + 0.2);
+    }
+
+    auto* bottomAxis = p5->getAxis(QStringLiteral("bottom"));
+    CHECK(bottomAxis != nullptr);
+    CHECK(bottomAxis->labelUnitPrefix() == QString::fromUtf8("µ"));
+    CHECK(nearlyEqual(bottomAxis->autoSIPrefixScale(), 1.0e6, 1.0e-6));
+
+    const auto childrenBounds = p5->getViewBox()->childrenBounds();
+    CHECK(childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis].has_value());
+    CHECK(childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis].has_value());
+    CHECK(example.p5Scatter->scatter()->isVisible());
+
+    const auto mappedBounds = example.p5Scatter->autoRangeBoundsRect();
+    CHECK(mappedBounds.has_value());
+    CHECK(mappedBounds->width() > 0.0);
+    CHECK(mappedBounds->height() > 0.0);
+    CHECK(!example.p5Scatter->scatter()->boundingRect().isNull());
+
+    const QPixmap pixmap = example.widget->grab();
+    CHECK(!pixmap.isNull());
+    const QImage image = pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+    int nonBackgroundPixels = 0;
+    for (int row = 0; row < image.height(); ++row) {
+        for (int column = 0; column < image.width(); ++column) {
+            const QColor color(image.pixel(column, row));
+            if (color.alpha() > 0 && color != QColor(0, 0, 0)) {
+                ++nonBackgroundPixels;
+            }
+        }
+    }
+    CHECK(nonBackgroundPixels > 1000);
+
+    return true;
+}
+
 bool testPlottingGrab(cppqtgraph::examples::PlottingExample& example)
 {
     example.widget->show();
@@ -269,6 +338,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPlottingDeterminism()) {
+        return 1;
+    }
+    if (!testPlottingP5LogMappedAutorangeAndRender(example)) {
         return 1;
     }
     if (!testPlottingGrab(example)) {

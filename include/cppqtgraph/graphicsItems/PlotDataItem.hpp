@@ -14,6 +14,8 @@
 #include <QtGui/QPen>
 #include <QtWidgets/QGraphicsItem>
 
+#include <array>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -75,16 +77,24 @@ public:
     [[nodiscard]] QPen pen() const;
     [[nodiscard]] bool lineVisible() const noexcept;
 
+    void setLogMode(bool xEnabled, bool yEnabled);
+    [[nodiscard]] std::array<bool, 2> logMode() const noexcept;
+
     [[nodiscard]] QRectF boundingRect() const override;
+    [[nodiscard]] std::optional<QRectF> autoRangeBoundsRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
 private:
+    void updateMappedData();
     void updateItems();
 
     PlotCurveItem* curve_ = nullptr;
     ScatterPlotItem* scatter_ = nullptr;
     std::vector<double> xData_;
     std::vector<double> yData_;
+    std::vector<double> displayX_;
+    std::vector<double> displayY_;
+    std::array<bool, 2> logMode_{{false, false}};
     bool hasData_ = false;
     bool lineVisible_ = true;
     bool symbolsVisible_ = false;
