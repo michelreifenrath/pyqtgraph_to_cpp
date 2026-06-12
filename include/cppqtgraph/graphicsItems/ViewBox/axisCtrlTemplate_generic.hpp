@@ -6,8 +6,11 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 class QCheckBox;
+class QComboBox;
 class QLabel;
+class QLineEdit;
 class QRadioButton;
+class QSpinBox;
 class QWidget;
 
 namespace cppqtgraph::graphicsItems::ViewBoxAxisConfig {
@@ -16,11 +19,17 @@ class Ui_Form {
 public:
     void setupUi(QWidget* form);
 
-    QCheckBox* mouseCheck = nullptr;
-    QRadioButton* manualRadio = nullptr;
+    QLabel* linkLabel = nullptr;
+    QComboBox* linkCombo = nullptr;
+    QSpinBox* autoPercentSpin = nullptr;
     QRadioButton* autoRadio = nullptr;
-    QLabel* minLabel = nullptr;
-    QLabel* maxLabel = nullptr;
+    QRadioButton* manualRadio = nullptr;
+    QLineEdit* minText = nullptr;
+    QLineEdit* maxText = nullptr;
+    QCheckBox* invertCheck = nullptr;
+    QCheckBox* mouseCheck = nullptr;
+    QCheckBox* visibleOnlyCheck = nullptr;
+    QCheckBox* autoPanCheck = nullptr;
 };
 
 } // namespace cppqtgraph::graphicsItems::ViewBoxAxisConfig

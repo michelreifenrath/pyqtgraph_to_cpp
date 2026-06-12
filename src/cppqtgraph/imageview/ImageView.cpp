@@ -8,6 +8,7 @@
 #include "../../../include/cppqtgraph/graphicsItems/AxisItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/HistogramLUTItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/InfiniteLine.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/LinearRegionItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/PlotCurveItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ROI.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
@@ -15,12 +16,20 @@
 #include "../../../include/cppqtgraph/widgets/HistogramLUTWidget.hpp"
 #include "../../../include/cppqtgraph/widgets/PlotWidget.hpp"
 
+#include <QtCore/QDir>
+#include <QtCore/QFileInfo>
 #include <QtCore/QRectF>
 #include <QtCore/QSignalBlocker>
+#include <QtGui/QAction>
 #include <QtGui/QColor>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QPen>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QMenu>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QRadioButton>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QVBoxLayout>
 
@@ -219,8 +228,47 @@ ImageView::ImageView(QWidget* parent, const QString& levelMode, bool discreteTim
     roi_->hide();
     connect(roi_, &graphicsItems::ROI::sigRegionChanged, this, &ImageView::roiChanged);
 
+    normRoi_ = new graphicsItems::ROI(QPointF(0.0, 0.0), QPointF(10.0, 10.0));
+    normRoi_->addScaleHandle(QPointF(1.0, 1.0), QPointF(0.0, 0.0));
+    normRoi_->addRotateHandle(QPointF(0.0, 0.0), QPointF(0.5, 0.5));
+    normRoi_->setPen(QPen(QColor(255, 255, 0)));
+    normRoi_->setZValue(20.0);
+    viewBox_->addItem(normRoi_);
+    normRoi_->hide();
+    connect(normRoi_, &graphicsItems::ROI::sigRegionChanged, this, &ImageView::updateNorm);
+
+    normRgn_ = new graphicsItems::LinearRegionItem(std::make_pair(0.0, 1.0));
+    normRgn_->setZValue(0.0);
+    roiPlot_->addItem(normRgn_);
+    normRgn_->hide();
+    connect(normRgn_, &graphicsItems::LinearRegionItem::sigRegionChanged, this, &ImageView::updateNorm);
+
     if (ui_.roiBtn != nullptr) {
         connect(ui_.roiBtn, &QPushButton::clicked, this, &ImageView::roiClicked);
+    }
+    if (ui_.menuBtn != nullptr) {
+        connect(ui_.menuBtn, &QPushButton::clicked, this, &ImageView::menuClicked);
+    }
+    if (ui_.normGroup != nullptr) {
+        ui_.normGroup->hide();
+    }
+    if (ui_.normDivideRadio != nullptr) {
+        connect(ui_.normDivideRadio, &QRadioButton::clicked, this, &ImageView::normRadioChanged);
+    }
+    if (ui_.normSubtractRadio != nullptr) {
+        connect(ui_.normSubtractRadio, &QRadioButton::clicked, this, &ImageView::normRadioChanged);
+    }
+    if (ui_.normOffRadio != nullptr) {
+        connect(ui_.normOffRadio, &QRadioButton::clicked, this, &ImageView::normRadioChanged);
+    }
+    if (ui_.normROICheck != nullptr) {
+        connect(ui_.normROICheck, &QCheckBox::clicked, this, &ImageView::updateNorm);
+    }
+    if (ui_.normFrameCheck != nullptr) {
+        connect(ui_.normFrameCheck, &QCheckBox::clicked, this, &ImageView::updateNorm);
+    }
+    if (ui_.normTimeRangeCheck != nullptr) {
+        connect(ui_.normTimeRangeCheck, &QCheckBox::clicked, this, &ImageView::updateNorm);
     }
 
     if (ui_.splitter != nullptr) {
@@ -331,6 +379,7 @@ void ImageView::setImageImpl(core::ArrayView<const T, Rank> image,
         currentIndex_ = 0;
     }
 
+    invalidateProcessedImage();
     syncTimelineBounds();
     updateDisplayedFrame(autoLevels, autoRange);
     applyRoiPlotVisibility();
@@ -382,6 +431,7 @@ void ImageView::setImageTimeRgbImpl(core::ArrayView<const T, 4> image,
         assignDefaultXValues(xvals_, shape_[0]);
     }
 
+    invalidateProcessedImage();
     syncTimelineBounds();
     updateDisplayedFrame(autoLevels, autoRange);
     applyRoiPlotVisibility();
@@ -398,6 +448,8 @@ void ImageView::clearImage()
     floatData_.clear();
     doubleData_.clear();
     xvals_.clear();
+    processedFloatData_.clear();
+    processedFloatDirty_ = true;
     rgbDisplayBuffer_.clear();
     imageItem_->clearImage();
     applyRoiPlotVisibility();
@@ -745,6 +797,26 @@ const QPushButton* ImageView::roiButton() const noexcept
     return ui_.roiBtn;
 }
 
+QPushButton* ImageView::menuButton() noexcept
+{
+    return ui_.menuBtn;
+}
+
+const QPushButton* ImageView::menuButton() const noexcept
+{
+    return ui_.menuBtn;
+}
+
+QWidget* ImageView::normGroup() noexcept
+{
+    return ui_.normGroup;
+}
+
+const QWidget* ImageView::normGroup() const noexcept
+{
+    return ui_.normGroup;
+}
+
 graphicsItems::ROI* ImageView::roi() noexcept
 {
     return roi_;
@@ -753,6 +825,16 @@ graphicsItems::ROI* ImageView::roi() noexcept
 const graphicsItems::ROI* ImageView::roi() const noexcept
 {
     return roi_;
+}
+
+graphicsItems::ROI* ImageView::normRoi() noexcept
+{
+    return normRoi_;
+}
+
+const graphicsItems::ROI* ImageView::normRoi() const noexcept
+{
+    return normRoi_;
 }
 
 std::size_t ImageView::roiCurveCount() const noexcept
@@ -922,6 +1004,8 @@ void ImageView::roiChanged()
 
     if (dataKind_ == DataKind::FloatRank4TimeRgb || dataKind_ == DataKind::DoubleRank4TimeRgb) {
         updateRoiCurvesFromTimeRgb();
+    } else if (dataKind_ == DataKind::FloatRank3 && isFrameStackShape(shape_)) {
+        updateRoiCurvesFromFrameStack();
     }
 }
 
@@ -1079,7 +1163,12 @@ void ImageView::updateDisplayedFrame(bool autoLevels, bool autoRange)
         imageItem_->setImage(contiguousRank2(floatData_, shape_));
         break;
     case DataKind::FloatRank3:
-        imageItem_->setImage(frameView(floatData_, shape_, currentIndex_));
+        if (isFrameStackShape(shape_)) {
+            refreshProcessedImage();
+            imageItem_->setImage(frameView(processedFloatData_, shape_, currentIndex_));
+        } else {
+            imageItem_->setImage(frameView(floatData_, shape_, currentIndex_));
+        }
         break;
     case DataKind::FloatRank4TimeRgb:
         updateDisplayedRgbFrame(autoLevels, autoRange);
@@ -1249,6 +1338,10 @@ std::optional<ImageLevelRange> ImageView::computeAutoLevels() const
     case DataKind::FloatRank2:
         return autoLevelsFor(floatData_);
     case DataKind::FloatRank3:
+        if (isFrameStackShape(shape_) && normalizationEnabled()) {
+            refreshProcessedImage();
+            return autoLevelsFor(processedFloatData_);
+        }
         return autoLevelsFor(floatData_);
     case DataKind::FloatRank4TimeRgb:
         return autoLevelsFor(floatData_);
@@ -1258,6 +1351,341 @@ std::optional<ImageLevelRange> ImageView::computeAutoLevels() const
         return std::nullopt;
     }
     return std::nullopt;
+}
+
+void ImageView::buildMenu()
+{
+    if (menu_ != nullptr) {
+        return;
+    }
+
+    menu_ = new QMenu(this);
+    normAction_ = menu_->addAction(tr("Normalization"));
+    normAction_->setCheckable(true);
+    connect(normAction_, &QAction::toggled, this, &ImageView::normToggled);
+    exportAction_ = menu_->addAction(tr("Export"));
+    connect(exportAction_, &QAction::triggered, this, &ImageView::exportClicked);
+}
+
+QMenu* ImageView::menu()
+{
+    if (menu_ == nullptr) {
+        buildMenu();
+    }
+    return menu_;
+}
+
+const QMenu* ImageView::menu() const
+{
+    return menu_;
+}
+
+void ImageView::menuClicked()
+{
+    if (menu_ == nullptr) {
+        buildMenu();
+    }
+    menu_->popup(mapToGlobal(ui_.menuBtn != nullptr ? ui_.menuBtn->rect().bottomLeft() : QPoint()));
+}
+
+void ImageView::normToggled(bool enabled)
+{
+    if (ui_.normGroup != nullptr) {
+        ui_.normGroup->setVisible(enabled);
+    }
+    if (normRoi_ != nullptr) {
+        normRoi_->setVisible(enabled && ui_.normROICheck != nullptr && ui_.normROICheck->isChecked());
+    }
+    if (normRgn_ != nullptr) {
+        normRgn_->setVisible(enabled && ui_.normTimeRangeCheck != nullptr && ui_.normTimeRangeCheck->isChecked());
+    }
+}
+
+void ImageView::normRadioChanged()
+{
+    invalidateProcessedImage();
+    updateDisplayedFrame(true, false);
+    roiChanged();
+}
+
+void ImageView::updateNorm()
+{
+    if (normRgn_ != nullptr) {
+        normRgn_->setVisible(ui_.normTimeRangeCheck != nullptr && ui_.normTimeRangeCheck->isChecked()
+                              && ui_.normGroup != nullptr && ui_.normGroup->isVisible());
+    }
+    if (normRoi_ != nullptr) {
+        normRoi_->setVisible(ui_.normROICheck != nullptr && ui_.normROICheck->isChecked()
+                             && ui_.normGroup != nullptr && ui_.normGroup->isVisible());
+    }
+
+    if (ui_.normOffRadio != nullptr && ui_.normOffRadio->isChecked()) {
+        return;
+    }
+
+    invalidateProcessedImage();
+    updateDisplayedFrame(true, false);
+    roiChanged();
+}
+
+bool ImageView::normalizationEnabled() const noexcept
+{
+    return ui_.normOffRadio == nullptr || !ui_.normOffRadio->isChecked();
+}
+
+void ImageView::invalidateProcessedImage()
+{
+    processedFloatDirty_ = true;
+}
+
+const std::vector<float>& ImageView::processedFloatData() const
+{
+    refreshProcessedImage();
+    return processedFloatData_;
+}
+
+core::ArrayView<const float, 3> ImageView::processedFloatStackView() const
+{
+    refreshProcessedImage();
+    return core::ArrayView<const float, 3>(processedFloatData_.data(), {shape_[0], shape_[1], shape_[2]});
+}
+
+void ImageView::refreshProcessedImage() const
+{
+    if (!processedFloatDirty_ || dataKind_ != DataKind::FloatRank3 || !isFrameStackShape(shape_)) {
+        return;
+    }
+
+    auto* self = const_cast<ImageView*>(this);
+    self->normalizeFloatStack(processedFloatData_);
+    processedFloatDirty_ = false;
+}
+
+void ImageView::normalizeFloatStack(std::vector<float>& output) const
+{
+    output = floatData_;
+    if (!normalizationEnabled() || dataKind_ != DataKind::FloatRank3 || !isFrameStackShape(shape_)) {
+        return;
+    }
+
+    const std::size_t frames = shape_[0];
+    const std::size_t height = shape_[1];
+    const std::size_t width = shape_[2];
+    const bool divide = ui_.normDivideRadio != nullptr && ui_.normDivideRadio->isChecked();
+
+    auto applyFactor = [&](std::size_t frame, double factor) {
+        if (factor == 0.0) {
+            return;
+        }
+        for (std::size_t axis1 = 0; axis1 < height; ++axis1) {
+            for (std::size_t axis2 = 0; axis2 < width; ++axis2) {
+                const std::size_t index = (frame * height + axis1) * width + axis2;
+                if (divide) {
+                    output[index] = static_cast<float>(output[index] / factor);
+                } else {
+                    output[index] = static_cast<float>(output[index] - factor);
+                }
+            }
+        }
+    };
+
+    if (ui_.normTimeRangeCheck != nullptr && ui_.normTimeRangeCheck->isChecked() && normRgn_ != nullptr) {
+        const auto region = normRgn_->getRegion();
+        const auto [startIndex, startTime] = timeIndexFor(region.first);
+        const auto [endIndex, endTime] = timeIndexFor(region.second);
+        Q_UNUSED(startTime);
+        Q_UNUSED(endTime);
+        const std::size_t start = static_cast<std::size_t>(std::clamp(startIndex, 0, static_cast<int>(frames) - 1));
+        const std::size_t end = static_cast<std::size_t>(std::clamp(endIndex, 0, static_cast<int>(frames) - 1));
+        std::vector<double> mean(height * width, 0.0);
+        const std::size_t count = end >= start ? end - start + 1 : 0;
+        if (count > 0) {
+            for (std::size_t frame = start; frame <= end; ++frame) {
+                for (std::size_t pixel = 0; pixel < height * width; ++pixel) {
+                    mean[pixel] += static_cast<double>(floatData_[frame * height * width + pixel]);
+                }
+            }
+            for (double& value : mean) {
+                value /= static_cast<double>(count);
+            }
+            for (std::size_t frame = 0; frame < frames; ++frame) {
+                for (std::size_t axis1 = 0; axis1 < height; ++axis1) {
+                    for (std::size_t axis2 = 0; axis2 < width; ++axis2) {
+                        const std::size_t pixel = axis1 * width + axis2;
+                        const std::size_t index = frame * height * width + pixel;
+                        const double factor = mean[pixel];
+                        if (divide) {
+                            if (factor != 0.0) {
+                                output[index] = static_cast<float>(output[index] / factor);
+                            }
+                        } else {
+                            output[index] = static_cast<float>(output[index] - factor);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (ui_.normFrameCheck != nullptr && ui_.normFrameCheck->isChecked()) {
+        for (std::size_t frame = 0; frame < frames; ++frame) {
+            double sum = 0.0;
+            for (std::size_t pixel = 0; pixel < height * width; ++pixel) {
+                sum += static_cast<double>(floatData_[frame * height * width + pixel]);
+            }
+            const double mean = sum / static_cast<double>(height * width);
+            applyFactor(frame, mean);
+        }
+    }
+
+    if (ui_.normROICheck != nullptr && ui_.normROICheck->isChecked() && normRoi_ != nullptr && imageItem_ != nullptr) {
+        for (std::size_t frame = 0; frame < frames; ++frame) {
+            std::vector<float> slice(height * width);
+            for (std::size_t axis1 = 0; axis1 < height; ++axis1) {
+                for (std::size_t axis2 = 0; axis2 < width; ++axis2) {
+                    slice[axis1 * width + axis2] = output[frame * height * width + axis1 * width + axis2];
+                }
+            }
+            const auto region = normRoi_->getArrayRegion(
+                core::ArrayView<const float, 2>(slice.data(), {height, width}), *imageItem_);
+            double sum = 0.0;
+            for (const double value : region.values) {
+                sum += value;
+            }
+            const double mean = region.values.empty() ? 0.0 : sum / static_cast<double>(region.values.size());
+            applyFactor(frame, mean);
+        }
+    }
+}
+
+double ImageView::normalizedSamplePixel(int frame, int row, int col) const
+{
+    if (dataKind_ != DataKind::FloatRank3 || !isFrameStackShape(shape_)) {
+        return 0.0;
+    }
+    refreshProcessedImage();
+    const std::size_t frameIndex = static_cast<std::size_t>(std::clamp(frame, 0, frameCount() - 1));
+    const std::size_t rowIndex = static_cast<std::size_t>(std::max(row, 0));
+    const std::size_t colIndex = static_cast<std::size_t>(std::max(col, 0));
+    if (rowIndex >= shape_[1] || colIndex >= shape_[2]) {
+        return 0.0;
+    }
+    const std::size_t index = (frameIndex * shape_[1] + rowIndex) * shape_[2] + colIndex;
+    return static_cast<double>(processedFloatData_[index]);
+}
+
+bool ImageView::saveCurrentImageItem(const QString& fileName) const
+{
+    if (imageItem_ == nullptr) {
+        return false;
+    }
+    if (imageItem_->renderRequired()) {
+        if (!const_cast<graphicsItems::ImageItem*>(imageItem_)->render()) {
+            return false;
+        }
+    }
+    return imageItem_->cachedImage().save(fileName);
+}
+
+void ImageView::exportImage(const QString& fileName)
+{
+    if (!hasImage() || imageItem_ == nullptr) {
+        return;
+    }
+
+    if (hasTimeAxis() && (dataKind_ == DataKind::FloatRank3 || dataKind_ == DataKind::FloatRank4TimeRgb
+                          || dataKind_ == DataKind::DoubleRank4TimeRgb)) {
+        const QFileInfo info(fileName);
+        const QString base = info.path() + QLatin1Char('/') + info.completeBaseName();
+        const QString ext = info.suffix().isEmpty() ? QStringLiteral(".png") : QStringLiteral(".") + info.suffix();
+        const int frames = frameCount();
+        const int digits = frames > 0 ? static_cast<int>(std::log10(static_cast<double>(frames))) + 1 : 1;
+        const int savedIndex = currentIndex_;
+
+        for (int frame = 0; frame < frames; ++frame) {
+            setCurrentIndex(frame);
+            const QString indexedName = QStringLiteral("%1%2%3").arg(base).arg(frame, digits, 10, QLatin1Char('0')).arg(ext);
+            saveCurrentImageItem(indexedName);
+        }
+        setCurrentIndex(savedIndex);
+        return;
+    }
+
+    saveCurrentImageItem(fileName);
+}
+
+void ImageView::exportClicked()
+{
+    const QString fileName = QFileDialog::getSaveFileName(this, tr("Export Image"));
+    if (fileName.isEmpty()) {
+        return;
+    }
+    exportImage(fileName);
+}
+
+void ImageView::updateRoiCurvesFromFrameStack()
+{
+    const std::size_t frames = shape_[0];
+    const std::size_t height = shape_[1];
+    const std::size_t width = shape_[2];
+    if (frames == 0 || height == 0 || width == 0) {
+        return;
+    }
+
+    refreshProcessedImage();
+    const std::vector<float>& source = normalizationEnabled() ? processedFloatData_ : floatData_;
+
+    if (xvals_.empty()) {
+        roiCurveXBuffer_.assign(frames, 0.0);
+        for (std::size_t frame = 0; frame < frames; ++frame) {
+            roiCurveXBuffer_[frame] = static_cast<double>(frame);
+        }
+    } else {
+        roiCurveXBuffer_.assign(xvals_.begin(), xvals_.end());
+    }
+
+    std::vector<double> curveY(frames, 0.0);
+    for (std::size_t frame = 0; frame < frames; ++frame) {
+        std::vector<float> slice(height * width);
+        for (std::size_t axis1 = 0; axis1 < height; ++axis1) {
+            for (std::size_t axis2 = 0; axis2 < width; ++axis2) {
+                slice[axis1 * width + axis2] = source[frame * height * width + axis1 * width + axis2];
+            }
+        }
+        const auto region = roi_->getArrayRegion(
+            core::ArrayView<const float, 2>(slice.data(), {height, width}), *imageItem_);
+        double sum = 0.0;
+        for (const double value : region.values) {
+            sum += value;
+        }
+        curveY[frame] = region.values.empty() ? 0.0 : sum / static_cast<double>(region.values.size());
+    }
+
+    while (roiCurves_.size() > 1) {
+        auto* curve = roiCurves_.back();
+        roiCurves_.pop_back();
+        if (curve != nullptr) {
+            roiPlot_->removeItem(curve);
+            delete curve;
+        }
+    }
+    while (roiCurves_.empty()) {
+        auto* curve = roiPlot_->plot(std::span<const double>{}, std::span<const double>{});
+        roiCurves_.push_back(curve);
+    }
+
+    auto* curve = roiCurves_.front();
+    if (curve != nullptr) {
+        curve->setData(roiCurveXBuffer_, curveY);
+        QPen pen(Qt::white);
+        pen.setWidthF(1.0);
+        curve->setPen(pen);
+        if (ui_.roiBtn != nullptr && ui_.roiBtn->isChecked()) {
+            curve->show();
+        } else {
+            curve->hide();
+        }
+    }
 }
 
 } // namespace cppqtgraph::imageview
