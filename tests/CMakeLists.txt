@@ -102,6 +102,17 @@ set_tests_properties(
 )
 
 add_test(
+    NAME cppqtgraph.oracle.P410.ImageViewRgbaHistogram
+    COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/probes/P410_imageview_rgba_histogram_oracle.py" --check
+)
+set_tests_properties(
+    cppqtgraph.oracle.P410.ImageViewRgbaHistogram
+    PROPERTIES
+        LABELS P410
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+add_test(
     NAME cppqtgraph.oracle.P2_09
     COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/oracle/scripts/generate_P2_09_widgetgroup_oracle.py" --check
 )
@@ -863,6 +874,18 @@ if(_cppqtgraph_has_graphicsitem)
             CPPQTGRAPH_P409_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P409/imageview_view_oracle.json"
     )
     set_tests_properties(cppqtgraph.widgets.ImageView.P409 PROPERTIES LABELS P409)
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_widgets_imageview_p410
+        widgets/test_ImageView_P410_rgba_histogram.cpp
+        cppqtgraph.widgets.ImageView.P410
+    )
+    set_target_properties(cppqtgraph_widgets_imageview_p410 PROPERTIES AUTOMOC ON)
+    target_link_libraries(cppqtgraph_widgets_imageview_p410 PRIVATE Qt6::Widgets)
+    target_compile_definitions(cppqtgraph_widgets_imageview_p410
+        PRIVATE
+            CPPQTGRAPH_P410_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P410/imageview_rgba_histogram_oracle.json"
+    )
+    set_tests_properties(cppqtgraph.widgets.ImageView.P410 PROPERTIES LABELS P410)
     cppqtgraph_add_cpp_test(
         cppqtgraph_widgets_scatterplotwidget_p5_08
         widgets/test_ScatterPlotWidget_P5_08.cpp

@@ -5,9 +5,11 @@
 
 #include "../../../include/cppqtgraph/imageview/ImageView.hpp"
 
+#include "../../../include/cppqtgraph/graphicsItems/AxisItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/HistogramLUTItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
 #include "../../../include/cppqtgraph/widgets/GraphicsView.hpp"
+#include "../../../include/cppqtgraph/widgets/HistogramLUTWidget.hpp"
 
 #include <QtCore/QRectF>
 #include <QtWidgets/QVBoxLayout>
@@ -149,7 +151,7 @@ template <typename T>
 
 } // namespace
 
-ImageView::ImageView(QWidget* parent, bool levelMode)
+ImageView::ImageView(QWidget* parent, const QString& levelMode)
     : QWidget(parent)
     , levelMode_(levelMode)
 {
@@ -169,12 +171,14 @@ ImageView::ImageView(QWidget* parent, bool levelMode)
     viewBox_->setAspectLocked(true);
     viewBox_->invertY(true);
 
-    if (levelMode_) {
-        histogram_ = new graphicsItems::HistogramLUTItem(imageItem_);
-        ui_.histogramContainer->show();
-    } else {
-        ui_.histogramContainer->hide();
-    }
+    auto* histogramLayout = new QVBoxLayout(ui_.histogramContainer);
+    histogramLayout->setContentsMargins(0, 0, 0, 0);
+    histogramLayout->setSpacing(0);
+    histogramWidget_ = new widgets::HistogramLUTWidget(ui_.histogramContainer, imageItem_, true, levelMode_);
+    histogramLayout->addWidget(histogramWidget_);
+    histogram_ = histogramWidget_->item();
+    ui_.histogramContainer->setMinimumWidth(135);
+    ui_.histogramContainer->show();
 }
 
 ImageView::~ImageView() = default;
@@ -436,6 +440,33 @@ const graphicsItems::HistogramLUTItem* ImageView::getHistogram() const noexcept
     return histogram_;
 }
 
+widgets::HistogramLUTWidget* ImageView::getHistogramWidget() noexcept
+{
+    return histogramWidget_;
+}
+
+const widgets::HistogramLUTWidget* ImageView::getHistogramWidget() const noexcept
+{
+    return histogramWidget_;
+}
+
+void ImageView::setHistogramLabel(const QString& text)
+{
+    if (histogram_ == nullptr || histogram_->axis() == nullptr) {
+        return;
+    }
+    histogram_->axis()->setLabel(text);
+    if (text.isEmpty()) {
+        histogram_->axis()->showLabel(false);
+    }
+    if (histogramWidget_ != nullptr) {
+        histogramWidget_->setMinimumWidth(135);
+    }
+    if (ui_.histogramContainer != nullptr) {
+        ui_.histogramContainer->setMinimumWidth(135);
+    }
+}
+
 bool ImageView::hasImage() const noexcept
 {
     return dataKind_ != DataKind::None;
@@ -495,7 +526,7 @@ void ImageView::updateDisplayedFrame(bool autoLevels, bool autoRange)
     }
 
     if (histogram_ != nullptr) {
-        histogram_->imageChanged(autoLevels, autoRange);
+        histogram_->imageChanged(false, autoRange);
     }
 }
 
@@ -524,16 +555,110 @@ void ImageView::updateDisplayedRgbFrame(bool autoLevels, bool autoRange)
     }
 
     if (histogram_ != nullptr) {
-        histogram_->imageChanged(autoLevels, autoRange);
+        histogram_->imageChanged(false, autoRange);
     }
 }
 
 void ImageView::applyAutoLevels()
 {
+    if (levelMode_ == QStringLiteral("rgba")) {
+        const std::vector<ImageLevelRange> channelLevels = computeRgbaAutoLevels();
+        if (!channelLevels.empty()) {
+            syncRgbaHistogramLevels(channelLevels);
+            imageItem_->setChannelLevels(channelLevels);
+        }
+        return;
+    }
+
     const std::optional<ImageLevelRange> levels = computeAutoLevels();
     if (levels.has_value()) {
         imageItem_->setLevels(*levels);
     }
+}
+
+void ImageView::syncRgbaHistogramLevels(const std::vector<ImageLevelRange>& channelLevels)
+{
+    if (histogram_ == nullptr) {
+        return;
+    }
+    std::vector<std::pair<double, double>> levels;
+    levels.reserve(channelLevels.size());
+    for (const auto& range : channelLevels) {
+        levels.emplace_back(range.minimum, range.maximum);
+    }
+    histogram_->setChannelLevels(levels);
+}
+
+std::vector<ImageLevelRange> ImageView::computeRgbaAutoLevels() const
+{
+    std::vector<ImageLevelRange> levels;
+    switch (dataKind_) {
+    case DataKind::FloatRank4TimeRgb: {
+        const std::size_t channels = shape_[3];
+        levels.resize(channels);
+        for (std::size_t channel = 0; channel < channels; ++channel) {
+            double minimum = std::numeric_limits<double>::infinity();
+            double maximum = -std::numeric_limits<double>::infinity();
+            for (std::size_t frame = 0; frame < shape_[0]; ++frame) {
+                for (std::size_t axis1 = 0; axis1 < shape_[1]; ++axis1) {
+                    for (std::size_t axis2 = 0; axis2 < shape_[2]; ++axis2) {
+                        const std::size_t index = ((frame * shape_[1] + axis1) * shape_[2] + axis2) * channels + channel;
+                        const double value = static_cast<double>(floatData_[index]);
+                        minimum = std::min(minimum, value);
+                        maximum = std::max(maximum, value);
+                    }
+                }
+            }
+            levels[channel] = ImageLevelRange{minimum, maximum};
+        }
+        break;
+    }
+    case DataKind::DoubleRank4TimeRgb: {
+        const std::size_t channels = shape_[3];
+        levels.resize(channels);
+        for (std::size_t channel = 0; channel < channels; ++channel) {
+            double minimum = std::numeric_limits<double>::infinity();
+            double maximum = -std::numeric_limits<double>::infinity();
+            for (std::size_t frame = 0; frame < shape_[0]; ++frame) {
+                for (std::size_t axis1 = 0; axis1 < shape_[1]; ++axis1) {
+                    for (std::size_t axis2 = 0; axis2 < shape_[2]; ++axis2) {
+                        const std::size_t index = ((frame * shape_[1] + axis1) * shape_[2] + axis2) * channels + channel;
+                        const double value = doubleData_[index];
+                        minimum = std::min(minimum, value);
+                        maximum = std::max(maximum, value);
+                    }
+                }
+            }
+            levels[channel] = ImageLevelRange{minimum, maximum};
+        }
+        break;
+    }
+    case DataKind::UInt8Rank3:
+    case DataKind::UInt16Rank3: {
+        const std::vector<std::uint8_t>* uint8 = dataKind_ == DataKind::UInt8Rank3 ? &uint8Data_ : nullptr;
+        const std::vector<std::uint16_t>* uint16 = dataKind_ == DataKind::UInt16Rank3 ? &uint16Data_ : nullptr;
+        const std::size_t channels = shape_[2];
+        levels.resize(channels);
+        for (std::size_t channel = 0; channel < channels; ++channel) {
+            double minimum = std::numeric_limits<double>::infinity();
+            double maximum = -std::numeric_limits<double>::infinity();
+            for (std::size_t row = 0; row < shape_[0]; ++row) {
+                for (std::size_t col = 0; col < shape_[1]; ++col) {
+                    const std::size_t index = (row * shape_[1] + col) * channels + channel;
+                    const double value = uint8 != nullptr ? static_cast<double>((*uint8)[index])
+                                                          : static_cast<double>((*uint16)[index]);
+                    minimum = std::min(minimum, value);
+                    maximum = std::max(maximum, value);
+                }
+            }
+            levels[channel] = ImageLevelRange{minimum, maximum};
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    return levels;
 }
 
 std::optional<ImageLevelRange> ImageView::computeAutoLevels() const

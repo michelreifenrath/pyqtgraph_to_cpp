@@ -32,6 +32,7 @@ struct MakeQImageOptions {
 
 struct TryMakeQImageOptions {
     std::optional<ImageLevelRange> levels = std::nullopt;
+    std::optional<std::vector<ImageLevelRange>> channelLevels = std::nullopt;
     std::optional<ImageLookupTable> lut = std::nullopt;
 };
 

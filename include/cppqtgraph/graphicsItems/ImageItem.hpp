@@ -56,7 +56,11 @@ public:
     void clearCompositionMode();
 
     void setLevels(std::optional<ImageLevelRange> levels);
+    void setChannelLevels(const std::vector<ImageLevelRange>& levels);
+    void clearChannelLevels();
     [[nodiscard]] std::optional<ImageLevelRange> getLevels() const noexcept;
+    [[nodiscard]] std::optional<std::vector<ImageLevelRange>> getChannelLevels() const noexcept;
+    [[nodiscard]] std::pair<std::vector<double>, std::vector<double>> getHistogram(int channel = -1) const;
     void setLookupTable(ImageLookupTable lut);
     void clearLookupTable();
     [[nodiscard]] std::optional<ImageLookupTable> lookupTable() const noexcept;
@@ -101,6 +105,7 @@ private:
     std::vector<std::uint16_t> uint16Data_;
     std::vector<float> floatData_;
     std::optional<ImageLevelRange> levels_;
+    std::optional<std::vector<ImageLevelRange>> channelLevels_;
     std::vector<std::uint8_t> lookupTableData_;
     std::size_t lookupTableRows_ = 0;
     std::size_t lookupTableChannels_ = 0;

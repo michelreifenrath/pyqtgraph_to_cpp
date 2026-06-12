@@ -457,7 +457,7 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
     if (!hasTryMakeData(imageData)) {
         return std::nullopt;
     }
-    if (!options.levels.has_value() && !options.lut.has_value()) {
+    if (!options.levels.has_value() && !options.channelLevels.has_value() && !options.lut.has_value()) {
         return tryMakeQImage(imageData);
     }
     if (options.lut.has_value()) {
@@ -472,7 +472,6 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
     const int width = static_cast<int>(shape[1]);
     const int height = static_cast<int>(shape[0]);
     QImage image = allocateQImage(width, height, QImage::Format_RGB888);
-    const ImageLevelRange levels = *options.levels;
 
     for (int y = 0; y < height; ++y) {
         uchar* row = image.scanLine(y);
@@ -480,9 +479,19 @@ std::optional<QImage> tryMakeQImage(core::ArrayView<const std::uint8_t, 3> image
             const std::size_t rowIndex = static_cast<std::size_t>(y);
             const std::size_t colIndex = static_cast<std::size_t>(x);
             const std::size_t base = static_cast<std::size_t>(x) * 3;
-            row[base + 0] = scaledGray(imageData(rowIndex, colIndex, 0), levels);
-            row[base + 1] = scaledGray(imageData(rowIndex, colIndex, 1), levels);
-            row[base + 2] = scaledGray(imageData(rowIndex, colIndex, 2), levels);
+            if (options.channelLevels.has_value() && options.channelLevels->size() >= 3) {
+                const auto& channelLevels = *options.channelLevels;
+                row[base + 0] = scaledGray(imageData(rowIndex, colIndex, 0), channelLevels[0]);
+                row[base + 1] = scaledGray(imageData(rowIndex, colIndex, 1), channelLevels[1]);
+                row[base + 2] = scaledGray(imageData(rowIndex, colIndex, 2), channelLevels[2]);
+            } else if (options.levels.has_value()) {
+                const ImageLevelRange levels = *options.levels;
+                row[base + 0] = scaledGray(imageData(rowIndex, colIndex, 0), levels);
+                row[base + 1] = scaledGray(imageData(rowIndex, colIndex, 1), levels);
+                row[base + 2] = scaledGray(imageData(rowIndex, colIndex, 2), levels);
+            } else {
+                return std::nullopt;
+            }
         }
     }
 
