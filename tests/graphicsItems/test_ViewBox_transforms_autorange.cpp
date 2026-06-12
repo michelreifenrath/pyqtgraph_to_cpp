@@ -1,4 +1,6 @@
 #include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
+#include <cppqtgraph/graphicsItems/LinearRegionItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
 #include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QObject>
@@ -13,11 +15,13 @@
 #include <QtWidgets/QGraphicsRectItem>
 #include <QtWidgets/QGraphicsScene>
 
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string_view>
+#include <vector>
 
 namespace {
 
@@ -451,6 +455,57 @@ bool testSceneRenderRefreshesPendingAutoRange()
     return true;
 }
 
+bool testAutorangeIgnoresViewRelativeUiItems()
+{
+    QGraphicsScene scene;
+    ViewBox viewBox;
+    scene.addItem(&viewBox);
+    viewBox.resize(400.0, 300.0);
+    viewBox.setDefaultPadding(0.0);
+    viewBox.setRange(QRectF(0.0, 0.0, 1.0, 1.0), 0.0, true, false);
+
+    const std::vector<double> x{0.0, 1.0, 2.0, 3.0};
+    const std::vector<double> y{-1.0, 0.0, 2.0, 1.0};
+    auto curve = std::make_unique<cppqtgraph::graphicsItems::PlotCurveItem>();
+    curve->setData(x, y);
+    viewBox.addItem(curve.get());
+
+    auto region = std::make_unique<cppqtgraph::graphicsItems::LinearRegionItem>(std::make_pair(1.0, 2.0));
+    viewBox.addItem(region.get());
+
+    const QRectF curveBounds = curve->boundingRect();
+    viewBox.autoRange(0.0);
+    CHECK(checkRange(viewBox.viewRange(),
+        curveBounds.left(),
+        curveBounds.right(),
+        curveBounds.top(),
+        curveBounds.bottom()));
+
+    const auto bounds = viewBox.childrenBounds();
+    CHECK(bounds[ViewBox::XAxis].has_value());
+    CHECK(bounds[ViewBox::YAxis].has_value());
+    CHECK(nearlyEqual((*bounds[ViewBox::XAxis])[0], curveBounds.left()));
+    CHECK(nearlyEqual((*bounds[ViewBox::XAxis])[1], curveBounds.right()));
+    CHECK(nearlyEqual((*bounds[ViewBox::YAxis])[0], curveBounds.top()));
+    CHECK(nearlyEqual((*bounds[ViewBox::YAxis])[1], curveBounds.bottom()));
+
+    int rangeChanges = 0;
+    const auto connection = QObject::connect(&viewBox, &ViewBox::sigRangeChanged, &viewBox,
+        [&rangeChanges](ViewBox*, ViewBox::Range2D, std::array<bool, 2>) {
+            ++rangeChanges;
+        });
+    QApplication::processEvents();
+    const int changesAfterSettle = rangeChanges;
+    QApplication::processEvents();
+    CHECK(rangeChanges == changesAfterSettle);
+    QObject::disconnect(connection);
+
+    viewBox.removeItem(region.get());
+    viewBox.removeItem(curve.get());
+    scene.removeItem(&viewBox);
+    return true;
+}
+
 bool testSceneRenderAppliesPendingChildTransform()
 {
     QGraphicsScene scene;
@@ -513,6 +568,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testSceneRenderRefreshesPendingAutoRange()) {
+        return 1;
+    }
+    if (!testAutorangeIgnoresViewRelativeUiItems()) {
         return 1;
     }
     if (!testSceneRenderAppliesPendingChildTransform()) {

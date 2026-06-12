@@ -19,6 +19,15 @@ GraphicsObject::GraphicsObject(QGraphicsItem* parent)
 
 GraphicsObject::~GraphicsObject() = default;
 
+std::optional<QRectF> GraphicsObject::autoRangeBoundsRect() const
+{
+    const QRectF rect = boundingRect();
+    if (rect.isNull()) {
+        return std::nullopt;
+    }
+    return rect;
+}
+
 QVariant GraphicsObject::itemChange(GraphicsItemChange change, const QVariant& value)
 {
     switch (change) {

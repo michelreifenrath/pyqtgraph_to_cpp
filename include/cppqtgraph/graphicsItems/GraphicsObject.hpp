@@ -7,7 +7,11 @@
 
 #include "GraphicsItem.hpp"
 
+#include <QtCore/QRectF>
+
 #include <QtWidgets/QGraphicsObject>
+
+#include <optional>
 
 class QGraphicsItem;
 
@@ -22,6 +26,8 @@ public:
     GraphicsObject& operator=(const GraphicsObject&) = delete;
     GraphicsObject(GraphicsObject&&) = delete;
     GraphicsObject& operator=(GraphicsObject&&) = delete;
+
+    [[nodiscard]] virtual std::optional<QRectF> autoRangeBoundsRect() const;
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;

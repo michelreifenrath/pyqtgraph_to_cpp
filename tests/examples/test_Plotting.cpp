@@ -3,6 +3,8 @@
 
 #include <cppqtgraph/graphicsItems/AxisItem.hpp>
 
+#include <QtCore/QObject>
+#include <QtCore/QRectF>
 #include <QtCore/QSize>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QApplication>
@@ -154,6 +156,49 @@ bool testPlottingTimer(cppqtgraph::examples::PlottingExample& example)
     return true;
 }
 
+bool testPlottingP8AutorangeRange(cppqtgraph::examples::PlottingExample& example)
+{
+    example.widget->show();
+    QApplication::processEvents();
+
+    const auto* p8 = example.plots[7];
+    const auto viewRange = p8->viewRange();
+    const auto xRange = viewRange[cppqtgraph::graphicsItems::ViewBox::XAxis];
+    const auto yRange = viewRange[cppqtgraph::graphicsItems::ViewBox::YAxis];
+
+    CHECK(std::isfinite(xRange[0]));
+    CHECK(std::isfinite(xRange[1]));
+    CHECK(std::isfinite(yRange[0]));
+    CHECK(std::isfinite(yRange[1]));
+    CHECK(xRange[1] > xRange[0]);
+    CHECK(yRange[1] > yRange[0]);
+    CHECK(yRange[1] - yRange[0] < 5.0);
+
+    const QRectF curveBounds = example.p8Curve->boundingRect();
+    const auto childrenBounds = p8->getViewBox()->childrenBounds();
+    CHECK(childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis].has_value());
+    CHECK(childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis].has_value());
+    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis])[0], curveBounds.left(), 1.0e-6));
+    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis])[1], curveBounds.right(), 1.0e-6));
+    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis])[0], curveBounds.top(), 1.0e-6));
+    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis])[1], curveBounds.bottom(), 1.0e-6));
+
+    int rangeChanges = 0;
+    const auto connection = QObject::connect(p8->getViewBox(),
+        &cppqtgraph::graphicsItems::ViewBox::sigRangeChanged,
+        p8->getViewBox(),
+        [&rangeChanges](cppqtgraph::graphicsItems::ViewBox*, cppqtgraph::graphicsItems::ViewBox::Range2D, std::array<bool, 2>) {
+            ++rangeChanges;
+        });
+    QApplication::processEvents();
+    const int changesAfterSettle = rangeChanges;
+    QApplication::processEvents();
+    CHECK(rangeChanges == changesAfterSettle);
+    QObject::disconnect(connection);
+
+    return true;
+}
+
 bool testPlottingRegionZoomLinkage(cppqtgraph::examples::PlottingExample& example)
 {
     const auto p9Range = example.plots[8]->viewRange()[cppqtgraph::graphicsItems::ViewBox::XAxis];
@@ -215,6 +260,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPlottingTimer(example)) {
+        return 1;
+    }
+    if (!testPlottingP8AutorangeRange(example)) {
         return 1;
     }
     if (!testPlottingRegionZoomLinkage(example)) {
