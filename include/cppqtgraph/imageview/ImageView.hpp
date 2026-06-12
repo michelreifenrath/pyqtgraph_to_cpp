@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace cppqtgraph::graphicsItems {
@@ -48,10 +49,19 @@ public:
     void setImage(core::ArrayView<const std::uint16_t, 3> image, bool autoLevels = false, bool autoRange = true);
     void setImage(core::ArrayView<const float, 2> image, bool autoLevels = false, bool autoRange = true);
     void setImage(core::ArrayView<const float, 3> image, bool autoLevels = false, bool autoRange = true);
+    void setImage(core::ArrayView<const float, 4> image,
+                  core::ArrayView<const double, 1> xvals = {},
+                  bool autoLevels = false,
+                  bool autoRange = true);
+    void setImage(core::ArrayView<const double, 4> image,
+                  core::ArrayView<const double, 1> xvals = {},
+                  bool autoLevels = false,
+                  bool autoRange = true);
     void clearImage();
 
     void setCurrentIndex(int index);
     [[nodiscard]] int currentIndex() const noexcept;
+    [[nodiscard]] std::span<const double> xValues() const noexcept;
 
     void setLevels(std::optional<ImageLevelRange> levels);
     void autoLevels();
@@ -81,6 +91,8 @@ private:
         UInt16Rank3,
         FloatRank2,
         FloatRank3,
+        FloatRank4TimeRgb,
+        DoubleRank4TimeRgb,
     };
 
     template <typename T, std::size_t Rank>
@@ -90,7 +102,16 @@ private:
                       bool autoLevels,
                       bool autoRange);
 
+    template <typename T>
+    void setImageTimeRgbImpl(core::ArrayView<const T, 4> image,
+                             core::ArrayView<const double, 1> xvals,
+                             DataKind kind,
+                             std::vector<T>& destination,
+                             bool autoLevels,
+                             bool autoRange);
+
     void updateDisplayedFrame(bool autoLevels, bool autoRange);
+    void updateDisplayedRgbFrame(bool autoLevels, bool autoRange);
     void applyAutoLevels();
     [[nodiscard]] std::optional<ImageLevelRange> computeAutoLevels() const;
 
@@ -98,10 +119,13 @@ private:
     bool levelMode_ = false;
     DataKind dataKind_ = DataKind::None;
     int currentIndex_ = 0;
-    std::array<std::size_t, 3> shape_{};
+    std::array<std::size_t, 4> shape_{};
     std::vector<std::uint8_t> uint8Data_;
     std::vector<std::uint16_t> uint16Data_;
     std::vector<float> floatData_;
+    std::vector<double> doubleData_;
+    std::vector<double> xvals_;
+    std::vector<std::uint8_t> rgbDisplayBuffer_;
     graphicsItems::ImageItem::AxisOrder axisOrder_ = graphicsItems::ImageItem::AxisOrder::ColMajor;
 
     widgets::GraphicsView* graphicsView_ = nullptr;
