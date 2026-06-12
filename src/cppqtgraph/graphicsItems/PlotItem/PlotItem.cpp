@@ -1001,6 +1001,10 @@ void PlotItem::updateLogMode()
         }
     }
     if (initialized_ && vb_ != nullptr) {
+        const auto autoRange = vb_->autoRangeEnabled();
+        if (autoRange[ViewBox::XAxis] && autoRange[ViewBox::YAxis]) {
+            vb_->enableAutoRange(ViewBox::XYAxes, false);
+        }
         vb_->enableAutoRange(ViewBox::XYAxes, true);
         syncAxisRanges();
     }

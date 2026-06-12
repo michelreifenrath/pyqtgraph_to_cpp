@@ -244,8 +244,6 @@ bool testPlottingP5LogMappedAutorangeAndRender(cppqtgraph::examples::PlottingExa
 
     example.widget->show();
     QApplication::processEvents();
-    example.plots[4]->autoRange();
-    QApplication::processEvents();
 
     auto* p5 = example.plots[4];
     const auto viewRange = p5->viewRange();
