@@ -7,6 +7,7 @@
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
+#include <QtWidgets/QPushButton>
 
 #include <cmath>
 #include <cstddef>
@@ -71,6 +72,8 @@ ImageViewExample createImageViewExample()
     imageView->setImage(core::ArrayView<const float, 4>(data.data(), {kFrames, kHeight, kWidth, kChannels}),
                         core::ArrayView<const double, 1>(xvals.data(), {xvals.size()}),
                         true);
+    imageView->roiButton()->setChecked(true);
+    imageView->roiClicked();
 
     return {.window = std::move(window), .imageView = imageView};
 }

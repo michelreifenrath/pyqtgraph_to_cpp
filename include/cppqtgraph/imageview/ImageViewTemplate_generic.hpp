@@ -6,6 +6,7 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 class QHBoxLayout;
+class QPushButton;
 class QSplitter;
 class QVBoxLayout;
 class QWidget;
@@ -18,6 +19,7 @@ public:
 
     QWidget* graphicsContainer = nullptr;
     QWidget* histogramContainer = nullptr;
+    QPushButton* roiBtn = nullptr;
     QWidget* roiPlotContainer = nullptr;
     QSplitter* splitter = nullptr;
     QHBoxLayout* horizontalLayout = nullptr;

@@ -14,6 +14,8 @@
 #include <QtCore/QTimer>
 #include <QtWidgets/QWidget>
 
+class QPushButton;
+
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -28,6 +30,8 @@
 namespace cppqtgraph::graphicsItems {
 class HistogramLUTItem;
 class InfiniteLine;
+class PlotCurveItem;
+class ROI;
 class ViewBox;
 } // namespace cppqtgraph::graphicsItems
 
@@ -104,6 +108,17 @@ public:
     [[nodiscard]] const graphicsItems::InfiniteLine* timeLine() const noexcept;
     [[nodiscard]] bool discreteTimeLine() const noexcept;
 
+    [[nodiscard]] QPushButton* roiButton() noexcept;
+    [[nodiscard]] const QPushButton* roiButton() const noexcept;
+    [[nodiscard]] graphicsItems::ROI* roi() noexcept;
+    [[nodiscard]] const graphicsItems::ROI* roi() const noexcept;
+    [[nodiscard]] std::size_t roiCurveCount() const noexcept;
+    [[nodiscard]] graphicsItems::PlotCurveItem* roiCurve(std::size_t index) noexcept;
+    [[nodiscard]] const graphicsItems::PlotCurveItem* roiCurve(std::size_t index) const noexcept;
+
+public slots:
+    void roiClicked();
+
 signals:
     void sigTimeChanged(int index, double time);
 
@@ -114,6 +129,7 @@ protected:
 private slots:
     void timeLineChanged();
     void playbackTimeout();
+    void roiChanged();
 
 private:
     enum class DataKind {
@@ -153,6 +169,8 @@ private:
     [[nodiscard]] int frameCount() const noexcept;
     [[nodiscard]] std::pair<int, double> timeIndexFor(double time) const;
     void syncTimelineBounds();
+    void applyRoiPlotVisibility();
+    void updateRoiCurvesFromTimeRgb();
     void togglePause();
     void jumpFrames(int frameDelta);
     void evalKeyState();
@@ -181,6 +199,10 @@ private:
     graphicsItems::HistogramLUTItem* histogram_ = nullptr;
     widgets::PlotWidget* roiPlot_ = nullptr;
     graphicsItems::InfiniteLine* timeLine_ = nullptr;
+    graphicsItems::ROI* roi_ = nullptr;
+    std::vector<graphicsItems::PlotCurveItem*> roiCurves_;
+    std::vector<double> roiCurveXBuffer_;
+    std::vector<std::vector<double>> roiCurveYBuffers_;
 
     QTimer playTimer_;
     double playRate_ = 0.0;

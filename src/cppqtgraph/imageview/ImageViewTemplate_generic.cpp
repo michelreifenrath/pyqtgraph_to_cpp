@@ -6,6 +6,7 @@
 #include "../../../include/cppqtgraph/imageview/ImageViewTemplate_generic.hpp"
 
 #include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
@@ -35,12 +36,26 @@ void Ui_Form::setupUi(QWidget* form)
     graphicsContainer->setObjectName(QStringLiteral("graphicsContainer"));
     graphicsLayout->addWidget(graphicsContainer);
 
-    histogramContainer = new QWidget(topRow);
+    auto* histogramColumn = new QWidget(topRow);
+    histogramColumn->setObjectName(QStringLiteral("histogramColumn"));
+    auto* histogramColumnLayout = new QVBoxLayout(histogramColumn);
+    histogramColumnLayout->setContentsMargins(0, 0, 0, 0);
+    histogramColumnLayout->setSpacing(0);
+
+    histogramContainer = new QWidget(histogramColumn);
     histogramContainer->setObjectName(QStringLiteral("histogramContainer"));
     histogramContainer->setMinimumWidth(64);
 
+    roiBtn = new QPushButton(histogramColumn);
+    roiBtn->setObjectName(QStringLiteral("roiBtn"));
+    roiBtn->setCheckable(true);
+    roiBtn->setText(QStringLiteral("ROI"));
+
+    histogramColumnLayout->addWidget(histogramContainer, 1);
+    histogramColumnLayout->addWidget(roiBtn, 0);
+
     horizontalLayout->addLayout(graphicsLayout, 1);
-    horizontalLayout->addWidget(histogramContainer);
+    horizontalLayout->addWidget(histogramColumn);
 
     roiPlotContainer = new QWidget(splitter);
     roiPlotContainer->setObjectName(QStringLiteral("roiPlotContainer"));
