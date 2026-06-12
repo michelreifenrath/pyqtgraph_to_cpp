@@ -320,8 +320,12 @@ std::optional<QRectF> PlotDataItem::autoRangeBoundsRect() const
         return std::nullopt;
     }
 
-    const QRectF rect(xMin, yMin, xMax - xMin, yMax - yMin);
-    return rect.isNull() ? std::nullopt : std::optional<QRectF>{rect};
+    constexpr double kMinimumBoundsSpan = 1.0e-12;
+    const double width = std::max(xMax - xMin, kMinimumBoundsSpan);
+    const double height = std::max(yMax - yMin, kMinimumBoundsSpan);
+    const double xCenter = (xMin + xMax) * 0.5;
+    const double yCenter = (yMin + yMax) * 0.5;
+    return QRectF(xCenter - width * 0.5, yCenter - height * 0.5, width, height);
 }
 
 QRectF PlotDataItem::boundingRect() const

@@ -139,6 +139,28 @@ bool testLogModeBoundsUseMappedFiniteValues()
     return true;
 }
 
+bool testSingleValidLogPointReturnsFiniteBounds()
+{
+    cppqtgraph::graphicsItems::PlotDataItem item;
+    item.setData(std::vector<double>{1.0e-5}, std::vector<double>{1.1});
+    item.setPen(nullptr);
+    item.setSymbol(QStringLiteral("t"));
+    item.setLogMode(true, false);
+
+    const auto bounds = item.autoRangeBoundsRect();
+    CHECK(bounds.has_value());
+    CHECK(std::isfinite(bounds->left()));
+    CHECK(std::isfinite(bounds->right()));
+    CHECK(std::isfinite(bounds->top()));
+    CHECK(std::isfinite(bounds->bottom()));
+    CHECK(bounds->width() > 0.0);
+    CHECK(bounds->height() > 0.0);
+    CHECK(nearlyEqual(bounds->center().x(), std::log10(1.0e-5)));
+    CHECK(nearlyEqual(bounds->center().y(), 1.1));
+
+    return true;
+}
+
 bool testSetDataAfterLogModeRecomputesMappedDisplay()
 {
     cppqtgraph::graphicsItems::PlotDataItem item;
@@ -169,6 +191,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testLogModeBoundsUseMappedFiniteValues()) {
+        return 1;
+    }
+    if (!testSingleValidLogPointReturnsFiniteBounds()) {
         return 1;
     }
     if (!testSetDataAfterLogModeRecomputesMappedDisplay()) {

@@ -85,6 +85,29 @@ bool testPlotItemPropagatesLogModeToLaterAddedPlotDataItem()
     return true;
 }
 
+bool testPlotItemAutorangesLaterAddedItemWithMappedLogBounds()
+{
+    cppqtgraph::graphicsItems::PlotItem plot;
+    plot.setLogMode(true, false);
+
+    auto data = std::make_unique<cppqtgraph::graphicsItems::PlotDataItem>(
+        std::vector<double>{1.0e-5, 1.0e-4},
+        std::vector<double>{1.1, 1.2});
+    data->setPen(nullptr);
+    data->setSymbol(QStringLiteral("t"));
+    plot.addItem(data.get());
+
+    const auto viewRange = plot.viewRange();
+    const auto xRange = viewRange[cppqtgraph::graphicsItems::ViewBox::XAxis];
+    CHECK(xRange[1] - xRange[0] > 0.5);
+    CHECK(xRange[0] < std::log10(1.0e-5));
+    CHECK(xRange[1] > std::log10(1.0e-4));
+    CHECK(xRange[0] < -1.0);
+
+    plot.removeItem(data.get());
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -96,6 +119,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPlotItemPropagatesLogModeToLaterAddedPlotDataItem()) {
+        return 1;
+    }
+    if (!testPlotItemAutorangesLaterAddedItemWithMappedLogBounds()) {
         return 1;
     }
 

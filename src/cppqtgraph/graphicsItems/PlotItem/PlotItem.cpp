@@ -434,12 +434,12 @@ void PlotItem::addItem(QGraphicsItem* item, bool ignoreBounds, const QString& na
     }
 
     items_.push_back(item);
+    if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
+        plotData->setLogMode(logMode_[0], logMode_[1]);
+    }
     {
         ScopedBool guard(forwardingChild_);
         vb_->addItem(item, ignoreBounds);
-    }
-    if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
-        plotData->setLogMode(logMode_[0], logMode_[1]);
     }
     if (legend_ != nullptr && !name.isEmpty()) {
         legend_->addItem(item, name);
