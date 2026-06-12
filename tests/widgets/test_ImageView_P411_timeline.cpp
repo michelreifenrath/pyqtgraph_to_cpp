@@ -1,10 +1,14 @@
+#include <cppqtgraph/GraphicsScene/mouseEvents.hpp>
 #include <cppqtgraph/graphicsItems/InfiniteLine.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 #include <cppqtgraph/imageview/ImageView.hpp>
 #include <cppqtgraph/widgets/PlotWidget.hpp>
 
+#include <QtCore/QPointF>
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QGraphicsSceneMouseEvent>
 
 #include <cmath>
 #include <iostream>
@@ -145,6 +149,8 @@ bool testSetCurrentIndexClipsAndUpdatesTimeline()
     auto* timeLine = imageView->timeLine();
     CHECK(timeLine != nullptr);
 
+    QSignalSpy spy(imageView.get(), &cppqtgraph::imageview::ImageView::sigTimeChanged);
+
     imageView->setCurrentIndex(-1);
     CHECK(imageView->currentIndex() == 0);
     CHECK(nearlyEqual(timeLine->value(), 0.0));
@@ -152,29 +158,102 @@ bool testSetCurrentIndexClipsAndUpdatesTimeline()
     imageView->setCurrentIndex(99);
     CHECK(imageView->currentIndex() == static_cast<int>(kFrames - 1));
     CHECK(nearlyEqual(timeLine->value(), 5.0));
+    CHECK(spy.size() >= 1);
+    CHECK(spy.last().at(0).toInt() == static_cast<int>(kFrames - 1));
+    CHECK(nearlyEqual(spy.last().at(1).toDouble(), 5.0));
 
     imageView->setCurrentIndex(2);
     CHECK(imageView->currentIndex() == 2);
     CHECK(nearlyEqual(timeLine->value(), 3.0));
+    CHECK(spy.size() >= 2);
+    CHECK(spy.last().at(0).toInt() == 2);
+    CHECK(nearlyEqual(spy.last().at(1).toDouble(), 3.0));
     return true;
+}
+
+bool testNonMonotonicXValsSelectLastMatchingIndex()
+{
+    const std::vector<float> data = makeFrameData();
+    const std::vector<double> xvals = {0.0, 5.0, 1.5, 3.0};
+    auto imageView = std::make_unique<cppqtgraph::imageview::ImageView>(
+        nullptr, QStringLiteral("rgba"), false);
+    imageView->setImage(cppqtgraph::core::ArrayView<const float, 4>(
+                            data.data(), {kFrames, kHeight, kWidth, kChannels}),
+                        cppqtgraph::core::ArrayView<const double, 1>(xvals.data(), {xvals.size()}),
+                        false,
+                        false);
+
+    auto* timeLine = imageView->timeLine();
+    CHECK(timeLine != nullptr);
+
+    timeLine->setValue(4.0);
+    QTest::qWait(0);
+    CHECK(imageView->currentIndex() == 3);
+    CHECK(nearlyEqual(timeLine->value(), 4.0));
+    return true;
+}
+
+std::unique_ptr<QGraphicsSceneMouseEvent> timelineSceneMouseEvent(cppqtgraph::graphicsItems::InfiniteLine* timeLine,
+                                                                 QEvent::Type type,
+                                                                 const QPointF& scenePos,
+                                                                 const QPointF& lastScenePos,
+                                                                 Qt::MouseButton button,
+                                                                 Qt::MouseButtons buttons,
+                                                                 const QPointF& buttonDownScenePos)
+{
+    auto event = std::make_unique<QGraphicsSceneMouseEvent>(type);
+    event->setScenePos(scenePos);
+    event->setLastScenePos(lastScenePos);
+    event->setPos(timeLine->mapFromScene(scenePos));
+    event->setLastPos(timeLine->mapFromScene(lastScenePos));
+    event->setButton(button);
+    event->setButtons(buttons);
+    event->setButtonDownScenePos(button, buttonDownScenePos);
+    event->setButtonDownPos(button, timeLine->mapFromScene(buttonDownScenePos));
+    return event;
 }
 
 bool testTimelineDragUpdatesIndex()
 {
     const auto imageView = makeTimelineImageView(false);
-    imageView->resize(640, 480);
+    imageView->resize(800, 800);
     imageView->show();
-    QTest::qWait(0);
+    QTest::qWait(200);
 
+    auto* roiPlot = imageView->getRoiPlot();
     auto* timeLine = imageView->timeLine();
+    CHECK(roiPlot != nullptr);
     CHECK(timeLine != nullptr);
 
     QSignalSpy spy(imageView.get(), &cppqtgraph::imageview::ImageView::sigTimeChanged);
-    const double before = timeLine->value();
-    timeLine->setValue(3.5);
+
+    auto* viewBox = roiPlot->getPlotItem()->getViewBox();
+    const QPointF startScene = timeLine->sceneBoundingRect().center();
+    const double viewY = viewBox->mapSceneToView(startScene).y();
+    const QPointF endScene = viewBox->mapViewToScene(QPointF(3.5, viewY));
+
+    auto press = timelineSceneMouseEvent(
+        timeLine, QEvent::GraphicsSceneMousePress, startScene, startScene, Qt::LeftButton, Qt::LeftButton, startScene);
+    auto moveStart = timelineSceneMouseEvent(
+        timeLine, QEvent::GraphicsSceneMouseMove, startScene, startScene, Qt::LeftButton, Qt::LeftButton, startScene);
+
+    cppqtgraph::GraphicsScene::MouseDragEvent dragBegin(
+        moveStart.get(), press.get(), nullptr, true, false);
+    dragBegin.setCurrentItem(timeLine);
+    timeLine->mouseDragEvent(&dragBegin);
+    CHECK(dragBegin.isAccepted());
+
+    QTest::qWait(50);
+
+    auto moveEnd = timelineSceneMouseEvent(
+        timeLine, QEvent::GraphicsSceneMouseMove, endScene, startScene, Qt::LeftButton, Qt::LeftButton, startScene);
+    cppqtgraph::GraphicsScene::MouseDragEvent dragFinish(
+        moveEnd.get(), press.get(), moveStart.get(), false, true);
+    dragFinish.setCurrentItem(timeLine);
+    timeLine->mouseDragEvent(&dragFinish);
+    CHECK(dragFinish.isAccepted());
     QTest::qWait(0);
     CHECK(imageView->currentIndex() == 2);
-    CHECK(!nearlyEqual(before, timeLine->value()) || imageView->currentIndex() == 2);
     CHECK(spy.size() >= 1);
     return true;
 }
@@ -187,7 +266,8 @@ int main(int argc, char** argv)
     ApplicationGuard guard(argc, argv);
 
     if (!testTimelineHostVisible() || !testTimelineMapsToFrameByXVals() || !testDiscreteTimelineSnapsToXVals()
-        || !testSetCurrentIndexClipsAndUpdatesTimeline() || !testTimelineDragUpdatesIndex()) {
+        || !testSetCurrentIndexClipsAndUpdatesTimeline() || !testNonMonotonicXValsSelectLastMatchingIndex()
+        || !testTimelineDragUpdatesIndex()) {
         return 1;
     }
 

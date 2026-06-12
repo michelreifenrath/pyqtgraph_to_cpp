@@ -14,6 +14,7 @@
 #include "../../../include/cppqtgraph/widgets/PlotWidget.hpp"
 
 #include <QtCore/QRectF>
+#include <QtCore/QSignalBlocker>
 #include <QtGui/QColor>
 #include <QtGui/QPen>
 #include <QtWidgets/QVBoxLayout>
@@ -576,8 +577,6 @@ std::pair<int, double> ImageView::timeIndexFor(double time) const
     for (std::size_t index = 0; index < xvals_.size(); ++index) {
         if (xvals_[index] <= time) {
             lastIndex = static_cast<int>(index);
-        } else {
-            break;
         }
     }
 
@@ -625,7 +624,7 @@ void ImageView::syncTimelineBounds()
 
 void ImageView::timeLineChanged()
 {
-    if (ignoreTimeLine_ || timeLine_ == nullptr || !hasTimeAxis()) {
+    if (timeLine_ == nullptr || !hasTimeAxis()) {
         return;
     }
 
@@ -636,13 +635,12 @@ void ImageView::timeLineChanged()
     }
 
     if (discreteTimeLine_) {
-        ignoreTimeLine_ = true;
+        const QSignalBlocker blocker(timeLine_);
         if (!xvals_.empty()) {
             timeLine_->setPos(xvals_[static_cast<std::size_t>(index)]);
         } else {
             timeLine_->setPos(static_cast<double>(index));
         }
-        ignoreTimeLine_ = false;
     }
 
     emit sigTimeChanged(index, time);
