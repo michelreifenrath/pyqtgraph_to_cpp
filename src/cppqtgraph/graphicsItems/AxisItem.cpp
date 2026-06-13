@@ -280,6 +280,7 @@ struct AxisItem::Private {
     std::optional<double> fixedHeight;
     double textWidth = kDefaultTextWidth;
     double textHeight = kDefaultTextHeight;
+    std::optional<int> gridAlpha;
 };
 
 AxisItem::AxisItem(QGraphicsItem* parent, Qt::WindowFlags flags)
@@ -623,6 +624,42 @@ void AxisItem::setLogMode(bool xEnabled, bool yEnabled)
     updateAutoSIPrefix();
 }
 
+void AxisItem::setGrid(bool enabled)
+{
+    if (!enabled) {
+        if (!d_->gridAlpha.has_value()) {
+            return;
+        }
+        prepareGeometryChange();
+        d_->gridAlpha.reset();
+        update();
+        return;
+    }
+    throw std::invalid_argument("AxisItem::setGrid(bool) only accepts false to disable the grid");
+}
+
+void AxisItem::setGrid(int alpha)
+{
+    const int clamped = std::clamp(alpha, 0, 255);
+    if (d_->gridAlpha.has_value() && *d_->gridAlpha == clamped) {
+        return;
+    }
+    prepareGeometryChange();
+    d_->gridAlpha = clamped;
+    update();
+}
+
+void AxisItem::setGrid(double alpha)
+{
+    const int converted = std::clamp(static_cast<int>(std::floor(alpha * 255.0)), 0, 255);
+    setGrid(converted);
+}
+
+std::optional<int> AxisItem::grid() const noexcept
+{
+    return d_->gridAlpha;
+}
+
 void AxisItem::setTicks(const std::vector<std::vector<ExplicitTick>>& ticks)
 {
     d_->tickLevels = ticks;
@@ -836,28 +873,34 @@ std::optional<AxisItem::DrawSpecs> AxisItem::generateDrawSpecs(QPainter& painter
     }
     const double spacingLength = deviceAxisLength(painter, bounds, vertical);
 
+    QRectF tickBounds = bounds;
+    ViewBox* linkedViewBox = linkedView();
+    if (linkedViewBox != nullptr && d_->gridAlpha.has_value()) {
+        tickBounds = linkedViewBox->mapRectToItem(const_cast<AxisItem*>(this), linkedViewBox->boundingRect());
+    }
+
     QLineF span;
     double tickStart = 0.0;
     double tickStop = 0.0;
     int tickDirection = 1;
     if (d_->orientation == Orientation::Left) {
         span = QLineF(bounds.right() - 1.0, bounds.top() - 1.0, bounds.right() - 1.0, bounds.bottom() + 1.0);
-        tickStart = bounds.right();
+        tickStart = tickBounds.right();
         tickStop = bounds.right();
         tickDirection = -1;
     } else if (d_->orientation == Orientation::Right) {
         span = QLineF(bounds.left() + 1.0, bounds.top() - 1.0, bounds.left() + 1.0, bounds.bottom() + 1.0);
-        tickStart = bounds.left();
+        tickStart = tickBounds.left();
         tickStop = bounds.left();
         tickDirection = 1;
     } else if (d_->orientation == Orientation::Top) {
         span = QLineF(bounds.left() - 1.0, bounds.bottom() - 1.0, bounds.right() + 1.0, bounds.bottom() - 1.0);
-        tickStart = bounds.bottom();
+        tickStart = tickBounds.bottom();
         tickStop = bounds.bottom();
         tickDirection = -1;
     } else {
         span = QLineF(bounds.left() - 1.0, bounds.top() + 1.0, bounds.right() + 1.0, bounds.top() + 1.0);
-        tickStart = bounds.top();
+        tickStart = tickBounds.top();
         tickStop = bounds.top();
         tickDirection = 1;
     }
@@ -910,8 +953,21 @@ std::optional<AxisItem::DrawSpecs> AxisItem::generateDrawSpecs(QPainter& painter
         QPen levelPen = tickPen();
         if (levelPen.brush().style() == Qt::SolidPattern) {
             QColor color = levelPen.color();
-            const int configuredAlpha = color.alpha();
-            color.setAlpha(static_cast<int>(std::round(static_cast<double>(configuredAlpha) / (static_cast<double>(levelIndex) + 1.0))));
+            int lineAlpha = 0;
+            if (d_->gridAlpha.has_value()) {
+                lineAlpha = static_cast<int>(std::lround(255.0 / (static_cast<double>(levelIndex) + 1.0)));
+                const double density = std::clamp(
+                    0.05 * spacingLength / (static_cast<double>(values.size()) + 1.0),
+                    0.0,
+                    1.0);
+                lineAlpha = static_cast<int>(std::lround(
+                    static_cast<double>(lineAlpha) * (static_cast<double>(*d_->gridAlpha) / 255.0) * density));
+            } else {
+                const int configuredAlpha = color.alpha();
+                lineAlpha = static_cast<int>(std::lround(
+                    static_cast<double>(configuredAlpha) / (static_cast<double>(levelIndex) + 1.0)));
+            }
+            color.setAlpha(lineAlpha);
             levelPen.setColor(color);
         }
 
@@ -924,11 +980,16 @@ std::optional<AxisItem::DrawSpecs> AxisItem::generateDrawSpecs(QPainter& painter
             tickPositions.back().push_back(coordinate);
             validPositions.push_back(coordinate);
 
+            double tickEnd = tickStop;
+            if (!d_->gridAlpha.has_value()) {
+                tickEnd += tickLength * static_cast<double>(tickDirection);
+            }
+
             QLineF line;
             if (vertical) {
-                line = QLineF(tickStart, coordinate, tickStop + tickLength * static_cast<double>(tickDirection), coordinate);
+                line = QLineF(tickStart, coordinate, tickEnd, coordinate);
             } else {
-                line = QLineF(coordinate, tickStart, coordinate, tickStop + tickLength * static_cast<double>(tickDirection));
+                line = QLineF(coordinate, tickStart, coordinate, tickEnd);
             }
             specs.ticks.push_back({levelPen, line});
         }
@@ -1077,6 +1138,11 @@ std::optional<AxisItem::DrawSpecs> AxisItem::generateDrawSpecs(QPainter& painter
 QRectF AxisItem::boundingRect() const
 {
     QRectF rect = localWidgetRect(*this);
+    ViewBox* linkedViewBox = linkedView();
+    if (linkedViewBox != nullptr && d_->gridAlpha.has_value()) {
+        return rect.united(linkedViewBox->mapRectToItem(const_cast<AxisItem*>(this), linkedViewBox->boundingRect()));
+    }
+
     double margin = 0.0;
     if (!d_->hideOverlappingLabels) {
         margin = 15.0;

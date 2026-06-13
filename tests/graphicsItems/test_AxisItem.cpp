@@ -1,4 +1,5 @@
 #include <cppqtgraph/graphicsItems/AxisItem.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QRectF>
@@ -880,6 +881,107 @@ bool testP307VisualArtifacts()
 #endif
 }
 
+bool testGridStateStorage()
+{
+    using cppqtgraph::graphicsItems::AxisItem;
+
+    AxisItem axis(QStringLiteral("bottom"));
+    CHECK(!axis.grid().has_value());
+
+    axis.setGrid(false);
+    CHECK(!axis.grid().has_value());
+
+    axis.setGrid(128);
+    CHECK(axis.grid().has_value());
+    CHECK(*axis.grid() == 128);
+
+    axis.setGrid(0.5);
+    CHECK(axis.grid().has_value());
+    CHECK(*axis.grid() == 127);
+
+    axis.setGrid(false);
+    CHECK(!axis.grid().has_value());
+
+    return true;
+}
+
+bool testGridExtendsLinkedViewTicks()
+{
+    using cppqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::ViewBox;
+
+    QGraphicsScene scene;
+    ViewBox viewBox;
+    viewBox.setGeometry(QRectF(80.0, 20.0, 220.0, 140.0));
+    scene.addItem(&viewBox);
+
+    AxisItem bottom(QStringLiteral("bottom"));
+    bottom.setGeometry(QRectF(80.0, 160.0, 220.0, 40.0));
+    bottom.setHeight(40.0);
+    bottom.setRange(0.0, 10.0);
+    bottom.linkToView(&viewBox);
+    scene.addItem(&bottom);
+
+    QImage probe(360, 240, QImage::Format_ARGB32_Premultiplied);
+    probe.fill(Qt::black);
+    QPainter painter(&probe);
+
+    bottom.setGrid(false);
+    const auto disabledSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(disabledSpecs.has_value());
+    double disabledMaxLength = 0.0;
+    for (const auto& [tickPen, tickLine] : disabledSpecs->ticks) {
+        Q_UNUSED(tickPen);
+        disabledMaxLength = std::max(disabledMaxLength, tickLine.length());
+    }
+
+    bottom.setGrid(128);
+    const auto enabledSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(enabledSpecs.has_value());
+    double enabledMaxLength = 0.0;
+    for (const auto& [tickPen, tickLine] : enabledSpecs->ticks) {
+        Q_UNUSED(tickPen);
+        enabledMaxLength = std::max(enabledMaxLength, tickLine.length());
+    }
+
+    CHECK(enabledMaxLength > disabledMaxLength);
+    CHECK(enabledMaxLength > 80.0);
+    CHECK(disabledMaxLength < 20.0);
+
+    return true;
+}
+
+bool testGridAlphaAffectsRenderedTickOpacity()
+{
+    using cppqtgraph::graphicsItems::AxisItem;
+
+    AxisItem bottom(QStringLiteral("bottom"));
+    bottom.setGeometry(QRectF(0.0, 0.0, 240.0, 40.0));
+    bottom.setHeight(40.0);
+    bottom.setRange(0.0, 1.0);
+    bottom.setTicks({{{0.25, QStringLiteral("a")}, {0.75, QStringLiteral("b")}}});
+
+    QImage probe(280, 80, QImage::Format_ARGB32_Premultiplied);
+    probe.fill(Qt::black);
+    QPainter painter(&probe);
+
+    bottom.setGrid(255);
+    const auto strongSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(strongSpecs.has_value());
+    CHECK(!strongSpecs->ticks.empty());
+    const int strongAlpha = strongSpecs->ticks.front().first.color().alpha();
+
+    bottom.setGrid(64);
+    const auto weakSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(weakSpecs.has_value());
+    CHECK(!weakSpecs->ticks.empty());
+    const int weakAlpha = weakSpecs->ticks.front().first.color().alpha();
+
+    CHECK(strongAlpha > weakAlpha);
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -900,6 +1002,15 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testP307VisualArtifacts()) {
+        return 1;
+    }
+    if (!testGridStateStorage()) {
+        return 1;
+    }
+    if (!testGridExtendsLinkedViewTicks()) {
+        return 1;
+    }
+    if (!testGridAlphaAffectsRenderedTickOpacity()) {
         return 1;
     }
 

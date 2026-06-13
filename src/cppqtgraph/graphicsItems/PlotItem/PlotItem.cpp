@@ -1021,6 +1021,26 @@ void PlotItem::updateGrid()
     gridState_.alphaSliderValue = ctrl_->gridAlphaSlider->value();
     const int maximum = std::max(1, ctrl_->gridAlphaSlider->maximum());
     gridState_.alpha = static_cast<double>(gridState_.alphaSliderValue) / static_cast<double>(maximum);
+
+    const int alpha = gridState_.alphaSliderValue;
+    const std::optional<int> xGrid = gridState_.x ? std::optional<int>{alpha} : std::nullopt;
+    const std::optional<int> yGrid = gridState_.y ? std::optional<int>{alpha} : std::nullopt;
+
+    auto applyGrid = [](AxisItem* axis, const std::optional<int>& gridValue) {
+        if (axis == nullptr) {
+            return;
+        }
+        if (gridValue.has_value()) {
+            axis->setGrid(*gridValue);
+        } else {
+            axis->setGrid(false);
+        }
+    };
+
+    applyGrid(getAxis(QStringLiteral("top")), xGrid);
+    applyGrid(getAxis(QStringLiteral("bottom")), xGrid);
+    applyGrid(getAxis(QStringLiteral("left")), yGrid);
+    applyGrid(getAxis(QStringLiteral("right")), yGrid);
     update();
 }
 
