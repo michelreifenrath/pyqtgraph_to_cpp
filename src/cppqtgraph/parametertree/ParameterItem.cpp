@@ -14,7 +14,10 @@
 #include <QtCore/QObject>
 #include <QtCore/QSignalBlocker>
 #include <QtGui/QColor>
+#include <QtGui/QIcon>
 #include <QtGui/QKeyEvent>
+#include <QtGui/QKeySequence>
+#include <QtGui/QShortcut>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -634,7 +637,7 @@ void ListParameterItem::writeEditorValue(const QVariant& val)
     } catch (const std::exception&) {
         if (combo_->count() > 0) {
             combo_->setCurrentIndex(0);
-            if (param_ != nullptr) {
+            if (param_ != nullptr && param_->options().contains(QStringLiteral("value"))) {
                 const QVariant first = combo_->value();
                 if (first.isValid() && param_->value() != first) {
                     param_->setValue(first);
@@ -670,15 +673,22 @@ void ListParameterItem::updateLimits(const QVariant& limits)
     const QVariant normalized = limits.isValid() ? limits : QVariant(QStringList{QString()});
     combo_->setItems(normalized);
 
-    if (!valueInLimits(param_->value(), normalized)) {
-        const QVariant first = firstLimitValue(normalized);
-        if (first.isValid()) {
-            param_->setValue(first);
+    if (param_->options().contains(QStringLiteral("value"))) {
+        if (!valueInLimits(param_->value(), normalized)) {
+            const QVariant first = firstLimitValue(normalized);
+            if (first.isValid()) {
+                param_->setValue(first);
+            }
+        } else {
+            writeEditorValue(param_->value());
         }
     } else {
-        writeEditorValue(param_->value());
+        combo_->setCurrentIndex(-1);
+        updateDisplayLabel(QString());
     }
-    updateDisplayLabel(combo_->currentText());
+    if (param_->options().contains(QStringLiteral("value"))) {
+        updateDisplayLabel(combo_->currentText());
+    }
     updatingWidget_ = false;
 }
 
@@ -778,6 +788,20 @@ void TextParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
     }
 }
 
+namespace {
+
+bool actionIsInteractive(const Parameter* param)
+{
+    if (param == nullptr) {
+        return false;
+    }
+    const QVariantMap& options = param->options();
+    return options.value(QStringLiteral("enabled"), true).toBool()
+        && options.value(QStringLiteral("visible"), true).toBool();
+}
+
+} // namespace
+
 ActionParameterItem::ActionParameterItem(Parameter* param, int depth)
     : ParameterItem(param, depth)
 {
@@ -796,6 +820,18 @@ ActionParameterItem::ActionParameterItem(Parameter* param, int depth)
     layout->addStretch();
 
     updateButton();
+    updateShortcut();
+}
+
+ActionParameterItem::~ActionParameterItem()
+{
+    delete shortcut_;
+}
+
+void ActionParameterItem::nameChanged(Parameter* param, const QString& name)
+{
+    ParameterItem::nameChanged(param, name);
+    updateButton();
 }
 
 void ActionParameterItem::treeWidgetChanged()
@@ -809,6 +845,7 @@ void ActionParameterItem::treeWidgetChanged()
         setFirstColumnSpanned(true);
         tree->setItemWidget(this, 0, layoutWidget_);
     }
+    updateShortcut();
 }
 
 void ActionParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
@@ -818,13 +855,28 @@ void ActionParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
         if (button_ != nullptr) {
             button_->setEnabled(opts.value(QStringLiteral("enabled")).toBool());
         }
+        if (shortcut_ != nullptr) {
+            shortcut_->setEnabled(actionIsInteractive(param));
+        }
+    }
+    if (opts.contains(QStringLiteral("visible"))) {
+        if (button_ != nullptr) {
+            button_->setVisible(opts.value(QStringLiteral("visible")).toBool());
+        }
+        if (shortcut_ != nullptr) {
+            shortcut_->setEnabled(actionIsInteractive(param));
+        }
     }
     if (opts.contains(QStringLiteral("tip"))) {
         if (button_ != nullptr) {
             button_->setToolTip(opts.value(QStringLiteral("tip")).toString());
         }
     }
-    if (opts.contains(QStringLiteral("title")) || opts.contains(QStringLiteral("name"))) {
+    if (opts.contains(QStringLiteral("shortcut"))) {
+        updateShortcut();
+    }
+    if (opts.contains(QStringLiteral("title")) || opts.contains(QStringLiteral("name"))
+        || opts.contains(QStringLiteral("icon"))) {
         updateButton();
     }
 }
@@ -839,7 +891,43 @@ void ActionParameterItem::updateButton()
     if (param_->options().contains(QStringLiteral("tip"))) {
         button_->setToolTip(param_->options().value(QStringLiteral("tip")).toString());
     }
+    button_->setVisible(param_->options().value(QStringLiteral("visible"), true).toBool());
+    button_->setEnabled(param_->options().value(QStringLiteral("enabled"), true).toBool());
+    if (param_->options().contains(QStringLiteral("icon"))) {
+        const QVariant iconValue = param_->options().value(QStringLiteral("icon"));
+        if (iconValue.isValid() && !iconValue.isNull()) {
+            button_->setIcon(QIcon(iconValue.toString()));
+        } else {
+            button_->setIcon(QIcon());
+        }
+    }
     setSizeHint(0, button_->sizeHint());
+}
+
+void ActionParameterItem::updateShortcut()
+{
+    delete shortcut_;
+    shortcut_ = nullptr;
+    if (param_ == nullptr || treeWidget() == nullptr) {
+        return;
+    }
+
+    const QString shortcutText = param_->options().value(QStringLiteral("shortcut")).toString();
+    if (shortcutText.isEmpty()) {
+        return;
+    }
+
+    shortcut_ = new QShortcut(QKeySequence(shortcutText), treeWidget());
+    shortcut_->setContext(Qt::WidgetWithChildrenShortcut);
+    shortcut_->setEnabled(actionIsInteractive(param_));
+    QObject::connect(shortcut_, &QShortcut::activated, shortcut_, [this]() {
+        if (!actionIsInteractive(param_)) {
+            return;
+        }
+        if (auto* action = dynamic_cast<ActionParameter*>(param_)) {
+            action->activate();
+        }
+    });
 }
 
 } // namespace cppqtgraph::parametertree

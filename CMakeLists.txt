@@ -192,6 +192,14 @@ if(_cppqtgraph_has_graphicsitem)
             src/cppqtgraph/parametertree/ParameterItem.cpp
             include/cppqtgraph/parametertree/ParameterTree.hpp
             src/cppqtgraph/parametertree/ParameterTree.cpp
+            include/cppqtgraph/parametertree/buildParamTypes.hpp
+            src/cppqtgraph/parametertree/buildParamTypes.cpp
+            include/cppqtgraph/parametertree/parameterTypes/BoolParameterItem.hpp
+            src/cppqtgraph/parametertree/parameterTypes/BoolParameterItem.cpp
+            include/cppqtgraph/parametertree/parameterTypes/StrParameterItem.hpp
+            src/cppqtgraph/parametertree/parameterTypes/StrParameterItem.cpp
+            include/cppqtgraph/parametertree/parameterTypes/NumericParameterItem.hpp
+            src/cppqtgraph/parametertree/parameterTypes/NumericParameterItem.cpp
             include/cppqtgraph/widgets/CheckTable.hpp
             src/cppqtgraph/widgets/CheckTable.cpp
             include/cppqtgraph/widgets/DataTreeWidget.hpp

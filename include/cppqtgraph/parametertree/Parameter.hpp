@@ -48,9 +48,10 @@ public:
     virtual QVariant setValue(const QVariant& value, bool blockSignal = false);
     void notifyValueChanging(const QVariant& value);
     QString setName(const QString& name);
-    virtual void setOpts(const QVariantMap& opts);
+    virtual     void setOpts(const QVariantMap& opts);
     void setDefault(const QVariant& val, bool updatePristineValues = false);
     void setToDefault();
+    void emitStateChanged(const QString& changeDesc, const QVariant& data = QVariant());
 
     [[nodiscard]] bool hasDefault() const;
     [[nodiscard]] QVariant defaultValue() const;
@@ -73,6 +74,7 @@ signals:
     void sigNameChanged(Parameter* param, const QString& name);
     void sigDefaultChanged(Parameter* param, const QVariant& defaultValue);
     void sigOptionsChanged(Parameter* param, const QVariantMap& changedOpts);
+    void sigStateChanged(Parameter* param, const QString& changeDesc, const QVariant& data);
 
 protected:
     QVariantMap opts_;
@@ -92,7 +94,11 @@ class SimpleParameter final : public Parameter {
 public:
     explicit SimpleParameter(QVariantMap opts, QObject* parent = nullptr);
 
+    QVariant setValue(const QVariant& value, bool blockSignal = false) override;
     ParameterItem* makeTreeItem(int depth = 0) override;
+
+private:
+    [[nodiscard]] QVariant interpretValue(const QVariant& value) const;
 };
 
 class ListParameter final : public Parameter {

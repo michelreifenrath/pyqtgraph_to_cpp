@@ -12,6 +12,7 @@
 class QLabel;
 class QPushButton;
 class QKeyEvent;
+class QShortcut;
 class QWidget;
 
 namespace cppqtgraph::widgets {
@@ -90,7 +91,7 @@ protected:
     virtual void writeEditorValue(const QVariant& val);
     virtual void configureEditor(QWidget* editor);
 
-    void updateDisplayLabel(const QVariant& value = QVariant());
+    virtual void updateDisplayLabel(const QVariant& value = QVariant());
     void updateDefaultBtn();
     void showEditor();
     void hideEditor();
@@ -150,17 +151,21 @@ protected:
 class ActionParameterItem final : public ParameterItem {
 public:
     ActionParameterItem(Parameter* param, int depth);
+    ~ActionParameterItem() override;
 
     void treeWidgetChanged() override;
+    void nameChanged(Parameter* param, const QString& name) override;
     void optsChanged(Parameter* param, const QVariantMap& opts) override;
 
     [[nodiscard]] QPushButton* actionButton() const { return button_; }
 
 private:
     void updateButton();
+    void updateShortcut();
 
     QWidget* layoutWidget_ = nullptr;
     QPushButton* button_ = nullptr;
+    QShortcut* shortcut_ = nullptr;
 };
 
 } // namespace cppqtgraph::parametertree
