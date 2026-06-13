@@ -277,6 +277,33 @@ bool testPlottingP5LogMappedAutorangeAndRender(cppqtgraph::examples::PlottingExa
     CHECK(childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis].has_value());
     CHECK(example.p5Scatter->scatter()->isVisible());
 
+    auto* p5Scatter = example.p5Scatter->scatter();
+    CHECK(p5Scatter->symbol() == QStringLiteral("t"));
+    CHECK(p5Scatter->pen().style() == Qt::NoPen);
+    CHECK(p5Scatter->brush().color().alpha() < 255);
+
+    const QImage triangleImage = cppqtgraph::graphicsItems::renderSymbol(
+        QStringLiteral("t"), p5Scatter->size(), p5Scatter->pen(), p5Scatter->brush(), 1.0);
+    CHECK(!triangleImage.isNull());
+    bool foundBlueFill = false;
+    bool foundWhiteOutline = false;
+    for (int row = 0; row < triangleImage.height(); ++row) {
+        for (int column = 0; column < triangleImage.width(); ++column) {
+            const QColor pixel = QColor::fromRgba(triangleImage.pixel(column, row));
+            if (pixel.alpha() == 0) {
+                continue;
+            }
+            if (pixel.blue() > pixel.red() && pixel.blue() > pixel.green()) {
+                foundBlueFill = true;
+            }
+            if (pixel.red() > 200 && pixel.green() > 200 && pixel.blue() > 200) {
+                foundWhiteOutline = true;
+            }
+        }
+    }
+    CHECK(foundBlueFill);
+    CHECK(!foundWhiteOutline);
+
     const auto mappedBounds = example.p5Scatter->autoRangeBoundsRect();
     CHECK(mappedBounds.has_value());
     CHECK(mappedBounds->width() > 0.0);
@@ -325,6 +352,7 @@ bool testPlottingP3AutorangeAndSymbolRender(cppqtgraph::examples::PlottingExampl
 
     auto* scatter = example.p3Curve->scatter();
     CHECK(scatter->symbol() == QStringLiteral("o"));
+    CHECK(scatter->pen().isCosmetic());
     CHECK(scatter->pen().color() == QColor(255, 255, 255));
     CHECK(scatter->brush().color() == QColor(255, 0, 0));
 
@@ -336,19 +364,27 @@ bool testPlottingP3AutorangeAndSymbolRender(cppqtgraph::examples::PlottingExampl
     const QImage symbolImage = cppqtgraph::graphicsItems::renderSymbol(
         QStringLiteral("o"), scatter->size(), scatter->pen(), scatter->brush(), 1.0);
     CHECK(!symbolImage.isNull());
-    bool foundRenderedPixel = false;
+
+    const QColor centerPixel = QColor::fromRgba(symbolImage.pixel(symbolImage.width() / 2, symbolImage.height() / 2));
+    CHECK(centerPixel.alpha() > 0);
+    CHECK(centerPixel.red() > centerPixel.green());
+    CHECK(centerPixel.red() > centerPixel.blue());
+    CHECK(QColor::fromRgba(symbolImage.pixel(0, 0)).alpha() == 0);
+
+    bool foundWhiteOutline = false;
     for (int row = 0; row < symbolImage.height(); ++row) {
         for (int column = 0; column < symbolImage.width(); ++column) {
-            if (QColor::fromRgba(symbolImage.pixel(column, row)).alpha() > 0) {
-                foundRenderedPixel = true;
+            const QColor pixel = QColor::fromRgba(symbolImage.pixel(column, row));
+            if (pixel.alpha() > 0 && pixel.red() > 200 && pixel.green() > 200 && pixel.blue() > 200) {
+                foundWhiteOutline = true;
                 break;
             }
         }
-        if (foundRenderedPixel) {
+        if (foundWhiteOutline) {
             break;
         }
     }
-    CHECK(foundRenderedPixel);
+    CHECK(foundWhiteOutline);
 
     return true;
 }

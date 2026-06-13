@@ -45,7 +45,19 @@ QPen defaultPlotDataPen()
 
 QPen defaultPlotDataSymbolPen()
 {
-    return QPen(QColor(200, 200, 200), 1.0);
+    QPen pen(QColor(200, 200, 200), 1.0);
+    pen.setCosmetic(true);
+    return pen;
+}
+
+QPen normalizeSymbolPen(const QPen& pen)
+{
+    if (pen.style() == Qt::NoPen) {
+        return pen;
+    }
+    QPen normalized(pen);
+    normalized.setCosmetic(true);
+    return normalized;
 }
 
 QBrush defaultPlotDataSymbolBrush()
@@ -208,7 +220,7 @@ qreal PlotDataItem::symbolSize() const noexcept
 
 void PlotDataItem::setSymbolPen(const QPen& pen)
 {
-    symbolPen_ = pen;
+    symbolPen_ = normalizeSymbolPen(pen);
     if (symbol_.isEmpty()) {
         symbol_ = defaultPlotDataSymbol();
         symbolsVisible_ = true;
