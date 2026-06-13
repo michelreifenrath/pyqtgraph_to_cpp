@@ -31,6 +31,7 @@ REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "Plotting.reference.p
 P8_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p8.reference.png"
 P3_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p3.reference.png"
 P5_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p5.reference.png"
+P4_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p4.reference.png"
 CHECK_VISUAL_ARTIFACTS = ROOT / "scripts" / "check_visual_artifacts"
 DEFAULT_REVIEW = ROOT / "reports" / "examples" / "P3.72" / "gpt5_vision_review.md"
 PYQTGRAPH_REF = ROOT / "reference" / "pyqtgraph"
@@ -46,6 +47,16 @@ P3_WHITE_COVERAGE_RATIO = 0.80
 # Measured from pinned PyQtGraph p5 crop (Plotting.p5.reference.png).
 P5_MIN_BLUE_TRIANGLE_PIXELS = 3000
 P5_TRIANGLE_COVERAGE_RATIO = 0.85
+
+# Measured from pinned PyQtGraph p4 crop (Plotting.p4.reference.png).
+P4_MIN_GRAY_GRID_PIXELS = 900
+P4_GRID_COVERAGE_RATIO = 0.75
+P4_MIN_CURVE_PIXELS = 30000
+P4_MIN_HORIZONTAL_GRID_LINES = 3
+P4_MIN_VERTICAL_GRID_LINES = 8
+
+# p1 never calls showGrid; grid-like pixels should stay sparse.
+P1_MAX_GRAY_GRID_PIXELS = 250
 
 # Measured from pinned PyQtGraph p8 crop (Plotting.p8.reference.png).
 P8_MIN_EDGE_LINE_PIXELS = 200
@@ -115,6 +126,102 @@ def _assert_p5_region_triangles(actual: Path) -> None:
 
     tmp_crop = actual.parent / "Plotting.p5.actual.png"
     write_subplot_png(actual, tmp_crop, col=1, row=1)
+
+
+def _is_gray_grid_pixel(red: int, green: int, blue: int, alpha: int) -> bool:
+    return (
+        alpha >= 25
+        and 90 <= red <= 190
+        and 90 <= green <= 190
+        and 90 <= blue <= 190
+        and max(abs(red - green), abs(green - blue)) < 35
+    )
+
+
+def _count_p4_region_pixels(rgba: bytes, width: int, height: int) -> tuple[int, int, int, int]:
+    gray_grid = 0
+    curve_pixels = 0
+    horizontal_lines: set[int] = set()
+    vertical_lines: set[int] = set()
+    for y in range(height):
+        horizontal_run = 0
+        for x in range(width):
+            index = (y * width + x) * 4
+            red, green, blue, alpha = rgba[index : index + 4]
+            if _is_gray_grid_pixel(red, green, blue, alpha):
+                gray_grid += 1
+                horizontal_run += 1
+                if y > 0:
+                    above = rgba[((y - 1) * width + x) * 4 : ((y - 1) * width + x) * 4 + 4]
+                    if _is_gray_grid_pixel(*above):
+                        horizontal_lines.add(y)
+                if x > 0:
+                    left = rgba[(y * width + (x - 1)) * 4 : (y * width + (x - 1)) * 4 + 4]
+                    if _is_gray_grid_pixel(*left):
+                        vertical_lines.add(x)
+            else:
+                if horizontal_run >= 8:
+                    horizontal_lines.add(y)
+                horizontal_run = 0
+            if alpha >= 40 and red < 40 and green < 40 and blue < 40:
+                curve_pixels += 1
+        if horizontal_run >= 8:
+            horizontal_lines.add(y)
+    return gray_grid, curve_pixels, len(horizontal_lines), len(vertical_lines)
+
+
+def _assert_p4_grid_region(actual: Path) -> None:
+    assert P4_REFERENCE.is_file(), f"missing pinned p4 reference crop: {P4_REFERENCE}"
+    ref_w, ref_h, ref_rgba = read_png_rgba(P4_REFERENCE)
+    ref_gray, ref_curve, ref_h_lines, ref_v_lines = _count_p4_region_pixels(
+        ref_rgba, ref_w, ref_h
+    )
+    assert ref_gray >= P4_MIN_GRAY_GRID_PIXELS
+    assert ref_h_lines >= P4_MIN_HORIZONTAL_GRID_LINES
+    assert ref_v_lines >= P4_MIN_VERTICAL_GRID_LINES
+    assert ref_curve >= P4_MIN_CURVE_PIXELS
+
+    width, height, rgba = read_png_rgba(actual)
+    crop_width, crop_height, crop_rgba = crop_subplot_rgba(rgba, width, height, col=0, row=1)
+    gray_pixels, curve_pixels, h_lines, v_lines = _count_p4_region_pixels(
+        crop_rgba, crop_width, crop_height
+    )
+    min_gray = max(P4_MIN_GRAY_GRID_PIXELS, int(P4_GRID_COVERAGE_RATIO * ref_gray))
+    assert gray_pixels >= min_gray, (
+        f"p4 gray grid coverage too low: {gray_pixels} < {min_gray} (reference={ref_gray})"
+    )
+    assert h_lines >= P4_MIN_HORIZONTAL_GRID_LINES, (
+        f"p4 horizontal grid lines too sparse: {h_lines} < {P4_MIN_HORIZONTAL_GRID_LINES}"
+    )
+    assert v_lines >= P4_MIN_VERTICAL_GRID_LINES, (
+        f"p4 vertical grid lines too sparse: {v_lines} < {P4_MIN_VERTICAL_GRID_LINES}"
+    )
+    assert curve_pixels >= int(0.8 * ref_curve), (
+        f"p4 curve should render above grid: {curve_pixels} < {int(0.8 * ref_curve)}"
+    )
+    assert curve_pixels > gray_pixels, (
+        f"p4 curve pixels should dominate grid pixels: {curve_pixels} <= {gray_pixels}"
+    )
+
+    tmp_crop = actual.parent / "Plotting.p4.actual.png"
+    write_subplot_png(actual, tmp_crop, col=0, row=1)
+
+
+def _assert_p1_no_grid_region(actual: Path) -> None:
+    width, height, rgba = read_png_rgba(actual)
+    crop_width, crop_height, crop_rgba = crop_subplot_rgba(rgba, width, height, col=0, row=0)
+    gray_pixels, _, h_lines, v_lines = _count_p4_region_pixels(
+        crop_rgba, crop_width, crop_height
+    )
+    assert gray_pixels <= P1_MAX_GRAY_GRID_PIXELS, (
+        f"p1 should not show grid pixels: {gray_pixels} > {P1_MAX_GRAY_GRID_PIXELS}"
+    )
+    assert h_lines <= 5 and v_lines <= 5, (
+        f"p1 should not show grid line structure: h={h_lines} v={v_lines}"
+    )
+
+    tmp_crop = actual.parent / "Plotting.p1.grid_probe.actual.png"
+    write_subplot_png(actual, tmp_crop, col=0, row=0)
 
 
 def _count_p8_region_pixels(rgba: bytes) -> tuple[int, int, int]:
@@ -214,6 +321,8 @@ def _run_renderer(renderer: Path, output: Path) -> dict[str, Any]:
     assert output.is_file()
     _assert_semantic_plot_image(output, width=1000, height=600)
     _assert_p3_region_markers(output)
+    _assert_p4_grid_region(output)
+    _assert_p1_no_grid_region(output)
     _assert_p5_region_triangles(output)
     _assert_p8_region_band(output)
     assert_all_subplots_nonempty(output)

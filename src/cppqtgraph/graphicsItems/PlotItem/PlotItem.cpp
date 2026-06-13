@@ -347,6 +347,9 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu
     setLayout(layout_);
 
     vb_ = new ViewBox(this);
+    // Axes use z=0.5 so extended grid ticks paint in the linked view area; keep the
+    // view box above axes so default plot data occludes grid at intersections.
+    vb_->setZValue(1.0);
     layout_->addItem(vb_, 2, 1);
 
     titleLabel_ = new TitleLabel(this);
@@ -1021,6 +1024,26 @@ void PlotItem::updateGrid()
     gridState_.alphaSliderValue = ctrl_->gridAlphaSlider->value();
     const int maximum = std::max(1, ctrl_->gridAlphaSlider->maximum());
     gridState_.alpha = static_cast<double>(gridState_.alphaSliderValue) / static_cast<double>(maximum);
+
+    const int alpha = gridState_.alphaSliderValue;
+    const std::optional<int> xGrid = gridState_.x ? std::optional<int>{alpha} : std::nullopt;
+    const std::optional<int> yGrid = gridState_.y ? std::optional<int>{alpha} : std::nullopt;
+
+    auto applyGrid = [](AxisItem* axis, const std::optional<int>& gridValue) {
+        if (axis == nullptr) {
+            return;
+        }
+        if (gridValue.has_value()) {
+            axis->setGrid(*gridValue);
+        } else {
+            axis->setGrid(false);
+        }
+    };
+
+    applyGrid(getAxis(QStringLiteral("top")), xGrid);
+    applyGrid(getAxis(QStringLiteral("bottom")), xGrid);
+    applyGrid(getAxis(QStringLiteral("left")), yGrid);
+    applyGrid(getAxis(QStringLiteral("right")), yGrid);
     update();
 }
 

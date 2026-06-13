@@ -133,6 +133,11 @@ public:
     void setLogMode(bool enabled);
     void setLogMode(bool xEnabled, bool yEnabled);
 
+    void setGrid(bool enabled);
+    void setGrid(int alpha);
+    void setGrid(double alpha);
+    [[nodiscard]] std::optional<int> grid() const noexcept;
+
     void setTicks(const std::vector<std::vector<ExplicitTick>>& ticks);
     void clearTicks();
     void setTickSpacing(std::optional<double> major = std::nullopt, std::optional<double> minor = std::nullopt);

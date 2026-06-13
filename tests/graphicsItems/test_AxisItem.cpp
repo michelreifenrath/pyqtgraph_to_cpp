@@ -1,4 +1,7 @@
 #include <cppqtgraph/graphicsItems/AxisItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QDir>
 #include <QtCore/QRectF>
@@ -880,6 +883,171 @@ bool testP307VisualArtifacts()
 #endif
 }
 
+bool testGridStateStorage()
+{
+    using cppqtgraph::graphicsItems::AxisItem;
+
+    AxisItem axis(QStringLiteral("bottom"));
+    CHECK(!axis.grid().has_value());
+
+    axis.setGrid(false);
+    CHECK(!axis.grid().has_value());
+
+    axis.setGrid(128);
+    CHECK(axis.grid().has_value());
+    CHECK(*axis.grid() == 128);
+
+    axis.setGrid(0.5);
+    CHECK(axis.grid().has_value());
+    CHECK(*axis.grid() == 127);
+
+    axis.setGrid(false);
+    CHECK(!axis.grid().has_value());
+
+    return true;
+}
+
+bool testGridExtendsLinkedViewTicks()
+{
+    using cppqtgraph::graphicsItems::AxisItem;
+    using cppqtgraph::graphicsItems::ViewBox;
+
+    QGraphicsScene scene;
+    ViewBox viewBox;
+    viewBox.setGeometry(QRectF(80.0, 20.0, 220.0, 140.0));
+    scene.addItem(&viewBox);
+
+    AxisItem bottom(QStringLiteral("bottom"));
+    bottom.setGeometry(QRectF(80.0, 160.0, 220.0, 40.0));
+    bottom.setHeight(40.0);
+    bottom.setRange(0.0, 10.0);
+    bottom.linkToView(&viewBox);
+    scene.addItem(&bottom);
+
+    QImage probe(360, 240, QImage::Format_ARGB32_Premultiplied);
+    probe.fill(Qt::black);
+    QPainter painter(&probe);
+
+    bottom.setGrid(false);
+    const auto disabledSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(disabledSpecs.has_value());
+    double disabledMaxLength = 0.0;
+    for (const auto& [tickPen, tickLine] : disabledSpecs->ticks) {
+        Q_UNUSED(tickPen);
+        disabledMaxLength = std::max(disabledMaxLength, tickLine.length());
+    }
+
+    bottom.setGrid(128);
+    const auto enabledSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(enabledSpecs.has_value());
+    double enabledMaxLength = 0.0;
+    for (const auto& [tickPen, tickLine] : enabledSpecs->ticks) {
+        Q_UNUSED(tickPen);
+        enabledMaxLength = std::max(enabledMaxLength, tickLine.length());
+    }
+
+    CHECK(enabledMaxLength > disabledMaxLength);
+    CHECK(enabledMaxLength > 80.0);
+    CHECK(disabledMaxLength < 20.0);
+
+    return true;
+}
+
+bool isRedCurvePixel(const QColor& color)
+{
+    return color.red() > 200 && color.green() < 80 && color.blue() < 80 && color.alpha() > 200;
+}
+
+bool isGrayGridPixel(const QColor& color)
+{
+    const int channel = color.red();
+    return color.alpha() > 40 && std::abs(color.red() - color.green()) < 15
+        && std::abs(color.green() - color.blue()) < 15 && channel > 120 && channel < 230
+        && color.red() < 200;
+}
+
+bool testPlotDataPaintsAboveExtendedGrid()
+{
+    using cppqtgraph::graphicsItems::PlotItem;
+
+    QGraphicsScene scene;
+    scene.setSceneRect(0.0, 0.0, 420.0, 320.0);
+    scene.setBackgroundBrush(Qt::white);
+
+    PlotItem plot;
+    scene.addItem(&plot);
+    plot.resize(420.0, 320.0);
+    plot.setXRange(0.0, 10.0, 0.0, true);
+    plot.setYRange(0.0, 10.0, 0.0, true);
+    plot.getAxis(QStringLiteral("bottom"))->setGrid(220);
+    plot.getAxis(QStringLiteral("left"))->setGrid(220);
+
+    const std::vector<double> x = {0.0, 10.0};
+    const std::vector<double> y = {5.0, 5.0};
+    auto* curve = plot.plot(x, y, QString());
+    curve->setPen(QPen(QColor(255, 0, 0), 3.0));
+    curve->setAntialias(false);
+
+    QImage image(420, 320, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::white);
+    QPainter painter(&image);
+    scene.render(&painter, QRectF(0.0, 0.0, 420.0, 320.0), QRectF(0.0, 0.0, 420.0, 320.0));
+    painter.end();
+
+    const QRectF viewSceneRect = plot.getViewBox()->sceneBoundingRect();
+    const int sampleY = static_cast<int>(std::lround(viewSceneRect.center().y()));
+    const int sampleStartX = static_cast<int>(std::lround(viewSceneRect.left() + viewSceneRect.width() * 0.15));
+    const int sampleEndX = static_cast<int>(std::lround(viewSceneRect.left() + viewSceneRect.width() * 0.85));
+
+    int redSamples = 0;
+    int graySamples = 0;
+    for (int xPixel = sampleStartX; xPixel <= sampleEndX; ++xPixel) {
+        const QColor color = image.pixelColor(xPixel, sampleY);
+        if (isRedCurvePixel(color)) {
+            ++redSamples;
+        } else if (isGrayGridPixel(color)) {
+            ++graySamples;
+        }
+    }
+
+    CHECK(redSamples >= 12);
+    CHECK(graySamples <= redSamples / 4);
+    CHECK(redSamples > graySamples);
+
+    return true;
+}
+
+bool testGridAlphaAffectsRenderedTickOpacity()
+{
+    using cppqtgraph::graphicsItems::AxisItem;
+
+    AxisItem bottom(QStringLiteral("bottom"));
+    bottom.setGeometry(QRectF(0.0, 0.0, 240.0, 40.0));
+    bottom.setHeight(40.0);
+    bottom.setRange(0.0, 1.0);
+    bottom.setTicks({{{0.25, QStringLiteral("a")}, {0.75, QStringLiteral("b")}}});
+
+    QImage probe(280, 80, QImage::Format_ARGB32_Premultiplied);
+    probe.fill(Qt::black);
+    QPainter painter(&probe);
+
+    bottom.setGrid(255);
+    const auto strongSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(strongSpecs.has_value());
+    CHECK(!strongSpecs->ticks.empty());
+    const int strongAlpha = strongSpecs->ticks.front().first.color().alpha();
+
+    bottom.setGrid(64);
+    const auto weakSpecs = bottom.generateDrawSpecs(painter);
+    CHECK(weakSpecs.has_value());
+    CHECK(!weakSpecs->ticks.empty());
+    const int weakAlpha = weakSpecs->ticks.front().first.color().alpha();
+
+    CHECK(strongAlpha > weakAlpha);
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -900,6 +1068,18 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testP307VisualArtifacts()) {
+        return 1;
+    }
+    if (!testGridStateStorage()) {
+        return 1;
+    }
+    if (!testGridExtendsLinkedViewTicks()) {
+        return 1;
+    }
+    if (!testGridAlphaAffectsRenderedTickOpacity()) {
+        return 1;
+    }
+    if (!testPlotDataPaintsAboveExtendedGrid()) {
         return 1;
     }
 
