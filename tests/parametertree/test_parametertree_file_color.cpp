@@ -12,7 +12,6 @@
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtGui/QImage>
-#include <QtGui/QPalette>
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
@@ -25,6 +24,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 #ifndef CPPQTGRAPH_PARAMETERTREE_FIXTURE_DIR
 #define CPPQTGRAPH_PARAMETERTREE_FIXTURE_DIR "oracle/fixtures/parametertree"
@@ -136,6 +136,110 @@ PixelMetrics compareImages(const QImage& reference, const QImage& actual)
         }
     }
     metrics.changedPercent = pixelCount == 0 ? 0.0 : (100.0 * static_cast<double>(metrics.changedPixels) / pixelCount);
+    metrics.passed = metrics.changedPercent <= 1.5 && metrics.maxDelta <= 24;
+    return metrics;
+}
+
+QImage cropColormapGradientBand(const QImage& image)
+{
+    constexpr int left = 10;
+    constexpr int top = 4;
+    constexpr int width = 280;
+    constexpr int height = 8;
+    if (image.width() < left + width || image.height() < top + height) {
+        return {};
+    }
+    return image.copy(left, top, width, height);
+}
+
+std::vector<QColor> profileFromGradientBand(const QImage& band)
+{
+    std::vector<QColor> profile;
+    if (band.isNull() || band.width() <= 0 || band.height() <= 0) {
+        return profile;
+    }
+    profile.resize(static_cast<std::size_t>(band.width()));
+    for (int x = 0; x < band.width(); ++x) {
+        int red = 0;
+        int green = 0;
+        int blue = 0;
+        int alpha = 0;
+        for (int y = 0; y < band.height(); ++y) {
+            const QColor color = band.pixelColor(x, y);
+            red += color.red();
+            green += color.green();
+            blue += color.blue();
+            alpha += color.alpha();
+        }
+        profile[static_cast<std::size_t>(x)] =
+            QColor(red / band.height(), green / band.height(), blue / band.height(), alpha / band.height());
+    }
+    return profile;
+}
+
+std::vector<QColor> profileFromColorMap(const cppqtgraph::ColorMap& colorMap, int width)
+{
+    const auto lut = colorMap.getLookupTable(
+        0.0, 1.0, static_cast<std::size_t>(width), true, cppqtgraph::ColorMap::OutputMode::Byte);
+    std::vector<QColor> profile;
+    profile.resize(static_cast<std::size_t>(width));
+    for (int x = 0; x < width; ++x) {
+        const std::size_t offset = static_cast<std::size_t>(x) * lut.channels;
+        profile[static_cast<std::size_t>(x)] = QColor(lut.bytes[offset],
+            lut.bytes[offset + 1],
+            lut.bytes[offset + 2],
+            lut.channels >= 4 ? lut.bytes[offset + 3] : 255);
+    }
+    return profile;
+}
+
+double gradientBandScore(const QImage& image, int row)
+{
+    if (image.isNull() || row < 0 || row >= image.height() || image.width() < 5) {
+        return 0.0;
+    }
+    const int fifth = std::max(1, image.width() / 5);
+    double leftRed = 0.0;
+    double rightRed = 0.0;
+    for (int x = 0; x < fifth; ++x) {
+        leftRed += image.pixelColor(x, row).red();
+        rightRed += image.pixelColor(image.width() - 1 - x, row).red();
+    }
+    return (rightRed - leftRed) / static_cast<double>(fifth);
+}
+
+bool gradientBandIsVisible(const QImage& image)
+{
+    if (image.isNull()) {
+        return false;
+    }
+    double bestScore = 0.0;
+    for (int row = 0; row < image.height(); ++row) {
+        bestScore = std::max(bestScore, gradientBandScore(image, row));
+    }
+    return bestScore >= 40.0;
+}
+
+PixelMetrics compareGradientProfiles(
+    const std::vector<QColor>& reference, const std::vector<QColor>& actual, int noiseFloor)
+{
+    PixelMetrics metrics;
+    if (reference.size() != actual.size() || reference.empty()) {
+        return metrics;
+    }
+    const int sampleCount = static_cast<int>(reference.size());
+    for (int index = 0; index < sampleCount; ++index) {
+        const QColor expected = reference[static_cast<std::size_t>(index)];
+        const QColor observed = actual[static_cast<std::size_t>(index)];
+        const int delta = std::abs(expected.red() - observed.red()) + std::abs(expected.green() - observed.green())
+            + std::abs(expected.blue() - observed.blue()) + std::abs(expected.alpha() - observed.alpha());
+        if (delta > noiseFloor) {
+            ++metrics.changedPixels;
+        }
+        metrics.totalDelta += static_cast<std::uint64_t>(delta);
+        metrics.maxDelta = std::max(metrics.maxDelta, delta);
+    }
+    metrics.changedPercent = 100.0 * static_cast<double>(metrics.changedPixels) / static_cast<double>(sampleCount);
     metrics.passed = metrics.changedPercent <= 1.5 && metrics.maxDelta <= 24;
     return metrics;
 }
@@ -396,14 +500,43 @@ bool testVisualWidgetMatchesPinnedReference(const QString& referenceName, QWidge
     CHECK(!reference.isNull());
     const QImage actual = renderWidget(widget, size);
     const PixelMetrics metrics = compareImages(reference, actual);
-    const bool passed = referenceName.contains(QStringLiteral("colormap_gradient"))
-        ? (metrics.changedPercent <= 50.0 && metrics.maxDelta <= 765)
-        : (metrics.changedPercent <= 1.5 && metrics.maxDelta <= 24);
-    if (!passed) {
+    if (!metrics.passed) {
         std::cerr << referenceName.toStdString() << " visual mismatch changed%=" << metrics.changedPercent
                   << " maxDelta=" << metrics.maxDelta << '\n';
     }
-    CHECK(passed);
+    CHECK(metrics.passed);
+    return true;
+}
+
+bool testColormapGradientBandMatchesPinnedReference(cppqtgraph::widgets::GradientWidget& gradient, const QSize& size)
+{
+    constexpr int kGradientNoiseFloor = 8;
+
+    const QString path = fixturePath(QStringLiteral("colormap_gradient.reference.png"));
+    if (!QFile::exists(path)) {
+        std::cerr << "missing visual reference: " << path.toStdString() << '\n';
+        return false;
+    }
+    QImage reference(path);
+    CHECK(!reference.isNull());
+    const QImage referenceBand = cropColormapGradientBand(reference);
+    CHECK(!referenceBand.isNull());
+    const std::vector<QColor> referenceProfile = profileFromGradientBand(referenceBand);
+    CHECK(!referenceProfile.empty());
+
+    const QImage grab = renderWidget(gradient, size);
+    CHECK(gradientBandIsVisible(grab));
+
+    const std::vector<QColor> actualProfile =
+        profileFromColorMap(gradient.colorMap(), static_cast<int>(referenceProfile.size()));
+    CHECK(actualProfile.size() == referenceProfile.size());
+
+    const PixelMetrics metrics = compareGradientProfiles(referenceProfile, actualProfile, kGradientNoiseFloor);
+    if (!metrics.passed) {
+        std::cerr << "colormap_gradient.reference.png gradient-band mismatch changed%=" << metrics.changedPercent
+                  << " maxDelta=" << metrics.maxDelta << '\n';
+    }
+    CHECK(metrics.passed);
     return true;
 }
 
@@ -416,17 +549,28 @@ bool testColorButtonVisualReference()
 
 bool testColormapGradientVisualReference()
 {
-    cppqtgraph::widgets::GradientWidget gradient(nullptr, QStringLiteral("bottom"));
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("gradient")},
+                    {QStringLiteral("type"), QStringLiteral("colormap")},
+                    {QStringLiteral("value"), QVariant()}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("gradient"));
+    CHECK(item != nullptr);
+    auto* gradient = qobject_cast<cppqtgraph::widgets::GradientWidget*>(editorForItem(item));
+    CHECK(gradient != nullptr);
+
     const cppqtgraph::ColorMap fixedMap(
         {0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 0, 0)}, QStringLiteral("fixed"));
-    gradient.setColorMap(fixedMap);
-    gradient.setMaxDim(35);
-    gradient.setMinimumWidth(300);
-    gradient.setLength(280.0);
-    gradient.setAutoFillBackground(true);
-    gradient.setBackgroundBrush(gradient.palette().brush(QPalette::Window));
-    return testVisualWidgetMatchesPinnedReference(
-        QStringLiteral("colormap_gradient.reference.png"), gradient, QSize(300, 35));
+    gradient->setColorMap(fixedMap);
+    gradient->setMaxDim(35);
+    gradient->setMinimumWidth(300);
+    gradient->setLength(280.0);
+    return testColormapGradientBandMatchesPinnedReference(*gradient, QSize(300, 35));
 }
 
 bool testCmapLutViridisLutMatchesFixture()
