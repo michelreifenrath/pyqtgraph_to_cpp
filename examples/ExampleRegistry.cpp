@@ -62,7 +62,7 @@ QVector<ExampleEntry> makeEntries()
          .title = QStringLiteral("ParameterTree"),
          .upstreamFile = QStringLiteral("pyqtgraph/examples/parametertree.py"),
          .cppFile = QStringLiteral("examples/parametertree.cpp"),
-         .status = ExampleStatus::Planned,
+         .status = ExampleStatus::Ported,
          .validation = {.smoke = ValidationLevel::Required,
                         .numeric = ValidationLevel::Required,
                         .visual = ValidationLevel::Required,
