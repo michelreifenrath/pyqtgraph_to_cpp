@@ -264,6 +264,59 @@ bool testSliderLimitsStepLabelsAndSignals()
     return true;
 }
 
+bool testSliderCustomFormatOmitsSuffixOnInlineLabel()
+{
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("slider")},
+                    {QStringLiteral("limits"), QVariantList{0, 10}},
+                    {QStringLiteral("step"), 2.0},
+                    {QStringLiteral("precision"), 0},
+                    {QStringLiteral("format"), QStringLiteral("{0:>3}")},
+                    {QStringLiteral("suffix"), QStringLiteral("ms")},
+                    {QStringLiteral("value"), 4.0}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("widget")));
+    CHECK(item != nullptr);
+    auto* editor = item->editorWidget();
+    CHECK(editor != nullptr);
+    const QList<QLabel*> labels = editor->findChildren<QLabel*>();
+    CHECK(!labels.isEmpty());
+    CHECK(labels.first()->text() == QStringLiteral("  4"));
+
+    auto fallbackParam = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("slider")},
+                    {QStringLiteral("limits"), QVariantList{0, 10}},
+                    {QStringLiteral("step"), 2.0},
+                    {QStringLiteral("precision"), 0},
+                    {QStringLiteral("suffix"), QStringLiteral("ms")},
+                    {QStringLiteral("value"), 4.0}});
+
+    cppqtgraph::parametertree::ParameterTree fallbackTree;
+    fallbackTree.setParameters(fallbackParam, false);
+    fallbackTree.show();
+    QTest::qWait(0);
+
+    auto* fallbackItem = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(fallbackTree.invisibleRootItem(), QStringLiteral("widget")));
+    CHECK(fallbackItem != nullptr);
+    const QList<QLabel*> fallbackLabels = fallbackItem->editorWidget()->findChildren<QLabel*>();
+    CHECK(!fallbackLabels.isEmpty());
+    CHECK(fallbackLabels.first()->text() == QStringLiteral("4 ms"));
+    return true;
+}
+
 bool testSliderSpanModeUsesPinnedReferenceValues()
 {
     const QVariantList span = [](const std::vector<double>& values) {
@@ -388,6 +441,7 @@ int main(int argc, char** argv)
         && testChecklistMetaButtonsAndExclusiveDisable()
         && testChecklistDelayedValueSignals()
         && testSliderLimitsStepLabelsAndSignals()
+        && testSliderCustomFormatOmitsSuffixOnInlineLabel()
         && testSliderNonDividingStepSpan()
         && testSliderSpanModeUsesPinnedReferenceValues()
         && testSliderHowToSetSwapsSpanAndLimits();

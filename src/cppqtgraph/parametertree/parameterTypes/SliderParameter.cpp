@@ -268,7 +268,7 @@ QString SliderParameterItem::prettyTextValue(int sliderIndex) const
         const int width = std::max(1, static_cast<int>(charSpan_.at(sliderIndex).size()));
         return QStringLiteral("%1").arg(charSpan_.at(sliderIndex), width) + suffixText;
     }
-    return formatPythonStyleValue(format, charSpan_.at(sliderIndex)) + suffixText;
+    return formatPythonStyleValue(format, charSpan_.at(sliderIndex));
 }
 
 SliderParameter::SliderParameter(QVariantMap opts, QObject* parent)
