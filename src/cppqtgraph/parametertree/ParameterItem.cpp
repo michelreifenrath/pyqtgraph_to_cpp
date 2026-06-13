@@ -633,6 +633,12 @@ void ListParameterItem::writeEditorValue(const QVariant& val)
     } catch (const std::exception&) {
         if (combo_->count() > 0) {
             combo_->setCurrentIndex(0);
+            if (param_ != nullptr) {
+                const QVariant first = combo_->value();
+                if (first.isValid() && param_->value() != first) {
+                    param_->setValue(first);
+                }
+            }
         }
     }
 }

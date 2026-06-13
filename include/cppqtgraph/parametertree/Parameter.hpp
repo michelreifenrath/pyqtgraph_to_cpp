@@ -45,10 +45,10 @@ public:
     void insertChild(int index, std::shared_ptr<Parameter> child);
     void removeChild(Parameter* child);
 
-    QVariant setValue(const QVariant& value, bool blockSignal = false);
+    virtual QVariant setValue(const QVariant& value, bool blockSignal = false);
     void notifyValueChanging(const QVariant& value);
     QString setName(const QString& name);
-    void setOpts(const QVariantMap& opts);
+    virtual void setOpts(const QVariantMap& opts);
     void setDefault(const QVariant& val, bool updatePristineValues = false);
     void setToDefault();
 
@@ -99,6 +99,8 @@ class ListParameter final : public Parameter {
 public:
     explicit ListParameter(QVariantMap opts, QObject* parent = nullptr);
 
+    QVariant setValue(const QVariant& value, bool blockSignal = false) override;
+    void setOpts(const QVariantMap& opts) override;
     ParameterItem* makeTreeItem(int depth = 0) override;
 };
 
@@ -106,6 +108,7 @@ class ColorParameter final : public Parameter {
 public:
     explicit ColorParameter(QVariantMap opts, QObject* parent = nullptr);
 
+    QVariant setValue(const QVariant& value, bool blockSignal = false) override;
     ParameterItem* makeTreeItem(int depth = 0) override;
 };
 

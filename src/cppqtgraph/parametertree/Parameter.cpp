@@ -41,23 +41,24 @@ QVariantMap normalizeListOpts(QVariantMap opts)
     return opts;
 }
 
+QVariant interpretColorValue(const QVariant& value)
+{
+    if (!value.isValid()) {
+        return value;
+    }
+    if (value.metaType().id() == QMetaType::QColor) {
+        return value;
+    }
+    return QVariant::fromValue(mkColor(value.toString()));
+}
+
 QVariantMap normalizeColorOpts(QVariantMap opts)
 {
-    auto interpret = [](const QVariant& value) {
-        if (!value.isValid()) {
-            return value;
-        }
-        if (value.metaType().id() == QMetaType::QColor) {
-            return value;
-        }
-        return QVariant::fromValue(mkColor(value.toString()));
-    };
-
     if (opts.contains(QStringLiteral("value"))) {
-        opts.insert(QStringLiteral("value"), interpret(opts.value(QStringLiteral("value"))));
+        opts.insert(QStringLiteral("value"), interpretColorValue(opts.value(QStringLiteral("value"))));
     }
     if (opts.contains(QStringLiteral("default"))) {
-        opts.insert(QStringLiteral("default"), interpret(opts.value(QStringLiteral("default"))));
+        opts.insert(QStringLiteral("default"), interpretColorValue(opts.value(QStringLiteral("default"))));
     }
     return opts;
 }
@@ -447,6 +448,32 @@ ParameterItem* ListParameter::makeTreeItem(int depth)
     return new ListParameterItem(this, depth);
 }
 
+QVariant ListParameter::setValue(const QVariant& value, bool blockSignal)
+{
+    QVariant adjusted = value;
+    if (!valueInListLimits(value, opts_)) {
+        const QVariantList allowed = listLimitValuesFromOpts(opts_);
+        if (!allowed.isEmpty()) {
+            adjusted = allowed.front();
+        }
+    }
+    return Parameter::setValue(adjusted, blockSignal);
+}
+
+void ListParameter::setOpts(const QVariantMap& opts)
+{
+    Parameter::setOpts(opts);
+    if (!opts.contains(QStringLiteral("limits")) && !opts.contains(QStringLiteral("values"))) {
+        return;
+    }
+
+    QVariantMap adjusted = opts_;
+    enforceListValueInLimits(adjusted);
+    if (adjusted.value(QStringLiteral("value")) != opts_.value(QStringLiteral("value"))) {
+        setValue(adjusted.value(QStringLiteral("value")), false);
+    }
+}
+
 ColorParameter::ColorParameter(QVariantMap opts, QObject* parent)
     : Parameter(normalizeColorOpts(std::move(opts)), parent)
 {
@@ -455,6 +482,11 @@ ColorParameter::ColorParameter(QVariantMap opts, QObject* parent)
 ParameterItem* ColorParameter::makeTreeItem(int depth)
 {
     return new ColorParameterItem(this, depth);
+}
+
+QVariant ColorParameter::setValue(const QVariant& value, bool blockSignal)
+{
+    return Parameter::setValue(interpretColorValue(value), blockSignal);
 }
 
 TextParameter::TextParameter(QVariantMap opts, QObject* parent)

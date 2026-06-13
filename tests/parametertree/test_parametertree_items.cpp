@@ -404,6 +404,43 @@ bool testListParameterResetsInvalidValueToFirstLimit()
     return true;
 }
 
+bool testColorParameterSetValueNormalizesShortHex()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("brush")},
+                    {QStringLiteral("type"), QStringLiteral("color")},
+                    {QStringLiteral("value"), QStringLiteral("#f00")}});
+    param->setValue(QStringLiteral("#0f0"));
+    CHECK(param->value().value<QColor>() == QColor(Qt::green));
+    return true;
+}
+
+bool testListParameterSetValueEnforcesLimits()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("choice")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("values"), QVariantList{QStringLiteral("one"), QStringLiteral("two")}},
+                    {QStringLiteral("value"), QStringLiteral("two")}});
+    param->setValue(QStringLiteral("missing"));
+    CHECK(param->value().toString() == QStringLiteral("one"));
+    return true;
+}
+
+bool testListParameterSetOptsLimitsEnforcesValue()
+{
+    const QVariantList initialLimits = {QStringLiteral("alpha"), QStringLiteral("beta"), QStringLiteral("gamma")};
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("choice")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("values"), initialLimits},
+                    {QStringLiteral("value"), QStringLiteral("beta")}});
+    param->setOpts(QVariantMap{{QStringLiteral("limits"),
+                              QVariantList{QStringLiteral("alpha"), QStringLiteral("gamma")}}});
+    CHECK(param->value().toString() == QStringLiteral("alpha"));
+    return true;
+}
+
 bool testColorParameterUsesColorButtonAndParsesShortHex()
 {
     auto param = cppqtgraph::parametertree::Parameter::create(
@@ -497,6 +534,15 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testListParameterResetsInvalidValueToFirstLimit()) {
+        return 1;
+    }
+    if (!testListParameterSetValueEnforcesLimits()) {
+        return 1;
+    }
+    if (!testListParameterSetOptsLimitsEnforcesValue()) {
+        return 1;
+    }
+    if (!testColorParameterSetValueNormalizesShortHex()) {
         return 1;
     }
     if (!testColorParameterUsesColorButtonAndParsesShortHex()) {
