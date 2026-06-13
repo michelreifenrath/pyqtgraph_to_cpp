@@ -27,7 +27,7 @@ public:
     ParameterItem(Parameter* param, int depth);
     ~ParameterItem() override;
 
-    void treeWidgetChanged();
+    virtual void treeWidgetChanged();
     [[nodiscard]] Parameter* parameter() const { return param_; }
     [[nodiscard]] int depth() const { return depth_; }
 
@@ -66,7 +66,7 @@ public:
     WidgetParameterItem(Parameter* param, int depth, QWidget* editor, WidgetParameterItemOptions options = {});
     ~WidgetParameterItem() override;
 
-    void treeWidgetChanged();
+    void treeWidgetChanged() override;
     void valueChanged(Parameter* param, const QVariant& val) override;
     void defaultChanged(Parameter* param, const QVariant& defaultValue) override;
     void optsChanged(Parameter* param, const QVariantMap& opts) override;
@@ -145,6 +145,22 @@ protected:
     QVariant readEditorValue() const override;
     void writeEditorValue(const QVariant& val) override;
     void configureEditor(QWidget* editor) override;
+};
+
+class ActionParameterItem final : public ParameterItem {
+public:
+    ActionParameterItem(Parameter* param, int depth);
+
+    void treeWidgetChanged() override;
+    void optsChanged(Parameter* param, const QVariantMap& opts) override;
+
+    [[nodiscard]] QPushButton* actionButton() const { return button_; }
+
+private:
+    void updateButton();
+
+    QWidget* layoutWidget_ = nullptr;
+    QPushButton* button_ = nullptr;
 };
 
 } // namespace cppqtgraph::parametertree

@@ -515,6 +515,40 @@ bool testTextParameterUsesReadonlyMultilineTextEdit()
     return true;
 }
 
+bool testActionParameterShowsButtonAndEmitsActivated()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("Run")},
+                    {QStringLiteral("type"), QStringLiteral("action")}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::ActionParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("Run")));
+    CHECK(item != nullptr);
+
+    auto* button = item->actionButton();
+    CHECK(button != nullptr);
+    CHECK(button->isVisible());
+    CHECK(button->text() == QStringLiteral("Run"));
+
+    auto* action = dynamic_cast<cppqtgraph::parametertree::ActionParameter*>(param.get());
+    CHECK(action != nullptr);
+
+    int activationCount = 0;
+    QObject::connect(action, &cppqtgraph::parametertree::ActionParameter::sigActivated, &tree,
+                     [&](cppqtgraph::parametertree::Parameter*) { ++activationCount; });
+
+    QTest::mouseClick(button, Qt::LeftButton);
+    QTest::qWait(0);
+    CHECK(activationCount == 1);
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -577,6 +611,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testTextParameterUsesReadonlyMultilineTextEdit()) {
+        return 1;
+    }
+    if (!testActionParameterShowsButtonAndEmitsActivated()) {
         return 1;
     }
 

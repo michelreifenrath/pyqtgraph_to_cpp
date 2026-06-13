@@ -12,11 +12,13 @@
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
+#include <QtGui/QColor>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QWidget>
 
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -51,7 +53,8 @@ std::vector<std::vector<double>> jsonToMatrix(const QJsonArray& rows)
 QVariantList makeValueChoiceList(const QStringList& valueKeys)
 {
     QVariantList choices;
-    choices.reserve(valueKeys.size());
+    choices.reserve(valueKeys.size() + 1);
+    choices.append(QStringLiteral("random"));
     for (const QString& key : valueKeys) {
         choices.append(key);
     }
@@ -96,12 +99,98 @@ struct MultiDataPlotOptions {
     bool plotFirstSelection = false;
 };
 
+struct NextPlotInvocation {
+    QString xtype;
+    QString ytype;
+    QString symbol;
+    QColor symbolBrush;
+};
+
+using NextPlotCallback = std::function<void(const NextPlotInvocation&)>;
+
+class MultiDataPlotRunBinding final : public QObject {
+public:
+    static std::unique_ptr<MultiDataPlotRunBinding> install(const std::shared_ptr<parametertree::Parameter>& root,
+                                                            NextPlotCallback callback)
+    {
+        if (root == nullptr || !callback) {
+            return nullptr;
+        }
+
+        auto* nextPlot = root->child(QStringLiteral("next_plot"));
+        if (nextPlot == nullptr) {
+            return nullptr;
+        }
+
+        auto binding = std::unique_ptr<MultiDataPlotRunBinding>(new MultiDataPlotRunBinding(std::move(callback)));
+        binding->bindChild(nextPlot, QStringLiteral("xtype"), &NextPlotInvocation::xtype);
+        binding->bindChild(nextPlot, QStringLiteral("ytype"), &NextPlotInvocation::ytype);
+        binding->bindChild(nextPlot, QStringLiteral("symbol"), &NextPlotInvocation::symbol);
+        binding->bindColorChild(nextPlot, QStringLiteral("symbolBrush"), &NextPlotInvocation::symbolBrush);
+
+        auto* runAction = dynamic_cast<parametertree::ActionParameter*>(nextPlot->child(QStringLiteral("Run")));
+        if (runAction == nullptr) {
+            return nullptr;
+        }
+
+        binding->connections_.push_back(QObject::connect(runAction, &parametertree::ActionParameter::sigActivated,
+                                                         binding.get(), [binding = binding.get()](parametertree::Parameter*) {
+                                                             binding->onRun();
+                                                         }));
+        return binding;
+    }
+
+private:
+    explicit MultiDataPlotRunBinding(NextPlotCallback callback)
+        : callback_(std::move(callback))
+    {
+    }
+
+    void bindChild(parametertree::Parameter* parent, const QString& name, QString NextPlotInvocation::*field)
+    {
+        auto* child = parent->child(name);
+        if (child == nullptr) {
+            return;
+        }
+        cache_.*field = child->value().toString();
+        connections_.push_back(QObject::connect(child, &parametertree::Parameter::sigValueChanged, this,
+                                                [this, field](parametertree::Parameter*, const QVariant& value) {
+                                                    cache_.*field = value.toString();
+                                                }));
+    }
+
+    void bindColorChild(parametertree::Parameter* parent, const QString& name, QColor NextPlotInvocation::*field)
+    {
+        auto* child = parent->child(name);
+        if (child == nullptr) {
+            return;
+        }
+        cache_.*field = child->value().value<QColor>();
+        connections_.push_back(QObject::connect(child, &parametertree::Parameter::sigValueChanged, this,
+                                                [this, field](parametertree::Parameter*, const QVariant& value) {
+                                                    cache_.*field = value.value<QColor>();
+                                                }));
+    }
+
+    void onRun()
+    {
+        if (callback_) {
+            callback_(cache_);
+        }
+    }
+
+    NextPlotCallback callback_;
+    NextPlotInvocation cache_;
+    std::vector<QMetaObject::Connection> connections_;
+};
+
 struct MultiDataPlotExample {
     std::unique_ptr<QWidget> window;
     widgets::PlotWidget* plotWidget = nullptr;
     parametertree::ParameterTree* parameterTree = nullptr;
     std::shared_ptr<parametertree::Parameter> root;
     std::shared_ptr<MultiDataPlotFixture> fixture;
+    std::unique_ptr<MultiDataPlotRunBinding> runBinding;
 };
 
 bool populateMultiDataPlotFixtureFromJson(const QJsonObject& root, MultiDataPlotFixture& fixture)
@@ -224,15 +313,6 @@ void plotSelectionOnWidget(widgets::PlotWidget& plotWidget, const MultiDataPlotF
 std::shared_ptr<parametertree::Parameter> buildMultiDataPlotParameterShell(const MultiDataPlotFixture& fixture)
 {
     const QVariantList valueChoices = makeValueChoiceList(fixture.valueKeys);
-    const QString initialText = fixture.randomSelections.empty()
-        ? QString{}
-        : QStringLiteral("x=%1\ny=%2")
-              .arg(fixture.randomSelections.front().xtype, fixture.randomSelections.front().ytype);
-
-    const QString initialXType = fixture.randomSelections.empty() ? fixture.valueKeys.front()
-                                                                  : fixture.randomSelections.front().xtype;
-    const QString initialYType = fixture.randomSelections.empty() ? fixture.valueKeys.front()
-                                                                  : fixture.randomSelections.front().ytype;
 
     return parametertree::Parameter::create(QVariantMap{
         {QStringLiteral("name"), QStringLiteral("params")},
@@ -247,26 +327,38 @@ std::shared_ptr<parametertree::Parameter> buildMultiDataPlotParameterShell(const
                       QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("xtype")},
                                                       {QStringLiteral("type"), QStringLiteral("list")},
                                                       {QStringLiteral("values"), valueChoices},
-                                                      {QStringLiteral("value"), initialXType}}),
+                                                      {QStringLiteral("value"), QStringLiteral("random")},
+                                                      {QStringLiteral("default"), QStringLiteral("random")}}),
                       QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ytype")},
                                                       {QStringLiteral("type"), QStringLiteral("list")},
                                                       {QStringLiteral("values"), valueChoices},
-                                                      {QStringLiteral("value"), initialYType}}),
+                                                      {QStringLiteral("value"), QStringLiteral("random")},
+                                                      {QStringLiteral("default"), QStringLiteral("random")}}),
                       QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("symbol")},
                                                       {QStringLiteral("type"), QStringLiteral("list")},
                                                       {QStringLiteral("values"), makeSymbolChoiceList()},
-                                                      {QStringLiteral("value"), QStringLiteral("o")}}),
+                                                      {QStringLiteral("value"), QStringLiteral("o")},
+                                                      {QStringLiteral("default"), QStringLiteral("o")}}),
                       QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("symbolBrush")},
                                                       {QStringLiteral("type"), QStringLiteral("color")},
-                                                      {QStringLiteral("value"), QStringLiteral("#f00")}}),
+                                                      {QStringLiteral("value"), QStringLiteral("#f00")},
+                                                      {QStringLiteral("default"), QStringLiteral("#f00")}}),
+                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Run")},
+                                                      {QStringLiteral("type"), QStringLiteral("action")}}),
                   }},
              }),
              QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("text")},
                                              {QStringLiteral("type"), QStringLiteral("text")},
                                              {QStringLiteral("readonly"), true},
-                                             {QStringLiteral("value"), initialText}}),
+                                             {QStringLiteral("value"), QString{}}}),
          }},
     });
+}
+
+std::unique_ptr<MultiDataPlotRunBinding> connectMultiDataPlotRunAction(const std::shared_ptr<parametertree::Parameter>& root,
+                                                                       NextPlotCallback callback)
+{
+    return MultiDataPlotRunBinding::install(root, std::move(callback));
 }
 
 MultiDataPlotExample createMultiDataPlotExample(const MultiDataPlotOptions& options = {})
@@ -300,6 +392,13 @@ MultiDataPlotExample createMultiDataPlotExample(const MultiDataPlotOptions& opti
     auto root = buildMultiDataPlotParameterShell(*fixture);
     tree->setParameters(root, true);
 
+    auto* textParam = root->child(QStringLiteral("text"));
+    auto runBinding = connectMultiDataPlotRunAction(root, [textParam](const NextPlotInvocation& invocation) {
+        if (textParam != nullptr) {
+            textParam->setValue(QStringLiteral("x=%1\ny=%2").arg(invocation.xtype, invocation.ytype));
+        }
+    });
+
     if (options.plotFirstSelection && !fixture->randomSelections.empty()) {
         plotSelectionOnWidget(*plotWidget, *fixture, fixture->randomSelections.front());
     }
@@ -308,7 +407,8 @@ MultiDataPlotExample createMultiDataPlotExample(const MultiDataPlotOptions& opti
             .plotWidget = plotWidget,
             .parameterTree = tree,
             .root = std::move(root),
-            .fixture = std::move(fixture)};
+            .fixture = std::move(fixture),
+            .runBinding = std::move(runBinding)};
 }
 
 } // namespace cppqtgraph::examples

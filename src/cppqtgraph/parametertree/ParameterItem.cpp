@@ -4,6 +4,7 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
+#include "../../../include/cppqtgraph/parametertree/Parameter.hpp"
 #include "../../../include/cppqtgraph/parametertree/ParameterTree.hpp"
 
 #include <cppqtgraph/functions.hpp>
@@ -775,6 +776,70 @@ void TextParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
             textEdit->setReadOnly(opts.value(QStringLiteral("readonly")).toBool());
         }
     }
+}
+
+ActionParameterItem::ActionParameterItem(Parameter* param, int depth)
+    : ParameterItem(param, depth)
+{
+    layoutWidget_ = new QWidget();
+    auto* layout = new QHBoxLayout(layoutWidget_);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    button_ = new QPushButton(layoutWidget_);
+    button_->setAutoDefault(false);
+    QObject::connect(button_, &QPushButton::clicked, button_, [this]() {
+        if (auto* action = dynamic_cast<ActionParameter*>(param_)) {
+            action->activate();
+        }
+    });
+    layout->addWidget(button_);
+    layout->addStretch();
+
+    updateButton();
+}
+
+void ActionParameterItem::treeWidgetChanged()
+{
+    ParameterItem::treeWidgetChanged();
+    if (layoutWidget_ == nullptr) {
+        return;
+    }
+
+    if (auto* tree = treeWidget()) {
+        setFirstColumnSpanned(true);
+        tree->setItemWidget(this, 0, layoutWidget_);
+    }
+}
+
+void ActionParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
+{
+    ParameterItem::optsChanged(param, opts);
+    if (opts.contains(QStringLiteral("enabled"))) {
+        if (button_ != nullptr) {
+            button_->setEnabled(opts.value(QStringLiteral("enabled")).toBool());
+        }
+    }
+    if (opts.contains(QStringLiteral("tip"))) {
+        if (button_ != nullptr) {
+            button_->setToolTip(opts.value(QStringLiteral("tip")).toString());
+        }
+    }
+    if (opts.contains(QStringLiteral("title")) || opts.contains(QStringLiteral("name"))) {
+        updateButton();
+    }
+}
+
+void ActionParameterItem::updateButton()
+{
+    if (button_ == nullptr || param_ == nullptr) {
+        return;
+    }
+
+    button_->setText(param_->title());
+    if (param_->options().contains(QStringLiteral("tip"))) {
+        button_->setToolTip(param_->options().value(QStringLiteral("tip")).toString());
+    }
+    setSizeHint(0, button_->sizeHint());
 }
 
 } // namespace cppqtgraph::parametertree

@@ -120,8 +120,16 @@ public:
 };
 
 class ActionParameter final : public Parameter {
+    Q_OBJECT
+
 public:
     explicit ActionParameter(QVariantMap opts, QObject* parent = nullptr);
+
+    void activate();
+    ParameterItem* makeTreeItem(int depth) override;
+
+signals:
+    void sigActivated(Parameter* param);
 };
 
 void registerBuiltinParameterTypes();

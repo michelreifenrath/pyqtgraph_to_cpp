@@ -504,6 +504,16 @@ ActionParameter::ActionParameter(QVariantMap opts, QObject* parent)
 {
 }
 
+void ActionParameter::activate()
+{
+    emit sigActivated(this);
+}
+
+ParameterItem* ActionParameter::makeTreeItem(int depth)
+{
+    return new ActionParameterItem(this, depth);
+}
+
 void registerBuiltinParameterTypes()
 {
     static bool registered = false;
