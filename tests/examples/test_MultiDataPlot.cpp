@@ -13,6 +13,7 @@
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QTextEdit>
 
 #include <iostream>
@@ -209,11 +210,93 @@ bool testParameterEditorsUseSpecializedWidgets()
     auto* textEdit = qobject_cast<QTextEdit*>(editorWidgetFor(textItem));
     CHECK(textEdit != nullptr);
     CHECK(textEdit->isReadOnly());
-    CHECK(!example.fixture->randomSelections.empty());
-    const QString expectedText = QStringLiteral("x=%1\ny=%2")
-                                     .arg(example.fixture->randomSelections.front().xtype,
-                                          example.fixture->randomSelections.front().ytype);
-    CHECK(textEdit->toPlainText() == expectedText);
+    CHECK(textEdit->toPlainText().isEmpty());
+
+    auto* nextPlot = example.root->child(QStringLiteral("next_plot"));
+    CHECK(nextPlot != nullptr);
+    CHECK(nextPlot->child(QStringLiteral("xtype"))->value().toString() == QStringLiteral("random"));
+    CHECK(nextPlot->child(QStringLiteral("ytype"))->value().toString() == QStringLiteral("random"));
+    CHECK(nextPlot->child(QStringLiteral("symbol"))->value().toString() == QStringLiteral("o"));
+    CHECK(nextPlot->child(QStringLiteral("Run")) != nullptr);
+
+    return true;
+}
+
+bool testNextPlotRunActionOnlyInvokesCallbackOnRun()
+{
+    cppqtgraph::examples::MultiDataPlotOptions options{
+        .dataFixturePath = fixturePath(),
+        .plotFirstSelection = false,
+    };
+    auto example = cppqtgraph::examples::createMultiDataPlotExample(options);
+
+    int callCount = 0;
+    cppqtgraph::examples::NextPlotInvocation lastInvocation;
+    example.runBinding.reset();
+    example.runBinding = cppqtgraph::examples::connectMultiDataPlotRunAction(
+        example.root, [&](const cppqtgraph::examples::NextPlotInvocation& invocation) {
+            ++callCount;
+            lastInvocation = invocation;
+        });
+    CHECK(example.runBinding != nullptr);
+
+    example.window->show();
+    QApplication::processEvents();
+
+    auto* nextPlot = example.root->child(QStringLiteral("next_plot"));
+    CHECK(nextPlot != nullptr);
+    CHECK(nextPlot->child(QStringLiteral("xtype")) != nullptr);
+    CHECK(nextPlot->child(QStringLiteral("ytype")) != nullptr);
+    CHECK(nextPlot->child(QStringLiteral("symbol")) != nullptr);
+    CHECK(nextPlot->child(QStringLiteral("symbolBrush")) != nullptr);
+    CHECK(nextPlot->child(QStringLiteral("Run")) != nullptr);
+
+    auto* runItem = findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("Run"));
+    CHECK(runItem != nullptr);
+    auto* actionItem = dynamic_cast<cppqtgraph::parametertree::ActionParameterItem*>(runItem);
+    CHECK(actionItem != nullptr);
+    auto* runButton = actionItem->actionButton();
+    CHECK(runButton != nullptr);
+    CHECK(runButton->isVisible());
+    CHECK(runButton->text() == QStringLiteral("Run"));
+
+    auto* xtypeCombo = qobject_cast<cppqtgraph::widgets::ComboBox*>(
+        editorWidgetFor(findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("xtype"))));
+    auto* ytypeCombo = qobject_cast<cppqtgraph::widgets::ComboBox*>(
+        editorWidgetFor(findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("ytype"))));
+    auto* symbolCombo = qobject_cast<cppqtgraph::widgets::ComboBox*>(
+        editorWidgetFor(findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("symbol"))));
+    auto* colorButton = qobject_cast<cppqtgraph::widgets::ColorButton*>(
+        editorWidgetFor(findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("symbolBrush"))));
+    auto* textEdit = qobject_cast<QTextEdit*>(
+        editorWidgetFor(findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("text"))));
+    CHECK(xtypeCombo != nullptr);
+    CHECK(ytypeCombo != nullptr);
+    CHECK(symbolCombo != nullptr);
+    CHECK(colorButton != nullptr);
+    CHECK(textEdit != nullptr);
+
+    xtypeCombo->setValue(QStringLiteral("Single curve values"));
+    ytypeCombo->setValue(QStringLiteral("2D matrix"));
+    symbolCombo->setValue(QStringLiteral("t"));
+    colorButton->setColor(QColor(Qt::green), true);
+    QApplication::processEvents();
+
+    CHECK(callCount == 0);
+    CHECK(textEdit->toPlainText().isEmpty());
+
+    runButton->click();
+    QApplication::processEvents();
+
+    CHECK(callCount == 1);
+    CHECK(lastInvocation.xtype == QStringLiteral("Single curve values"));
+    CHECK(lastInvocation.ytype == QStringLiteral("2D matrix"));
+    CHECK(lastInvocation.symbol == QStringLiteral("t"));
+    CHECK(lastInvocation.symbolBrush == QColor(Qt::green));
+
+    runButton->click();
+    QApplication::processEvents();
+    CHECK(callCount == 2);
 
     return true;
 }
@@ -253,6 +336,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testParameterEditorsUseSpecializedWidgets()) {
+        return 1;
+    }
+    if (!testNextPlotRunActionOnlyInvokesCallbackOnRun()) {
         return 1;
     }
     if (!testDirectExecutableSmoke()) {
