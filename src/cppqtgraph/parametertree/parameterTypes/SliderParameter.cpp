@@ -128,6 +128,8 @@ SliderParameterItem::SliderParameterItem(Parameter* param, int depth)
     layout->addWidget(slider_);
 
     bindEditor(editor_);
+    useSpanMode_ = param->options().contains(QStringLiteral("span"))
+        && param->options().value(QStringLiteral("span")).isValid();
     rebuildSpan(param->options(), {});
     writeEditorValue(param->value());
     updateDisplayLabel(param->value());
@@ -208,15 +210,12 @@ void SliderParameterItem::rebuildSpan(const QVariantMap& opts, const QVariantMap
         : 2;
     suffix_ = opts.value(QStringLiteral("suffix")).toString();
 
-    const bool useSpan = [&]() {
-        if (changed.contains(QStringLiteral("span"))) {
-            return changed.value(QStringLiteral("span")).isValid();
-        }
-        if (changed.contains(QStringLiteral("limits"))) {
-            return false;
-        }
-        return opts.contains(QStringLiteral("span")) && opts.value(QStringLiteral("span")).isValid();
-    }();
+    if (changed.contains(QStringLiteral("span"))) {
+        useSpanMode_ = changed.value(QStringLiteral("span")).isValid();
+    } else if (changed.contains(QStringLiteral("limits"))) {
+        useSpanMode_ = false;
+    }
+    const bool useSpan = useSpanMode_;
 
     if (useSpan) {
         span_ = spanFromVariant(opts.value(QStringLiteral("span")), precision);

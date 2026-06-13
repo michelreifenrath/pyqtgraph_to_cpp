@@ -42,6 +42,7 @@ private:
     std::vector<double> span_;
     QStringList charSpan_;
     QString suffix_;
+    bool useSpanMode_ = false;
 };
 
 class SliderParameter final : public Parameter {

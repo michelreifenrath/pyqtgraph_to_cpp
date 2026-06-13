@@ -229,6 +229,7 @@ std::shared_ptr<Parameter> makeSliderSampleGroup()
             QVariant::fromValue(
                 QVariantMap{{QStringLiteral("name"), QStringLiteral("span")},
                             {QStringLiteral("type"), QStringLiteral("list")},
+                            {QStringLiteral("value"), linspaceSpan},
                             {QStringLiteral("limits"),
                              QVariantMap{{QStringLiteral("linspace(-pi, pi)"), linspaceSpan},
                                            {QStringLiteral("arange(10)**2"), arangeSpan}}}}),
@@ -239,14 +240,20 @@ std::shared_ptr<Parameter> makeSliderSampleGroup()
         });
 
     Parameter* widgetParam = group->child(QStringLiteral("widget"));
+    Parameter* spanOption = group->child(QStringLiteral("span"));
     Parameter* howToSet = group->child(QStringLiteral("How to Set"));
     if (widgetParam != nullptr && howToSet != nullptr) {
+        widgetParam->setOpts({{QStringLiteral("span"), QVariant()}});
+
         QObject::connect(howToSet,
                          &Parameter::sigValueChanged,
                          widgetParam,
-                         [widgetParam](Parameter* /*source*/, const QVariant& value) {
+                         [widgetParam, spanOption](Parameter* /*source*/, const QVariant& value) {
                              if (value.toString() == QStringLiteral("Use span")) {
-                                 const QVariant span = widgetParam->options().value(QStringLiteral("span"));
+                                 QVariant span = widgetParam->options().value(QStringLiteral("span"));
+                                 if (!span.isValid() && spanOption != nullptr) {
+                                     span = spanOption->value();
+                                 }
                                  if (span.isValid()) {
                                      widgetParam->setOpts({{QStringLiteral("span"), span}});
                                  }
