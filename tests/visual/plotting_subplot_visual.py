@@ -15,6 +15,14 @@ if str(ORACLE_SCRIPTS) not in sys.path:
 
 from compare_screenshots import compare_images, read_png_rgba, write_png_rgba_bytes  # noqa: E402
 
+AUTO_ICON_PATH = Path(__file__).resolve().parents[2] / "src" / "cppqtgraph" / "icons" / "auto.png"
+AUTO_BUTTON_PROBE_SIZE = 14
+AUTO_BUTTON_MIN_TEMPLATE_CORR = 0.75
+AUTO_BUTTON_SEARCH_WIDTH = 40
+AUTO_BUTTON_SEARCH_HEIGHT = 60
+AUTO_BUTTON_MAX_LEFT_OFFSET = 20
+AUTO_BUTTON_MIN_BOTTOM_OFFSET = 60
+
 PLOT_NAMES = ("p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9")
 IMAGE_WIDTH = 1000
 IMAGE_HEIGHT = 600
@@ -60,6 +68,13 @@ SUBPLOT_CELLS = tuple(
     for index, name in enumerate(PLOT_NAMES)
 )
 
+PLOTS_WITH_AUTO_BUTTON = frozenset({"p6", "p9"})
+PLOTS_WITH_VISUAL_AUTO_BUTTON = frozenset({"p9"})
+PLOTS_WITHOUT_AUTO_BUTTON = frozenset({"p1", "p2", "p3", "p4", "p5", "p7", "p8"})
+TOP_LEFT_PROBE_SIZE = 20
+
+_AUTO_ICON_TEMPLATE_RGBA: bytes | None = None
+
 
 def _cell_bounds(
     width: int,
@@ -76,6 +91,290 @@ def _cell_bounds(
     x1 = (col + 1) * cell_width - inset if col < GRID_COLS - 1 else width
     y1 = (row + 1) * cell_height - inset if row < GRID_ROWS - 1 else height
     return x0, y0, x1, y1
+
+
+def sample_cell_region_rgba(
+    rgba: bytes,
+    width: int,
+    height: int,
+    *,
+    col: int,
+    row: int,
+    region_x: int,
+    region_y: int,
+    region_width: int,
+    region_height: int,
+) -> bytes:
+    x0, y0, x1, y1 = _cell_bounds(width, height, col=col, row=row)
+    pixels = bytearray()
+    for y in range(region_y, min(region_y + region_height, y1 - y0)):
+        for x in range(region_x, min(region_x + region_width, x1 - x0)):
+            image_x = x0 + x
+            image_y = y0 + y
+            offset = (image_y * width + image_x) * 4
+            pixels.extend(rgba[offset : offset + 4])
+    return bytes(pixels)
+
+
+def _auto_icon_template_rgba() -> bytes:
+    global _AUTO_ICON_TEMPLATE_RGBA
+    if _AUTO_ICON_TEMPLATE_RGBA is not None:
+        return _AUTO_ICON_TEMPLATE_RGBA
+
+    from PIL import Image
+
+    image = Image.open(AUTO_ICON_PATH).convert("RGBA").resize(
+        (AUTO_BUTTON_PROBE_SIZE, AUTO_BUTTON_PROBE_SIZE),
+        Image.Resampling.LANCZOS,
+    )
+    pixels = bytearray()
+    for red, green, blue, alpha in image.getdata():
+        scaled_alpha = int(alpha * 0.7)
+        pixels.extend(
+            (
+                red * scaled_alpha // 255,
+                green * scaled_alpha // 255,
+                blue * scaled_alpha // 255,
+                255,
+            )
+        )
+    _AUTO_ICON_TEMPLATE_RGBA = bytes(pixels)
+    return _AUTO_ICON_TEMPLATE_RGBA
+
+
+def _patch_template_correlation(patch_rgba: bytes, template_rgba: bytes) -> float:
+    patch_luma = [
+        0.299 * patch_rgba[index]
+        + 0.587 * patch_rgba[index + 1]
+        + 0.114 * patch_rgba[index + 2]
+        for index in range(0, len(patch_rgba), 4)
+    ]
+    template_luma = [
+        0.299 * template_rgba[index]
+        + 0.587 * template_rgba[index + 1]
+        + 0.114 * template_rgba[index + 2]
+        for index in range(0, len(template_rgba), 4)
+    ]
+    patch_mean = sum(patch_luma) / len(patch_luma)
+    template_mean = sum(template_luma) / len(template_luma)
+    numerator = sum(
+        (patch - patch_mean) * (template - template_mean)
+        for patch, template in zip(patch_luma, template_luma)
+    )
+    patch_var = sum((value - patch_mean) ** 2 for value in patch_luma)
+    template_var = sum((value - template_mean) ** 2 for value in template_luma)
+    denominator = (patch_var * template_var) ** 0.5
+    if denominator == 0:
+        return 0.0
+    return numerator / denominator
+
+
+def find_auto_button_patch(
+    rgba: bytes,
+    *,
+    width: int,
+    height: int,
+    col: int,
+    row: int,
+    min_correlation: float = AUTO_BUTTON_MIN_TEMPLATE_CORR,
+) -> tuple[int, int, float] | None:
+    x0, y0, x1, y1 = _cell_bounds(width, height, col=col, row=row)
+    cell_width = x1 - x0
+    cell_height = y1 - y0
+    template_rgba = _auto_icon_template_rgba()
+    best_match: tuple[float, int, int] | None = None
+    search_height = min(cell_height, AUTO_BUTTON_SEARCH_HEIGHT)
+    search_width = min(cell_width, AUTO_BUTTON_SEARCH_WIDTH)
+    for region_y in range(
+        max(0, cell_height - search_height),
+        cell_height - AUTO_BUTTON_PROBE_SIZE + 1,
+    ):
+        for region_x in range(0, max(1, search_width - AUTO_BUTTON_PROBE_SIZE + 1)):
+            patch = sample_cell_region_rgba(
+                rgba,
+                width,
+                height,
+                col=col,
+                row=row,
+                region_x=region_x,
+                region_y=region_y,
+                region_width=AUTO_BUTTON_PROBE_SIZE,
+                region_height=AUTO_BUTTON_PROBE_SIZE,
+            )
+            correlation = _patch_template_correlation(patch, template_rgba)
+            if best_match is None or correlation > best_match[0]:
+                best_match = (correlation, region_x, region_y)
+    if best_match is None or best_match[0] < min_correlation:
+        return None
+    return best_match[1], best_match[2], best_match[0]
+
+
+def count_flat_gray_button_pixels(region_rgba: bytes) -> int:
+    gray_pixels = 0
+    for index in range(0, len(region_rgba), 4):
+        red, green, blue, alpha = region_rgba[index : index + 4]
+        if 45 <= red <= 75 and 45 <= green <= 75 and 45 <= blue <= 75 and alpha >= 150:
+            gray_pixels += 1
+    return gray_pixels
+
+
+def assert_auto_button_bottom_left(
+    rgba: bytes,
+    *,
+    width: int,
+    height: int,
+    col: int,
+    row: int,
+    name: str,
+) -> None:
+    match = find_auto_button_patch(
+        rgba,
+        width=width,
+        height=height,
+        col=col,
+        row=row,
+        min_correlation=AUTO_BUTTON_MIN_TEMPLATE_CORR,
+    )
+    assert match is not None, (
+        f"{name} auto-range button missing near bottom-left"
+    )
+    region_x, region_y, correlation = match
+    x0, y0, x1, y1 = _cell_bounds(width, height, col=col, row=row)
+    cell_height = y1 - y0
+    assert region_x <= AUTO_BUTTON_MAX_LEFT_OFFSET, (
+        f"{name} auto-range button too far from left edge: x={region_x}"
+    )
+    assert region_y >= cell_height - AUTO_BUTTON_MIN_BOTTOM_OFFSET, (
+        f"{name} auto-range button too far from bottom edge: y={region_y}"
+    )
+    patch = sample_cell_region_rgba(
+        rgba,
+        width,
+        height,
+        col=col,
+        row=row,
+        region_x=region_x,
+        region_y=region_y,
+        region_width=AUTO_BUTTON_PROBE_SIZE,
+        region_height=AUTO_BUTTON_PROBE_SIZE,
+    )
+    distinct_colors = {
+        (patch[index], patch[index + 1], patch[index + 2])
+        for index in range(0, len(patch), 4)
+    }
+    assert len(distinct_colors) >= 6, (
+        f"{name} auto-range button patch has too few colors: "
+        f"{len(distinct_colors)} < 6 (corr={correlation:.3f})"
+    )
+
+
+def assert_plain_top_left_background(
+    rgba: bytes,
+    *,
+    width: int,
+    height: int,
+    col: int,
+    row: int,
+    name: str,
+) -> None:
+    x0, y0, x1, y1 = _cell_bounds(width, height, col=col, row=row)
+    cell_width = x1 - x0
+    cell_height = y1 - y0
+    title_height = _plot_area_title_height(cell_height)
+    probe = sample_cell_region_rgba(
+        rgba,
+        width,
+        height,
+        col=col,
+        row=row,
+        region_x=0,
+        region_y=title_height,
+        region_width=min(TOP_LEFT_PROBE_SIZE, cell_width),
+        region_height=min(TOP_LEFT_PROBE_SIZE, cell_height - title_height),
+    )
+    gray_pixels = count_flat_gray_button_pixels(probe)
+    assert gray_pixels < 20, (
+        f"{name} top-left shows flat gray auto-button artifact: {gray_pixels} gray pixels"
+    )
+
+
+def assert_no_auto_button(
+    rgba: bytes,
+    *,
+    width: int,
+    height: int,
+    col: int,
+    row: int,
+    name: str,
+) -> None:
+    x0, y0, x1, y1 = _cell_bounds(width, height, col=col, row=row)
+    cell_width = x1 - x0
+    cell_height = y1 - y0
+    title_height = _plot_area_title_height(cell_height)
+
+    top_left = sample_cell_region_rgba(
+        rgba,
+        width,
+        height,
+        col=col,
+        row=row,
+        region_x=0,
+        region_y=title_height,
+        region_width=min(TOP_LEFT_PROBE_SIZE, cell_width),
+        region_height=min(TOP_LEFT_PROBE_SIZE, cell_height - title_height),
+    )
+    assert count_flat_gray_button_pixels(top_left) < 20, (
+        f"{name} shows flat gray auto-button artifact at top-left"
+    )
+    match = find_auto_button_patch(
+        rgba,
+        width=width,
+        height=height,
+        col=col,
+        row=row,
+        min_correlation=AUTO_BUTTON_MIN_TEMPLATE_CORR,
+    )
+    assert match is None, (
+        f"{name} shows auto-range button near bottom-left (corr={match[2]:.3f})"
+        if match is not None
+        else f"{name} shows auto-range button near bottom-left"
+    )
+
+
+def assert_plotting_auto_button_layout(image_path: Path) -> None:
+    width, height, rgba = read_png_rgba(image_path)
+    assert (width, height) == (IMAGE_WIDTH, IMAGE_HEIGHT)
+    cells_by_name = {cell.name: cell for cell in SUBPLOT_CELLS}
+    for name in sorted(PLOTS_WITH_VISUAL_AUTO_BUTTON):
+        cell = cells_by_name[name]
+        assert_auto_button_bottom_left(
+            rgba,
+            width=width,
+            height=height,
+            col=cell.col,
+            row=cell.row,
+            name=name,
+        )
+    for name in sorted(PLOTS_WITH_AUTO_BUTTON):
+        cell = cells_by_name[name]
+        assert_plain_top_left_background(
+            rgba,
+            width=width,
+            height=height,
+            col=cell.col,
+            row=cell.row,
+            name=name,
+        )
+    for name in sorted(PLOTS_WITHOUT_AUTO_BUTTON):
+        cell = cells_by_name[name]
+        assert_no_auto_button(
+            rgba,
+            width=width,
+            height=height,
+            col=cell.col,
+            row=cell.row,
+            name=name,
+        )
 
 
 def crop_subplot_rgba(

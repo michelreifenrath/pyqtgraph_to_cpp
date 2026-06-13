@@ -640,6 +640,7 @@ if(_cppqtgraph_has_graphicsitem)
         graphicsItems/test_PlotItem_autorange_button.cpp
         cppqtgraph.graphicsItems.PlotItem.autorange_button
     )
+    target_link_libraries(cppqtgraph_graphicsitems_plotitem_autorange_button PRIVATE Qt6::Test)
     target_compile_definitions(cppqtgraph_graphicsitems_plotitem_menu_config_p4_14
         PRIVATE
             CPPQTGRAPH_P4_14_ARTIFACT_DIR="${PROJECT_BINARY_DIR}/artifacts/P4.14"
