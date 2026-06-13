@@ -4,7 +4,6 @@
 #include <cppqtgraph/graphicsItems/ScatterPlotItem.hpp>
 
 #include <QtCore/QPointer>
-#include <QtCore/QString>
 #include <QtGui/QBrush>
 #include <QtGui/QColor>
 #include <QtGui/QImage>
@@ -342,6 +341,51 @@ bool testSymbolStyleAfterDataUpdatesScatterPenAndBrush()
     return true;
 }
 
+bool testPlotDataItemScatterRendersRedCircleWhiteOutline()
+{
+    cppqtgraph::graphicsItems::PlotDataItem item;
+    const std::vector<double> y{0.0};
+
+    item.setData(y);
+    item.setSymbol(QStringLiteral("o"));
+    item.setSymbolBrush(QBrush(QColor(255, 0, 0)));
+    item.setSymbolPen(QPen(Qt::white));
+
+    const auto* scatter = item.scatter();
+    CHECK(scatter->pen().isCosmetic());
+    CHECK(scatter->pen().color() == QColor(255, 255, 255));
+    CHECK(scatter->brush().color() == QColor(255, 0, 0));
+
+    const QImage image = cppqtgraph::graphicsItems::renderSymbol(
+        QStringLiteral("o"), scatter->size(), scatter->pen(), scatter->brush(), 1.0);
+    CHECK(!image.isNull());
+
+    const QColor center = QColor::fromRgba(image.pixel(image.width() / 2, image.height() / 2));
+    CHECK(center.alpha() > 0);
+    CHECK(center.red() > center.green());
+    CHECK(center.red() > center.blue());
+
+    const QColor corner = QColor::fromRgba(image.pixel(0, 0));
+    CHECK(corner.alpha() == 0);
+
+    bool foundWhiteOutline = false;
+    for (int row = 0; row < image.height(); ++row) {
+        for (int column = 0; column < image.width(); ++column) {
+            const QColor pixel = QColor::fromRgba(image.pixel(column, row));
+            if (pixel.alpha() > 0 && pixel.red() > 200 && pixel.green() > 200 && pixel.blue() > 200) {
+                foundWhiteOutline = true;
+                break;
+            }
+        }
+        if (foundWhiteOutline) {
+            break;
+        }
+    }
+    CHECK(foundWhiteOutline);
+
+    return true;
+}
+
 bool testCurveLifetimeIsOwnedByPlotDataItem()
 {
     QPointer<cppqtgraph::graphicsItems::PlotCurveItem> curve;
@@ -399,6 +443,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testSymbolStyleAfterDataUpdatesScatterPenAndBrush()) {
+        return 1;
+    }
+    if (!testPlotDataItemScatterRendersRedCircleWhiteOutline()) {
         return 1;
     }
     if (!testCurveLifetimeIsOwnedByPlotDataItem()) {

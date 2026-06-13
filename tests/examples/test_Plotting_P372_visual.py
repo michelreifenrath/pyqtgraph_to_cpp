@@ -29,14 +29,92 @@ from compare_screenshots import read_png_rgba  # noqa: E402
 
 REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "Plotting.reference.png"
 P8_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p8.reference.png"
+P3_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p3.reference.png"
+P5_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p5.reference.png"
 CHECK_VISUAL_ARTIFACTS = ROOT / "scripts" / "check_visual_artifacts"
 DEFAULT_REVIEW = ROOT / "reports" / "examples" / "P3.72" / "gpt5_vision_review.md"
 PYQTGRAPH_REF = ROOT / "reference" / "pyqtgraph"
 PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
 
+# Measured from pinned PyQtGraph p3 crop (Plotting.p3.reference.png).
+# C++ default symbolSize is 7 vs PyQtGraph 10, so red area is ~47% of reference.
+P3_MIN_RED_MARKER_PIXELS = 2000
+P3_MIN_WHITE_RIM_PIXELS = 1200
+P3_RED_COVERAGE_RATIO = 0.40
+P3_WHITE_COVERAGE_RATIO = 0.80
+
+# Measured from pinned PyQtGraph p5 crop (Plotting.p5.reference.png).
+P5_MIN_BLUE_TRIANGLE_PIXELS = 3000
+P5_TRIANGLE_COVERAGE_RATIO = 0.85
+
 # Measured from pinned PyQtGraph p8 crop (Plotting.p8.reference.png).
 P8_MIN_EDGE_LINE_PIXELS = 200
 P8_MIN_BAND_COVERAGE_RATIO = 0.85
+
+
+def _count_p3_region_pixels(rgba: bytes) -> tuple[int, int]:
+    red_markers = 0
+    white_rim = 0
+    for index in range(0, len(rgba), 4):
+        red, green, blue, alpha = rgba[index : index + 4]
+        if alpha > 100 and red > 200 and green < 80 and blue < 80:
+            red_markers += 1
+        if alpha > 100 and red > 200 and green > 200 and blue > 200:
+            white_rim += 1
+    return red_markers, white_rim
+
+
+def _count_p5_region_pixels(rgba: bytes) -> int:
+    blue_triangles = 0
+    for index in range(0, len(rgba), 4):
+        red, green, blue, alpha = rgba[index : index + 4]
+        if alpha > 20 and blue > 100 and red < 120 and green < 120:
+            blue_triangles += 1
+    return blue_triangles
+
+
+def _assert_p3_region_markers(actual: Path) -> None:
+    assert P3_REFERENCE.is_file(), f"missing pinned p3 reference crop: {P3_REFERENCE}"
+    _, _, ref_rgba = read_png_rgba(P3_REFERENCE)
+    ref_red, ref_white = _count_p3_region_pixels(ref_rgba)
+    assert ref_red >= P3_MIN_RED_MARKER_PIXELS
+    assert ref_white >= P3_MIN_WHITE_RIM_PIXELS
+
+    width, height, rgba = read_png_rgba(actual)
+    _, _, crop_rgba = crop_subplot_rgba(rgba, width, height, col=2, row=0)
+    red_pixels, white_pixels = _count_p3_region_pixels(crop_rgba)
+    min_red = max(P3_MIN_RED_MARKER_PIXELS, int(P3_RED_COVERAGE_RATIO * ref_red))
+    min_white = max(P3_MIN_WHITE_RIM_PIXELS, int(P3_WHITE_COVERAGE_RATIO * ref_white))
+    assert red_pixels >= min_red, (
+        f"p3 red marker coverage too low: {red_pixels} < {min_red} (reference={ref_red})"
+    )
+    assert white_pixels >= min_white, (
+        f"p3 white rim coverage too low: {white_pixels} < {min_white} (reference={ref_white})"
+    )
+    assert red_pixels > white_pixels, (
+        f"p3 red interior should dominate white rim: {red_pixels} <= {white_pixels}"
+    )
+
+    tmp_crop = actual.parent / "Plotting.p3.actual.png"
+    write_subplot_png(actual, tmp_crop, col=2, row=0)
+
+
+def _assert_p5_region_triangles(actual: Path) -> None:
+    assert P5_REFERENCE.is_file(), f"missing pinned p5 reference crop: {P5_REFERENCE}"
+    _, _, ref_rgba = read_png_rgba(P5_REFERENCE)
+    ref_blue = _count_p5_region_pixels(ref_rgba)
+    assert ref_blue >= P5_MIN_BLUE_TRIANGLE_PIXELS
+
+    width, height, rgba = read_png_rgba(actual)
+    _, _, crop_rgba = crop_subplot_rgba(rgba, width, height, col=1, row=1)
+    blue_pixels = _count_p5_region_pixels(crop_rgba)
+    min_blue = int(P5_TRIANGLE_COVERAGE_RATIO * ref_blue)
+    assert blue_pixels >= min_blue, (
+        f"p5 blue triangle coverage too low: {blue_pixels} < {min_blue} (reference={ref_blue})"
+    )
+
+    tmp_crop = actual.parent / "Plotting.p5.actual.png"
+    write_subplot_png(actual, tmp_crop, col=1, row=1)
 
 
 def _count_p8_region_pixels(rgba: bytes) -> tuple[int, int, int]:
@@ -135,6 +213,8 @@ def _run_renderer(renderer: Path, output: Path) -> dict[str, Any]:
     assert Path(str(status["output"])).resolve() == output.resolve()
     assert output.is_file()
     _assert_semantic_plot_image(output, width=1000, height=600)
+    _assert_p3_region_markers(output)
+    _assert_p5_region_triangles(output)
     _assert_p8_region_band(output)
     assert_all_subplots_nonempty(output)
     return status
