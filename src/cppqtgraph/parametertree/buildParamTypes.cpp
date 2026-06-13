@@ -247,14 +247,15 @@ std::shared_ptr<Parameter> makeSliderSampleGroup()
                          [widgetParam](Parameter* /*source*/, const QVariant& value) {
                              if (value.toString() == QStringLiteral("Use span")) {
                                  const QVariant span = widgetParam->options().value(QStringLiteral("span"));
-                                 QVariantMap opts{{QStringLiteral("span"), span}};
-                                 opts.insert(QStringLiteral("limits"), QVariant());
-                                 widgetParam->setOpts(opts);
+                                 if (span.isValid()) {
+                                     widgetParam->setOpts({{QStringLiteral("span"), span}});
+                                 }
                              } else {
-                                 const QVariant limits = widgetParam->options().value(QStringLiteral("limits"));
-                                 QVariantMap opts{{QStringLiteral("limits"), limits}};
-                                 opts.insert(QStringLiteral("span"), QVariant());
-                                 widgetParam->setOpts(opts);
+                                 QVariant limits = widgetParam->options().value(QStringLiteral("limits"));
+                                 if (!limits.isValid() || limits.toList().isEmpty()) {
+                                     limits = QVariantList{0, 100};
+                                 }
+                                 widgetParam->setOpts({{QStringLiteral("limits"), limits}});
                              }
                          });
     }

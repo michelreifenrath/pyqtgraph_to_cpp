@@ -41,10 +41,25 @@ std::vector<double> buildSpanFromLimits(const QVariantList& limits, double step,
         return span;
     }
 
-    for (double value = start; value <= stop + (step * 0.5); value += step) {
+    for (double value = start; value < stop + step; value += step) {
         span.push_back(roundToPrecision(value, precision));
     }
     return span;
+}
+
+QString formatPythonStyleValue(const QString& format, const QString& value)
+{
+    if (format.size() >= 6 && format.startsWith(QStringLiteral("{0:>")) && format.endsWith(QLatin1Char('}'))) {
+        bool ok = false;
+        const int width = format.mid(4, format.size() - 5).toInt(&ok);
+        if (ok && width > 0) {
+            return QStringLiteral("%1").arg(value, width);
+        }
+    }
+    if (format.contains(QStringLiteral("{0}"))) {
+        return QString(format).replace(QStringLiteral("{0}"), value);
+    }
+    return format.arg(value);
 }
 
 std::vector<double> spanFromVariant(const QVariant& spanValue, int precision)
@@ -244,7 +259,7 @@ QString SliderParameterItem::prettyTextValue(int sliderIndex) const
         const int width = std::max(1, static_cast<int>(charSpan_.at(sliderIndex).size()));
         return QStringLiteral("%1").arg(charSpan_.at(sliderIndex), width) + suffixText;
     }
-    return format.arg(charSpan_.at(sliderIndex)) + suffixText;
+    return formatPythonStyleValue(format, charSpan_.at(sliderIndex)) + suffixText;
 }
 
 SliderParameter::SliderParameter(QVariantMap opts, QObject* parent)

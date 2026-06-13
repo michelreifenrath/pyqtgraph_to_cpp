@@ -239,12 +239,27 @@ bool testSliderLimitsStepLabelsAndSignals()
     CHECK(slider->maximum() == 5);
     CHECK(slider->value() == 2);
 
+    const QList<QLabel*> labels = editor->findChildren<QLabel*>();
+    CHECK(!labels.isEmpty());
+    CHECK(labels.first()->text() == QStringLiteral("  4"));
+
     QSignalSpy changing(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanging);
     QSignalSpy changed(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanged);
+    slider->resize(300, 30);
+    const int y = slider->height() / 2;
+    const auto xFor = [&](int value) {
+        const int max = std::max(1, slider->maximum());
+        return (slider->width() * value) / max;
+    };
+    QTest::mousePress(slider, Qt::LeftButton, Qt::NoModifier, QPoint(xFor(2), y));
+    QTest::mouseMove(slider, QPoint(xFor(3), y), 10);
+    CHECK(changing.count() >= 1);
+    QTest::mouseRelease(slider, Qt::LeftButton, Qt::NoModifier, QPoint(xFor(3), y));
     slider->setValue(3);
     QTest::qWait(0);
     CHECK(changed.count() >= 1);
     CHECK(param->value().toDouble() == 6.0);
+    CHECK(labels.first()->text() == QStringLiteral("  6"));
     return true;
 }
 
@@ -284,6 +299,36 @@ bool testSliderSpanModeUsesPinnedReferenceValues()
     return true;
 }
 
+bool testSliderNonDividingStepSpan()
+{
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("slider")},
+                    {QStringLiteral("limits"), QVariantList{0, 10}},
+                    {QStringLiteral("step"), 3.0},
+                    {QStringLiteral("precision"), 0},
+                    {QStringLiteral("value"), 9.0}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("widget")));
+    CHECK(item != nullptr);
+    auto* slider = item->editorWidget()->findChild<QSlider*>();
+    CHECK(slider != nullptr);
+    CHECK(slider->maximum() == 4);
+    CHECK(slider->value() == 3);
+    CHECK(param->value().toDouble() == 9.0);
+    return true;
+}
+
 bool testSliderHowToSetSwapsSpanAndLimits()
 {
     int argc = 0;
@@ -305,13 +350,18 @@ bool testSliderHowToSetSwapsSpanAndLimits()
                     {QStringLiteral("step"), 1.0},
                     {QStringLiteral("value"), 10.0}});
 
-    param->setOpts({{QStringLiteral("span"), span}, {QStringLiteral("limits"), QVariant()}});
+    param->setOpts({{QStringLiteral("span"), span}});
     CHECK(param->options().contains(QStringLiteral("span")));
-    CHECK(!param->options().value(QStringLiteral("limits")).isValid()
-           || param->options().value(QStringLiteral("limits")).toList().isEmpty());
+    CHECK(param->options().value(QStringLiteral("limits")).isValid());
 
-    param->setOpts({{QStringLiteral("limits"), QVariantList{0, 100}}, {QStringLiteral("span"), QVariant()}});
+    param->setOpts({{QStringLiteral("limits"), QVariantList{0, 100}}});
     CHECK(param->options().contains(QStringLiteral("limits")));
+    CHECK(param->options().value(QStringLiteral("span")).isValid());
+
+    const QVariant preservedSpan = param->options().value(QStringLiteral("span"));
+    param->setOpts({{QStringLiteral("span"), preservedSpan}});
+    CHECK(param->options().contains(QStringLiteral("span")));
+    CHECK(preservedSpan.toList().size() == span.size());
     return true;
 }
 
@@ -324,6 +374,7 @@ int main(int argc, char** argv)
         && testChecklistMetaButtonsAndExclusiveDisable()
         && testChecklistDelayedValueSignals()
         && testSliderLimitsStepLabelsAndSignals()
+        && testSliderNonDividingStepSpan()
         && testSliderSpanModeUsesPinnedReferenceValues()
         && testSliderHowToSetSwapsSpanAndLimits();
 
