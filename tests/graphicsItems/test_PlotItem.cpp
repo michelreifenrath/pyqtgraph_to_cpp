@@ -1,3 +1,4 @@
+#include <cppqtgraph/graphicsItems/LegendItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotDataItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 #include <cppqtgraph/graphicsItems/ScatterPlotItem.hpp>
@@ -17,6 +18,7 @@
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsView>
 #include <QtWidgets/QGraphicsWidget>
+#include <QtWidgets/QStyleOptionGraphicsItem>
 
 #include <cmath>
 #include <iostream>
@@ -286,6 +288,70 @@ bool testPlotItemOffscreenCropShowsLineAndMarkers()
     return true;
 }
 
+bool testNamedPlotLegendSampleUsesPlotDataItemPen()
+{
+    using cppqtgraph::graphicsItems::PlotItem;
+
+    PlotItem plot;
+    QGraphicsScene scene;
+    scene.addItem(&plot);
+    plot.resize(400.0, 300.0);
+    plot.addLegend(QPointF(30.0, 30.0));
+
+    const std::vector<double> x{0.0, 1.0, 2.0};
+    const std::vector<double> y{1.0, 2.0, 3.0};
+
+    PlotItem::PlotOptions options;
+    options.pen = QPen(QColor(255, 80, 40), 2.0);
+    options.name = QStringLiteral("series");
+    plot.plot(x, y, options);
+
+    auto* legend = plot.legend();
+    CHECK(legend != nullptr);
+    CHECK(legend->itemCount() == 1);
+
+    const QSizeF legendSize = legend->boundingRect().size();
+    QImage image(static_cast<int>(std::ceil(legendSize.width())),
+                 static_cast<int>(std::ceil(legendSize.height())),
+                 QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::black);
+    QPainter painter(&image);
+    QStyleOptionGraphicsItem option;
+    const QRect legendRect = legend->boundingRect().toRect();
+    option.rect = legendRect;
+    option.exposedRect = legendRect;
+    legend->paint(&painter, &option, nullptr);
+    painter.end();
+
+    int penColoredPixels = 0;
+    int labelColoredPixels = 0;
+    const int sampleTop = std::max(0, image.height() / 2 - 2);
+    const int sampleBottom = std::min(image.height() - 1, image.height() / 2 + 2);
+    const int sampleLeft = 6;
+    const int sampleRight = std::min(image.width() - 1, 36);
+    for (int row = sampleTop; row <= sampleBottom; ++row) {
+        for (int column = sampleLeft; column <= sampleRight; ++column) {
+            const QColor color = image.pixelColor(column, row);
+            if (color.alpha() < 100) {
+                continue;
+            }
+            if (color.red() > 200 && color.green() < 140 && color.blue() < 140) {
+                ++penColoredPixels;
+            }
+            if (color.red() > 220 && color.green() > 220 && color.blue() > 220) {
+                ++labelColoredPixels;
+            }
+        }
+    }
+
+    CHECK(penColoredPixels >= 4);
+    CHECK(labelColoredPixels == 0);
+
+    plot.clear();
+    scene.removeItem(&plot);
+    return true;
+}
+
 bool testPlotWidgetPlotReturnsPlotDataItem()
 {
     using cppqtgraph::graphicsItems::PlotDataItem;
@@ -327,6 +393,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPlotItemOffscreenCropShowsLineAndMarkers()) {
+        return 1;
+    }
+    if (!testNamedPlotLegendSampleUsesPlotDataItemPen()) {
         return 1;
     }
     if (!testPlotWidgetPlotReturnsPlotDataItem()) {

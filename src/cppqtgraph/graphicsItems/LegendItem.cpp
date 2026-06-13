@@ -6,6 +6,7 @@
 #include "../../../include/cppqtgraph/graphicsItems/LegendItem.hpp"
 
 #include "../../../include/cppqtgraph/graphicsItems/PlotCurveItem.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/PlotDataItem.hpp"
 
 #include <QtCore/QSizeF>
 #include <QtCore/Qt>
@@ -292,6 +293,13 @@ QPen LegendItem::samplePen(const Entry& entry) const
         if (curvePen.style() != Qt::NoPen) {
             curvePen.setCosmetic(true);
             return curvePen;
+        }
+    }
+    if (auto* data = dynamic_cast<PlotDataItem*>(entry.item)) {
+        QPen dataPen = data->pen();
+        if (dataPen.style() != Qt::NoPen) {
+            dataPen.setCosmetic(true);
+            return dataPen;
         }
     }
     QPen fallback(labelTextColor_, 1.5);
