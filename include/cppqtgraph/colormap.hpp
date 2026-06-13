@@ -59,6 +59,7 @@ public:
         std::vector<QColor> colors,
         QString name = {},
         MappingMode mappingMode = MappingMode::Clip);
+    ColorMap();
     [[nodiscard]] static ColorMap fromEqualSpacing(
         std::vector<QColor> colors,
         QString name = {},
@@ -103,3 +104,5 @@ private:
 [[nodiscard]] std::optional<ColorMap> get(const QString& name, const QString& source = {}, bool skipCache = false);
 
 } // namespace cppqtgraph
+
+Q_DECLARE_METATYPE(cppqtgraph::ColorMap)

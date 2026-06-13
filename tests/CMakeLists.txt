@@ -1250,6 +1250,17 @@ if(_cppqtgraph_has_graphicsitem)
     )
     target_link_libraries(cppqtgraph_parametertree_checklist_slider_test PRIVATE Qt6::Test)
     cppqtgraph_add_cpp_test(
+        cppqtgraph_parametertree_file_color_test
+        parametertree/test_parametertree_file_color.cpp
+        cppqtgraph.parametertree.file_color
+    )
+    target_link_libraries(cppqtgraph_parametertree_file_color_test PRIVATE Qt6::Test)
+    target_compile_definitions(cppqtgraph_parametertree_file_color_test
+        PRIVATE
+            CPPQTGRAPH_PARAMETERTREE_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/oracle/fixtures/parametertree"
+    )
+    set_tests_properties(cppqtgraph.parametertree.file_color PROPERTIES LABELS "visual")
+    cppqtgraph_add_cpp_test(
         cppqtgraph_examples_exampleapp_test
         examples/test_ExampleApp.cpp
         cppqtgraph.examples.ExampleApp

@@ -165,6 +165,7 @@ public:
 
     [[nodiscard]] QColor getColor(double fraction, bool toQColor = true) const;
     [[nodiscard]] cppqtgraph::ColorMap colorMap() const;
+    void setColorMap(const cppqtgraph::ColorMap& colorMap);
     [[nodiscard]] QLinearGradient getGradient() const;
 
     [[nodiscard]] GradientEditorState saveState() const;

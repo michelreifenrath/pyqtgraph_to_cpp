@@ -81,8 +81,8 @@ public:
 
     bool handleEditorKeyPress(QKeyEvent* event);
 
-    void widgetValueChanged();
-    void editorValueChanging(const QVariant& value);
+    virtual void widgetValueChanged();
+    virtual void editorValueChanging(const QVariant& value);
     void defaultClicked();
 
 protected:
@@ -92,7 +92,7 @@ protected:
     virtual void configureEditor(QWidget* editor);
 
     virtual void updateDisplayLabel(const QVariant& value = QVariant());
-    void updateDefaultBtn();
+    virtual void updateDefaultBtn();
     void showEditor();
     void hideEditor();
 

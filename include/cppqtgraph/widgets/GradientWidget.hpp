@@ -26,6 +26,7 @@ public:
     void setMaxDim(int maxDim = -1);
 
     [[nodiscard]] cppqtgraph::ColorMap colorMap() const;
+    void setColorMap(const cppqtgraph::ColorMap& colorMap);
     [[nodiscard]] graphicsItems::GradientEditorState saveState() const;
     void restoreState(const graphicsItems::GradientEditorState& state);
     void setLength(qreal length);

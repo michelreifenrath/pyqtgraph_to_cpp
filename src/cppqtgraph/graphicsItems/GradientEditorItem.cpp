@@ -440,6 +440,29 @@ QLinearGradient GradientEditorItem::getGradient() const
     return gradient;
 }
 
+void GradientEditorItem::setColorMap(const cppqtgraph::ColorMap& colorMap)
+{
+    const bool blocked = blockSignals(true);
+    setColorMode(QStringLiteral("rgb"));
+    const auto existingTicks = listTicks();
+    for (const auto& [tick, fraction] : existingTicks) {
+        Q_UNUSED(fraction);
+        removeTick(tick, false);
+    }
+
+    const auto colors = colorMap.getColors(cppqtgraph::ColorMap::OutputMode::QColor);
+    const auto& positions = colorMap.positions();
+  const std::size_t stopCount = std::min(positions.size(), colors.colors.size());
+    for (std::size_t index = 0; index < stopCount; ++index) {
+        addTick(positions[index], colors.colors[index], true, false);
+    }
+
+    blockSignals(blocked);
+    updateGradient();
+    emit sigTicksChanged(this);
+    emit sigGradientChangeFinished(this);
+}
+
 GradientEditorState GradientEditorItem::saveState() const
 {
     GradientEditorState state;
