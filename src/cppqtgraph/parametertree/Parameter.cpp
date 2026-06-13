@@ -6,6 +6,11 @@
 #include "../../../include/cppqtgraph/parametertree/Parameter.hpp"
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
 
+#include <cppqtgraph/functions.hpp>
+
+#include <QtGui/QColor>
+#include <QtWidgets/QLineEdit>
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -22,6 +27,95 @@ QHash<QString, ParameterFactory>& parameterTypeRegistry()
 bool variantEqual(const QVariant& left, const QVariant& right)
 {
     return left == right;
+}
+
+QVariantMap normalizeListOpts(QVariantMap opts)
+{
+    if (!opts.contains(QStringLiteral("limits")) && opts.contains(QStringLiteral("values"))) {
+        opts.insert(QStringLiteral("limits"), opts.value(QStringLiteral("values")));
+        opts.remove(QStringLiteral("values"));
+    }
+    if (!opts.contains(QStringLiteral("limits"))) {
+        opts.insert(QStringLiteral("limits"), QVariantList{});
+    }
+    return opts;
+}
+
+QVariant interpretColorValue(const QVariant& value)
+{
+    if (!value.isValid()) {
+        return value;
+    }
+    if (value.metaType().id() == QMetaType::QColor) {
+        return value;
+    }
+    return QVariant::fromValue(mkColor(value.toString()));
+}
+
+QVariantMap normalizeColorOpts(QVariantMap opts)
+{
+    if (opts.contains(QStringLiteral("value"))) {
+        opts.insert(QStringLiteral("value"), interpretColorValue(opts.value(QStringLiteral("value"))));
+    }
+    if (opts.contains(QStringLiteral("default"))) {
+        opts.insert(QStringLiteral("default"), interpretColorValue(opts.value(QStringLiteral("default"))));
+    }
+    return opts;
+}
+
+QVariantList listLimitValuesFromOpts(const QVariantMap& opts)
+{
+    const QVariant limits = opts.value(QStringLiteral("limits"));
+    if (limits.canConvert<QVariantList>()) {
+        QVariantList values;
+        for (const QVariant& entry : limits.toList()) {
+            if (entry.metaType().id() == QMetaType::QVariantList) {
+                const QVariantList pair = entry.toList();
+                if (pair.size() >= 2) {
+                    values.append(pair.at(1));
+                }
+            } else {
+                values.append(entry);
+            }
+        }
+        return values;
+    }
+    if (limits.canConvert<QVariantMap>()) {
+        QVariantList values;
+        for (auto it = limits.toMap().constBegin(); it != limits.toMap().constEnd(); ++it) {
+            values.append(it.value());
+        }
+        return values;
+    }
+    return {};
+}
+
+bool valueInListLimits(const QVariant& value, const QVariantMap& opts)
+{
+    const QVariantList allowed = listLimitValuesFromOpts(opts);
+    if (allowed.isEmpty()) {
+        return true;
+    }
+    for (const QVariant& entry : allowed) {
+        if (entry == value) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void enforceListValueInLimits(QVariantMap& opts)
+{
+    if (!opts.contains(QStringLiteral("value"))) {
+        return;
+    }
+    if (valueInListLimits(opts.value(QStringLiteral("value")), opts)) {
+        return;
+    }
+    const QVariantList allowed = listLimitValuesFromOpts(opts);
+    if (!allowed.isEmpty()) {
+        opts.insert(QStringLiteral("value"), allowed.front());
+    }
 }
 
 } // namespace
@@ -336,7 +430,73 @@ SimpleParameter::SimpleParameter(QVariantMap opts, QObject* parent)
 
 ParameterItem* SimpleParameter::makeTreeItem(int depth)
 {
-    return new WidgetParameterItem(this, depth);
+    return new WidgetParameterItem(this, depth, new QLineEdit());
+}
+
+ListParameter::ListParameter(QVariantMap opts, QObject* parent)
+    : Parameter(normalizeListOpts(std::move(opts)), parent)
+{
+    QVariantMap adjusted = opts_;
+    enforceListValueInLimits(adjusted);
+    if (adjusted.value(QStringLiteral("value")) != opts_.value(QStringLiteral("value"))) {
+        setValue(adjusted.value(QStringLiteral("value")), true);
+    }
+}
+
+ParameterItem* ListParameter::makeTreeItem(int depth)
+{
+    return new ListParameterItem(this, depth);
+}
+
+QVariant ListParameter::setValue(const QVariant& value, bool blockSignal)
+{
+    QVariant adjusted = value;
+    if (!valueInListLimits(value, opts_)) {
+        const QVariantList allowed = listLimitValuesFromOpts(opts_);
+        if (!allowed.isEmpty()) {
+            adjusted = allowed.front();
+        }
+    }
+    return Parameter::setValue(adjusted, blockSignal);
+}
+
+void ListParameter::setOpts(const QVariantMap& opts)
+{
+    Parameter::setOpts(opts);
+    if (!opts.contains(QStringLiteral("limits")) && !opts.contains(QStringLiteral("values"))) {
+        return;
+    }
+
+    QVariantMap adjusted = opts_;
+    enforceListValueInLimits(adjusted);
+    if (adjusted.value(QStringLiteral("value")) != opts_.value(QStringLiteral("value"))) {
+        setValue(adjusted.value(QStringLiteral("value")), false);
+    }
+}
+
+ColorParameter::ColorParameter(QVariantMap opts, QObject* parent)
+    : Parameter(normalizeColorOpts(std::move(opts)), parent)
+{
+}
+
+ParameterItem* ColorParameter::makeTreeItem(int depth)
+{
+    return new ColorParameterItem(this, depth);
+}
+
+QVariant ColorParameter::setValue(const QVariant& value, bool blockSignal)
+{
+    return Parameter::setValue(interpretColorValue(value), blockSignal);
+}
+
+TextParameter::TextParameter(QVariantMap opts, QObject* parent)
+    : Parameter(std::move(opts), parent)
+{
+}
+
+ParameterItem* TextParameter::makeTreeItem(int depth)
+{
+    return new TextParameterItem(this, depth);
 }
 
 ActionParameter::ActionParameter(QVariantMap opts, QObject* parent)
@@ -365,7 +525,7 @@ void registerBuiltinParameterTypes()
     registerParameterType(QStringLiteral("cmaplut"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("color"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<ColorParameter>(opts); });
     registerParameterType(QStringLiteral("colormap"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("file"),
@@ -377,7 +537,7 @@ void registerBuiltinParameterTypes()
     registerParameterType(QStringLiteral("int"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("list"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<ListParameter>(opts); });
     registerParameterType(QStringLiteral("pen"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("progress"),
@@ -387,7 +547,7 @@ void registerBuiltinParameterTypes()
     registerParameterType(QStringLiteral("str"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("text"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<TextParameter>(opts); });
 }
 
 } // namespace cppqtgraph::parametertree

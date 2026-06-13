@@ -14,6 +14,10 @@ class QPushButton;
 class QKeyEvent;
 class QWidget;
 
+namespace cppqtgraph::widgets {
+class ComboBox;
+}
+
 namespace cppqtgraph::parametertree {
 
 class Parameter;
@@ -52,9 +56,14 @@ protected:
     bool ignoreNameColumnChange_ = false;
 };
 
+struct WidgetParameterItemOptions {
+    bool hideWhenDeselected = true;
+    bool asSubItem = false;
+};
+
 class WidgetParameterItem : public ParameterItem {
 public:
-    WidgetParameterItem(Parameter* param, int depth);
+    WidgetParameterItem(Parameter* param, int depth, QWidget* editor, WidgetParameterItemOptions options = {});
     ~WidgetParameterItem() override;
 
     void treeWidgetChanged();
@@ -72,10 +81,15 @@ public:
     bool handleEditorKeyPress(QKeyEvent* event);
 
     void widgetValueChanged();
-    void editorTextChanging(const QString& text);
+    void editorValueChanging(const QVariant& value);
     void defaultClicked();
 
-private:
+protected:
+    virtual void bindEditor(QWidget* editor);
+    virtual QVariant readEditorValue() const;
+    virtual void writeEditorValue(const QVariant& val);
+    virtual void configureEditor(QWidget* editor);
+
     void updateDisplayLabel(const QVariant& value = QVariant());
     void updateDefaultBtn();
     void showEditor();
@@ -85,8 +99,52 @@ private:
     QWidget* editor_ = nullptr;
     QLabel* displayLabel_ = nullptr;
     QPushButton* defaultBtn_ = nullptr;
-    bool hideWidget_ = true;
+    QTreeWidgetItem* subItem_ = nullptr;
+    bool hideWhenDeselected_ = true;
+    bool asSubItem_ = false;
     bool updatingWidget_ = false;
+};
+
+class ListParameterItem final : public WidgetParameterItem {
+public:
+    ListParameterItem(Parameter* param, int depth);
+
+    void optsChanged(Parameter* param, const QVariantMap& opts) override;
+
+protected:
+    void bindEditor(QWidget* editor) override;
+    QVariant readEditorValue() const override;
+    void writeEditorValue(const QVariant& val) override;
+    void configureEditor(QWidget* editor) override;
+
+private:
+    void updateLimits(const QVariant& limits);
+
+    widgets::ComboBox* combo_ = nullptr;
+};
+
+class ColorParameterItem final : public WidgetParameterItem {
+public:
+    ColorParameterItem(Parameter* param, int depth);
+
+protected:
+    void bindEditor(QWidget* editor) override;
+    QVariant readEditorValue() const override;
+    void writeEditorValue(const QVariant& val) override;
+    void configureEditor(QWidget* editor) override;
+};
+
+class TextParameterItem final : public WidgetParameterItem {
+public:
+    TextParameterItem(Parameter* param, int depth);
+
+    void optsChanged(Parameter* param, const QVariantMap& opts) override;
+
+protected:
+    void bindEditor(QWidget* editor) override;
+    QVariant readEditorValue() const override;
+    void writeEditorValue(const QVariant& val) override;
+    void configureEditor(QWidget* editor) override;
 };
 
 } // namespace cppqtgraph::parametertree

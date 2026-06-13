@@ -1,11 +1,19 @@
 #define CPPQTGRAPH_MULTIDATAPLOT_NO_MAIN
 #include "../../examples/MultiDataPlot.cpp"
 
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/parametertree/ParameterItem.hpp>
+#include <cppqtgraph/widgets/ColorButton.hpp>
+#include <cppqtgraph/widgets/ComboBox.hpp>
+
+#include <QtGui/QColor>
 #include <QtCore/QProcess>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QTextEdit>
 
 #include <iostream>
 #include <memory>
@@ -59,6 +67,33 @@ QString fixturePath()
 QString executablePath()
 {
     return QString::fromUtf8(CPPQTGRAPH_MULTIDATAPLOT_EXECUTABLE);
+}
+
+cppqtgraph::parametertree::ParameterItem* findParameterItem(QTreeWidgetItem* root, const QString& name)
+{
+    if (root == nullptr) {
+        return nullptr;
+    }
+
+    for (int i = 0; i < root->childCount(); ++i) {
+        if (auto* item = dynamic_cast<cppqtgraph::parametertree::ParameterItem*>(root->child(i))) {
+            if (item->parameter() != nullptr && item->parameter()->name() == name) {
+                return item;
+            }
+            if (auto* nested = findParameterItem(item, name)) {
+                return nested;
+            }
+        }
+    }
+    return nullptr;
+}
+
+QWidget* editorWidgetFor(cppqtgraph::parametertree::ParameterItem* item)
+{
+    if (auto* widgetItem = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(item)) {
+        return widgetItem->editorWidget();
+    }
+    return nullptr;
 }
 
 bool testFixtureLoad()
@@ -128,6 +163,61 @@ bool testFactoryLayoutAndGrab()
     return true;
 }
 
+bool testParameterEditorsUseSpecializedWidgets()
+{
+    cppqtgraph::examples::MultiDataPlotOptions options{
+        .dataFixturePath = fixturePath(),
+        .plotFirstSelection = false,
+    };
+    auto example = cppqtgraph::examples::createMultiDataPlotExample(options);
+    example.window->show();
+    QApplication::processEvents();
+
+    auto* xtypeItem = findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("xtype"));
+    auto* ytypeItem = findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("ytype"));
+    auto* symbolItem = findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("symbol"));
+    auto* symbolBrushItem =
+        findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("symbolBrush"));
+    auto* textItem = findParameterItem(example.parameterTree->invisibleRootItem(), QStringLiteral("text"));
+    CHECK(xtypeItem != nullptr);
+    CHECK(ytypeItem != nullptr);
+    CHECK(symbolItem != nullptr);
+    CHECK(symbolBrushItem != nullptr);
+    CHECK(textItem != nullptr);
+
+    CHECK(qobject_cast<cppqtgraph::widgets::ComboBox*>(editorWidgetFor(xtypeItem)) != nullptr);
+    CHECK(qobject_cast<cppqtgraph::widgets::ComboBox*>(editorWidgetFor(ytypeItem)) != nullptr);
+    CHECK(qobject_cast<QLineEdit*>(editorWidgetFor(xtypeItem)) == nullptr);
+    CHECK(qobject_cast<QLineEdit*>(editorWidgetFor(ytypeItem)) == nullptr);
+
+    auto* symbolCombo = qobject_cast<cppqtgraph::widgets::ComboBox*>(editorWidgetFor(symbolItem));
+    CHECK(symbolCombo != nullptr);
+    QStringList expectedSymbols;
+    for (const auto& entry : cppqtgraph::symbolPaths()) {
+        expectedSymbols.append(entry.first);
+    }
+    CHECK(symbolCombo->count() == expectedSymbols.size());
+    for (int index = 0; index < expectedSymbols.size(); ++index) {
+        CHECK(symbolCombo->itemText(index) == expectedSymbols.at(index));
+    }
+
+    auto* colorButton = qobject_cast<cppqtgraph::widgets::ColorButton*>(editorWidgetFor(symbolBrushItem));
+    CHECK(colorButton != nullptr);
+    CHECK(example.root->child(QStringLiteral("next_plot"))->child(QStringLiteral("symbolBrush"))->value().value<QColor>()
+        == QColor(Qt::red));
+
+    auto* textEdit = qobject_cast<QTextEdit*>(editorWidgetFor(textItem));
+    CHECK(textEdit != nullptr);
+    CHECK(textEdit->isReadOnly());
+    CHECK(!example.fixture->randomSelections.empty());
+    const QString expectedText = QStringLiteral("x=%1\ny=%2")
+                                     .arg(example.fixture->randomSelections.front().xtype,
+                                          example.fixture->randomSelections.front().ytype);
+    CHECK(textEdit->toPlainText() == expectedText);
+
+    return true;
+}
+
 bool testDirectExecutableSmoke()
 {
     const QString path = executablePath();
@@ -160,6 +250,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testFactoryLayoutAndGrab()) {
+        return 1;
+    }
+    if (!testParameterEditorsUseSpecializedWidgets()) {
         return 1;
     }
     if (!testDirectExecutableSmoke()) {

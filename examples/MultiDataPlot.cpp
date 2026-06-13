@@ -3,6 +3,7 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
+#include <cppqtgraph/functions.hpp>
 #include <cppqtgraph/parametertree/Parameter.hpp>
 #include <cppqtgraph/parametertree/ParameterTree.hpp>
 #include <cppqtgraph/widgets/PlotWidget.hpp>
@@ -53,6 +54,15 @@ QVariantList makeValueChoiceList(const QStringList& valueKeys)
     choices.reserve(valueKeys.size());
     for (const QString& key : valueKeys) {
         choices.append(key);
+    }
+    return choices;
+}
+
+QVariantList makeSymbolChoiceList()
+{
+    QVariantList choices;
+    for (const auto& entry : cppqtgraph::symbolPaths()) {
+        choices.append(entry.first);
     }
     return choices;
 }
@@ -244,6 +254,7 @@ std::shared_ptr<parametertree::Parameter> buildMultiDataPlotParameterShell(const
                                                       {QStringLiteral("value"), initialYType}}),
                       QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("symbol")},
                                                       {QStringLiteral("type"), QStringLiteral("list")},
+                                                      {QStringLiteral("values"), makeSymbolChoiceList()},
                                                       {QStringLiteral("value"), QStringLiteral("o")}}),
                       QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("symbolBrush")},
                                                       {QStringLiteral("type"), QStringLiteral("color")},

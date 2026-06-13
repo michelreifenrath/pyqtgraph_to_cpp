@@ -1,12 +1,18 @@
+#include <cppqtgraph/functions.hpp>
 #include <cppqtgraph/parametertree/Parameter.hpp>
 #include <cppqtgraph/parametertree/ParameterItem.hpp>
 #include <cppqtgraph/parametertree/ParameterTree.hpp>
+#include <cppqtgraph/widgets/ColorButton.hpp>
+#include <cppqtgraph/widgets/ComboBox.hpp>
 
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
+#include <QtGui/QColor>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QTextEdit>
 
 #include <iostream>
 #include <memory>
@@ -58,6 +64,14 @@ cppqtgraph::parametertree::ParameterItem* findItemByName(QTreeWidgetItem* root, 
                 return nested;
             }
         }
+    }
+    return nullptr;
+}
+
+QWidget* editorForItem(cppqtgraph::parametertree::ParameterItem* item)
+{
+    if (auto* widgetItem = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(item)) {
+        return widgetItem->editorWidget();
     }
     return nullptr;
 }
@@ -346,6 +360,161 @@ bool testDefaultReset()
     return true;
 }
 
+bool testListParameterUsesComboBoxWithOrderedLimits()
+{
+    const QVariantList limits = {QStringLiteral("alpha"), QStringLiteral("beta"), QStringLiteral("gamma")};
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("choice")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("values"), limits},
+                    {QStringLiteral("value"), QStringLiteral("beta")}});
+    CHECK(param->value().toString() == QStringLiteral("beta"));
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("choice"));
+    CHECK(item != nullptr);
+    CHECK(qobject_cast<QLineEdit*>(editorForItem(item)) == nullptr);
+
+    auto* combo = qobject_cast<cppqtgraph::widgets::ComboBox*>(editorForItem(item));
+    CHECK(combo != nullptr);
+    CHECK(combo->count() == 3);
+    CHECK(combo->itemText(0) == QStringLiteral("alpha"));
+    CHECK(combo->itemText(1) == QStringLiteral("beta"));
+    CHECK(combo->itemText(2) == QStringLiteral("gamma"));
+    CHECK(param->value().toString() == QStringLiteral("beta"));
+
+    combo->setCurrentIndex(2);
+    QTest::qWait(0);
+    CHECK(param->value().toString() == QStringLiteral("gamma"));
+    return true;
+}
+
+bool testListParameterResetsInvalidValueToFirstLimit()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("choice")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("values"), QVariantList{QStringLiteral("one"), QStringLiteral("two")}},
+                    {QStringLiteral("value"), QStringLiteral("missing")}});
+    CHECK(param->value().toString() == QStringLiteral("one"));
+    return true;
+}
+
+bool testColorParameterSetValueNormalizesShortHex()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("brush")},
+                    {QStringLiteral("type"), QStringLiteral("color")},
+                    {QStringLiteral("value"), QStringLiteral("#f00")}});
+    param->setValue(QStringLiteral("#0f0"));
+    CHECK(param->value().value<QColor>() == QColor(Qt::green));
+    return true;
+}
+
+bool testListParameterSetValueEnforcesLimits()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("choice")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("values"), QVariantList{QStringLiteral("one"), QStringLiteral("two")}},
+                    {QStringLiteral("value"), QStringLiteral("two")}});
+    param->setValue(QStringLiteral("missing"));
+    CHECK(param->value().toString() == QStringLiteral("one"));
+    return true;
+}
+
+bool testListParameterSetOptsLimitsEnforcesValue()
+{
+    const QVariantList initialLimits = {QStringLiteral("alpha"), QStringLiteral("beta"), QStringLiteral("gamma")};
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("choice")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("values"), initialLimits},
+                    {QStringLiteral("value"), QStringLiteral("beta")}});
+    param->setOpts(QVariantMap{{QStringLiteral("limits"),
+                              QVariantList{QStringLiteral("alpha"), QStringLiteral("gamma")}}});
+    CHECK(param->value().toString() == QStringLiteral("alpha"));
+    return true;
+}
+
+bool testColorParameterUsesColorButtonAndParsesShortHex()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("brush")},
+                    {QStringLiteral("type"), QStringLiteral("color")},
+                    {QStringLiteral("value"), QStringLiteral("#f00")}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("brush"));
+    CHECK(item != nullptr);
+    CHECK(qobject_cast<QLineEdit*>(editorForItem(item)) == nullptr);
+
+    auto* button = qobject_cast<cppqtgraph::widgets::ColorButton*>(editorForItem(item));
+    CHECK(button != nullptr);
+    CHECK(param->value().value<QColor>() == QColor(Qt::red));
+    CHECK(button->color() == QColor(Qt::red));
+    return true;
+}
+
+bool testColorParameterButtonChangeUpdatesParameter()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("brush")},
+                    {QStringLiteral("type"), QStringLiteral("color")},
+                    {QStringLiteral("value"), QStringLiteral("#f00")}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("brush"));
+    CHECK(item != nullptr);
+
+    auto* button = qobject_cast<cppqtgraph::widgets::ColorButton*>(editorForItem(item));
+    CHECK(button != nullptr);
+    CHECK(param->value().value<QColor>() == QColor(Qt::red));
+
+    button->setColor(QColor(Qt::green), true);
+    QTest::qWait(0);
+    CHECK(param->value().value<QColor>() == QColor(Qt::green));
+    return true;
+}
+
+bool testTextParameterUsesReadonlyMultilineTextEdit()
+{
+    const QString text = QStringLiteral("x=first\ny=second");
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("summary")},
+                    {QStringLiteral("type"), QStringLiteral("text")},
+                    {QStringLiteral("readonly"), true},
+                    {QStringLiteral("value"), text}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("summary"));
+    CHECK(item != nullptr);
+    CHECK(qobject_cast<QLineEdit*>(editorForItem(item)) == nullptr);
+
+    auto* textEdit = qobject_cast<QTextEdit*>(editorForItem(item));
+    CHECK(textEdit != nullptr);
+    CHECK(textEdit->isReadOnly());
+    CHECK(textEdit->toPlainText() == text);
+    CHECK(param->value().toString() == text);
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -384,6 +553,30 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testDefaultReset()) {
+        return 1;
+    }
+    if (!testListParameterUsesComboBoxWithOrderedLimits()) {
+        return 1;
+    }
+    if (!testListParameterResetsInvalidValueToFirstLimit()) {
+        return 1;
+    }
+    if (!testListParameterSetValueEnforcesLimits()) {
+        return 1;
+    }
+    if (!testListParameterSetOptsLimitsEnforcesValue()) {
+        return 1;
+    }
+    if (!testColorParameterSetValueNormalizesShortHex()) {
+        return 1;
+    }
+    if (!testColorParameterUsesColorButtonAndParsesShortHex()) {
+        return 1;
+    }
+    if (!testColorParameterButtonChangeUpdatesParameter()) {
+        return 1;
+    }
+    if (!testTextParameterUsesReadonlyMultilineTextEdit()) {
         return 1;
     }
 
