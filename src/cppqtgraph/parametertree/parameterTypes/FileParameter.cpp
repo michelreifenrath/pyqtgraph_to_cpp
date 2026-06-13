@@ -125,9 +125,6 @@ QVariant defaultFilePickerDialog(const FilePickerRequest& request)
     cppqtgraph::widgets::FileDialog dialog;
     applyFilePickerRequest(dialog, request);
     if (!dialog.exec()) {
-        if (request.fileMode == QFileDialog::ExistingFiles) {
-            return QVariant::fromValue(QStringList{});
-        }
         return QVariant();
     }
 
@@ -191,12 +188,19 @@ QVariant shapeFilePickerResult(const QVariant& picked, QFileDialog::FileMode fil
 {
     if (fileMode == QFileDialog::ExistingFiles) {
         if (picked.metaType().id() == QMetaType::QStringList) {
+            if (picked.toStringList().isEmpty()) {
+                return QVariant();
+            }
             return picked;
         }
         if (picked.metaType().id() == QMetaType::QString) {
-            return QVariant::fromValue(QStringList{picked.toString()});
+            const QString path = picked.toString();
+            if (path.isEmpty()) {
+                return QVariant();
+            }
+            return QVariant::fromValue(QStringList{path});
         }
-        return QVariant::fromValue(QStringList{});
+        return QVariant();
     }
 
     if (picked.metaType().id() == QMetaType::QStringList) {
@@ -371,7 +375,10 @@ void FileParameterItem::retrieveFileSelection()
     }
 
     const QVariant shaped = shapeFilePickerResult(picked, request.fileMode);
-    if (!picked.isValid() && picked.typeId() != QMetaType::QStringList) {
+    if (!shaped.isValid()) {
+        return;
+    }
+    if (request.fileMode == QFileDialog::ExistingFiles && shaped.toStringList().isEmpty()) {
         return;
     }
     param_->setValue(shaped);

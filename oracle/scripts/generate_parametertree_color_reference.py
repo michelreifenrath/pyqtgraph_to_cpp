@@ -45,38 +45,27 @@ def main() -> int:
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
     from pyqtgraph.widgets.ColorButton import ColorButton
+    from pyqtgraph.widgets.ColorMapButton import ColorMapButton
     from pyqtgraph.widgets.GradientWidget import GradientWidget
-
-    class ReferenceColorMapStrip(QtWidgets.QWidget):
-        def __init__(self, color_map):
-            super().__init__()
-            self._color_map = color_map
-
-        def paintEvent(self, event):  # noqa: ARG002
-            painter = QtGui.QPainter(self)
-            lut = self._color_map.getLookupTable(0.0, 1.0, 256)
-            image = QtGui.QImage(len(lut), 1, QtGui.QImage.Format.Format_RGBA8888)
-            for index, color in enumerate(lut):
-                image.setPixelColor(index, 0, QtGui.QColor(*color))
-            painter.drawImage(self.contentsRect(), image)
-            painter.end()
 
     color_button = ColorButton(color=(255, 0, 0))
     color_button.setFlat(True)
     _grab(QtCore, QtWidgets, color_button, args.output_dir / "color_button.reference.png", 120, 30)
 
     gradient = GradientWidget(orientation="bottom")
-    gradient.setMinimumSize(300, 35)
-    gradient.setMaximumHeight(35)
+    gradient.setMaxDim(35)
+    gradient.setMinimumWidth(300)
+    gradient.setLength(280.0)
     fixed_map = pg.ColorMap(pos=[0.0, 1.0], color=[(0, 0, 0), (255, 0, 0)], name="fixed")
-    gradient_strip = ReferenceColorMapStrip(fixed_map)
-    _grab(QtCore, QtWidgets, gradient_strip, args.output_dir / "colormap_gradient.reference.png", 256, 1)
+    gradient.setColorMap(fixed_map)
+    _grab(QtCore, QtWidgets, gradient, args.output_dir / "colormap_gradient.reference.png", 300, 35)
 
     cm = pg.colormap.get("viridis")
     rows = [list(map(int, row[:3])) for row in cm.getLookupTable(0.0, 1.0, 256)]
     (args.output_dir / "viridis_lut.json").write_text(json.dumps(rows), encoding="utf-8")
-    cmap_button = ReferenceColorMapStrip(cm)
-    _grab(QtCore, QtWidgets, cmap_button, args.output_dir / "cmaplut_viridis.reference.png", 256, 1)
+    cmap_button = ColorMapButton()
+    cmap_button.setColorMap("viridis")
+    _grab(QtCore, QtWidgets, cmap_button, args.output_dir / "cmaplut_viridis.reference.png", 256, 30)
 
     _ = app
     return 0
