@@ -78,6 +78,13 @@ bool SignalProxy::flush()
     return true;
 }
 
+void SignalProxy::cancelPending() noexcept
+{
+    args_.clear();
+    hasArgs_ = false;
+    stopTimer();
+}
+
 void SignalProxy::disconnect()
 {
     blockSignal_ = true;

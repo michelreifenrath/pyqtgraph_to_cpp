@@ -85,7 +85,7 @@ protected:
     std::vector<ParameterItem*> items_;
 };
 
-class GroupParameter final : public Parameter {
+class GroupParameter : public Parameter {
 public:
     explicit GroupParameter(QVariantMap opts, QObject* parent = nullptr);
 };

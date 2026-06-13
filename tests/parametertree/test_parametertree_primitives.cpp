@@ -83,13 +83,15 @@ bool testExampleParametersGroupOrder()
 {
     const auto exampleParams = cppqtgraph::parametertree::buildExampleParametersGroup();
     CHECK(exampleParams->name() == QStringLiteral("Example Parameters"));
-    CHECK(exampleParams->children().size() == 6);
+    CHECK(exampleParams->children().size() == 8);
     CHECK(exampleParams->children()[0]->name() == QStringLiteral("Expand All"));
     CHECK(exampleParams->children()[1]->name() == QStringLiteral("Collapse All"));
     CHECK(exampleParams->children()[2]->name() == QStringLiteral("Sample List"));
     CHECK(exampleParams->children()[3]->name() == QStringLiteral("Sample Float"));
-    CHECK(exampleParams->children()[4]->name() == QStringLiteral("Sample Action"));
-    CHECK(exampleParams->children()[5]->name() == QStringLiteral("No Extra Options"));
+    CHECK(exampleParams->children()[4]->name() == QStringLiteral("Sample Checklist"));
+    CHECK(exampleParams->children()[5]->name() == QStringLiteral("Sample Slider"));
+    CHECK(exampleParams->children()[6]->name() == QStringLiteral("Sample Action"));
+    CHECK(exampleParams->children()[7]->name() == QStringLiteral("No Extra Options"));
     CHECK(!exampleParams->child(QStringLiteral("Sample List"))->options().value(QStringLiteral("expanded")).toBool());
     return true;
 }

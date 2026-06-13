@@ -1,0 +1,336 @@
+#include <cppqtgraph/parametertree/Parameter.hpp>
+#include <cppqtgraph/parametertree/ParameterItem.hpp>
+#include <cppqtgraph/parametertree/ParameterTree.hpp>
+#include <cppqtgraph/parametertree/parameterTypes/ChecklistParameter.hpp>
+#include <cppqtgraph/parametertree/parameterTypes/SliderParameter.hpp>
+
+#include <QtTest/QSignalSpy>
+#include <QtTest/QTest>
+#include <QtWidgets/QAbstractButton>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QRadioButton>
+#include <QtWidgets/QSlider>
+
+#include <iostream>
+#include <memory>
+#include <string_view>
+
+namespace {
+
+bool check(bool condition, std::string_view expression, std::string_view file, int line)
+{
+    if (!condition) {
+        std::cerr << file << ':' << line << ": check failed: " << expression << '\n';
+        return false;
+    }
+    return true;
+}
+
+#define CHECK(expression) \
+    do { \
+        if (!check((expression), #expression, __FILE__, __LINE__)) { \
+            return false; \
+        } \
+    } while (false)
+
+class ApplicationGuard {
+public:
+    ApplicationGuard(int& argc, char** argv)
+    {
+        if (QApplication::instance() == nullptr) {
+            application_ = std::make_unique<QApplication>(argc, argv);
+        }
+    }
+
+private:
+    std::unique_ptr<QApplication> application_;
+};
+
+cppqtgraph::parametertree::ParameterItem* findItemByName(QTreeWidgetItem* root, const QString& name)
+{
+    if (root == nullptr) {
+        return nullptr;
+    }
+
+    for (int i = 0; i < root->childCount(); ++i) {
+        if (auto* item = dynamic_cast<cppqtgraph::parametertree::ParameterItem*>(root->child(i))) {
+            if (item->parameter() != nullptr && item->parameter()->name() == name) {
+                return item;
+            }
+            if (auto* nested = findItemByName(item, name)) {
+                return nested;
+            }
+        }
+    }
+    return nullptr;
+}
+
+QCheckBox* findCheckBox(cppqtgraph::parametertree::ParameterTree& tree, const QString& name)
+{
+    auto* item = findItemByName(tree.invisibleRootItem(), name);
+    if (auto* widgetItem = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(item)) {
+        return qobject_cast<QCheckBox*>(widgetItem->editorWidget());
+    }
+    return nullptr;
+}
+
+QRadioButton* findRadio(cppqtgraph::parametertree::ParameterTree& tree, const QString& name)
+{
+    auto* item = findItemByName(tree.invisibleRootItem(), name);
+    if (auto* widgetItem = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(item)) {
+        return qobject_cast<QRadioButton*>(widgetItem->editorWidget());
+    }
+    return nullptr;
+}
+
+QPushButton* findMetaButton(cppqtgraph::parametertree::ParameterTree& tree, const QString& text)
+{
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("widget"));
+    if (item == nullptr) {
+        return nullptr;
+    }
+    const auto buttons = item->treeWidget()->findChildren<QPushButton*>();
+    for (QPushButton* button : buttons) {
+        if (button->text() == text) {
+            return button;
+        }
+    }
+    return nullptr;
+}
+
+bool variantListEqual(const QVariant& left, const QVariant& right)
+{
+    if (left.metaType().id() != QMetaType::QVariantList || right.metaType().id() != QMetaType::QVariantList) {
+        return left == right;
+    }
+    return left.toList() == right.toList();
+}
+
+bool testChecklistNonExclusiveInitialState()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("checklist")},
+                    {QStringLiteral("limits"),
+                     QVariantList{QStringLiteral("one"), QStringLiteral("two"), QStringLiteral("three")}},
+                    {QStringLiteral("value"),
+                     QVariantList{QStringLiteral("one"), QStringLiteral("three")}}});
+
+    CHECK(param->value().toList().size() == 2);
+    CHECK(param->child(QStringLiteral("one"))->value().toBool());
+    CHECK(!param->child(QStringLiteral("two"))->value().toBool());
+    CHECK(param->child(QStringLiteral("three"))->value().toBool());
+    return true;
+}
+
+bool testChecklistExclusiveCoercesSingleValue()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("checklist")},
+                    {QStringLiteral("exclusive"), true},
+                    {QStringLiteral("limits"),
+                     QVariantList{QStringLiteral("one"), QStringLiteral("two"), QStringLiteral("three")}},
+                    {QStringLiteral("value"), QVariantList{}}});
+
+    CHECK(param->value().toString() == QStringLiteral("one"));
+    CHECK(param->child(QStringLiteral("one"))->value().toBool());
+    CHECK(!param->child(QStringLiteral("two"))->value().toBool());
+    return true;
+}
+
+bool testChecklistMetaButtonsAndExclusiveDisable()
+{
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("checklist")},
+                    {QStringLiteral("limits"),
+                     QVariantList{QStringLiteral("one"), QStringLiteral("two"), QStringLiteral("three")}},
+                    {QStringLiteral("expanded"), true}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* clearBtn = findMetaButton(tree, QStringLiteral("Clear All"));
+    auto* selectBtn = findMetaButton(tree, QStringLiteral("Select All"));
+    CHECK(clearBtn != nullptr);
+    CHECK(selectBtn != nullptr);
+    CHECK(clearBtn->isEnabled());
+    CHECK(selectBtn->isEnabled());
+
+    QTest::mouseClick(selectBtn, Qt::LeftButton);
+    QTest::qWait(0);
+    CHECK(param->value().toList().size() == 3);
+
+    QTest::mouseClick(clearBtn, Qt::LeftButton);
+    QTest::qWait(0);
+    CHECK(param->value().toList().isEmpty());
+
+    param->setOpts({{QStringLiteral("exclusive"), true}});
+    QTest::qWait(0);
+    CHECK(!clearBtn->isEnabled());
+    CHECK(!selectBtn->isEnabled());
+    return true;
+}
+
+bool testChecklistDelayedValueSignals()
+{
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("checklist")},
+                    {QStringLiteral("delay"), 0.05},
+                    {QStringLiteral("limits"),
+                     QVariantList{QStringLiteral("one"), QStringLiteral("two"), QStringLiteral("three")}},
+                    {QStringLiteral("value"), QVariantList{QStringLiteral("two")}}});
+
+    QSignalSpy changing(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanging);
+    QSignalSpy changed(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanged);
+    CHECK(changing.isValid());
+    CHECK(changed.isValid());
+
+    param->child(QStringLiteral("one"))->setValue(true);
+    CHECK(changing.count() >= 1);
+    CHECK(changed.isEmpty());
+    QTest::qWait(80);
+    CHECK(changed.count() >= 1);
+    return true;
+}
+
+bool testSliderLimitsStepLabelsAndSignals()
+{
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("slider")},
+                    {QStringLiteral("limits"), QVariantList{0, 10}},
+                    {QStringLiteral("step"), 2.0},
+                    {QStringLiteral("precision"), 0},
+                    {QStringLiteral("format"), QStringLiteral("{0:>3}")},
+                    {QStringLiteral("value"), 4.0}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("widget")));
+    CHECK(item != nullptr);
+    auto* editor = item->editorWidget();
+    CHECK(editor != nullptr);
+    auto* slider = editor->findChild<QSlider*>();
+    CHECK(slider != nullptr);
+    CHECK(slider->maximum() == 5);
+    CHECK(slider->value() == 2);
+
+    QSignalSpy changing(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanging);
+    QSignalSpy changed(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanged);
+    slider->setValue(3);
+    QTest::qWait(0);
+    CHECK(changed.count() >= 1);
+    CHECK(param->value().toDouble() == 6.0);
+    return true;
+}
+
+bool testSliderSpanModeUsesPinnedReferenceValues()
+{
+    const QVariantList span = [](const std::vector<double>& values) {
+        QVariantList list;
+        for (double value : values) {
+            list.append(value);
+        }
+        return list;
+    }(cppqtgraph::parametertree::arangeSquared(10));
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("slider")},
+                    {QStringLiteral("span"), span},
+                    {QStringLiteral("precision"), 0},
+                    {QStringLiteral("value"), 16.0}});
+
+    CHECK(param->value().toDouble() == 16.0);
+
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("widget")));
+    auto* slider = item->editorWidget()->findChild<QSlider*>();
+    CHECK(slider != nullptr);
+    CHECK(slider->maximum() == 9);
+    CHECK(slider->value() == 4);
+    return true;
+}
+
+bool testSliderHowToSetSwapsSpanAndLimits()
+{
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+
+    const QVariantList span = [](const std::vector<double>& values) {
+        QVariantList list;
+        for (double value : values) {
+            list.append(value);
+        }
+        return list;
+    }(cppqtgraph::parametertree::linspaceMinusPiToPi(50));
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("slider")},
+                    {QStringLiteral("limits"), QVariantList{0, 100}},
+                    {QStringLiteral("step"), 1.0},
+                    {QStringLiteral("value"), 10.0}});
+
+    param->setOpts({{QStringLiteral("span"), span}, {QStringLiteral("limits"), QVariant()}});
+    CHECK(param->options().contains(QStringLiteral("span")));
+    CHECK(!param->options().value(QStringLiteral("limits")).isValid()
+           || param->options().value(QStringLiteral("limits")).toList().isEmpty());
+
+    param->setOpts({{QStringLiteral("limits"), QVariantList{0, 100}}, {QStringLiteral("span"), QVariant()}});
+    CHECK(param->options().contains(QStringLiteral("limits")));
+    return true;
+}
+
+} // namespace
+
+int main(int argc, char** argv)
+{
+    const bool ok = testChecklistNonExclusiveInitialState()
+        && testChecklistExclusiveCoercesSingleValue()
+        && testChecklistMetaButtonsAndExclusiveDisable()
+        && testChecklistDelayedValueSignals()
+        && testSliderLimitsStepLabelsAndSignals()
+        && testSliderSpanModeUsesPinnedReferenceValues()
+        && testSliderHowToSetSwapsSpanAndLimits();
+
+    if (!ok) {
+        return 1;
+    }
+
+    std::cout << "All parametertree checklist/slider tests passed\n";
+    return 0;
+}

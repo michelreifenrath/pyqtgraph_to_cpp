@@ -6,7 +6,10 @@
 #include "../../../include/cppqtgraph/parametertree/Parameter.hpp"
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/BoolParameterItem.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/ChecklistParameter.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/NumericParameterItem.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/RadioParameterItem.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/SliderParameter.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/StrParameterItem.hpp"
 
 #include <cppqtgraph/functions.hpp>
@@ -594,7 +597,7 @@ void registerBuiltinParameterTypes()
     registerParameterType(QStringLiteral("calendar"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("checklist"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<ChecklistParameter>(opts); });
     registerParameterType(QStringLiteral("cmaplut"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("color"),
@@ -615,8 +618,10 @@ void registerBuiltinParameterTypes()
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("progress"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+    registerParameterType(QStringLiteral("radio"),
+                          [](const QVariantMap& opts) { return std::make_shared<RadioParameter>(opts); });
     registerParameterType(QStringLiteral("slider"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<SliderParameter>(opts); });
     registerParameterType(QStringLiteral("str"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("text"),

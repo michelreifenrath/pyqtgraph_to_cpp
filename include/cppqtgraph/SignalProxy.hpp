@@ -32,6 +32,7 @@ public:
 
 public slots:
     bool flush();
+    void cancelPending() noexcept;
     void disconnect();
     void signalReceived();
     void signalReceived(const QVariant& arg);
