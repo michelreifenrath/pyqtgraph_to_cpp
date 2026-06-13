@@ -41,7 +41,8 @@ ChecklistMapping makeChecklistMapping(const QVariant& limits)
 {
     ChecklistMapping mapping;
     if (limits.canConvert<QVariantMap>()) {
-        for (auto it = limits.toMap().constBegin(); it != limits.toMap().constEnd(); ++it) {
+        const QVariantMap limitMap = limits.toMap();
+        for (auto it = limitMap.constBegin(); it != limitMap.constEnd(); ++it) {
             mapping.forward.insert(it.key(), it.value());
             mapping.values.append(it.value());
             mapping.names.append(it.key());
@@ -200,7 +201,8 @@ void ChecklistParameterItem::selectAllClicked()
         return;
     }
     checklist->cancelPendingChanges();
-    checklist->setValue(checklist->options().value(QStringLiteral("limits")));
+    const QVariant limits = checklist->options().value(QStringLiteral("limits"));
+    checklist->setValue(makeChecklistMapping(limits).values);
 }
 
 void ChecklistParameterItem::clearAllClicked()

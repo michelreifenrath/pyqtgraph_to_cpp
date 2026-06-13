@@ -143,6 +143,51 @@ bool testChecklistExclusiveCoercesSingleValue()
     return true;
 }
 
+bool testChecklistQVariantMapLimitsMappingAndSelectAll()
+{
+    int argc = 0;
+    char** argv = nullptr;
+    ApplicationGuard guard(argc, argv);
+
+    const QVariant limits = QVariantMap{{QStringLiteral("Alpha"), 1},
+                                        {QStringLiteral("Beta"), 2},
+                                        {QStringLiteral("Gamma"), 3}};
+    const auto mapping = cppqtgraph::parametertree::makeChecklistMapping(limits);
+    CHECK(mapping.names.size() == 3);
+    CHECK(mapping.values.size() == 3);
+    CHECK(mapping.forward.value(QStringLiteral("Alpha")) == 1);
+    CHECK(mapping.forward.value(QStringLiteral("Beta")) == 2);
+    CHECK(mapping.forward.value(QStringLiteral("Gamma")) == 3);
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                    {QStringLiteral("type"), QStringLiteral("checklist")},
+                    {QStringLiteral("limits"), limits},
+                    {QStringLiteral("value"), QVariantList{1}},
+                    {QStringLiteral("expanded"), true}});
+
+    CHECK(param->child(QStringLiteral("Alpha")) != nullptr);
+    CHECK(param->child(QStringLiteral("Beta")) != nullptr);
+    CHECK(param->child(QStringLiteral("Gamma")) != nullptr);
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* selectBtn = findMetaButton(tree, QStringLiteral("Select All"));
+    CHECK(selectBtn != nullptr);
+    QTest::mouseClick(selectBtn, Qt::LeftButton);
+    QTest::qWait(0);
+
+    const QVariantList selected = param->value().toList();
+    CHECK(selected.size() == 3);
+    CHECK(selected.contains(1));
+    CHECK(selected.contains(2));
+    CHECK(selected.contains(3));
+    return true;
+}
+
 bool testChecklistMetaButtonsAndExclusiveDisable()
 {
     int argc = 0;
@@ -438,6 +483,7 @@ int main(int argc, char** argv)
 {
     const bool ok = testChecklistNonExclusiveInitialState()
         && testChecklistExclusiveCoercesSingleValue()
+        && testChecklistQVariantMapLimitsMappingAndSelectAll()
         && testChecklistMetaButtonsAndExclusiveDisable()
         && testChecklistDelayedValueSignals()
         && testSliderLimitsStepLabelsAndSignals()
