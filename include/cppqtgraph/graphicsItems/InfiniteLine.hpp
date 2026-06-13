@@ -85,6 +85,8 @@ public:
     void mouseClickEvent(cppqtgraph::GraphicsScene::MouseClickEvent* event) override;
     void mouseDragEvent(cppqtgraph::GraphicsScene::MouseDragEvent* event) override;
 
+    void refreshViewGeometry();
+
 signals:
     void sigDragged(cppqtgraph::graphicsItems::InfiniteLine* line);
     void sigPositionChangeFinished(cppqtgraph::graphicsItems::InfiniteLine* line);

@@ -353,6 +353,44 @@ bool testPlottingP3AutorangeAndSymbolRender(cppqtgraph::examples::PlottingExampl
     return true;
 }
 
+bool testPlottingRegionBoundingRectAfterShow()
+{
+    auto example = cppqtgraph::examples::createPlottingExample();
+    example.widget->show();
+    QApplication::processEvents();
+    const QRectF bounds = example.region->boundingRect();
+    const auto [regionMinimum, regionMaximum] = example.region->getRegion();
+
+    CHECK(nearlyEqual(regionMinimum, 400.0, 1.0e-6));
+    CHECK(nearlyEqual(regionMaximum, 700.0, 1.0e-6));
+    CHECK(nearlyEqual(bounds.left(), regionMinimum, 1.0e-6));
+    CHECK(nearlyEqual(bounds.right(), regionMaximum, 1.0e-6));
+    CHECK(bounds.height() > 1.0);
+
+    return true;
+}
+
+bool testPlottingP8YRangeUnaffectedByRegion(cppqtgraph::examples::PlottingExample& example)
+{
+    example.widget->show();
+    QApplication::processEvents();
+
+    auto* p8 = example.plots[7];
+    const auto yWithRegion = p8->viewRange()[cppqtgraph::graphicsItems::ViewBox::YAxis];
+
+    p8->removeItem(example.region);
+    example.region = nullptr;
+    p8->getViewBox()->enableAutoRange(cppqtgraph::graphicsItems::ViewBox::YAxis, true);
+    p8->getViewBox()->autoRange();
+    QApplication::processEvents();
+
+    const auto yWithoutRegion = p8->viewRange()[cppqtgraph::graphicsItems::ViewBox::YAxis];
+    CHECK(nearlyEqual(yWithoutRegion[0], yWithRegion[0], 1.0e-6));
+    CHECK(nearlyEqual(yWithoutRegion[1], yWithRegion[1], 1.0e-6));
+
+    return true;
+}
+
 bool testPlottingGrab(cppqtgraph::examples::PlottingExample& example)
 {
     example.widget->show();
@@ -385,7 +423,13 @@ int main(int argc, char** argv)
     if (!testPlottingP8AutorangeRange(example)) {
         return 1;
     }
+    if (!testPlottingRegionBoundingRectAfterShow()) {
+        return 1;
+    }
     if (!testPlottingRegionZoomLinkage(example)) {
+        return 1;
+    }
+    if (!testPlottingP8YRangeUnaffectedByRegion(example)) {
         return 1;
     }
     if (!testPlottingDeterminism()) {

@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <vector>
 
 namespace cppqtgraph::graphicsItems {
 namespace {
@@ -40,6 +41,26 @@ ViewBox* findViewBox(QGraphicsItem* item)
 QRectF fallbackViewRect()
 {
     return QRectF(-1000.0, -1000.0, 2000.0, 2000.0);
+}
+
+QRectF localViewRect(const QGraphicsItem* item, ViewBox* viewBox)
+{
+    if (viewBox == nullptr) {
+        return fallbackViewRect();
+    }
+
+    QRectF view = viewBox->viewRect();
+    std::vector<const QGraphicsItem*> ancestors;
+    for (const QGraphicsItem* current = item; current != nullptr && current != viewBox; current = current->parentItem()) {
+        ancestors.push_back(current);
+    }
+    for (auto it = ancestors.rbegin(); it != ancestors.rend(); ++it) {
+        if ((*it)->parentItem() == viewBox) {
+            continue;
+        }
+        view = (*it)->mapRectFromParent(view);
+    }
+    return view;
 }
 
 QPainterPath crosshairPath()
@@ -280,10 +301,7 @@ std::optional<QRectF> InfiniteLine::autoRangeBoundsRect() const
 
 QRectF InfiniteLine::boundingRect() const
 {
-    QRectF view = fallbackViewRect();
-    if (auto* viewBox = findViewBox(parentItem()); viewBox != nullptr) {
-        view = mapRectFromItem(viewBox, viewBox->viewRect());
-    }
+    const QRectF view = localViewRect(this, findViewBox(parentItem()));
 
     const qreal penWidth = std::max<qreal>({1.0, pen_.widthF(), hoverPen_.widthF()});
     QRectF rect(view.left(), -penWidth - 2.0, view.width(), 2.0 * (penWidth + 2.0));
@@ -373,6 +391,11 @@ void InfiniteLine::invalidateBounds()
     update();
 }
 
+void InfiniteLine::refreshViewGeometry()
+{
+    invalidateBounds();
+}
+
 LinearRegionItem::LinearRegionItem(std::pair<qreal, qreal> values,
                                    Orientation orientation,
                                    bool movable,
@@ -398,6 +421,46 @@ LinearRegionItem::LinearRegionItem(std::pair<qreal, qreal> values,
     hover.setAlpha(std::min(hover.alpha() * 2, 255));
     setHoverBrush(QBrush(hover));
     setMovable(movable);
+    connectViewBoxUpdates();
+}
+
+void LinearRegionItem::connectViewBoxUpdates()
+{
+    QObject::disconnect(viewRangeConnection_);
+    QObject::disconnect(viewTransformConnection_);
+    viewRangeConnection_ = {};
+    viewTransformConnection_ = {};
+
+    ViewBox* viewBox = findViewBox(parentItem());
+    if (viewBox == nullptr) {
+        return;
+    }
+
+    viewRangeConnection_ = QObject::connect(
+        viewBox,
+        &ViewBox::sigRangeChanged,
+        this,
+        [this](ViewBox*, ViewBox::Range2D, std::array<bool, 2>) { invalidateViewGeometry(); });
+    viewTransformConnection_ = QObject::connect(
+        viewBox, &ViewBox::sigTransformChanged, this, [this](ViewBox*) { invalidateViewGeometry(); });
+    invalidateViewGeometry();
+}
+
+void LinearRegionItem::invalidateViewGeometry()
+{
+    prepareGeometryChange();
+    for (auto* regionLine : lines_) {
+        regionLine->refreshViewGeometry();
+    }
+    update();
+}
+
+QVariant LinearRegionItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value)
+{
+    if (change == QGraphicsItem::ItemParentHasChanged || change == QGraphicsItem::ItemSceneHasChanged) {
+        connectViewBoxUpdates();
+    }
+    return GraphicsObject::itemChange(change, value);
 }
 
 LinearRegionItem::~LinearRegionItem() = default;
@@ -569,10 +632,7 @@ std::optional<QRectF> LinearRegionItem::autoRangeBoundsRect() const
 
 QRectF LinearRegionItem::boundingRect() const
 {
-    QRectF view = fallbackViewRect();
-    if (auto* viewBox = findViewBox(parentItem()); viewBox != nullptr) {
-        view = mapRectFromItem(viewBox, viewBox->viewRect());
-    }
+    QRectF view = localViewRect(this, findViewBox(parentItem()));
 
     const auto region = getRegion();
     if (orientation_ == Orientation::Vertical) {
