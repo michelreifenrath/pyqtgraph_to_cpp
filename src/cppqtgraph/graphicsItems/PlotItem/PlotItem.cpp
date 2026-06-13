@@ -347,6 +347,9 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu
     setLayout(layout_);
 
     vb_ = new ViewBox(this);
+    // Axes use z=0.5 so extended grid ticks paint in the linked view area; keep the
+    // view box above axes so default plot data occludes grid at intersections.
+    vb_->setZValue(1.0);
     layout_->addItem(vb_, 2, 1);
 
     titleLabel_ = new TitleLabel(this);

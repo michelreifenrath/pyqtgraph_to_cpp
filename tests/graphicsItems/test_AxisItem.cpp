@@ -1,4 +1,6 @@
 #include <cppqtgraph/graphicsItems/AxisItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 #include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QDir>
@@ -951,6 +953,70 @@ bool testGridExtendsLinkedViewTicks()
     return true;
 }
 
+bool isRedCurvePixel(const QColor& color)
+{
+    return color.red() > 200 && color.green() < 80 && color.blue() < 80 && color.alpha() > 200;
+}
+
+bool isGrayGridPixel(const QColor& color)
+{
+    const int channel = color.red();
+    return color.alpha() > 40 && std::abs(color.red() - color.green()) < 15
+        && std::abs(color.green() - color.blue()) < 15 && channel > 120 && channel < 230
+        && color.red() < 200;
+}
+
+bool testPlotDataPaintsAboveExtendedGrid()
+{
+    using cppqtgraph::graphicsItems::PlotItem;
+
+    QGraphicsScene scene;
+    scene.setSceneRect(0.0, 0.0, 420.0, 320.0);
+    scene.setBackgroundBrush(Qt::white);
+
+    PlotItem plot;
+    scene.addItem(&plot);
+    plot.resize(420.0, 320.0);
+    plot.setXRange(0.0, 10.0, 0.0, true);
+    plot.setYRange(0.0, 10.0, 0.0, true);
+    plot.getAxis(QStringLiteral("bottom"))->setGrid(220);
+    plot.getAxis(QStringLiteral("left"))->setGrid(220);
+
+    const std::vector<double> x = {0.0, 10.0};
+    const std::vector<double> y = {5.0, 5.0};
+    auto* curve = plot.plot(x, y, QString());
+    curve->setPen(QPen(QColor(255, 0, 0), 3.0));
+    curve->setAntialias(false);
+
+    QImage image(420, 320, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::white);
+    QPainter painter(&image);
+    scene.render(&painter, QRectF(0.0, 0.0, 420.0, 320.0), QRectF(0.0, 0.0, 420.0, 320.0));
+    painter.end();
+
+    const QRectF viewSceneRect = plot.getViewBox()->sceneBoundingRect();
+    const int sampleY = static_cast<int>(std::lround(viewSceneRect.center().y()));
+    const int sampleStartX = static_cast<int>(std::lround(viewSceneRect.left() + viewSceneRect.width() * 0.15));
+    const int sampleEndX = static_cast<int>(std::lround(viewSceneRect.left() + viewSceneRect.width() * 0.85));
+
+    int redSamples = 0;
+    int graySamples = 0;
+    for (int xPixel = sampleStartX; xPixel <= sampleEndX; ++xPixel) {
+        const QColor color = image.pixelColor(xPixel, sampleY);
+        if (isRedCurvePixel(color)) {
+            ++redSamples;
+        } else if (isGrayGridPixel(color)) {
+            ++graySamples;
+        }
+    }
+
+    CHECK(redSamples >= 12);
+    CHECK(graySamples <= redSamples / 4);
+    CHECK(redSamples > graySamples);
+
+    return true;
+}
+
 bool testGridAlphaAffectsRenderedTickOpacity()
 {
     using cppqtgraph::graphicsItems::AxisItem;
@@ -1011,6 +1077,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testGridAlphaAffectsRenderedTickOpacity()) {
+        return 1;
+    }
+    if (!testPlotDataPaintsAboveExtendedGrid()) {
         return 1;
     }
 
