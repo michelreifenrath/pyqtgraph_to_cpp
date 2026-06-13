@@ -128,7 +128,7 @@ SliderParameterItem::SliderParameterItem(Parameter* param, int depth)
     layout->addWidget(slider_);
 
     bindEditor(editor_);
-    rebuildSpan(param->options());
+    rebuildSpan(param->options(), {});
     writeEditorValue(param->value());
     updateDisplayLabel(param->value());
 }
@@ -177,7 +177,7 @@ void SliderParameterItem::configureEditor(QWidget* /*editor*/)
 void SliderParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
 {
     WidgetParameterItem::optsChanged(param, opts);
-    rebuildSpan(param->options());
+    rebuildSpan(param->options(), opts);
     if (param->options().contains(QStringLiteral("value"))) {
         writeEditorValue(param->value());
         updateDisplayLabel(param->value());
@@ -201,14 +201,24 @@ void SliderParameterItem::updateDisplayLabel(const QVariant& value)
     displayLabel_->setText(displayText);
 }
 
-void SliderParameterItem::rebuildSpan(const QVariantMap& opts)
+void SliderParameterItem::rebuildSpan(const QVariantMap& opts, const QVariantMap& changed)
 {
     const int precision = opts.contains(QStringLiteral("precision")) && !opts.value(QStringLiteral("precision")).isNull()
         ? opts.value(QStringLiteral("precision")).toInt()
         : 2;
     suffix_ = opts.value(QStringLiteral("suffix")).toString();
 
-    if (opts.contains(QStringLiteral("span")) && opts.value(QStringLiteral("span")).isValid()) {
+    const bool useSpan = [&]() {
+        if (changed.contains(QStringLiteral("span"))) {
+            return changed.value(QStringLiteral("span")).isValid();
+        }
+        if (changed.contains(QStringLiteral("limits"))) {
+            return false;
+        }
+        return opts.contains(QStringLiteral("span")) && opts.value(QStringLiteral("span")).isValid();
+    }();
+
+    if (useSpan) {
         span_ = spanFromVariant(opts.value(QStringLiteral("span")), precision);
     } else {
         const double step = opts.value(QStringLiteral("step"), 1.0).toDouble();
@@ -282,6 +292,19 @@ QVariant SliderParameter::setValue(const QVariant& value, bool blockSignal)
 void SliderParameter::setOpts(const QVariantMap& opts)
 {
     Parameter::setOpts(opts);
+
+    QVariantMap modeChanged;
+    if (opts.contains(QStringLiteral("limits")) && !opts.contains(QStringLiteral("span"))) {
+        modeChanged.insert(QStringLiteral("limits"), opts.value(QStringLiteral("limits")));
+    } else if (opts.contains(QStringLiteral("span")) && !opts.contains(QStringLiteral("limits"))) {
+        modeChanged.insert(QStringLiteral("span"), opts.value(QStringLiteral("span")));
+    }
+
+    if (!modeChanged.isEmpty()) {
+        for (ParameterItem* item : items_) {
+            item->optsChanged(this, modeChanged);
+        }
+    }
 }
 
 ParameterItem* SliderParameter::makeTreeItem(int depth)

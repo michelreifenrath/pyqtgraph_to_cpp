@@ -350,18 +350,53 @@ bool testSliderHowToSetSwapsSpanAndLimits()
                     {QStringLiteral("step"), 1.0},
                     {QStringLiteral("value"), 10.0}});
 
+    auto howToSet = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("How to Set")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("limits"),
+                     QVariantList{QStringLiteral("Use span"), QStringLiteral("Use step + limits")}}});
+
+    QObject::connect(howToSet.get(),
+                     &cppqtgraph::parametertree::Parameter::sigValueChanged,
+                     param.get(),
+                     [param](cppqtgraph::parametertree::Parameter* /*source*/, const QVariant& value) {
+                         if (value.toString() == QStringLiteral("Use span")) {
+                             const QVariant preservedSpan = param->options().value(QStringLiteral("span"));
+                             if (preservedSpan.isValid()) {
+                                 param->setOpts({{QStringLiteral("span"), preservedSpan}});
+                             }
+                         } else {
+                             QVariant limits = param->options().value(QStringLiteral("limits"));
+                             if (!limits.isValid() || limits.toList().isEmpty()) {
+                                 limits = QVariantList{0, 100};
+                             }
+                             param->setOpts({{QStringLiteral("limits"), limits}});
+                         }
+                     });
+
     param->setOpts({{QStringLiteral("span"), span}});
-    CHECK(param->options().contains(QStringLiteral("span")));
-    CHECK(param->options().value(QStringLiteral("limits")).isValid());
 
-    param->setOpts({{QStringLiteral("limits"), QVariantList{0, 100}}});
-    CHECK(param->options().contains(QStringLiteral("limits")));
-    CHECK(param->options().value(QStringLiteral("span")).isValid());
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
 
-    const QVariant preservedSpan = param->options().value(QStringLiteral("span"));
-    param->setOpts({{QStringLiteral("span"), preservedSpan}});
-    CHECK(param->options().contains(QStringLiteral("span")));
-    CHECK(preservedSpan.toList().size() == span.size());
+    auto* item = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("widget")));
+    CHECK(item != nullptr);
+    auto* slider = item->editorWidget()->findChild<QSlider*>();
+    CHECK(slider != nullptr);
+    CHECK(slider->maximum() == 49);
+
+    howToSet->setValue(QStringLiteral("Use step + limits"));
+    QTest::qWait(0);
+    CHECK(slider->maximum() == 100);
+    CHECK(param->value().toDouble() == 10.0);
+
+    howToSet->setValue(QStringLiteral("Use span"));
+    QTest::qWait(0);
+    CHECK(slider->maximum() == 49);
+    CHECK(param->options().value(QStringLiteral("span")).toList().size() == span.size());
     return true;
 }
 

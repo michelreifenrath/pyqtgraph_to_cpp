@@ -33,7 +33,7 @@ protected:
     void updateDisplayLabel(const QVariant& value = QVariant()) override;
 
 private:
-    void rebuildSpan(const QVariantMap& opts);
+    void rebuildSpan(const QVariantMap& opts, const QVariantMap& changed);
     int spanToSliderValue(double value) const;
     QString prettyTextValue(int sliderIndex) const;
 
