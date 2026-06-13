@@ -188,6 +188,8 @@ if(_cppqtgraph_has_graphicsitem)
             src/cppqtgraph/widgets/TreeWidget.cpp
             include/cppqtgraph/parametertree/Parameter.hpp
             src/cppqtgraph/parametertree/Parameter.cpp
+            include/cppqtgraph/parametertree/ParameterItem.hpp
+            src/cppqtgraph/parametertree/ParameterItem.cpp
             include/cppqtgraph/parametertree/ParameterTree.hpp
             src/cppqtgraph/parametertree/ParameterTree.cpp
             include/cppqtgraph/widgets/CheckTable.hpp

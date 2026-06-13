@@ -4,6 +4,7 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 #include "../../../include/cppqtgraph/parametertree/Parameter.hpp"
+#include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -18,16 +19,9 @@ QHash<QString, ParameterFactory>& parameterTypeRegistry()
     return registry;
 }
 
-QString displayValue(const Parameter& param)
+bool variantEqual(const QVariant& left, const QVariant& right)
 {
-    if (param.type() == QStringLiteral("group") || param.type() == QStringLiteral("action")) {
-        return {};
-    }
-    const QVariant value = param.value();
-    if (!value.isValid()) {
-        return {};
-    }
-    return value.toString();
+    return left == right;
 }
 
 } // namespace
@@ -37,8 +31,9 @@ void registerParameterType(const QString& typeName, ParameterFactory factory)
     parameterTypeRegistry().insert(typeName, std::move(factory));
 }
 
-Parameter::Parameter(QVariantMap opts)
-    : opts_(std::move(opts))
+Parameter::Parameter(QVariantMap opts, QObject* parent)
+    : QObject(parent)
+    , opts_(std::move(opts))
 {
     if (!opts_.contains(QStringLiteral("name"))) {
         throw std::invalid_argument("Parameter must have a name specified");
@@ -127,6 +122,162 @@ void Parameter::insertChild(int index, std::shared_ptr<Parameter> child)
     names_.insert(childName, child.get());
     children_.insert(children_.begin() + index, child);
     child->parent_ = this;
+    emit sigChildAdded(this, child.get(), index);
+    for (ParameterItem* item : items_) {
+        item->childAdded(this, child.get(), index);
+    }
+}
+
+void Parameter::removeChild(Parameter* child)
+{
+    if (child == nullptr) {
+        return;
+    }
+
+    const QString childName = child->name();
+    if (!names_.contains(childName) || names_.value(childName) != child) {
+        throw std::runtime_error("Parameter is not a child; can't remove.");
+    }
+
+    names_.remove(childName);
+    auto& siblings = children_;
+    siblings.erase(std::remove_if(siblings.begin(),
+                                  siblings.end(),
+                                  [child](const std::shared_ptr<Parameter>& entry) {
+                                      return entry.get() == child;
+                                  }),
+                   siblings.end());
+    child->parent_ = nullptr;
+    emit sigChildRemoved(this, child);
+    for (ParameterItem* item : items_) {
+        item->childRemoved(this, child);
+    }
+}
+
+QVariant Parameter::setValue(const QVariant& value, bool blockSignal)
+{
+    if (variantEqual(opts_.value(QStringLiteral("value")), value)) {
+        return value;
+    }
+
+    modifiedSinceReset_ = true;
+    opts_.insert(QStringLiteral("value"), value);
+    if (!blockSignal) {
+        const QVariant current = opts_.value(QStringLiteral("value"));
+        emit sigValueChanged(this, current);
+        for (ParameterItem* item : items_) {
+            item->valueChanged(this, current);
+        }
+    }
+    return opts_.value(QStringLiteral("value"));
+}
+
+QString Parameter::setName(const QString& name)
+{
+    if (opts_.value(QStringLiteral("name")).toString() == name) {
+        return name;
+    }
+
+    if (parent_ != nullptr) {
+        parent_->names_.remove(opts_.value(QStringLiteral("name")).toString());
+        parent_->names_.insert(name, this);
+    }
+
+    opts_.insert(QStringLiteral("name"), name);
+    emit sigNameChanged(this, name);
+    for (ParameterItem* item : items_) {
+        item->nameChanged(this, name);
+    }
+    return name;
+}
+
+void Parameter::setOpts(const QVariantMap& opts)
+{
+    QVariantMap changed;
+    for (auto it = opts.cbegin(); it != opts.cend(); ++it) {
+        const QString& key = it.key();
+        if (key == QStringLiteral("value")) {
+            setValue(it.value());
+        } else if (key == QStringLiteral("name")) {
+            setName(it.value().toString());
+        } else if (key == QStringLiteral("default")) {
+            setDefault(it.value());
+        } else if (!opts_.contains(key) || opts_.value(key) != it.value()) {
+            opts_.insert(key, it.value());
+            changed.insert(key, it.value());
+        }
+    }
+
+    if (!changed.isEmpty()) {
+        emit sigOptionsChanged(this, changed);
+        for (ParameterItem* item : items_) {
+            item->optsChanged(this, changed);
+        }
+    }
+}
+
+void Parameter::setDefault(const QVariant& val, bool updatePristineValues)
+{
+    if (variantEqual(opts_.value(QStringLiteral("default")), val)) {
+        return;
+    }
+
+    opts_.insert(QStringLiteral("default"), val);
+    if (!opts_.contains(QStringLiteral("value"))
+        || (updatePristineValues && !valueModifiedSinceResetToDefault())) {
+        setToDefault();
+    }
+    if (!valueIsDefault()) {
+        modifiedSinceReset_ = true;
+    }
+    emit sigDefaultChanged(this, val);
+    for (ParameterItem* item : items_) {
+        item->defaultChanged(this, val);
+    }
+}
+
+void Parameter::setToDefault()
+{
+    if (!hasDefault()) {
+        throw std::runtime_error("No default value set");
+    }
+    setValue(defaultValue());
+    modifiedSinceReset_ = false;
+}
+
+bool Parameter::hasDefault() const
+{
+    return opts_.contains(QStringLiteral("default"));
+}
+
+QVariant Parameter::defaultValue() const
+{
+    return opts_.value(QStringLiteral("default"));
+}
+
+bool Parameter::valueIsDefault() const
+{
+    return hasDefault() && variantEqual(value(), defaultValue());
+}
+
+bool Parameter::valueModifiedSinceResetToDefault() const
+{
+    return modifiedSinceReset_;
+}
+
+bool Parameter::writable() const
+{
+    return !readonly();
+}
+
+bool Parameter::readonly() const
+{
+    return opts_.value(QStringLiteral("readonly"), false).toBool();
+}
+
+bool Parameter::enabled() const
+{
+    return opts_.value(QStringLiteral("enabled"), true).toBool();
 }
 
 ParameterItem* Parameter::makeTreeItem(int depth)
@@ -134,37 +285,39 @@ ParameterItem* Parameter::makeTreeItem(int depth)
     return new ParameterItem(this, depth);
 }
 
-GroupParameter::GroupParameter(QVariantMap opts)
-    : Parameter(std::move(opts))
+void Parameter::registerItem(ParameterItem* item)
 {
-}
-
-SimpleParameter::SimpleParameter(QVariantMap opts)
-    : Parameter(std::move(opts))
-{
-}
-
-ActionParameter::ActionParameter(QVariantMap opts)
-    : Parameter(std::move(opts))
-{
-}
-
-ParameterItem::ParameterItem(Parameter* param, int depth)
-    : widgets::TreeWidgetItem(QStringList{param->title(), displayValue(*param)})
-    , param_(param)
-    , depth_(depth)
-{
-}
-
-void ParameterItem::treeWidgetChanged()
-{
-    if (param_ == nullptr) {
+    if (item == nullptr) {
         return;
     }
+    if (std::find(items_.begin(), items_.end(), item) == items_.end()) {
+        items_.push_back(item);
+    }
+}
 
-    const QVariantMap& opts = param_->options();
-    setHidden(!opts.value(QStringLiteral("visible"), true).toBool());
-    setExpanded(opts.value(QStringLiteral("expanded"), true).toBool());
+void Parameter::unregisterItem(ParameterItem* item)
+{
+    items_.erase(std::remove(items_.begin(), items_.end(), item), items_.end());
+}
+
+GroupParameter::GroupParameter(QVariantMap opts, QObject* parent)
+    : Parameter(std::move(opts), parent)
+{
+}
+
+SimpleParameter::SimpleParameter(QVariantMap opts, QObject* parent)
+    : Parameter(std::move(opts), parent)
+{
+}
+
+ParameterItem* SimpleParameter::makeTreeItem(int depth)
+{
+    return new WidgetParameterItem(this, depth);
+}
+
+ActionParameter::ActionParameter(QVariantMap opts, QObject* parent)
+    : Parameter(std::move(opts), parent)
+{
 }
 
 void registerBuiltinParameterTypes()
