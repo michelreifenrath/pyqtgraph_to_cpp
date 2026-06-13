@@ -114,12 +114,14 @@ examples:
     title: Plotting Datasets
     upstream_file: pyqtgraph/examples/MultiDataPlot.py
     cpp_file: examples/MultiDataPlot.cpp
-    status: planned
+    status: ported
     validation:
       smoke: required
       numeric: required
       visual: required
       interaction: required
+    ctest:
+      normal: cppqtgraph.examples.MultiDataPlot
 
   - order: 6
     name: InteractiveParameter

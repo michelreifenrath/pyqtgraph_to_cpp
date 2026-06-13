@@ -72,7 +72,7 @@ QVector<ExampleEntry> makeEntries()
          .title = QStringLiteral("Plotting Datasets"),
          .upstreamFile = QStringLiteral("pyqtgraph/examples/MultiDataPlot.py"),
          .cppFile = QStringLiteral("examples/MultiDataPlot.cpp"),
-         .status = ExampleStatus::Planned,
+         .status = ExampleStatus::Ported,
          .validation = {.smoke = ValidationLevel::Required,
                         .numeric = ValidationLevel::Required,
                         .visual = ValidationLevel::Required,
