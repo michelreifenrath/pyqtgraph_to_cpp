@@ -785,6 +785,20 @@ void TextParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
     }
 }
 
+namespace {
+
+bool actionIsInteractive(const Parameter* param)
+{
+    if (param == nullptr) {
+        return false;
+    }
+    const QVariantMap& options = param->options();
+    return options.value(QStringLiteral("enabled"), true).toBool()
+        && options.value(QStringLiteral("visible"), true).toBool();
+}
+
+} // namespace
+
 ActionParameterItem::ActionParameterItem(Parameter* param, int depth)
     : ParameterItem(param, depth)
 {
@@ -832,10 +846,16 @@ void ActionParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
         if (button_ != nullptr) {
             button_->setEnabled(opts.value(QStringLiteral("enabled")).toBool());
         }
+        if (shortcut_ != nullptr) {
+            shortcut_->setEnabled(actionIsInteractive(param));
+        }
     }
     if (opts.contains(QStringLiteral("visible"))) {
         if (button_ != nullptr) {
             button_->setVisible(opts.value(QStringLiteral("visible")).toBool());
+        }
+        if (shortcut_ != nullptr) {
+            shortcut_->setEnabled(actionIsInteractive(param));
         }
     }
     if (opts.contains(QStringLiteral("tip"))) {
@@ -890,7 +910,11 @@ void ActionParameterItem::updateShortcut()
 
     shortcut_ = new QShortcut(QKeySequence(shortcutText), treeWidget());
     shortcut_->setContext(Qt::WidgetWithChildrenShortcut);
+    shortcut_->setEnabled(actionIsInteractive(param_));
     QObject::connect(shortcut_, &QShortcut::activated, shortcut_, [this]() {
+        if (!actionIsInteractive(param_)) {
+            return;
+        }
         if (auto* action = dynamic_cast<ActionParameter*>(param_)) {
             action->activate();
         }

@@ -28,6 +28,7 @@ protected:
 
 private:
     void applySpinBoxOpts(const QVariantMap& opts);
+    void applyChangedSpinBoxOpts(const QVariantMap& changedOpts);
 
     widgets::SpinBox* spinBox_ = nullptr;
 };

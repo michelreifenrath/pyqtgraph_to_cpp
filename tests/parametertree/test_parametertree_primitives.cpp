@@ -335,6 +335,115 @@ bool testExpandCollapseAllActions()
     return true;
 }
 
+bool testNumericSuffixChangePreservesLimits()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("val")},
+                    {QStringLiteral("type"), QStringLiteral("float")},
+                    {QStringLiteral("value"), 3.0}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("val")));
+    CHECK(item != nullptr);
+    auto* spinBox = qobject_cast<cppqtgraph::widgets::SpinBox*>(item->editorWidget());
+    CHECK(spinBox != nullptr);
+
+    param->setOpts({{QStringLiteral("limits"), QVariantList{1.0, 5.0}}});
+    QTest::qWait(0);
+    param->setValue(10.0);
+    QTest::qWait(0);
+    CHECK(spinBox->value() == 5.0);
+
+    param->setOpts({{QStringLiteral("suffix"), QStringLiteral("Hz")}});
+    QTest::qWait(0);
+    param->setValue(10.0);
+    QTest::qWait(0);
+    CHECK(spinBox->value() == 5.0);
+    return true;
+}
+
+bool testNumericLimitsClearMaxBound()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("val")},
+                    {QStringLiteral("type"), QStringLiteral("float")},
+                    {QStringLiteral("value"), 3.0},
+                    {QStringLiteral("limits"), QVariantList{1.0, 5.0}}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::WidgetParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("val")));
+    CHECK(item != nullptr);
+    auto* spinBox = qobject_cast<cppqtgraph::widgets::SpinBox*>(item->editorWidget());
+    CHECK(spinBox != nullptr);
+
+    param->setValue(10.0);
+    QTest::qWait(0);
+    CHECK(spinBox->value() == 5.0);
+
+    param->setOpts({{QStringLiteral("limits"), QVariantList{0.0, QVariant()}}});
+    QTest::qWait(0);
+
+    param->setValue(3.0);
+    QTest::qWait(0);
+    param->setValue(10.0);
+    QTest::qWait(0);
+    CHECK(spinBox->value() == 10.0);
+    return true;
+}
+
+bool testDisabledActionShortcutDoesNotActivate()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("Run")},
+                    {QStringLiteral("type"), QStringLiteral("action")},
+                    {QStringLiteral("shortcut"), QStringLiteral("Ctrl+Shift+P")},
+                    {QStringLiteral("enabled"), false}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::ActionParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("Run")));
+    CHECK(item != nullptr);
+
+    auto* action = dynamic_cast<cppqtgraph::parametertree::ActionParameter*>(param.get());
+    CHECK(action != nullptr);
+
+    int activationCount = 0;
+    QObject::connect(action, &cppqtgraph::parametertree::ActionParameter::sigActivated, &tree,
+                     [&](cppqtgraph::parametertree::Parameter*) { ++activationCount; });
+
+    tree.setFocus();
+    QTest::keySequence(&tree, QKeySequence(QStringLiteral("Ctrl+Shift+P")));
+    QTest::qWait(0);
+    CHECK(activationCount == 0);
+
+    param->setOpts({{QStringLiteral("enabled"), true}});
+    QTest::qWait(0);
+    QTest::keySequence(&tree, QKeySequence(QStringLiteral("Ctrl+Shift+P")));
+    QTest::qWait(0);
+    CHECK(activationCount == 1);
+
+    param->setOpts({{QStringLiteral("enabled"), false}});
+    QTest::qWait(0);
+    QTest::keySequence(&tree, QKeySequence(QStringLiteral("Ctrl+Shift+P")));
+    QTest::qWait(0);
+    CHECK(activationCount == 1);
+    return true;
+}
+
 bool testTwoTreePrimitiveSync()
 {
     const auto exampleParams = cppqtgraph::parametertree::buildExampleParametersGroup();
@@ -391,10 +500,19 @@ int main(int argc, char** argv)
     if (!testNumericSpinBoxSuffixAndSiPrefixLabel()) {
         return 1;
     }
+    if (!testNumericSuffixChangePreservesLimits()) {
+        return 1;
+    }
+    if (!testNumericLimitsClearMaxBound()) {
+        return 1;
+    }
     if (!testListComboUpdatesValue()) {
         return 1;
     }
     if (!testActionActivationAndStateChanged()) {
+        return 1;
+    }
+    if (!testDisabledActionShortcutDoesNotActivate()) {
         return 1;
     }
     if (!testExpandCollapseAllActions()) {

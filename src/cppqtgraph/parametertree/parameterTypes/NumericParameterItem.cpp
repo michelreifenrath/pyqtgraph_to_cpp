@@ -96,7 +96,7 @@ void NumericParameterItem::configureEditor(QWidget* editor)
 void NumericParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
 {
     WidgetParameterItem::optsChanged(param, opts);
-    applySpinBoxOpts(opts);
+    applyChangedSpinBoxOpts(opts);
     updateDisplayLabel();
 }
 
@@ -157,6 +157,66 @@ void NumericParameterItem::applySpinBoxOpts(const QVariantMap& opts)
     }
 
     spinBox_->setOpts(spinOpts);
+}
+
+void NumericParameterItem::applyChangedSpinBoxOpts(const QVariantMap& changedOpts)
+{
+    if (spinBox_ == nullptr || param_ == nullptr) {
+        return;
+    }
+
+    if (changedOpts.contains(QStringLiteral("limits"))) {
+        std::optional<double> minBound;
+        std::optional<double> maxBound;
+        const QVariant limits = changedOpts.value(QStringLiteral("limits"));
+        if (limits.isValid() && limits.canConvert<QVariantList>()) {
+            const QVariantList pair = limits.toList();
+            if (pair.size() >= 2) {
+                minBound = boundFromVariant(pair.at(0));
+                maxBound = boundFromVariant(pair.at(1));
+            }
+        }
+        spinBox_->setRange(minBound, maxBound);
+    }
+
+    widgets::SpinBoxOptions spinOpts;
+    bool hasOpts = false;
+
+    if (changedOpts.contains(QStringLiteral("step"))) {
+        spinOpts.step = changedOpts.value(QStringLiteral("step")).toDouble();
+        hasOpts = true;
+    }
+    if (changedOpts.contains(QStringLiteral("suffix"))) {
+        spinOpts.suffix = changedOpts.value(QStringLiteral("suffix")).toString();
+        hasOpts = true;
+    } else if (changedOpts.contains(QStringLiteral("units"))) {
+        spinOpts.suffix = changedOpts.value(QStringLiteral("units")).toString();
+        hasOpts = true;
+    }
+    if (changedOpts.contains(QStringLiteral("siPrefix"))) {
+        spinOpts.siPrefix = changedOpts.value(QStringLiteral("siPrefix")).toBool();
+        hasOpts = true;
+    }
+    if (changedOpts.contains(QStringLiteral("finite"))) {
+        spinOpts.finite = changedOpts.value(QStringLiteral("finite")).toBool();
+        hasOpts = true;
+    }
+    if (changedOpts.contains(QStringLiteral("dec"))) {
+        spinOpts.dec = changedOpts.value(QStringLiteral("dec")).toBool();
+        hasOpts = true;
+    }
+    if (changedOpts.contains(QStringLiteral("decimals"))) {
+        spinOpts.decimals = changedOpts.value(QStringLiteral("decimals")).toInt();
+        hasOpts = true;
+    }
+    if (changedOpts.contains(QStringLiteral("minStep"))) {
+        spinOpts.minStep = changedOpts.value(QStringLiteral("minStep")).toDouble();
+        hasOpts = true;
+    }
+
+    if (hasOpts) {
+        spinBox_->setOpts(spinOpts);
+    }
 }
 
 } // namespace cppqtgraph::parametertree
