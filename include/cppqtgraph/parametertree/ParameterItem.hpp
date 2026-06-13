@@ -154,6 +154,7 @@ public:
     ~ActionParameterItem() override;
 
     void treeWidgetChanged() override;
+    void nameChanged(Parameter* param, const QString& name) override;
     void optsChanged(Parameter* param, const QVariantMap& opts) override;
 
     [[nodiscard]] QPushButton* actionButton() const { return button_; }

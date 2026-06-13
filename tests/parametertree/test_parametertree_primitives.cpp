@@ -444,6 +444,53 @@ bool testDisabledActionShortcutDoesNotActivate()
     return true;
 }
 
+bool testBuildExampleParametersGroupReleases()
+{
+    std::weak_ptr<cppqtgraph::parametertree::Parameter> weak;
+    {
+        auto exampleParams = cppqtgraph::parametertree::buildExampleParametersGroup();
+        weak = exampleParams;
+        CHECK(!weak.expired());
+
+        cppqtgraph::parametertree::ParameterTree tree;
+        tree.setParameters(exampleParams, false);
+        tree.show();
+        QTest::qWait(0);
+
+        auto* expandAll = dynamic_cast<cppqtgraph::parametertree::ActionParameterItem*>(
+            findItemByName(tree.invisibleRootItem(), QStringLiteral("Expand All")));
+        CHECK(expandAll != nullptr);
+        QTest::mouseClick(expandAll->actionButton(), Qt::LeftButton);
+        QTest::qWait(0);
+
+        exampleParams.reset();
+    }
+    CHECK(weak.expired());
+    return true;
+}
+
+bool testActionRenameUpdatesButtonText()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("Run")},
+                    {QStringLiteral("type"), QStringLiteral("action")}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::ActionParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("Run")));
+    CHECK(item != nullptr);
+    CHECK(item->actionButton()->text() == QStringLiteral("Run"));
+
+    param->setName(QStringLiteral("Execute"));
+    QTest::qWait(0);
+    CHECK(item->actionButton()->text() == QStringLiteral("Execute"));
+    return true;
+}
+
 bool testTwoTreePrimitiveSync()
 {
     const auto exampleParams = cppqtgraph::parametertree::buildExampleParametersGroup();
@@ -516,6 +563,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testExpandCollapseAllActions()) {
+        return 1;
+    }
+    if (!testBuildExampleParametersGroupReleases()) {
+        return 1;
+    }
+    if (!testActionRenameUpdatesButtonText()) {
         return 1;
     }
     if (!testTwoTreePrimitiveSync()) {

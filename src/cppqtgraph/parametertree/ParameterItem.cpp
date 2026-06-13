@@ -825,6 +825,12 @@ ActionParameterItem::~ActionParameterItem()
     delete shortcut_;
 }
 
+void ActionParameterItem::nameChanged(Parameter* param, const QString& name)
+{
+    ParameterItem::nameChanged(param, name);
+    updateButton();
+}
+
 void ActionParameterItem::treeWidgetChanged()
 {
     ParameterItem::treeWidgetChanged();

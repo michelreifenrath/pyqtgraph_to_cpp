@@ -20,11 +20,11 @@ QVariant normalizedOptionValue(const QVariant& value)
     return value;
 }
 
-void connectOptionRow(const std::shared_ptr<Parameter>& widgetParam, const std::shared_ptr<Parameter>& optionParam)
+void connectOptionRow(Parameter* widgetParam, Parameter* optionParam)
 {
-    QObject::connect(optionParam.get(),
+    QObject::connect(optionParam,
                      &Parameter::sigValueChanged,
-                     widgetParam.get(),
+                     widgetParam,
                      [widgetParam, optionParam](Parameter* /*source*/, const QVariant& value) {
                          widgetParam->setOpts(
                              {{optionParam->name(), normalizedOptionValue(value)}});
@@ -71,7 +71,7 @@ std::shared_ptr<Parameter> makeSampleGroup(const QString& chType, const QVariant
     optionRows.reserve(static_cast<std::size_t>(optSpecs.size()));
     for (const QVariant& optionSpec : optSpecs) {
         auto optionParam = Parameter::create(optionSpec.toMap());
-        connectOptionRow(widgetParam, optionParam);
+        connectOptionRow(widgetParam.get(), optionParam.get());
         optionRows.push_back(optionParam);
     }
     applyInitialOptions(widgetParam, optionRows);
@@ -201,7 +201,7 @@ std::shared_ptr<Parameter> makeNoExtraOptionsGroup()
                          });
 }
 
-void connectExpandCollapseActions(const std::shared_ptr<Parameter>& exampleParams)
+void connectExpandCollapseActions(Parameter* exampleParams)
 {
     const auto activate = [exampleParams](Parameter* action) {
         const bool expand = action->name() == QStringLiteral("Expand All");
@@ -216,7 +216,7 @@ void connectExpandCollapseActions(const std::shared_ptr<Parameter>& exampleParam
         auto button = Parameter::create(
             QVariantMap{{QStringLiteral("name"), name}, {QStringLiteral("type"), QStringLiteral("action")}});
         if (auto* action = dynamic_cast<ActionParameter*>(button.get())) {
-            QObject::connect(action, &ActionParameter::sigActivated, exampleParams.get(), [activate](Parameter* param) {
+            QObject::connect(action, &ActionParameter::sigActivated, exampleParams, [activate](Parameter* param) {
                 activate(param);
             });
         }
@@ -234,7 +234,7 @@ std::shared_ptr<Parameter> buildExampleParametersGroup()
     exampleParams->addChild(makeFloatSampleGroup());
     exampleParams->addChild(makeActionSampleGroup());
     exampleParams->addChild(makeNoExtraOptionsGroup());
-    connectExpandCollapseActions(exampleParams);
+    connectExpandCollapseActions(exampleParams.get());
     return exampleParams;
 }
 
