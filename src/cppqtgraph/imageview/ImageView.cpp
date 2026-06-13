@@ -9,7 +9,7 @@
 #include "../../../include/cppqtgraph/graphicsItems/HistogramLUTItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/InfiniteLine.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/LinearRegionItem.hpp"
-#include "../../../include/cppqtgraph/graphicsItems/PlotCurveItem.hpp"
+#include "../../../include/cppqtgraph/graphicsItems/PlotDataItem.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ROI.hpp"
 #include "../../../include/cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp"
 #include "../../../include/cppqtgraph/widgets/GraphicsView.hpp"
@@ -839,17 +839,17 @@ const graphicsItems::ROI* ImageView::normRoi() const noexcept
 
 std::size_t ImageView::roiCurveCount() const noexcept
 {
-    return roiCurves_.size();
+    return roiPlotData_.size();
 }
 
 graphicsItems::PlotCurveItem* ImageView::roiCurve(std::size_t index) noexcept
 {
-    return index < roiCurves_.size() ? roiCurves_[index] : nullptr;
+    return index < roiPlotData_.size() && roiPlotData_[index] != nullptr ? roiPlotData_[index]->curve() : nullptr;
 }
 
 const graphicsItems::PlotCurveItem* ImageView::roiCurve(std::size_t index) const noexcept
 {
-    return index < roiCurves_.size() ? roiCurves_[index] : nullptr;
+    return index < roiPlotData_.size() && roiPlotData_[index] != nullptr ? roiPlotData_[index]->curve() : nullptr;
 }
 
 void ImageView::roiClicked()
@@ -946,9 +946,9 @@ void ImageView::applyRoiPlotVisibility()
         if (roiChecked) {
             roi_->show();
             roiPlot_->setMouseEnabled(true, true);
-            for (auto* curve : roiCurves_) {
-                if (curve != nullptr) {
-                    curve->show();
+            for (auto* plotData : roiPlotData_) {
+                if (plotData != nullptr) {
+                    plotData->show();
                 }
             }
             roiPlot_->showAxis(QStringLiteral("left"));
@@ -958,9 +958,9 @@ void ImageView::applyRoiPlotVisibility()
         } else {
             roi_->hide();
             roiPlot_->setMouseEnabled(false, false);
-            for (auto* curve : roiCurves_) {
-                if (curve != nullptr) {
-                    curve->hide();
+            for (auto* plotData : roiPlotData_) {
+                if (plotData != nullptr) {
+                    plotData->hide();
                 }
             }
             roiPlot_->hideAxis(QStringLiteral("left"));
@@ -1072,32 +1072,31 @@ void ImageView::updateRoiCurvesFromTimeRgb()
         QColor(255, 255, 255),
     };
 
-    while (roiCurves_.size() > channels) {
-        auto* curve = roiCurves_.back();
-        roiCurves_.pop_back();
-        if (curve != nullptr) {
-            roiPlot_->removeItem(curve);
-            delete curve;
+    while (roiPlotData_.size() > channels) {
+        auto* plotData = roiPlotData_.back();
+        roiPlotData_.pop_back();
+        if (plotData != nullptr) {
+            roiPlot_->removeItem(plotData);
         }
     }
-    while (roiCurves_.size() < channels) {
-        auto* curve = roiPlot_->plot(std::span<const double>{}, std::span<const double>{});
-        roiCurves_.push_back(curve);
+    while (roiPlotData_.size() < channels) {
+        auto* plotData = roiPlot_->plot(std::span<const double>{}, std::span<const double>{});
+        roiPlotData_.push_back(plotData);
     }
 
     for (std::size_t channel = 0; channel < channels; ++channel) {
-        auto* curve = roiCurves_[channel];
-        if (curve == nullptr) {
+        auto* plotData = roiPlotData_[channel];
+        if (plotData == nullptr) {
             continue;
         }
-        curve->setData(roiCurveXBuffer_, roiCurveYBuffers_[channel]);
+        plotData->setData(roiCurveXBuffer_, roiCurveYBuffers_[channel]);
         QPen pen(channelColors[std::min(channel, channelColors.size() - 1)]);
         pen.setWidthF(1.0);
-        curve->setPen(pen);
+        plotData->setPen(pen);
         if (ui_.roiBtn != nullptr && ui_.roiBtn->isChecked()) {
-            curve->show();
+            plotData->show();
         } else {
-            curve->hide();
+            plotData->hide();
         }
     }
 }
@@ -1661,29 +1660,28 @@ void ImageView::updateRoiCurvesFromFrameStack()
         curveY[frame] = region.values.empty() ? 0.0 : sum / static_cast<double>(region.values.size());
     }
 
-    while (roiCurves_.size() > 1) {
-        auto* curve = roiCurves_.back();
-        roiCurves_.pop_back();
-        if (curve != nullptr) {
-            roiPlot_->removeItem(curve);
-            delete curve;
+    while (roiPlotData_.size() > 1) {
+        auto* plotData = roiPlotData_.back();
+        roiPlotData_.pop_back();
+        if (plotData != nullptr) {
+            roiPlot_->removeItem(plotData);
         }
     }
-    while (roiCurves_.empty()) {
-        auto* curve = roiPlot_->plot(std::span<const double>{}, std::span<const double>{});
-        roiCurves_.push_back(curve);
+    while (roiPlotData_.empty()) {
+        auto* plotData = roiPlot_->plot(std::span<const double>{}, std::span<const double>{});
+        roiPlotData_.push_back(plotData);
     }
 
-    auto* curve = roiCurves_.front();
-    if (curve != nullptr) {
-        curve->setData(roiCurveXBuffer_, curveY);
+    auto* plotData = roiPlotData_.front();
+    if (plotData != nullptr) {
+        plotData->setData(roiCurveXBuffer_, curveY);
         QPen pen(Qt::white);
         pen.setWidthF(1.0);
-        curve->setPen(pen);
+        plotData->setPen(pen);
         if (ui_.roiBtn != nullptr && ui_.roiBtn->isChecked()) {
-            curve->show();
+            plotData->show();
         } else {
-            curve->hide();
+            plotData->hide();
         }
     }
 }

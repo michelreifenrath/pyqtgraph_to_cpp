@@ -45,14 +45,25 @@ void PlotWidget::clear()
     plotItem_->clear();
 }
 
-graphicsItems::PlotCurveItem* PlotWidget::plot(std::span<const double> y, const QString& name)
+graphicsItems::PlotDataItem* PlotWidget::plot(std::span<const double> y, const QString& name)
 {
     return plotItem_->plot(y, name);
 }
 
-graphicsItems::PlotCurveItem* PlotWidget::plot(std::span<const double> x, std::span<const double> y, const QString& name)
+graphicsItems::PlotDataItem* PlotWidget::plot(std::span<const double> x, std::span<const double> y, const QString& name)
 {
     return plotItem_->plot(x, y, name);
+}
+
+graphicsItems::PlotDataItem* PlotWidget::plot(std::span<const double> y, graphicsItems::PlotItem::PlotOptions options)
+{
+    return plotItem_->plot(y, options);
+}
+
+graphicsItems::PlotDataItem* PlotWidget::plot(std::span<const double> x, std::span<const double> y,
+                                              graphicsItems::PlotItem::PlotOptions options)
+{
+    return plotItem_->plot(x, y, options);
 }
 
 graphicsItems::LegendItem* PlotWidget::addLegend(std::optional<QPointF> offset)

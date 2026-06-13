@@ -33,6 +33,7 @@ class HistogramLUTItem;
 class InfiniteLine;
 class LinearRegionItem;
 class PlotCurveItem;
+class PlotDataItem;
 class ROI;
 class ViewBox;
 } // namespace cppqtgraph::graphicsItems
@@ -233,7 +234,7 @@ private:
     QMenu* menu_ = nullptr;
     class QAction* normAction_ = nullptr;
     class QAction* exportAction_ = nullptr;
-    std::vector<graphicsItems::PlotCurveItem*> roiCurves_;
+    std::vector<graphicsItems::PlotDataItem*> roiPlotData_;
     std::vector<double> roiCurveXBuffer_;
     std::vector<std::vector<double>> roiCurveYBuffers_;
 

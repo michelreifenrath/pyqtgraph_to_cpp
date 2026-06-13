@@ -115,16 +115,16 @@ struct PlottingOptions {
 struct PlottingExample {
     std::unique_ptr<widgets::GraphicsLayoutWidget> widget;
     std::array<graphicsItems::PlotItem*, 9> plots{};
-    graphicsItems::PlotCurveItem* p1Curve = nullptr;
-    graphicsItems::PlotCurveItem* p2RedCurve = nullptr;
-    graphicsItems::PlotCurveItem* p2GreenCurve = nullptr;
-    graphicsItems::PlotCurveItem* p2BlueCurve = nullptr;
+    graphicsItems::PlotDataItem* p1Curve = nullptr;
+    graphicsItems::PlotDataItem* p2RedCurve = nullptr;
+    graphicsItems::PlotDataItem* p2GreenCurve = nullptr;
+    graphicsItems::PlotDataItem* p2BlueCurve = nullptr;
     graphicsItems::PlotDataItem* p3Curve = nullptr;
     graphicsItems::PlotDataItem* p5Scatter = nullptr;
     graphicsItems::PlotCurveItem* p6Curve = nullptr;
-    graphicsItems::PlotCurveItem* p7Curve = nullptr;
-    graphicsItems::PlotCurveItem* p8Curve = nullptr;
-    graphicsItems::PlotCurveItem* p9Curve = nullptr;
+    graphicsItems::PlotDataItem* p7Curve = nullptr;
+    graphicsItems::PlotDataItem* p8Curve = nullptr;
+    graphicsItems::PlotDataItem* p9Curve = nullptr;
     graphicsItems::LinearRegionItem* region = nullptr;
     QTimer* timer = nullptr;
     std::shared_ptr<PlottingState> state;
@@ -353,8 +353,8 @@ PlottingExample createPlottingExample(const PlottingOptions& options = {})
     auto* p7 = example.widget->addPlot();
     p7->setTitle(QStringLiteral("Filled plot, axis disabled"));
     example.p7Curve = p7->plot(example.state->p7Y);
-    example.p7Curve->setFillLevel(-0.3);
-    example.p7Curve->setFillBrush(QBrush(QColor(50, 50, 200, 100)));
+    example.p7Curve->curve()->setFillLevel(-0.3);
+    example.p7Curve->curve()->setFillBrush(QBrush(QColor(50, 50, 200, 100)));
     p7->showAxis(QStringLiteral("bottom"), false);
     example.plots[6] = p7;
 

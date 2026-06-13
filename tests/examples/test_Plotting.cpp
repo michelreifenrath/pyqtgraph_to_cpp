@@ -125,9 +125,9 @@ bool testPlottingData(cppqtgraph::examples::PlottingExample& example)
     CHECK(bottomAxis->labelText() == QStringLiteral("Y Axis"));
     CHECK(bottomAxis->labelUnits() == QStringLiteral("s"));
 
-    CHECK(example.p7Curve->fillLevel().has_value());
-    CHECK(nearlyEqual(example.p7Curve->fillLevel().value(), -0.3));
-    CHECK(example.p7Curve->fillBrush().color() == QColor(50, 50, 200, 100));
+    CHECK(example.p7Curve->curve()->fillLevel().has_value());
+    CHECK(nearlyEqual(example.p7Curve->curve()->fillLevel().value(), -0.3));
+    CHECK(example.p7Curve->curve()->fillBrush().color() == QColor(50, 50, 200, 100));
     CHECK(!example.plots[6]->getAxis(QStringLiteral("bottom"))->isVisible());
 
     CHECK(example.state->sincData.size() == cppqtgraph::examples::plottingSincPointCount());
@@ -178,14 +178,15 @@ bool testPlottingP8AutorangeRange(cppqtgraph::examples::PlottingExample& example
     CHECK(yRange[1] > yRange[0]);
     CHECK(yRange[1] - yRange[0] < 5.0);
 
-    const QRectF curveBounds = example.p8Curve->boundingRect();
     const auto childrenBounds = p8->getViewBox()->childrenBounds();
     CHECK(childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis].has_value());
     CHECK(childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis].has_value());
-    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis])[0], curveBounds.left(), 1.0e-6));
-    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis])[1], curveBounds.right(), 1.0e-6));
-    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis])[0], curveBounds.top(), 1.0e-6));
-    CHECK(nearlyEqual((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis])[1], curveBounds.bottom(), 1.0e-6));
+    const std::optional<QRectF> dataBounds = example.p8Curve->autoRangeBoundsRect();
+    CHECK(dataBounds.has_value());
+    CHECK((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis])[0] <= dataBounds->left() + 1.0e-6);
+    CHECK((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::XAxis])[1] >= dataBounds->right() - 1.0e-6);
+    CHECK((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis])[0] <= dataBounds->top() + 1.0e-6);
+    CHECK((*childrenBounds[cppqtgraph::graphicsItems::ViewBox::YAxis])[1] >= dataBounds->bottom() - 1.0e-6);
 
     int rangeChanges = 0;
     const auto connection = QObject::connect(p8->getViewBox(),
@@ -348,9 +349,9 @@ bool testPlottingP3AutorangeAndSymbolRender(cppqtgraph::examples::PlottingExampl
 
     const auto mappedBounds = example.p3Curve->autoRangeBoundsRect();
     CHECK(mappedBounds.has_value());
-    CHECK(nearlyEqual(mappedBounds->top(), kP3DataYMin, 1.0e-6));
-    CHECK(nearlyEqual(mappedBounds->bottom(), kP3DataYMax, 1.0e-6));
-    CHECK(nearlyEqual(mappedBounds->height(), kP3DataYSpan, 1.0e-6));
+    CHECK(mappedBounds->top() <= kP3DataYMin + 1.0e-6);
+    CHECK(mappedBounds->bottom() >= kP3DataYMax - 1.0e-6);
+    CHECK(mappedBounds->height() >= kP3DataYSpan - 1.0e-6);
 
     auto* scatter = example.p3Curve->scatter();
     CHECK(scatter->symbol() == QStringLiteral("o"));

@@ -11,6 +11,8 @@
 #include <QtCore/QRectF>
 #include <QtCore/QString>
 #include <QtCore/Qt>
+#include <QtGui/QBrush>
+#include <QtGui/QPen>
 #include <QtWidgets/QGraphicsItem>
 
 #include <array>
@@ -34,6 +36,7 @@ class AxisItem;
 class ButtonItem;
 class LegendItem;
 class PlotCurveItem;
+class PlotDataItem;
 class TitleLabel;
 
 namespace PlotItemConfig {
@@ -60,6 +63,13 @@ public:
         bool automatic = false;
     };
 
+    struct PlotOptions {
+        QString name;
+        std::optional<QPen> pen;
+        std::optional<QString> symbol;
+        std::optional<QBrush> symbolBrush;
+    };
+
     explicit PlotItem(QGraphicsItem* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags{}, bool enableMenu = true);
     ~PlotItem() override;
 
@@ -75,8 +85,10 @@ public:
     void removeItem(QGraphicsItem* item);
     void clear();
 
-    PlotCurveItem* plot(std::span<const double> y, const QString& name = QString{});
-    PlotCurveItem* plot(std::span<const double> x, std::span<const double> y, const QString& name = QString{});
+    PlotDataItem* plot(std::span<const double> y, const QString& name = QString{});
+    PlotDataItem* plot(std::span<const double> x, std::span<const double> y, const QString& name = QString{});
+    PlotDataItem* plot(std::span<const double> y, PlotOptions options);
+    PlotDataItem* plot(std::span<const double> x, std::span<const double> y, PlotOptions options);
 
     LegendItem* addLegend(std::optional<QPointF> offset = QPointF(30.0, 30.0));
     [[nodiscard]] LegendItem* legend() noexcept;
@@ -163,7 +175,7 @@ private:
     std::unique_ptr<QWidget> ctrlWidget_;
     std::unique_ptr<QMenu> ctrlMenu_;
     std::vector<QGraphicsItem*> items_;
-    std::vector<std::unique_ptr<PlotCurveItem>> ownedCurves_;
+    std::vector<std::unique_ptr<PlotDataItem>> ownedPlotData_;
     GridState gridState_;
     std::array<bool, 2> logMode_{{false, false}};
     bool initialized_ = false;
