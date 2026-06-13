@@ -47,6 +47,7 @@ NumericParameterItem::NumericParameterItem(Parameter* param, int depth)
     bindEditor(editor_);
     applySpinBoxOpts(param->options());
     writeEditorValue(param->value());
+    updateDisplayLabel();
 }
 
 void NumericParameterItem::bindEditor(QWidget* editor)

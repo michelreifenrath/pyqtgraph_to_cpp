@@ -12,6 +12,7 @@
 #include <QtGui/QPixmap>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTreeWidgetItem>
@@ -167,6 +168,16 @@ bool testNumericSpinBoxSuffixAndSiPrefixLabel()
     CHECK(spinBox != nullptr);
     CHECK(spinBox->formatText().contains(QStringLiteral("k")));
     CHECK(spinBox->formatText().contains(QStringLiteral("Hz")));
+
+    CHECK(spinBox->isHidden());
+    auto* layout = spinBox->parentWidget();
+    CHECK(layout != nullptr);
+    auto* displayLabel = layout->findChild<QLabel*>();
+    CHECK(displayLabel != nullptr);
+    CHECK(displayLabel->isVisible());
+    CHECK(displayLabel->text().contains(QStringLiteral("k")));
+    CHECK(displayLabel->text().contains(QStringLiteral("Hz")));
+    CHECK(displayLabel->text() == spinBox->formatText());
     return true;
 }
 
