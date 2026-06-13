@@ -1,0 +1,241 @@
+// Source note: translated/adapted from PyQtGraph pyqtgraph/examples/_buildParamTypes.py
+// PyQtGraph ref: pyqtgraph-0.14.0
+// Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
+// License: MIT; see THIRD_PARTY_NOTICES.md
+
+#include "../../../include/cppqtgraph/parametertree/buildParamTypes.hpp"
+#include "../../../include/cppqtgraph/parametertree/Parameter.hpp"
+
+#include <QtCore/QObject>
+
+namespace cppqtgraph::parametertree {
+
+namespace {
+
+QVariant normalizedOptionValue(const QVariant& value)
+{
+    if (value.typeId() == QMetaType::QString && value.toString().isEmpty()) {
+        return QVariant();
+    }
+    return value;
+}
+
+void connectOptionRow(const std::shared_ptr<Parameter>& widgetParam, const std::shared_ptr<Parameter>& optionParam)
+{
+    QObject::connect(optionParam.get(),
+                     &Parameter::sigValueChanged,
+                     widgetParam.get(),
+                     [widgetParam, optionParam](Parameter* /*source*/, const QVariant& value) {
+                         widgetParam->setOpts(
+                             {{optionParam->name(), normalizedOptionValue(value)}});
+                     });
+}
+
+void applyInitialOptions(const std::shared_ptr<Parameter>& widgetParam,
+                         const std::vector<std::shared_ptr<Parameter>>& optionRows)
+{
+    for (const auto& option : optionRows) {
+        const QVariant value = option->options().contains(QStringLiteral("value"))
+            ? option->value()
+            : QVariant();
+        widgetParam->setOpts({{option->name(), normalizedOptionValue(value)}});
+    }
+}
+
+std::shared_ptr<Parameter> makeSampleGroup(const QString& chType, const QVariantList& childSpecs)
+{
+    QVariantList metaSpecs;
+    QVariantList optSpecs;
+    QVariantMap widgetSpec;
+
+    for (const QVariant& childSpec : childSpecs) {
+        const QVariantMap spec = childSpec.toMap();
+        const QString name = spec.value(QStringLiteral("name")).toString();
+        if (name == QStringLiteral("widget")) {
+            widgetSpec = spec;
+            continue;
+        }
+        if (name.contains(QLatin1Char(' '))) {
+            metaSpecs.append(childSpec);
+        } else {
+            optSpecs.append(childSpec);
+        }
+    }
+
+    auto widgetParam = Parameter::create(widgetSpec);
+    if (widgetParam->hasDefault()) {
+        widgetParam->setDefault(widgetParam->value());
+    }
+
+    std::vector<std::shared_ptr<Parameter>> optionRows;
+    optionRows.reserve(static_cast<std::size_t>(optSpecs.size()));
+    for (const QVariant& optionSpec : optSpecs) {
+        auto optionParam = Parameter::create(optionSpec.toMap());
+        connectOptionRow(widgetParam, optionParam);
+        optionRows.push_back(optionParam);
+    }
+    applyInitialOptions(widgetParam, optionRows);
+
+    auto group = Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("Sample %1").arg(chType.at(0).toUpper() + chType.mid(1))},
+        {QStringLiteral("type"), QStringLiteral("group")},
+        {QStringLiteral("expanded"), false},
+    });
+
+    for (const QVariant& metaSpec : metaSpecs) {
+        group->addChild(Parameter::create(metaSpec.toMap()));
+    }
+    group->addChild(widgetParam);
+    for (const auto& option : optionRows) {
+        group->addChild(option);
+    }
+    return group;
+}
+
+std::shared_ptr<Parameter> makeMetaGroup(const QString& name, const QVariantList& childSpecs)
+{
+    auto group = Parameter::create(QVariantMap{{QStringLiteral("name"), name},
+                                               {QStringLiteral("type"), QStringLiteral("group")},
+                                               {QStringLiteral("expanded"), false}});
+    for (const QVariant& childSpec : childSpecs) {
+        group->addChild(Parameter::create(childSpec.toMap()));
+    }
+    return group;
+}
+
+std::shared_ptr<Parameter> makeListSampleGroup()
+{
+    return makeSampleGroup(QStringLiteral("list"),
+                           QVariantList{
+                               QVariant::fromValue(QVariantMap{
+                                   {QStringLiteral("name"), QStringLiteral("widget")},
+                                   {QStringLiteral("type"), QStringLiteral("list")},
+                                   {QStringLiteral("limits"),
+                                    QVariantList{QStringLiteral("a"), QStringLiteral("b"), QStringLiteral("c")}}}),
+                               QVariant::fromValue(QVariantMap{
+                                   {QStringLiteral("name"), QStringLiteral("limits")},
+                                   {QStringLiteral("type"), QStringLiteral("list")},
+                                   {QStringLiteral("limits"),
+                                    QVariantMap{{QStringLiteral("default"),
+                                                 QVariantList{QStringLiteral("a"), QStringLiteral("b"),
+                                                                QStringLiteral("c")}}}},
+                                   {QStringLiteral("value"),
+                                    QVariantList{QStringLiteral("a"), QStringLiteral("b"), QStringLiteral("c")}}}),
+                           });
+}
+
+std::shared_ptr<Parameter> makeFloatSampleGroup()
+{
+    return makeSampleGroup(
+        QStringLiteral("float"),
+        QVariantList{
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Float Information")},
+                                            {QStringLiteral("type"), QStringLiteral("str")},
+                                            {QStringLiteral("readonly"), true},
+                                            {QStringLiteral("value"),
+                                             QStringLiteral("Note that all options except \"finite\" also apply to "
+                                                            "\"int\" parameters")}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                                            {QStringLiteral("type"), QStringLiteral("float")},
+                                            {QStringLiteral("value"), 0.0}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("step")},
+                                            {QStringLiteral("type"), QStringLiteral("float")},
+                                            {QStringLiteral("limits"), QVariantList{0, QVariant()}},
+                                            {QStringLiteral("value"), 1.0}}),
+            QVariant::fromValue(
+                QVariantMap{{QStringLiteral("name"), QStringLiteral("limits")},
+                            {QStringLiteral("type"), QStringLiteral("list")},
+                            {QStringLiteral("limits"),
+                             QVariantMap{{QStringLiteral("[0, None]"), QVariantList{0, QVariant()}},
+                                           {QStringLiteral("[1, 5]"), QVariantList{1, 5}}}}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("suffix")},
+                                            {QStringLiteral("type"), QStringLiteral("list")},
+                                            {QStringLiteral("limits"),
+                                             QVariantList{QStringLiteral("Hz"), QStringLiteral("s"), QStringLiteral("m")}}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("siPrefix")},
+                                            {QStringLiteral("type"), QStringLiteral("bool")},
+                                            {QStringLiteral("value"), true}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("finite")},
+                                            {QStringLiteral("type"), QStringLiteral("bool")},
+                                            {QStringLiteral("value"), true}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("dec")},
+                                            {QStringLiteral("type"), QStringLiteral("bool")},
+                                            {QStringLiteral("value"), false}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("minStep")},
+                                            {QStringLiteral("type"), QStringLiteral("float")},
+                                            {QStringLiteral("value"), 1.0e-12}}),
+        });
+}
+
+std::shared_ptr<Parameter> makeActionSampleGroup()
+{
+    return makeSampleGroup(
+        QStringLiteral("action"),
+        QVariantList{
+            QVariant::fromValue(
+                QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")}, {QStringLiteral("type"), QStringLiteral("action")}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("shortcut")},
+                                            {QStringLiteral("type"), QStringLiteral("str")},
+                                            {QStringLiteral("value"), QStringLiteral("Ctrl+Shift+P")}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("icon")},
+                                            {QStringLiteral("type"), QStringLiteral("file")},
+                                            {QStringLiteral("value"), QVariant()},
+                                            {QStringLiteral("nameFilter"),
+                                             QStringLiteral("Images (*.png *.jpg *.bmp *.jpeg *.svg)")}}),
+        });
+}
+
+std::shared_ptr<Parameter> makeNoExtraOptionsGroup()
+{
+    return makeMetaGroup(QStringLiteral("No Extra Options"),
+                         QVariantList{
+                             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("int")},
+                                                             {QStringLiteral("type"), QStringLiteral("int")},
+                                                             {QStringLiteral("value"), 10}}),
+                             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("str")},
+                                                             {QStringLiteral("type"), QStringLiteral("str")},
+                                                             {QStringLiteral("value"), QStringLiteral("Hi, world!")}}),
+                             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("bool")},
+                                                             {QStringLiteral("type"), QStringLiteral("bool")},
+                                                             {QStringLiteral("value"), false}}),
+                         });
+}
+
+void connectExpandCollapseActions(const std::shared_ptr<Parameter>& exampleParams)
+{
+    const auto activate = [exampleParams](Parameter* action) {
+        const bool expand = action->name() == QStringLiteral("Expand All");
+        for (const auto& child : exampleParams->children()) {
+            if (child->type() == QStringLiteral("group")) {
+                child->setOpts({{QStringLiteral("expanded"), expand}});
+            }
+        }
+    };
+
+    for (const QString& name : {QStringLiteral("Collapse All"), QStringLiteral("Expand All")}) {
+        auto button = Parameter::create(
+            QVariantMap{{QStringLiteral("name"), name}, {QStringLiteral("type"), QStringLiteral("action")}});
+        if (auto* action = dynamic_cast<ActionParameter*>(button.get())) {
+            QObject::connect(action, &ActionParameter::sigActivated, exampleParams.get(), [activate](Parameter* param) {
+                activate(param);
+            });
+        }
+        exampleParams->insertChild(0, button);
+    }
+}
+
+} // namespace
+
+std::shared_ptr<Parameter> buildExampleParametersGroup()
+{
+    auto exampleParams = Parameter::create(QVariantMap{{QStringLiteral("name"), QStringLiteral("Example Parameters")},
+                                                     {QStringLiteral("type"), QStringLiteral("group")}});
+    exampleParams->addChild(makeListSampleGroup());
+    exampleParams->addChild(makeFloatSampleGroup());
+    exampleParams->addChild(makeActionSampleGroup());
+    exampleParams->addChild(makeNoExtraOptionsGroup());
+    connectExpandCollapseActions(exampleParams);
+    return exampleParams;
+}
+
+} // namespace cppqtgraph::parametertree

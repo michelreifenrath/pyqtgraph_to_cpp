@@ -15,6 +15,8 @@
 #include <QtCore/QSignalBlocker>
 #include <QtGui/QColor>
 #include <QtGui/QKeyEvent>
+#include <QtGui/QKeySequence>
+#include <QtGui/QShortcut>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -796,6 +798,12 @@ ActionParameterItem::ActionParameterItem(Parameter* param, int depth)
     layout->addStretch();
 
     updateButton();
+    updateShortcut();
+}
+
+ActionParameterItem::~ActionParameterItem()
+{
+    delete shortcut_;
 }
 
 void ActionParameterItem::treeWidgetChanged()
@@ -809,6 +817,7 @@ void ActionParameterItem::treeWidgetChanged()
         setFirstColumnSpanned(true);
         tree->setItemWidget(this, 0, layoutWidget_);
     }
+    updateShortcut();
 }
 
 void ActionParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
@@ -819,10 +828,18 @@ void ActionParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
             button_->setEnabled(opts.value(QStringLiteral("enabled")).toBool());
         }
     }
+    if (opts.contains(QStringLiteral("visible"))) {
+        if (button_ != nullptr) {
+            button_->setVisible(opts.value(QStringLiteral("visible")).toBool());
+        }
+    }
     if (opts.contains(QStringLiteral("tip"))) {
         if (button_ != nullptr) {
             button_->setToolTip(opts.value(QStringLiteral("tip")).toString());
         }
+    }
+    if (opts.contains(QStringLiteral("shortcut"))) {
+        updateShortcut();
     }
     if (opts.contains(QStringLiteral("title")) || opts.contains(QStringLiteral("name"))) {
         updateButton();
@@ -839,7 +856,30 @@ void ActionParameterItem::updateButton()
     if (param_->options().contains(QStringLiteral("tip"))) {
         button_->setToolTip(param_->options().value(QStringLiteral("tip")).toString());
     }
+  button_->setVisible(param_->options().value(QStringLiteral("visible"), true).toBool());
     setSizeHint(0, button_->sizeHint());
+}
+
+void ActionParameterItem::updateShortcut()
+{
+    delete shortcut_;
+    shortcut_ = nullptr;
+    if (param_ == nullptr || treeWidget() == nullptr) {
+        return;
+    }
+
+    const QString shortcutText = param_->options().value(QStringLiteral("shortcut")).toString();
+    if (shortcutText.isEmpty()) {
+        return;
+    }
+
+    shortcut_ = new QShortcut(QKeySequence(shortcutText), treeWidget());
+    shortcut_->setContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(shortcut_, &QShortcut::activated, shortcut_, [this]() {
+        if (auto* action = dynamic_cast<ActionParameter*>(param_)) {
+            action->activate();
+        }
+    });
 }
 
 } // namespace cppqtgraph::parametertree

@@ -5,6 +5,9 @@
 
 #include "../../../include/cppqtgraph/parametertree/Parameter.hpp"
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/BoolParameterItem.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/NumericParameterItem.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/StrParameterItem.hpp"
 
 #include <cppqtgraph/functions.hpp>
 
@@ -311,8 +314,13 @@ QString Parameter::setName(const QString& name)
 
 void Parameter::setOpts(const QVariantMap& opts)
 {
+    QVariantMap adjusted = opts;
+    if (adjusted.contains(QStringLiteral("disabled"))) {
+        adjusted.insert(QStringLiteral("enabled"), !adjusted.take(QStringLiteral("disabled")).toBool());
+    }
+
     QVariantMap changed;
-    for (auto it = opts.cbegin(); it != opts.cend(); ++it) {
+    for (auto it = adjusted.cbegin(); it != adjusted.cend(); ++it) {
         const QString& key = it.key();
         if (key == QStringLiteral("value")) {
             setValue(it.value());
@@ -332,6 +340,11 @@ void Parameter::setOpts(const QVariantMap& opts)
             item->optsChanged(this, changed);
         }
     }
+}
+
+void Parameter::emitStateChanged(const QString& changeDesc, const QVariant& data)
+{
+    emit sigStateChanged(this, changeDesc, data);
 }
 
 void Parameter::setDefault(const QVariant& val, bool updatePristineValues)
@@ -428,8 +441,41 @@ SimpleParameter::SimpleParameter(QVariantMap opts, QObject* parent)
 {
 }
 
+QVariant SimpleParameter::interpretValue(const QVariant& value) const
+{
+    const QString paramType = type();
+    if (paramType == QStringLiteral("bool")) {
+        return value.toBool();
+    }
+    if (paramType == QStringLiteral("int")) {
+        return value.toInt();
+    }
+    if (paramType == QStringLiteral("float")) {
+        return value.toDouble();
+    }
+    if (paramType == QStringLiteral("str")) {
+        return value.toString();
+    }
+    return value;
+}
+
+QVariant SimpleParameter::setValue(const QVariant& value, bool blockSignal)
+{
+    return Parameter::setValue(interpretValue(value), blockSignal);
+}
+
 ParameterItem* SimpleParameter::makeTreeItem(int depth)
 {
+    const QString paramType = type();
+    if (paramType == QStringLiteral("bool")) {
+        return new BoolParameterItem(this, depth);
+    }
+    if (paramType == QStringLiteral("str")) {
+        return new StrParameterItem(this, depth);
+    }
+    if (paramType == QStringLiteral("int") || paramType == QStringLiteral("float")) {
+        return new NumericParameterItem(this, depth);
+    }
     return new WidgetParameterItem(this, depth, new QLineEdit());
 }
 
@@ -507,6 +553,7 @@ ActionParameter::ActionParameter(QVariantMap opts, QObject* parent)
 void ActionParameter::activate()
 {
     emit sigActivated(this);
+    emitStateChanged(QStringLiteral("activated"));
 }
 
 ParameterItem* ActionParameter::makeTreeItem(int depth)

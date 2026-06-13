@@ -3,6 +3,7 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
+#include <cppqtgraph/parametertree/buildParamTypes.hpp>
 #include <cppqtgraph/parametertree/Parameter.hpp>
 #include <cppqtgraph/parametertree/ParameterTree.hpp>
 
@@ -17,88 +18,76 @@ namespace cppqtgraph::examples {
 
 std::shared_ptr<parametertree::Parameter> buildParametertreeRoot()
 {
-    return parametertree::Parameter::create(QVariantMap{
+    auto root = parametertree::Parameter::create(QVariantMap{
         {QStringLiteral("name"), QStringLiteral("params")},
+        {QStringLiteral("type"), QStringLiteral("group")},
+    });
+    root->addChild(parametertree::buildExampleParametersGroup());
+    root->addChild(parametertree::Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("Save/Restore functionality")},
         {QStringLiteral("type"), QStringLiteral("group")},
         {QStringLiteral("children"),
          QVariantList{
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Save State")},
+                                             {QStringLiteral("type"), QStringLiteral("action")}}),
              QVariant::fromValue(QVariantMap{
-                 {QStringLiteral("name"), QStringLiteral("Example Parameters")},
-                 {QStringLiteral("type"), QStringLiteral("group")},
+                 {QStringLiteral("name"), QStringLiteral("Restore State")},
+                 {QStringLiteral("type"), QStringLiteral("action")},
                  {QStringLiteral("children"),
                   QVariantList{
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Collapse All")},
-                                                      {QStringLiteral("type"), QStringLiteral("action")}}),
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Expand All")},
-                                                      {QStringLiteral("type"), QStringLiteral("action")}}),
-                  }},
-             }),
-             QVariant::fromValue(QVariantMap{
-                 {QStringLiteral("name"), QStringLiteral("Save/Restore functionality")},
-                 {QStringLiteral("type"), QStringLiteral("group")},
-                 {QStringLiteral("children"),
-                  QVariantList{
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Save State")},
-                                                      {QStringLiteral("type"), QStringLiteral("action")}}),
-                      QVariant::fromValue(QVariantMap{
-                          {QStringLiteral("name"), QStringLiteral("Restore State")},
-                          {QStringLiteral("type"), QStringLiteral("action")},
-                          {QStringLiteral("children"),
-                           QVariantList{
-                               QVariant::fromValue(QVariantMap{{QStringLiteral("name"),
-                                                                QStringLiteral("Add missing items")},
-                                                               {QStringLiteral("type"), QStringLiteral("bool")},
-                                                               {QStringLiteral("value"), true}}),
-                               QVariant::fromValue(QVariantMap{{QStringLiteral("name"),
-                                                                QStringLiteral("Remove extra items")},
-                                                               {QStringLiteral("type"), QStringLiteral("bool")},
-                                                               {QStringLiteral("value"), true}}),
-                           }},
-                      }),
-                  }},
-             }),
-             QVariant::fromValue(QVariantMap{
-                 {QStringLiteral("name"), QStringLiteral("Custom context menu")},
-                 {QStringLiteral("type"), QStringLiteral("group")},
-                 {QStringLiteral("children"),
-                  QVariantList{
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("List contextMenu")},
-                                                      {QStringLiteral("type"), QStringLiteral("float")},
-                                                      {QStringLiteral("value"), 0}}),
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Dict contextMenu")},
-                                                      {QStringLiteral("type"), QStringLiteral("float")},
-                                                      {QStringLiteral("value"), 0}}),
-                  }},
-             }),
-             QVariant::fromValue(QVariantMap{
-                 {QStringLiteral("name"), QStringLiteral("Custom parameter group (reciprocal values)")},
-                 {QStringLiteral("type"), QStringLiteral("group")},
-                 {QStringLiteral("children"),
-                  QVariantList{
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("A = 1/B")},
-                                                      {QStringLiteral("type"), QStringLiteral("float")},
-                                                      {QStringLiteral("value"), 7.0}}),
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("B = 1/A")},
-                                                      {QStringLiteral("type"), QStringLiteral("float")},
-                                                      {QStringLiteral("value"), 1.0 / 7.0}}),
-                  }},
-             }),
-             QVariant::fromValue(QVariantMap{
-                 {QStringLiteral("name"), QStringLiteral("Expandable Parameter Group")},
-                 {QStringLiteral("type"), QStringLiteral("group")},
-                 {QStringLiteral("tip"), QStringLiteral("Click to add children")},
-                 {QStringLiteral("children"),
-                  QVariantList{
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 1")},
-                                                      {QStringLiteral("type"), QStringLiteral("str")},
-                                                      {QStringLiteral("value"), QStringLiteral("default param 1")}}),
-                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 2")},
-                                                      {QStringLiteral("type"), QStringLiteral("str")},
-                                                      {QStringLiteral("value"), QStringLiteral("default param 2")}}),
+                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"),
+                                                       QStringLiteral("Add missing items")},
+                                                      {QStringLiteral("type"), QStringLiteral("bool")},
+                                                      {QStringLiteral("value"), true}}),
+                      QVariant::fromValue(QVariantMap{{QStringLiteral("name"),
+                                                       QStringLiteral("Remove extra items")},
+                                                      {QStringLiteral("type"), QStringLiteral("bool")},
+                                                      {QStringLiteral("value"), true}}),
                   }},
              }),
          }},
-    });
+    }));
+    root->addChild(parametertree::Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("Custom context menu")},
+        {QStringLiteral("type"), QStringLiteral("group")},
+        {QStringLiteral("children"),
+         QVariantList{
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("List contextMenu")},
+                                             {QStringLiteral("type"), QStringLiteral("float")},
+                                             {QStringLiteral("value"), 0}}),
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Dict contextMenu")},
+                                             {QStringLiteral("type"), QStringLiteral("float")},
+                                             {QStringLiteral("value"), 0}}),
+         }},
+    }));
+    root->addChild(parametertree::Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("Custom parameter group (reciprocal values)")},
+        {QStringLiteral("type"), QStringLiteral("group")},
+        {QStringLiteral("children"),
+         QVariantList{
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("A = 1/B")},
+                                             {QStringLiteral("type"), QStringLiteral("float")},
+                                             {QStringLiteral("value"), 7.0}}),
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("B = 1/A")},
+                                             {QStringLiteral("type"), QStringLiteral("float")},
+                                             {QStringLiteral("value"), 1.0 / 7.0}}),
+         }},
+    }));
+    root->addChild(parametertree::Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("Expandable Parameter Group")},
+        {QStringLiteral("type"), QStringLiteral("group")},
+        {QStringLiteral("tip"), QStringLiteral("Click to add children")},
+        {QStringLiteral("children"),
+         QVariantList{
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 1")},
+                                             {QStringLiteral("type"), QStringLiteral("str")},
+                                             {QStringLiteral("value"), QStringLiteral("default param 1")}}),
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 2")},
+                                             {QStringLiteral("type"), QStringLiteral("str")},
+                                             {QStringLiteral("value"), QStringLiteral("default param 2")}}),
+         }},
+    }));
+    return root;
 }
 
 struct ParametertreeExample {
