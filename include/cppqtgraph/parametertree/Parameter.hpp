@@ -46,6 +46,7 @@ public:
     void removeChild(Parameter* child);
 
     QVariant setValue(const QVariant& value, bool blockSignal = false);
+    void notifyValueChanging(const QVariant& value);
     QString setName(const QString& name);
     void setOpts(const QVariantMap& opts);
     void setDefault(const QVariant& val, bool updatePristineValues = false);

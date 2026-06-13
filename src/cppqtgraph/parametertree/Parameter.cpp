@@ -41,6 +41,17 @@ Parameter::Parameter(QVariantMap opts, QObject* parent)
     if (!opts_.contains(QStringLiteral("default")) && opts_.contains(QStringLiteral("value"))) {
         opts_.insert(QStringLiteral("default"), opts_.value(QStringLiteral("value")));
     }
+
+    const bool hadExplicitValue = opts_.contains(QStringLiteral("value"));
+    if (hadExplicitValue) {
+        const QVariant explicitValue = opts_.value(QStringLiteral("value"));
+        if (explicitValue.isValid() || explicitValue.typeId() == QMetaType::QString) {
+            setValue(explicitValue, true);
+        }
+    } else if (opts_.contains(QStringLiteral("default"))) {
+        setValue(opts_.value(QStringLiteral("default")), true);
+    }
+    modifiedSinceReset_ = hadExplicitValue;
 }
 
 std::shared_ptr<Parameter> Parameter::create(QVariantMap opts)
@@ -173,6 +184,11 @@ QVariant Parameter::setValue(const QVariant& value, bool blockSignal)
         }
     }
     return opts_.value(QStringLiteral("value"));
+}
+
+void Parameter::notifyValueChanging(const QVariant& value)
+{
+    emit sigValueChanging(this, value);
 }
 
 QString Parameter::setName(const QString& name)

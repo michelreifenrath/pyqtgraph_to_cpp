@@ -2,6 +2,7 @@
 #include <cppqtgraph/parametertree/ParameterItem.hpp>
 #include <cppqtgraph/parametertree/ParameterTree.hpp>
 
+#include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QLineEdit>
@@ -278,6 +279,50 @@ bool testBacktabFocusTraversal()
     return true;
 }
 
+bool testDefaultOnlyInitializesValueFromDefault()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("onlyDefault")},
+                    {QStringLiteral("type"), QStringLiteral("str")},
+                    {QStringLiteral("default"), QStringLiteral("defval")}});
+    CHECK(param->value().toString() == QStringLiteral("defval"));
+    CHECK(!param->valueModifiedSinceResetToDefault());
+    return true;
+}
+
+bool testEditorTextChangingEmitsSigValueChanging()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("changing")},
+                    {QStringLiteral("type"), QStringLiteral("str")},
+                    {QStringLiteral("value"), QStringLiteral("start")},
+                    {QStringLiteral("default"), QStringLiteral("start")}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findWidgetItem(tree, QStringLiteral("changing"));
+    CHECK(item != nullptr);
+
+    QSignalSpy changingSpy(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanging);
+    tree.setCurrentItem(item);
+    QTest::qWait(0);
+
+    auto* editor = qobject_cast<QLineEdit*>(item->editorWidget());
+    CHECK(editor != nullptr);
+
+    editor->setText(QStringLiteral("typing"));
+    QTest::qWait(0);
+
+    CHECK(changingSpy.count() >= 1);
+    const auto args = changingSpy.takeLast();
+    CHECK(args.at(0).value<cppqtgraph::parametertree::Parameter*>() == param.get());
+    CHECK(args.at(1).toString() == QStringLiteral("typing"));
+    return true;
+}
+
 bool testDefaultReset()
 {
     DualTreeFixture fixture;
@@ -330,6 +375,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testBacktabFocusTraversal()) {
+        return 1;
+    }
+    if (!testDefaultOnlyInitializesValueFromDefault()) {
+        return 1;
+    }
+    if (!testEditorTextChangingEmitsSigValueChanging()) {
         return 1;
     }
     if (!testDefaultReset()) {

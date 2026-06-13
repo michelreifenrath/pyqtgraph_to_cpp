@@ -64,6 +64,11 @@ public:
         : QObject(editor)
         , item_(item)
     {
+        QObject::connect(editor, &QLineEdit::textChanged, this, [this](const QString& text) {
+            if (item_ != nullptr) {
+                item_->editorTextChanging(text);
+            }
+        });
         QObject::connect(editor, &QLineEdit::editingFinished, this, [this]() {
             if (item_ != nullptr) {
                 item_->widgetValueChanged();
@@ -403,6 +408,14 @@ void WidgetParameterItem::widgetValueChanged()
     param_->setValue(lineEdit->text());
     updateDisplayLabel();
     updateDefaultBtn();
+}
+
+void WidgetParameterItem::editorTextChanging(const QString& text)
+{
+    if (updatingWidget_ || param_ == nullptr) {
+        return;
+    }
+    param_->notifyValueChanging(text);
 }
 
 void WidgetParameterItem::defaultClicked()

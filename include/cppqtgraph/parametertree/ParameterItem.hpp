@@ -72,6 +72,7 @@ public:
     bool handleEditorKeyPress(QKeyEvent* event);
 
     void widgetValueChanged();
+    void editorTextChanging(const QString& text);
     void defaultClicked();
 
 private:
