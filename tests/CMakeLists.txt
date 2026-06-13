@@ -1244,6 +1244,12 @@ if(_cppqtgraph_has_graphicsitem)
     )
     target_link_libraries(cppqtgraph_parametertree_primitives_test PRIVATE Qt6::Test)
     cppqtgraph_add_cpp_test(
+        cppqtgraph_parametertree_checklist_slider_test
+        parametertree/test_parametertree_checklist_slider.cpp
+        cppqtgraph.parametertree.checklist_slider
+    )
+    target_link_libraries(cppqtgraph_parametertree_checklist_slider_test PRIVATE Qt6::Test)
+    cppqtgraph_add_cpp_test(
         cppqtgraph_examples_exampleapp_test
         examples/test_ExampleApp.cpp
         cppqtgraph.examples.ExampleApp

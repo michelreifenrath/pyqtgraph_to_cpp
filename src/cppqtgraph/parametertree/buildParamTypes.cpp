@@ -5,8 +5,10 @@
 
 #include "../../../include/cppqtgraph/parametertree/buildParamTypes.hpp"
 #include "../../../include/cppqtgraph/parametertree/Parameter.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/SliderParameter.hpp"
 
 #include <QtCore/QObject>
+#include <vector>
 
 namespace cppqtgraph::parametertree {
 
@@ -140,7 +142,7 @@ std::shared_ptr<Parameter> makeFloatSampleGroup()
                                             {QStringLiteral("value"), 0.0}}),
             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("step")},
                                             {QStringLiteral("type"), QStringLiteral("float")},
-                                            {QStringLiteral("limits"), QVariantList{0, QVariant()}},
+                                            {QStringLiteral("limits"), QVariantList{QVariant(0), QVariant()}},
                                             {QStringLiteral("value"), 1.0}}),
             QVariant::fromValue(
                 QVariantMap{{QStringLiteral("name"), QStringLiteral("limits")},
@@ -165,6 +167,106 @@ std::shared_ptr<Parameter> makeFloatSampleGroup()
                                             {QStringLiteral("type"), QStringLiteral("float")},
                                             {QStringLiteral("value"), 1.0e-12}}),
         });
+}
+
+QVariantList spanToVariantList(const std::vector<double>& span)
+{
+    QVariantList values;
+    values.reserve(static_cast<int>(span.size()));
+    for (double value : span) {
+        values.append(value);
+    }
+    return values;
+}
+
+std::shared_ptr<Parameter> makeChecklistSampleGroup()
+{
+    return makeSampleGroup(
+        QStringLiteral("checklist"),
+        QVariantList{
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                                            {QStringLiteral("type"), QStringLiteral("checklist")},
+                                            {QStringLiteral("limits"),
+                                             QVariantList{QStringLiteral("one"), QStringLiteral("two"),
+                                                            QStringLiteral("three"), QStringLiteral("four")}}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("limits")},
+                                            {QStringLiteral("type"), QStringLiteral("checklist")},
+                                            {QStringLiteral("limits"),
+                                             QVariantList{QStringLiteral("one"), QStringLiteral("two"),
+                                                            QStringLiteral("three"), QStringLiteral("four")}}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("exclusive")},
+                                            {QStringLiteral("type"), QStringLiteral("bool")},
+                                            {QStringLiteral("value"), false}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("delay")},
+                                            {QStringLiteral("type"), QStringLiteral("float")},
+                                            {QStringLiteral("value"), 1.0},
+                                            {QStringLiteral("limits"), QVariantList{QVariant(0), QVariant()}}}),
+        });
+}
+
+std::shared_ptr<Parameter> makeSliderSampleGroup()
+{
+    const QVariantList linspaceSpan = spanToVariantList(linspaceMinusPiToPi(50));
+    const QVariantList arangeSpan = spanToVariantList(arangeSquared(10));
+
+    auto group = makeSampleGroup(
+        QStringLiteral("slider"),
+        QVariantList{
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                                            {QStringLiteral("type"), QStringLiteral("slider")},
+                                            {QStringLiteral("limits"), QVariantList{0, 100}}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("step")},
+                                            {QStringLiteral("type"), QStringLiteral("float")},
+                                            {QStringLiteral("limits"), QVariantList{QVariant(0), QVariant()}},
+                                            {QStringLiteral("value"), 1.0}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("format")},
+                                            {QStringLiteral("type"), QStringLiteral("str")},
+                                            {QStringLiteral("value"), QStringLiteral("{0:>3}")}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("precision")},
+                                            {QStringLiteral("type"), QStringLiteral("int")},
+                                            {QStringLiteral("value"), 2},
+                                            {QStringLiteral("limits"), QVariantList{QVariant(1), QVariant()}}}),
+            QVariant::fromValue(
+                QVariantMap{{QStringLiteral("name"), QStringLiteral("span")},
+                            {QStringLiteral("type"), QStringLiteral("list")},
+                            {QStringLiteral("value"), linspaceSpan},
+                            {QStringLiteral("limits"),
+                             QVariantMap{{QStringLiteral("linspace(-pi, pi)"), linspaceSpan},
+                                           {QStringLiteral("arange(10)**2"), arangeSpan}}}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("How to Set")},
+                                            {QStringLiteral("type"), QStringLiteral("list")},
+                                            {QStringLiteral("limits"),
+                                             QVariantList{QStringLiteral("Use span"), QStringLiteral("Use step + limits")}}}),
+        });
+
+    Parameter* widgetParam = group->child(QStringLiteral("widget"));
+    Parameter* spanOption = group->child(QStringLiteral("span"));
+    Parameter* howToSet = group->child(QStringLiteral("How to Set"));
+    if (widgetParam != nullptr && howToSet != nullptr) {
+        widgetParam->setOpts({{QStringLiteral("span"), QVariant()}});
+
+        QObject::connect(howToSet,
+                         &Parameter::sigValueChanged,
+                         widgetParam,
+                         [widgetParam, spanOption](Parameter* /*source*/, const QVariant& value) {
+                             if (value.toString() == QStringLiteral("Use span")) {
+                                 QVariant span = widgetParam->options().value(QStringLiteral("span"));
+                                 if (!span.isValid() && spanOption != nullptr) {
+                                     span = spanOption->value();
+                                 }
+                                 if (span.isValid()) {
+                                     widgetParam->setOpts({{QStringLiteral("span"), span}});
+                                 }
+                             } else {
+                                 QVariant limits = widgetParam->options().value(QStringLiteral("limits"));
+                                 if (!limits.isValid() || limits.toList().isEmpty()) {
+                                     limits = QVariantList{0, 100};
+                                 }
+                                 widgetParam->setOpts({{QStringLiteral("limits"), limits}});
+                             }
+                         });
+    }
+    return group;
 }
 
 std::shared_ptr<Parameter> makeActionSampleGroup()
@@ -232,6 +334,8 @@ std::shared_ptr<Parameter> buildExampleParametersGroup()
                                                      {QStringLiteral("type"), QStringLiteral("group")}});
     exampleParams->addChild(makeListSampleGroup());
     exampleParams->addChild(makeFloatSampleGroup());
+    exampleParams->addChild(makeChecklistSampleGroup());
+    exampleParams->addChild(makeSliderSampleGroup());
     exampleParams->addChild(makeActionSampleGroup());
     exampleParams->addChild(makeNoExtraOptionsGroup());
     connectExpandCollapseActions(exampleParams.get());

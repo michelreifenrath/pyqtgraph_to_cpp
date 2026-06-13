@@ -200,6 +200,12 @@ if(_cppqtgraph_has_graphicsitem)
             src/cppqtgraph/parametertree/parameterTypes/StrParameterItem.cpp
             include/cppqtgraph/parametertree/parameterTypes/NumericParameterItem.hpp
             src/cppqtgraph/parametertree/parameterTypes/NumericParameterItem.cpp
+            include/cppqtgraph/parametertree/parameterTypes/ChecklistParameter.hpp
+            src/cppqtgraph/parametertree/parameterTypes/ChecklistParameter.cpp
+            include/cppqtgraph/parametertree/parameterTypes/RadioParameterItem.hpp
+            src/cppqtgraph/parametertree/parameterTypes/RadioParameterItem.cpp
+            include/cppqtgraph/parametertree/parameterTypes/SliderParameter.hpp
+            src/cppqtgraph/parametertree/parameterTypes/SliderParameter.cpp
             include/cppqtgraph/widgets/CheckTable.hpp
             src/cppqtgraph/widgets/CheckTable.cpp
             include/cppqtgraph/widgets/DataTreeWidget.hpp
