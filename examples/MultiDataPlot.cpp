@@ -305,7 +305,6 @@ MultiDataPlotExample createMultiDataPlotExample(const MultiDataPlotOptions& opti
 #ifndef CPPQTGRAPH_MULTIDATAPLOT_NO_MAIN
 int main(int argc, char** argv)
 {
-    qputenv("QT_QPA_PLATFORM", "offscreen");
     QApplication application(argc, argv);
 
     const bool smokeMode = argc > 1 && QString::fromLocal8Bit(argv[1]) == QStringLiteral("--smoke");
