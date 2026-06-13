@@ -113,10 +113,7 @@ void Parameter::insertChild(int index, std::shared_ptr<Parameter> child)
     }
 
     if (child->parent_ != nullptr) {
-        child->parent_->names_.remove(child->name());
-        auto& siblings = child->parent_->children_;
-        siblings.erase(std::remove(siblings.begin(), siblings.end(), child), siblings.end());
-        child->parent_ = nullptr;
+        child->parent_->removeChild(child.get());
     }
 
     names_.insert(childName, child.get());
@@ -140,13 +137,19 @@ void Parameter::removeChild(Parameter* child)
     }
 
     names_.remove(childName);
+
+    std::shared_ptr<Parameter> retained;
     auto& siblings = children_;
-    siblings.erase(std::remove_if(siblings.begin(),
-                                  siblings.end(),
-                                  [child](const std::shared_ptr<Parameter>& entry) {
-                                      return entry.get() == child;
-                                  }),
-                   siblings.end());
+    const auto it = std::find_if(siblings.begin(),
+                                 siblings.end(),
+                                 [child](const std::shared_ptr<Parameter>& entry) {
+                                     return entry.get() == child;
+                                 });
+    if (it != siblings.end()) {
+        retained = *it;
+        siblings.erase(it);
+    }
+
     child->parent_ = nullptr;
     emit sigChildRemoved(this, child);
     for (ParameterItem* item : items_) {
@@ -174,21 +177,26 @@ QVariant Parameter::setValue(const QVariant& value, bool blockSignal)
 
 QString Parameter::setName(const QString& name)
 {
-    if (opts_.value(QStringLiteral("name")).toString() == name) {
+    const QString oldName = opts_.value(QStringLiteral("name")).toString();
+    if (oldName == name) {
         return name;
     }
 
+    QString actualName = name;
     if (parent_ != nullptr) {
-        parent_->names_.remove(opts_.value(QStringLiteral("name")).toString());
-        parent_->names_.insert(name, this);
+        if (parent_->names_.contains(name) && parent_->names_.value(name) != this) {
+            return oldName;
+        }
+        parent_->names_.remove(oldName);
+        parent_->names_.insert(actualName, this);
     }
 
-    opts_.insert(QStringLiteral("name"), name);
-    emit sigNameChanged(this, name);
+    opts_.insert(QStringLiteral("name"), actualName);
+    emit sigNameChanged(this, actualName);
     for (ParameterItem* item : items_) {
-        item->nameChanged(this, name);
+        item->nameChanged(this, actualName);
     }
-    return name;
+    return actualName;
 }
 
 void Parameter::setOpts(const QVariantMap& opts)

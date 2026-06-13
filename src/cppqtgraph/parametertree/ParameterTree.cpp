@@ -26,7 +26,6 @@ ParameterTree::ParameterTree(QWidget* parent, bool showHeader)
     connect(this, &QTreeWidget::itemChanged, this, &ParameterTree::itemChangedEvent);
     connect(this, &QTreeWidget::itemExpanded, this, &ParameterTree::itemExpandedEvent);
     connect(this, &QTreeWidget::itemCollapsed, this, &ParameterTree::itemCollapsedEvent);
-    connect(this, &QTreeWidget::currentItemChanged, this, &ParameterTree::currentItemChangedEvent);
 }
 
 void ParameterTree::setParameters(const std::shared_ptr<Parameter>& param, bool showTop)
@@ -138,21 +137,29 @@ ParameterItem* ParameterTree::nextFocusableChild(QTreeWidgetItem* root,
     return nullptr;
 }
 
-void ParameterTree::currentItemChangedEvent(QTreeWidgetItem* current, QTreeWidgetItem* previous)
-{
-    if (auto* prev = dynamic_cast<ParameterItem*>(previous)) {
-        prev->selected(false);
-    }
-    if (auto* curr = dynamic_cast<ParameterItem*>(current)) {
-        curr->selected(true);
-    }
-    lastSel_ = current;
-}
-
 void ParameterTree::selectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
 {
-    Q_UNUSED(selected);
-    Q_UNUSED(deselected);
+    QList<QTreeWidgetItem*> sel = selectedItems();
+    QTreeWidgetItem* selItem = nullptr;
+    if (sel.size() == 1) {
+        selItem = sel[0];
+    }
+
+    if (auto* prev = dynamic_cast<ParameterItem*>(lastSel_)) {
+        prev->selected(false);
+    }
+
+    if (selItem == nullptr) {
+        lastSel_ = nullptr;
+        QTreeWidget::selectionChanged(selected, deselected);
+        return;
+    }
+
+    lastSel_ = selItem;
+    if (auto* curr = dynamic_cast<ParameterItem*>(selItem)) {
+        curr->selected(true);
+    }
+
     QTreeWidget::selectionChanged(selected, deselected);
 }
 

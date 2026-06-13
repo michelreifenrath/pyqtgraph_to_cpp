@@ -44,7 +44,6 @@ private slots:
     void itemChangedEvent(QTreeWidgetItem* item, int col);
     void itemExpandedEvent(QTreeWidgetItem* item);
     void itemCollapsedEvent(QTreeWidgetItem* item);
-    void currentItemChangedEvent(QTreeWidgetItem* current, QTreeWidgetItem* previous);
 
 private:
     std::shared_ptr<Parameter> paramSet_;

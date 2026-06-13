@@ -150,6 +150,58 @@ bool testChildAddRemovePropagatesToBothViews()
     CHECK(findItemByName(fixture.tree1->invisibleRootItem(), QStringLiteral("group1"))->childCount() == before);
     CHECK(findItemByName(fixture.tree2->invisibleRootItem(), QStringLiteral("group1"))->childCount() == before);
     CHECK(findWidgetItem(*fixture.tree1, QStringLiteral("gamma")) == nullptr);
+    CHECK(findWidgetItem(*fixture.tree2, QStringLiteral("gamma")) == nullptr);
+    return true;
+}
+
+bool testReparentUpdatesBothViews()
+{
+    DualTreeFixture fixture;
+    auto* group1 = fixture.root->child(QStringLiteral("group1"));
+    CHECK(group1 != nullptr);
+
+    const QVariantMap group2Spec = {{QStringLiteral("name"), QStringLiteral("group2")},
+                                    {QStringLiteral("type"), QStringLiteral("group")}};
+    auto group2 = cppqtgraph::parametertree::Parameter::create(group2Spec);
+    fixture.root->addChild(group2);
+    QTest::qWait(0);
+
+    auto child = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("moved")},
+                    {QStringLiteral("type"), QStringLiteral("str")},
+                    {QStringLiteral("value"), QStringLiteral("x")}});
+    group1->addChild(child);
+    QTest::qWait(0);
+
+    CHECK(findWidgetItem(*fixture.tree1, QStringLiteral("moved")) != nullptr);
+    CHECK(findWidgetItem(*fixture.tree2, QStringLiteral("moved")) != nullptr);
+
+    group2->insertChild(0, child);
+    QTest::qWait(0);
+
+    CHECK(findWidgetItem(*fixture.tree1, QStringLiteral("moved")) != nullptr);
+    CHECK(findWidgetItem(*fixture.tree2, QStringLiteral("moved")) != nullptr);
+    CHECK(findItemByName(findItemByName(fixture.tree1->invisibleRootItem(), QStringLiteral("group1")),
+                         QStringLiteral("moved"))
+        == nullptr);
+    CHECK(findItemByName(findItemByName(fixture.tree2->invisibleRootItem(), QStringLiteral("group1")),
+                         QStringLiteral("moved"))
+        == nullptr);
+    return true;
+}
+
+bool testRenameRejectsDuplicateSiblingName()
+{
+    DualTreeFixture fixture;
+    auto* alpha = fixture.root->child(QStringLiteral("group1"))->child(QStringLiteral("alpha"));
+    CHECK(alpha != nullptr);
+
+    const QString rejected = alpha->setName(QStringLiteral("beta"));
+    QTest::qWait(0);
+
+    CHECK(rejected == QStringLiteral("alpha"));
+    CHECK(alpha->name() == QStringLiteral("alpha"));
+    CHECK(fixture.root->child(QStringLiteral("group1"))->child(QStringLiteral("alpha")) == alpha);
     return true;
 }
 
@@ -170,6 +222,8 @@ bool testVisibleExpandedTitleOptionsSync()
     CHECK(item2->isHidden());
     CHECK(item1->text(0) == QStringLiteral("Alpha Title"));
     CHECK(item2->text(0) == QStringLiteral("Alpha Title"));
+    CHECK(!item1->isExpanded());
+    CHECK(!item2->isExpanded());
     return true;
 }
 
@@ -180,7 +234,6 @@ bool testSelectionShowsEditor()
     CHECK(item != nullptr);
 
     fixture.tree1->setCurrentItem(item);
-    item->selected(true);
     QTest::qWait(0);
 
     auto* editor = qobject_cast<QLineEdit*>(item->editorWidget());
@@ -198,13 +251,30 @@ bool testTabFocusTraversal()
     CHECK(beta != nullptr);
 
     fixture.tree1->setCurrentItem(alpha);
-    alpha->selected(true);
     QTest::qWait(0);
 
     QTest::keyClick(alpha->editorWidget(), Qt::Key_Tab);
     QTest::qWait(0);
     CHECK(fixture.tree1->currentItem() == beta);
     CHECK(!qobject_cast<QLineEdit*>(beta->editorWidget())->isHidden());
+    return true;
+}
+
+bool testBacktabFocusTraversal()
+{
+    DualTreeFixture fixture;
+    auto* alpha = findWidgetItem(*fixture.tree1, QStringLiteral("alpha"));
+    auto* beta = findWidgetItem(*fixture.tree1, QStringLiteral("beta"));
+    CHECK(alpha != nullptr);
+    CHECK(beta != nullptr);
+
+    fixture.tree1->setCurrentItem(beta);
+    QTest::qWait(0);
+
+    QTest::keyClick(beta->editorWidget(), Qt::Key_Backtab);
+    QTest::qWait(0);
+    CHECK(fixture.tree1->currentItem() == alpha);
+    CHECK(!qobject_cast<QLineEdit*>(alpha->editorWidget())->isHidden());
     return true;
 }
 
@@ -244,6 +314,12 @@ int main(int argc, char** argv)
     if (!testChildAddRemovePropagatesToBothViews()) {
         return 1;
     }
+    if (!testReparentUpdatesBothViews()) {
+        return 1;
+    }
+    if (!testRenameRejectsDuplicateSiblingName()) {
+        return 1;
+    }
     if (!testVisibleExpandedTitleOptionsSync()) {
         return 1;
     }
@@ -251,6 +327,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testTabFocusTraversal()) {
+        return 1;
+    }
+    if (!testBacktabFocusTraversal()) {
         return 1;
     }
     if (!testDefaultReset()) {
