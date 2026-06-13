@@ -1067,6 +1067,12 @@ if(_cppqtgraph_has_graphicsitem)
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_imageview)
     add_executable(cppqtgraph_examples_parametertree "${PROJECT_SOURCE_DIR}/examples/parametertree.cpp")
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_parametertree)
+    add_executable(cppqtgraph_examples_multidataplot "${PROJECT_SOURCE_DIR}/examples/MultiDataPlot.cpp")
+    cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_multidataplot)
+    target_compile_definitions(cppqtgraph_examples_multidataplot
+        PRIVATE
+            CPPQTGRAPH_P458_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P458/multidataplot_data.json"
+    )
     add_executable(cppqtgraph_examples_exampleapp
         "${PROJECT_SOURCE_DIR}/examples/ExampleRegistry.cpp"
         "${PROJECT_SOURCE_DIR}/examples/ExampleApp.cpp"
@@ -1210,6 +1216,17 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.examples.parametertree
     )
     cppqtgraph_add_cpp_test(
+        cppqtgraph_examples_multidataplot_test
+        examples/test_MultiDataPlot.cpp
+        cppqtgraph.examples.MultiDataPlot
+    )
+    target_compile_definitions(cppqtgraph_examples_multidataplot_test
+        PRIVATE
+            CPPQTGRAPH_P458_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P458/multidataplot_data.json"
+            CPPQTGRAPH_MULTIDATAPLOT_EXECUTABLE="$<TARGET_FILE:cppqtgraph_examples_multidataplot>"
+    )
+    add_dependencies(cppqtgraph_examples_multidataplot_test cppqtgraph_examples_multidataplot)
+    cppqtgraph_add_cpp_test(
         cppqtgraph_parametertree_base_test
         parametertree/test_parametertree_base.cpp
         cppqtgraph.parametertree.base
@@ -1233,6 +1250,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_plotting
         cppqtgraph_examples_imageview
         cppqtgraph_examples_parametertree
+        cppqtgraph_examples_multidataplot
     )
     add_dependencies(cppqtgraph_examples_exampleapp_test
         cppqtgraph_examples_simpleplot
@@ -1241,6 +1259,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_plotting
         cppqtgraph_examples_imageview
         cppqtgraph_examples_parametertree
+        cppqtgraph_examples_multidataplot
     )
     set_tests_properties(cppqtgraph.examples.ExampleApp PROPERTIES LABELS "interaction")
     add_test(

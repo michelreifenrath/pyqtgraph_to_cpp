@@ -103,6 +103,9 @@ bool testRegistryOrderAndStatus()
     CHECK(entries[3].status == cppqtgraph::examples::ExampleStatus::Ported);
     CHECK(entries[4].name == QStringLiteral("parametertree"));
     CHECK(entries[4].status == cppqtgraph::examples::ExampleStatus::Ported);
+    CHECK(entries[5].name == QStringLiteral("MultiDataPlot"));
+    CHECK(entries[5].title == QStringLiteral("Plotting Datasets"));
+    CHECK(entries[5].status == cppqtgraph::examples::ExampleStatus::Ported);
     CHECK(entries[10].name == QStringLiteral("DateAxisItem"));
     CHECK(entries[10].status == cppqtgraph::examples::ExampleStatus::Planned);
 
@@ -112,6 +115,7 @@ bool testRegistryOrderAndStatus()
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("Plotting")));
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageView")));
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("parametertree")));
+    CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("MultiDataPlot")));
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("unknown")));
 
     return true;
@@ -119,7 +123,7 @@ bool testRegistryOrderAndStatus()
 
 bool testRegistryLaunchPendingFailsClosed()
 {
-    CHECK(!cppqtgraph::examples::ExampleRegistry::launch(QStringLiteral("MultiDataPlot")).has_value());
+    CHECK(!cppqtgraph::examples::ExampleRegistry::launch(QStringLiteral("DateAxisItem")).has_value());
     return true;
 }
 
@@ -167,8 +171,8 @@ bool testRegistryLaunchesPortedExamplesViaHook()
         CHECK(launched->executablePath.contains(entry.name));
     }
 
-    CHECK(portedCount == 5);
-    CHECK(hookCalls == 5);
+    CHECK(portedCount == 6);
+    CHECK(hookCalls == 6);
 
     cppqtgraph::examples::ExampleRegistry::clearLaunchHookForTesting();
     return true;
