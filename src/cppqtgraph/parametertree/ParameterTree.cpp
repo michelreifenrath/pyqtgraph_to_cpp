@@ -59,7 +59,10 @@ void ParameterTree::addParameters(Parameter* param, QTreeWidgetItem* root, int d
 
 void ParameterTree::clearParameters()
 {
-    invisibleRootItem()->takeChildren();
+    const QList<QTreeWidgetItem*> children = invisibleRootItem()->takeChildren();
+    for (QTreeWidgetItem* child : children) {
+        delete child;
+    }
     paramSet_.reset();
 }
 
