@@ -121,6 +121,35 @@ void enforceListValueInLimits(QVariantMap& opts)
     }
 }
 
+QVariant interpretSimpleValue(const QString& paramType, const QVariant& value)
+{
+    if (paramType == QStringLiteral("bool")) {
+        return value.toBool();
+    }
+    if (paramType == QStringLiteral("int")) {
+        return value.toInt();
+    }
+    if (paramType == QStringLiteral("float")) {
+        return value.toDouble();
+    }
+    if (paramType == QStringLiteral("str")) {
+        return value.toString();
+    }
+    return value;
+}
+
+QVariantMap normalizeSimpleOpts(QVariantMap opts)
+{
+    const QString paramType = opts.value(QStringLiteral("type")).toString();
+    if (opts.contains(QStringLiteral("value"))) {
+        opts.insert(QStringLiteral("value"), interpretSimpleValue(paramType, opts.value(QStringLiteral("value"))));
+    }
+    if (opts.contains(QStringLiteral("default"))) {
+        opts.insert(QStringLiteral("default"), interpretSimpleValue(paramType, opts.value(QStringLiteral("default"))));
+    }
+    return opts;
+}
+
 } // namespace
 
 void registerParameterType(const QString& typeName, ParameterFactory factory)
@@ -437,26 +466,13 @@ GroupParameter::GroupParameter(QVariantMap opts, QObject* parent)
 }
 
 SimpleParameter::SimpleParameter(QVariantMap opts, QObject* parent)
-    : Parameter(std::move(opts), parent)
+    : Parameter(normalizeSimpleOpts(std::move(opts)), parent)
 {
 }
 
 QVariant SimpleParameter::interpretValue(const QVariant& value) const
 {
-    const QString paramType = type();
-    if (paramType == QStringLiteral("bool")) {
-        return value.toBool();
-    }
-    if (paramType == QStringLiteral("int")) {
-        return value.toInt();
-    }
-    if (paramType == QStringLiteral("float")) {
-        return value.toDouble();
-    }
-    if (paramType == QStringLiteral("str")) {
-        return value.toString();
-    }
-    return value;
+    return interpretSimpleValue(type(), value);
 }
 
 QVariant SimpleParameter::setValue(const QVariant& value, bool blockSignal)

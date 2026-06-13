@@ -7,6 +7,9 @@
 
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
+#include <QtCore/QTemporaryDir>
+#include <QtGui/QKeySequence>
+#include <QtGui/QPixmap>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QLineEdit>
@@ -190,6 +193,75 @@ bool testListComboUpdatesValue()
     return true;
 }
 
+bool testSimpleParameterCtorInterpretsValueAndDefault()
+{
+    auto boolParam = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("flag")},
+                    {QStringLiteral("type"), QStringLiteral("bool")},
+                    {QStringLiteral("value"), QStringLiteral("true")}});
+    CHECK(boolParam->value().metaType().id() == QMetaType::Bool);
+    CHECK(boolParam->value().toBool());
+
+    auto intParam = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("count")},
+                    {QStringLiteral("type"), QStringLiteral("int")},
+                    {QStringLiteral("default"), QStringLiteral("7")}});
+    CHECK(intParam->value().metaType().id() == QMetaType::Int);
+    CHECK(intParam->value().toInt() == 7);
+    return true;
+}
+
+bool testValueLessListDoesNotMutateSampleFloatWidget()
+{
+    const auto exampleParams = cppqtgraph::parametertree::buildExampleParametersGroup();
+    auto* floatGroup = exampleParams->child(QStringLiteral("Sample Float"));
+    CHECK(floatGroup != nullptr);
+
+    auto* limitsParam = floatGroup->child(QStringLiteral("limits"));
+    auto* widgetParam = floatGroup->child(QStringLiteral("widget"));
+    CHECK(limitsParam != nullptr);
+    CHECK(widgetParam != nullptr);
+    CHECK(!limitsParam->options().contains(QStringLiteral("value")));
+    CHECK(widgetParam->value().toDouble() == 0.0);
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(exampleParams, false);
+    tree.show();
+    QTest::qWait(0);
+
+    CHECK(!limitsParam->options().contains(QStringLiteral("value")));
+    CHECK(widgetParam->value().toDouble() == 0.0);
+    return true;
+}
+
+bool testActionEnabledAndIconOptions()
+{
+    QTemporaryDir tempDir;
+    CHECK(tempDir.isValid());
+    QPixmap pixmap(8, 8);
+    pixmap.fill(Qt::blue);
+    const QString iconPath = tempDir.path() + QStringLiteral("/icon.png");
+    CHECK(pixmap.save(iconPath));
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("Run")},
+                    {QStringLiteral("type"), QStringLiteral("action")},
+                    {QStringLiteral("enabled"), false},
+                    {QStringLiteral("icon"), iconPath}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = dynamic_cast<cppqtgraph::parametertree::ActionParameterItem*>(
+        findItemByName(tree.invisibleRootItem(), QStringLiteral("Run")));
+    CHECK(item != nullptr);
+    CHECK(!item->actionButton()->isEnabled());
+    CHECK(!item->actionButton()->icon().isNull());
+    return true;
+}
+
 bool testActionActivationAndStateChanged()
 {
     auto param = cppqtgraph::parametertree::Parameter::create(
@@ -224,6 +296,12 @@ bool testActionActivationAndStateChanged()
     QTest::qWait(0);
     CHECK(activationCount == 1);
     CHECK(stateChangedCount == 1);
+
+    tree.setFocus();
+    QTest::keySequence(&tree, QKeySequence(QStringLiteral("Ctrl+Shift+P")));
+    QTest::qWait(0);
+    CHECK(activationCount == 2);
+    CHECK(stateChangedCount == 2);
     return true;
 }
 
@@ -293,6 +371,15 @@ int main(int argc, char** argv)
     ApplicationGuard application(argc, argv);
 
     if (!testExampleParametersGroupOrder()) {
+        return 1;
+    }
+    if (!testSimpleParameterCtorInterpretsValueAndDefault()) {
+        return 1;
+    }
+    if (!testValueLessListDoesNotMutateSampleFloatWidget()) {
+        return 1;
+    }
+    if (!testActionEnabledAndIconOptions()) {
         return 1;
     }
     if (!testBoolCheckboxUpdatesValue()) {
