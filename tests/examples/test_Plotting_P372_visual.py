@@ -20,15 +20,62 @@ from plotting_subplot_visual import (  # noqa: E402
     assert_all_subplots_nonempty,
     blank_subplot,
     compare_subplots,
+    crop_subplot_rgba,
     degenerate_axis_subplots,
+    write_subplot_png,
 )
 from test_P1_08_cpp_visual_renderer import _assert_semantic_plot_image  # noqa: E402
+from compare_screenshots import read_png_rgba  # noqa: E402
 
 REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "Plotting.reference.png"
+P8_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p8.reference.png"
 CHECK_VISUAL_ARTIFACTS = ROOT / "scripts" / "check_visual_artifacts"
 DEFAULT_REVIEW = ROOT / "reports" / "examples" / "P3.72" / "gpt5_vision_review.md"
 PYQTGRAPH_REF = ROOT / "reference" / "pyqtgraph"
 PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
+
+# Measured from pinned PyQtGraph p8 crop (Plotting.p8.reference.png).
+P8_MIN_EDGE_LINE_PIXELS = 200
+P8_MIN_BAND_COVERAGE_RATIO = 0.85
+
+
+def _count_p8_region_pixels(rgba: bytes) -> tuple[int, int, int]:
+    translucent_band = 0
+    edge_lines = 0
+    relaxed_band = 0
+    for index in range(0, len(rgba), 4):
+        red, green, blue, alpha = rgba[index : index + 4]
+        if blue > 100 and red < 80 and green < 80 and alpha > 20:
+            translucent_band += 1
+        if blue > red + 15 and blue > green + 15 and alpha > 100:
+            relaxed_band += 1
+        if red > 150 and green > 150 and blue < 120 and alpha > 100:
+            edge_lines += 1
+    return translucent_band, edge_lines, relaxed_band
+
+
+def _assert_p8_region_band(actual: Path) -> None:
+    assert P8_REFERENCE.is_file(), f"missing pinned p8 reference crop: {P8_REFERENCE}"
+    _, _, ref_rgba = read_png_rgba(P8_REFERENCE)
+    ref_band, ref_edges, ref_relaxed = _count_p8_region_pixels(ref_rgba)
+    assert ref_edges >= P8_MIN_EDGE_LINE_PIXELS
+    assert ref_relaxed > 0
+
+    width, height, rgba = read_png_rgba(actual)
+    _, _, crop_rgba = crop_subplot_rgba(rgba, width, height, col=1, row=2)
+    _, edge_pixels, relaxed_band = _count_p8_region_pixels(crop_rgba)
+    min_relaxed = int(P8_MIN_BAND_COVERAGE_RATIO * ref_relaxed)
+    assert relaxed_band >= min_relaxed, (
+        f"p8 translucent band coverage too low: {relaxed_band} < {min_relaxed} "
+        f"(reference={ref_relaxed}, strict_band={ref_band})"
+    )
+    assert edge_pixels >= P8_MIN_EDGE_LINE_PIXELS, (
+        f"p8 edge lines too sparse: {edge_pixels} < {P8_MIN_EDGE_LINE_PIXELS} "
+        f"(reference={ref_edges})"
+    )
+
+    tmp_crop = actual.parent / "Plotting.p8.actual.png"
+    write_subplot_png(actual, tmp_crop, col=1, row=2)
 
 
 def _renderer() -> Path:
@@ -88,6 +135,7 @@ def _run_renderer(renderer: Path, output: Path) -> dict[str, Any]:
     assert Path(str(status["output"])).resolve() == output.resolve()
     assert output.is_file()
     _assert_semantic_plot_image(output, width=1000, height=600)
+    _assert_p8_region_band(output)
     assert_all_subplots_nonempty(output)
     return status
 

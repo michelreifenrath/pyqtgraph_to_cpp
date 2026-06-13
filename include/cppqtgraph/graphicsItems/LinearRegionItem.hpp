@@ -10,6 +10,7 @@
 
 #include <cppqtgraph/GraphicsScene/GraphicsScene.hpp>
 
+#include <QtCore/QMetaObject>
 #include <QtCore/QRectF>
 #include <QtGui/QBrush>
 #include <QtGui/QPen>
@@ -74,11 +75,17 @@ public:
     void mouseClickEvent(cppqtgraph::GraphicsScene::MouseClickEvent* event) override;
     void mouseDragEvent(cppqtgraph::GraphicsScene::MouseDragEvent* event) override;
 
+protected:
+    QVariant itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value) override;
+
 signals:
     void sigRegionChangeFinished(cppqtgraph::graphicsItems::LinearRegionItem* region);
     void sigRegionChanged(cppqtgraph::graphicsItems::LinearRegionItem* region);
 
 private:
+    void connectViewBoxUpdates();
+    void invalidateViewGeometry();
+
     [[nodiscard]] QPointF valuePoint(qreal value) const;
     [[nodiscard]] qreal axisDelta(const QPointF& point) const;
 
@@ -95,6 +102,8 @@ private:
     QBrush brush_;
     QBrush hoverBrush_;
     QBrush currentBrush_;
+    QMetaObject::Connection viewRangeConnection_;
+    QMetaObject::Connection viewTransformConnection_;
 };
 
 } // namespace cppqtgraph::graphicsItems
