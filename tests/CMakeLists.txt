@@ -1215,6 +1215,12 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.parametertree.base
     )
     cppqtgraph_add_cpp_test(
+        cppqtgraph_parametertree_items_test
+        parametertree/test_parametertree_items.cpp
+        cppqtgraph.parametertree.items
+    )
+    target_link_libraries(cppqtgraph_parametertree_items_test PRIVATE Qt6::Test)
+    cppqtgraph_add_cpp_test(
         cppqtgraph_examples_exampleapp_test
         examples/test_ExampleApp.cpp
         cppqtgraph.examples.ExampleApp

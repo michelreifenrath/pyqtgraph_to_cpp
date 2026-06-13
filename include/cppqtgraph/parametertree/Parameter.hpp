@@ -5,9 +5,8 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
-#include <cppqtgraph/widgets/TreeWidget.hpp>
-
 #include <QHash>
+#include <QObject>
 #include <QVariantMap>
 
 #include <functional>
@@ -23,10 +22,12 @@ using ParameterFactory = std::function<std::shared_ptr<Parameter>(const QVariant
 
 void registerParameterType(const QString& typeName, ParameterFactory factory);
 
-class Parameter {
+class Parameter : public QObject {
+    Q_OBJECT
+
 public:
-    explicit Parameter(QVariantMap opts);
-    virtual ~Parameter() = default;
+    explicit Parameter(QVariantMap opts, QObject* parent = nullptr);
+    ~Parameter() override = default;
 
     static std::shared_ptr<Parameter> create(QVariantMap opts);
 
@@ -42,42 +43,61 @@ public:
 
     void addChild(std::shared_ptr<Parameter> child);
     void insertChild(int index, std::shared_ptr<Parameter> child);
+    void removeChild(Parameter* child);
+
+    QVariant setValue(const QVariant& value, bool blockSignal = false);
+    void notifyValueChanging(const QVariant& value);
+    QString setName(const QString& name);
+    void setOpts(const QVariantMap& opts);
+    void setDefault(const QVariant& val, bool updatePristineValues = false);
+    void setToDefault();
+
+    [[nodiscard]] bool hasDefault() const;
+    [[nodiscard]] QVariant defaultValue() const;
+    [[nodiscard]] bool valueIsDefault() const;
+    [[nodiscard]] bool valueModifiedSinceResetToDefault() const;
+    [[nodiscard]] bool writable() const;
+    [[nodiscard]] bool readonly() const;
+    [[nodiscard]] bool enabled() const;
 
     virtual ParameterItem* makeTreeItem(int depth = 0);
+
+    void registerItem(ParameterItem* item);
+    void unregisterItem(ParameterItem* item);
+
+signals:
+    void sigValueChanged(Parameter* param, const QVariant& value);
+    void sigValueChanging(Parameter* param, const QVariant& value);
+    void sigChildAdded(Parameter* param, Parameter* child, int index);
+    void sigChildRemoved(Parameter* param, Parameter* child);
+    void sigNameChanged(Parameter* param, const QString& name);
+    void sigDefaultChanged(Parameter* param, const QVariant& defaultValue);
+    void sigOptionsChanged(Parameter* param, const QVariantMap& changedOpts);
 
 protected:
     QVariantMap opts_;
     Parameter* parent_ = nullptr;
     std::vector<std::shared_ptr<Parameter>> children_;
     QHash<QString, Parameter*> names_;
+    bool modifiedSinceReset_ = false;
+    std::vector<ParameterItem*> items_;
 };
 
 class GroupParameter final : public Parameter {
 public:
-    explicit GroupParameter(QVariantMap opts);
+    explicit GroupParameter(QVariantMap opts, QObject* parent = nullptr);
 };
 
 class SimpleParameter final : public Parameter {
 public:
-    explicit SimpleParameter(QVariantMap opts);
+    explicit SimpleParameter(QVariantMap opts, QObject* parent = nullptr);
+
+    ParameterItem* makeTreeItem(int depth = 0) override;
 };
 
 class ActionParameter final : public Parameter {
 public:
-    explicit ActionParameter(QVariantMap opts);
-};
-
-class ParameterItem : public widgets::TreeWidgetItem {
-public:
-    ParameterItem(Parameter* param, int depth);
-
-    void treeWidgetChanged();
-    [[nodiscard]] Parameter* parameter() const { return param_; }
-    [[nodiscard]] int depth() const { return depth_; }
-
-private:
-    Parameter* param_ = nullptr;
-    int depth_ = 0;
+    explicit ActionParameter(QVariantMap opts, QObject* parent = nullptr);
 };
 
 void registerBuiltinParameterTypes();

@@ -10,7 +10,11 @@
 
 #include <memory>
 
+class QTreeWidgetItem;
+
 namespace cppqtgraph::parametertree {
+
+class ParameterItem;
 
 class ParameterTree : public widgets::TreeWidget {
     Q_OBJECT
@@ -27,8 +31,23 @@ public:
 
     [[nodiscard]] Parameter* parameters() const { return paramSet_.get(); }
 
+    void focusNext(ParameterItem* item, bool forward = true);
+    void focusPrevious(ParameterItem* item);
+    [[nodiscard]] ParameterItem* nextFocusableChild(QTreeWidgetItem* root,
+                                                    QTreeWidgetItem* startItem = nullptr,
+                                                    bool forward = true) const;
+
+protected:
+    void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected) override;
+
+private slots:
+    void itemChangedEvent(QTreeWidgetItem* item, int col);
+    void itemExpandedEvent(QTreeWidgetItem* item);
+    void itemCollapsedEvent(QTreeWidgetItem* item);
+
 private:
     std::shared_ptr<Parameter> paramSet_;
+    QTreeWidgetItem* lastSel_ = nullptr;
 };
 
 } // namespace cppqtgraph::parametertree
