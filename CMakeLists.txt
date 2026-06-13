@@ -186,6 +186,10 @@ if(_cppqtgraph_has_graphicsitem)
             src/cppqtgraph/widgets/GradientWidget.cpp
             include/cppqtgraph/widgets/TreeWidget.hpp
             src/cppqtgraph/widgets/TreeWidget.cpp
+            include/cppqtgraph/parametertree/Parameter.hpp
+            src/cppqtgraph/parametertree/Parameter.cpp
+            include/cppqtgraph/parametertree/ParameterTree.hpp
+            src/cppqtgraph/parametertree/ParameterTree.cpp
             include/cppqtgraph/widgets/CheckTable.hpp
             src/cppqtgraph/widgets/CheckTable.cpp
             include/cppqtgraph/widgets/DataTreeWidget.hpp

@@ -1065,6 +1065,8 @@ if(_cppqtgraph_has_graphicsitem)
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_plotting)
     add_executable(cppqtgraph_examples_imageview "${PROJECT_SOURCE_DIR}/examples/ImageView.cpp")
     cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_imageview)
+    add_executable(cppqtgraph_examples_parametertree "${PROJECT_SOURCE_DIR}/examples/parametertree.cpp")
+    cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_parametertree)
     add_executable(cppqtgraph_examples_exampleapp
         "${PROJECT_SOURCE_DIR}/examples/ExampleRegistry.cpp"
         "${PROJECT_SOURCE_DIR}/examples/ExampleApp.cpp"
@@ -1203,6 +1205,16 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.examples.ImageView
     )
     cppqtgraph_add_cpp_test(
+        cppqtgraph_examples_parametertree_test
+        examples/test_parametertree.cpp
+        cppqtgraph.examples.parametertree
+    )
+    cppqtgraph_add_cpp_test(
+        cppqtgraph_parametertree_base_test
+        parametertree/test_parametertree_base.cpp
+        cppqtgraph.parametertree.base
+    )
+    cppqtgraph_add_cpp_test(
         cppqtgraph_examples_exampleapp_test
         examples/test_ExampleApp.cpp
         cppqtgraph.examples.ExampleApp
@@ -1214,6 +1226,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_cliexample
         cppqtgraph_examples_plotting
         cppqtgraph_examples_imageview
+        cppqtgraph_examples_parametertree
     )
     add_dependencies(cppqtgraph_examples_exampleapp_test
         cppqtgraph_examples_simpleplot
@@ -1221,6 +1234,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_cliexample
         cppqtgraph_examples_plotting
         cppqtgraph_examples_imageview
+        cppqtgraph_examples_parametertree
     )
     set_tests_properties(cppqtgraph.examples.ExampleApp PROPERTIES LABELS "interaction")
     add_test(

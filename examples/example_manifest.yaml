@@ -100,12 +100,14 @@ examples:
     title: ParameterTree
     upstream_file: pyqtgraph/examples/parametertree.py
     cpp_file: examples/parametertree.cpp
-    status: planned
+    status: ported
     validation:
       smoke: required
       numeric: required
       visual: required
       interaction: required
+    ctest:
+      normal: cppqtgraph.examples.parametertree
 
   - order: 5
     name: MultiDataPlot
