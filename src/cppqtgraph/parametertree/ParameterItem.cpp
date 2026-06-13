@@ -682,10 +682,13 @@ void ListParameterItem::updateLimits(const QVariant& limits)
         } else {
             writeEditorValue(param_->value());
         }
-    } else if (combo_->count() > 0) {
-        combo_->setCurrentIndex(0);
+    } else {
+        combo_->setCurrentIndex(-1);
+        updateDisplayLabel(QString());
     }
-    updateDisplayLabel(combo_->currentText());
+    if (param_->options().contains(QStringLiteral("value"))) {
+        updateDisplayLabel(combo_->currentText());
+    }
     updatingWidget_ = false;
 }
 

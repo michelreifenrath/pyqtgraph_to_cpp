@@ -222,6 +222,38 @@ bool testSimpleParameterCtorInterpretsValueAndDefault()
     return true;
 }
 
+bool testValueLessListShowsNoSelectionUntilChosen()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("choice")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("limits"), QVariantList{QStringLiteral("a"), QStringLiteral("b")}}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    CHECK(!param->options().contains(QStringLiteral("value")));
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("choice"));
+    CHECK(item != nullptr);
+    auto* combo = qobject_cast<cppqtgraph::widgets::ComboBox*>(editorForItem(item));
+    CHECK(combo != nullptr);
+    CHECK(combo->count() == 2);
+    CHECK(combo->currentIndex() == -1);
+    CHECK(item->text(1).isEmpty());
+
+    QSignalSpy valueSpy(param.get(), &cppqtgraph::parametertree::Parameter::sigValueChanged);
+    combo->setCurrentIndex(0);
+    QTest::qWait(0);
+    CHECK(param->options().contains(QStringLiteral("value")));
+    CHECK(param->value().toString() == QStringLiteral("a"));
+    CHECK(valueSpy.count() >= 1);
+    CHECK(combo->currentIndex() == 0);
+    return true;
+}
+
 bool testValueLessListDoesNotMutateSampleFloatWidget()
 {
     const auto exampleParams = cppqtgraph::parametertree::buildExampleParametersGroup();
@@ -541,6 +573,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testSimpleParameterCtorInterpretsValueAndDefault()) {
+        return 1;
+    }
+    if (!testValueLessListShowsNoSelectionUntilChosen()) {
         return 1;
     }
     if (!testValueLessListDoesNotMutateSampleFloatWidget()) {
