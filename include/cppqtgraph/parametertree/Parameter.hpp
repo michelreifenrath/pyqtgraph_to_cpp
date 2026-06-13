@@ -95,6 +95,27 @@ public:
     ParameterItem* makeTreeItem(int depth = 0) override;
 };
 
+class ListParameter final : public Parameter {
+public:
+    explicit ListParameter(QVariantMap opts, QObject* parent = nullptr);
+
+    ParameterItem* makeTreeItem(int depth = 0) override;
+};
+
+class ColorParameter final : public Parameter {
+public:
+    explicit ColorParameter(QVariantMap opts, QObject* parent = nullptr);
+
+    ParameterItem* makeTreeItem(int depth = 0) override;
+};
+
+class TextParameter final : public Parameter {
+public:
+    explicit TextParameter(QVariantMap opts, QObject* parent = nullptr);
+
+    ParameterItem* makeTreeItem(int depth = 0) override;
+};
+
 class ActionParameter final : public Parameter {
 public:
     explicit ActionParameter(QVariantMap opts, QObject* parent = nullptr);

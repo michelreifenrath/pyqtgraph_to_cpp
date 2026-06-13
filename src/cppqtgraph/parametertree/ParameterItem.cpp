@@ -6,13 +6,23 @@
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
 #include "../../../include/cppqtgraph/parametertree/ParameterTree.hpp"
 
+#include <cppqtgraph/functions.hpp>
+#include <cppqtgraph/widgets/ColorButton.hpp>
+#include <cppqtgraph/widgets/ComboBox.hpp>
+
 #include <QtCore/QObject>
 #include <QtCore/QSignalBlocker>
+#include <QtGui/QColor>
 #include <QtGui/QKeyEvent>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QTextEdit>
+#include <QtWidgets/QTreeWidgetItem>
+
+#include <stdexcept>
 
 namespace cppqtgraph::parametertree {
 
@@ -27,7 +37,65 @@ QString displayValue(const Parameter& param)
     if (!value.isValid()) {
         return {};
     }
+    if (value.metaType().id() == QMetaType::QColor) {
+        return value.value<QColor>().name(QColor::HexRgb);
+    }
     return value.toString();
+}
+
+QVariant listLimitsFromOptions(const QVariantMap& opts)
+{
+    if (opts.contains(QStringLiteral("limits"))) {
+        return opts.value(QStringLiteral("limits"));
+    }
+    if (opts.contains(QStringLiteral("values"))) {
+        return opts.value(QStringLiteral("values"));
+    }
+    return QVariant();
+}
+
+QVariantList listLimitValues(const QVariant& limits)
+{
+    QVariantList values;
+    if (limits.canConvert<QVariantList>()) {
+        for (const QVariant& entry : limits.toList()) {
+            if (entry.metaType().id() == QMetaType::QVariantList) {
+                const QVariantList pair = entry.toList();
+                if (pair.size() >= 2) {
+                    values.append(pair.at(1));
+                }
+            } else {
+                values.append(entry);
+            }
+        }
+        return values;
+    }
+    if (limits.canConvert<QVariantMap>()) {
+        for (auto it = limits.toMap().constBegin(); it != limits.toMap().constEnd(); ++it) {
+            values.append(it.value());
+        }
+    }
+    return values;
+}
+
+bool valueInLimits(const QVariant& value, const QVariant& limits)
+{
+    const QVariantList allowed = listLimitValues(limits);
+    for (const QVariant& entry : allowed) {
+        if (entry == value) {
+            return true;
+        }
+    }
+    return allowed.isEmpty();
+}
+
+QVariant firstLimitValue(const QVariant& limits)
+{
+    const QVariantList allowed = listLimitValues(limits);
+    if (allowed.isEmpty()) {
+        return QVariant();
+    }
+    return allowed.front();
 }
 
 class EditorEventFilter final : public QObject {
@@ -66,7 +134,7 @@ public:
     {
         QObject::connect(editor, &QLineEdit::textChanged, this, [this](const QString& text) {
             if (item_ != nullptr) {
-                item_->editorTextChanging(text);
+                item_->editorValueChanging(text);
             }
         });
         QObject::connect(editor, &QLineEdit::editingFinished, this, [this]() {
@@ -269,10 +337,25 @@ void ParameterItem::titleChanged()
     setSizeHint(0, size);
 }
 
-WidgetParameterItem::WidgetParameterItem(Parameter* param, int depth)
+WidgetParameterItem::WidgetParameterItem(Parameter* param, int depth, QWidget* editor, WidgetParameterItemOptions options)
     : ParameterItem(param, depth)
+    , editor_(editor)
+    , hideWhenDeselected_(options.hideWhenDeselected)
+    , asSubItem_(options.asSubItem)
 {
-    editor_ = new QLineEdit();
+    if (editor_ == nullptr) {
+        throw std::invalid_argument("WidgetParameterItem requires an editor widget");
+    }
+
+    if (asSubItem_) {
+        subItem_ = new QTreeWidgetItem();
+        subItem_->setFlags(Qt::NoItemFlags);
+        addChild(subItem_);
+    }
+
+    configureEditor(editor_);
+    bindEditor(editor_);
+
     auto* filter = new EditorEventFilter(this, editor_);
     editor_->installEventFilter(filter);
 
@@ -284,7 +367,9 @@ WidgetParameterItem::WidgetParameterItem(Parameter* param, int depth)
     auto* layout = new QHBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(2);
-    layout->addWidget(editor_, 1);
+    if (!asSubItem_) {
+        layout->addWidget(editor_, 1);
+    }
     layout->addWidget(displayLabel_, 1);
     layout->addStretch(0);
     layout->addWidget(defaultBtn_);
@@ -292,7 +377,11 @@ WidgetParameterItem::WidgetParameterItem(Parameter* param, int depth)
     layoutWidget_ = new QWidget();
     layoutWidget_->setLayout(layout);
 
-    new WidgetHooks(this, qobject_cast<QLineEdit*>(editor_), defaultBtn_);
+    if (auto* lineEdit = qobject_cast<QLineEdit*>(editor_)) {
+        new WidgetHooks(this, lineEdit, defaultBtn_);
+    } else {
+        QObject::connect(defaultBtn_, &QPushButton::clicked, defaultBtn_, [this]() { defaultClicked(); });
+    }
 
     valueChanged(param, param->value());
     updateDefaultBtn();
@@ -309,9 +398,19 @@ void WidgetParameterItem::treeWidgetChanged()
     }
 
     if (auto* tree = treeWidget()) {
+        if (asSubItem_ && subItem_ != nullptr) {
+            subItem_->setFirstColumnSpanned(true);
+            tree->setItemWidget(subItem_, 0, editor_);
+            subItem_->setSizeHint(0, QSize(300, 100));
+            setSizeHint(1, defaultBtn_->sizeHint());
+        }
         tree->setItemWidget(this, 1, layoutWidget_);
-        hideEditor();
-        selected(false);
+        if (hideWhenDeselected_) {
+            hideEditor();
+            selected(false);
+        } else {
+            showEditor();
+        }
     }
 }
 
@@ -323,10 +422,7 @@ void WidgetParameterItem::valueChanged(Parameter* param, const QVariant& val)
     }
 
     updatingWidget_ = true;
-    if (auto* lineEdit = qobject_cast<QLineEdit*>(editor_)) {
-        const QSignalBlocker blocker(lineEdit);
-        lineEdit->setText(val.toString());
-    }
+    writeEditorValue(val);
     updateDisplayLabel(val);
     updateDefaultBtn();
     updatingWidget_ = false;
@@ -342,17 +438,25 @@ void WidgetParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
 {
     ParameterItem::optsChanged(param, opts);
 
-    if (opts.contains(QStringLiteral("enabled")) && editor_ != nullptr) {
+    if (editor_ == nullptr) {
+        return;
+    }
+
+    if (opts.contains(QStringLiteral("enabled"))) {
         editor_->setEnabled(opts.value(QStringLiteral("enabled")).toBool());
         updateDefaultBtn();
     }
-    if (opts.contains(QStringLiteral("readonly")) && editor_ != nullptr) {
+    if (opts.contains(QStringLiteral("readonly"))) {
         if (auto* lineEdit = qobject_cast<QLineEdit*>(editor_)) {
             lineEdit->setReadOnly(opts.value(QStringLiteral("readonly")).toBool());
+        } else if (auto* textEdit = qobject_cast<QTextEdit*>(editor_)) {
+            textEdit->setReadOnly(opts.value(QStringLiteral("readonly")).toBool());
+        } else {
+            editor_->setEnabled(param_->enabled() && !opts.value(QStringLiteral("readonly")).toBool());
         }
         updateDefaultBtn();
     }
-    if (opts.contains(QStringLiteral("tip")) && editor_ != nullptr) {
+    if (opts.contains(QStringLiteral("tip"))) {
         editor_->setToolTip(opts.value(QStringLiteral("tip")).toString());
     }
 }
@@ -365,7 +469,7 @@ void WidgetParameterItem::selected(bool sel)
     }
     if (sel && param_->writable()) {
         showEditor();
-    } else if (hideWidget_) {
+    } else if (hideWhenDeselected_) {
         hideEditor();
     }
 }
@@ -400,22 +504,17 @@ void WidgetParameterItem::widgetValueChanged()
         return;
     }
 
-    const auto* lineEdit = qobject_cast<const QLineEdit*>(editor_);
-    if (lineEdit == nullptr) {
-        return;
-    }
-
-    param_->setValue(lineEdit->text());
+    param_->setValue(readEditorValue());
     updateDisplayLabel();
     updateDefaultBtn();
 }
 
-void WidgetParameterItem::editorTextChanging(const QString& text)
+void WidgetParameterItem::editorValueChanging(const QVariant& value)
 {
     if (updatingWidget_ || param_ == nullptr) {
         return;
     }
-    param_->notifyValueChanging(text);
+    param_->notifyValueChanging(value);
 }
 
 void WidgetParameterItem::defaultClicked()
@@ -433,7 +532,11 @@ void WidgetParameterItem::updateDisplayLabel(const QVariant& value)
         return;
     }
     const QVariant display = value.isValid() ? value : param_->value();
-    displayLabel_->setText(display.toString());
+    if (display.metaType().id() == QMetaType::QColor) {
+        displayLabel_->setText(display.value<QColor>().name(QColor::HexRgb));
+    } else {
+        displayLabel_->setText(display.toString());
+    }
 }
 
 void WidgetParameterItem::updateDefaultBtn()
@@ -463,6 +566,209 @@ void WidgetParameterItem::hideEditor()
     }
     editor_->hide();
     displayLabel_->show();
+}
+
+void WidgetParameterItem::bindEditor(QWidget* editor)
+{
+    // Default QLineEdit bindings are installed via WidgetHooks in the constructor.
+    Q_UNUSED(editor);
+}
+
+QVariant WidgetParameterItem::readEditorValue() const
+{
+    if (auto* lineEdit = qobject_cast<const QLineEdit*>(editor_)) {
+        return lineEdit->text();
+    }
+    return QVariant();
+}
+
+void WidgetParameterItem::writeEditorValue(const QVariant& val)
+{
+    if (auto* lineEdit = qobject_cast<QLineEdit*>(editor_)) {
+        const QSignalBlocker blocker(lineEdit);
+        lineEdit->setText(val.toString());
+    }
+}
+
+void WidgetParameterItem::configureEditor(QWidget* editor)
+{
+    Q_UNUSED(editor);
+}
+
+ListParameterItem::ListParameterItem(Parameter* param, int depth)
+    : WidgetParameterItem(param, depth, new widgets::ComboBox())
+{
+    combo_ = qobject_cast<widgets::ComboBox*>(editor_);
+    bindEditor(editor_);
+    updateLimits(listLimitsFromOptions(param->options()));
+}
+
+void ListParameterItem::bindEditor(QWidget* editor)
+{
+    combo_ = qobject_cast<widgets::ComboBox*>(editor);
+    if (combo_ == nullptr) {
+        return;
+    }
+    QObject::connect(combo_, qOverload<int>(&QComboBox::currentIndexChanged), combo_, [this](int) {
+        widgetValueChanged();
+    });
+}
+
+QVariant ListParameterItem::readEditorValue() const
+{
+    if (combo_ == nullptr) {
+        return QVariant();
+    }
+    return combo_->value();
+}
+
+void ListParameterItem::writeEditorValue(const QVariant& val)
+{
+    if (combo_ == nullptr) {
+        return;
+    }
+    const QSignalBlocker blocker(combo_);
+    try {
+        combo_->setValue(val);
+    } catch (const std::exception&) {
+        if (combo_->count() > 0) {
+            combo_->setCurrentIndex(0);
+        }
+    }
+}
+
+void ListParameterItem::configureEditor(QWidget* editor)
+{
+    if (auto* combo = qobject_cast<widgets::ComboBox*>(editor)) {
+        combo->setMaximumHeight(20);
+    }
+}
+
+void ListParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
+{
+    WidgetParameterItem::optsChanged(param, opts);
+    if (opts.contains(QStringLiteral("limits")) || opts.contains(QStringLiteral("values"))) {
+        updateLimits(listLimitsFromOptions(param->options()));
+    }
+}
+
+void ListParameterItem::updateLimits(const QVariant& limits)
+{
+    if (combo_ == nullptr || param_ == nullptr) {
+        return;
+    }
+
+    updatingWidget_ = true;
+    const QSignalBlocker blocker(combo_);
+    const QVariant normalized = limits.isValid() ? limits : QVariant(QStringList{QString()});
+    combo_->setItems(normalized);
+
+    if (!valueInLimits(param_->value(), normalized)) {
+        const QVariant first = firstLimitValue(normalized);
+        if (first.isValid()) {
+            param_->setValue(first);
+        }
+    } else {
+        writeEditorValue(param_->value());
+    }
+    updateDisplayLabel(combo_->currentText());
+    updatingWidget_ = false;
+}
+
+ColorParameterItem::ColorParameterItem(Parameter* param, int depth)
+    : WidgetParameterItem(param, depth, new widgets::ColorButton(), WidgetParameterItemOptions{.hideWhenDeselected = false})
+{
+    bindEditor(editor_);
+    writeEditorValue(param->value());
+}
+
+void ColorParameterItem::bindEditor(QWidget* editor)
+{
+    auto* button = qobject_cast<widgets::ColorButton*>(editor);
+    if (button == nullptr) {
+        return;
+    }
+    QObject::connect(button, &widgets::ColorButton::sigColorChanged, button, [this](widgets::ColorButton*) {
+        widgetValueChanged();
+    });
+    QObject::connect(button, &widgets::ColorButton::sigColorChanging, button, [this](widgets::ColorButton* btn) {
+        editorValueChanging(QVariant::fromValue(btn->color()));
+    });
+}
+
+QVariant ColorParameterItem::readEditorValue() const
+{
+    if (auto* button = qobject_cast<const widgets::ColorButton*>(editor_)) {
+        return QVariant::fromValue(button->color());
+    }
+    return QVariant();
+}
+
+void ColorParameterItem::writeEditorValue(const QVariant& val)
+{
+    if (auto* button = qobject_cast<widgets::ColorButton*>(editor_)) {
+        QColor color = val.metaType().id() == QMetaType::QColor ? val.value<QColor>() : mkColor(val.toString());
+        button->setColor(color, true);
+    }
+}
+
+void ColorParameterItem::configureEditor(QWidget* editor)
+{
+    if (auto* button = qobject_cast<widgets::ColorButton*>(editor)) {
+        button->setFlat(true);
+    }
+}
+
+TextParameterItem::TextParameterItem(Parameter* param, int depth)
+    : WidgetParameterItem(param,
+                          depth,
+                          new QTextEdit(),
+                          WidgetParameterItemOptions{.hideWhenDeselected = false, .asSubItem = true})
+{
+    bindEditor(editor_);
+    writeEditorValue(param->value());
+}
+
+void TextParameterItem::bindEditor(QWidget* editor)
+{
+    auto* textEdit = qobject_cast<QTextEdit*>(editor);
+    if (textEdit == nullptr) {
+        return;
+    }
+    QObject::connect(textEdit, &QTextEdit::textChanged, textEdit, [this]() { widgetValueChanged(); });
+}
+
+QVariant TextParameterItem::readEditorValue() const
+{
+    if (auto* textEdit = qobject_cast<const QTextEdit*>(editor_)) {
+        return textEdit->toPlainText();
+    }
+    return QVariant();
+}
+
+void TextParameterItem::writeEditorValue(const QVariant& val)
+{
+    if (auto* textEdit = qobject_cast<QTextEdit*>(editor_)) {
+        const QSignalBlocker blocker(textEdit);
+        textEdit->setPlainText(val.toString());
+    }
+}
+
+void TextParameterItem::configureEditor(QWidget* editor)
+{
+    if (auto* textEdit = qobject_cast<QTextEdit*>(editor)) {
+        textEdit->setReadOnly(param_->readonly());
+    }
+}
+
+void TextParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
+{
+    WidgetParameterItem::optsChanged(param, opts);
+    if (opts.contains(QStringLiteral("readonly"))) {
+        if (auto* textEdit = qobject_cast<QTextEdit*>(editor_)) {
+            textEdit->setReadOnly(opts.value(QStringLiteral("readonly")).toBool());
+        }
+    }
 }
 
 } // namespace cppqtgraph::parametertree
