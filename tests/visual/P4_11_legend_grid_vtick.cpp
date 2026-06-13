@@ -1,6 +1,7 @@
 #include <cppqtgraph/graphicsItems/GridItem.hpp>
 #include <cppqtgraph/graphicsItems/LegendItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotDataItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 #include <cppqtgraph/graphicsItems/VTickGroup.hpp>
 #include <cppqtgraph/widgets/PlotWidget.hpp>

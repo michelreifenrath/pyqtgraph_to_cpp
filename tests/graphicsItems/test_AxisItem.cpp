@@ -1,5 +1,6 @@
 #include <cppqtgraph/graphicsItems/AxisItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotDataItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 #include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
@@ -984,9 +985,9 @@ bool testPlotDataPaintsAboveExtendedGrid()
 
     const std::vector<double> x = {0.0, 10.0};
     const std::vector<double> y = {5.0, 5.0};
-    auto* curve = plot.plot(x, y, QString());
-    curve->setPen(QPen(QColor(255, 0, 0), 3.0));
-    curve->setAntialias(false);
+    auto* plotData = plot.plot(x, y, QString());
+    plotData->setPen(QPen(QColor(255, 0, 0), 3.0));
+    plotData->curve()->setAntialias(false);
 
     QImage image(420, 320, QImage::Format_ARGB32_Premultiplied);
     image.fill(Qt::white);

@@ -465,9 +465,9 @@ void PlotItem::removeItem(QGraphicsItem* item)
     }
     vb_->removeItem(item);
     detachDirectChild(item);
-    ownedCurves_.erase(std::remove_if(ownedCurves_.begin(), ownedCurves_.end(), [item](const auto& curve) {
-        return curve.get() == item;
-    }), ownedCurves_.end());
+    ownedPlotData_.erase(std::remove_if(ownedPlotData_.begin(), ownedPlotData_.end(), [item](const auto& plotData) {
+        return plotData.get() == item;
+    }), ownedPlotData_.end());
     syncAxisRanges();
     update();
 }
@@ -483,29 +483,60 @@ void PlotItem::clear()
         detachDirectChild(item);
     }
     items_.clear();
-    ownedCurves_.clear();
+    ownedPlotData_.clear();
     vb_->clear();
     syncAxisRanges();
     update();
 }
 
-PlotCurveItem* PlotItem::plot(std::span<const double> y, const QString& name)
+namespace {
+
+void applyPlotOptions(PlotDataItem& item, const PlotItem::PlotOptions& options)
 {
-    auto curve = std::make_unique<PlotCurveItem>();
-    PlotCurveItem* result = curve.get();
-    curve->setData(y);
-    ownedCurves_.push_back(std::move(curve));
-    addItem(result, false, name);
+    if (options.pen.has_value()) {
+        item.setPen(*options.pen);
+    }
+    if (options.symbol.has_value()) {
+        item.setSymbol(*options.symbol);
+    }
+    if (options.symbolBrush.has_value()) {
+        item.setSymbolBrush(*options.symbolBrush);
+    }
+}
+
+} // namespace
+
+PlotDataItem* PlotItem::plot(std::span<const double> y, const QString& name)
+{
+    PlotOptions options;
+    options.name = name;
+    return plot(y, options);
+}
+
+PlotDataItem* PlotItem::plot(std::span<const double> x, std::span<const double> y, const QString& name)
+{
+    PlotOptions options;
+    options.name = name;
+    return plot(x, y, options);
+}
+
+PlotDataItem* PlotItem::plot(std::span<const double> y, PlotOptions options)
+{
+    auto plotData = std::make_unique<PlotDataItem>(y);
+    PlotDataItem* result = plotData.get();
+    applyPlotOptions(*result, options);
+    ownedPlotData_.push_back(std::move(plotData));
+    addItem(result, false, options.name);
     return result;
 }
 
-PlotCurveItem* PlotItem::plot(std::span<const double> x, std::span<const double> y, const QString& name)
+PlotDataItem* PlotItem::plot(std::span<const double> x, std::span<const double> y, PlotOptions options)
 {
-    auto curve = std::make_unique<PlotCurveItem>();
-    PlotCurveItem* result = curve.get();
-    curve->setData(x, y);
-    ownedCurves_.push_back(std::move(curve));
-    addItem(result, false, name);
+    auto plotData = std::make_unique<PlotDataItem>(x, y);
+    PlotDataItem* result = plotData.get();
+    applyPlotOptions(*result, options);
+    ownedPlotData_.push_back(std::move(plotData));
+    addItem(result, false, options.name);
     return result;
 }
 

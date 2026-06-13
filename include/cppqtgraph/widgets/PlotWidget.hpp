@@ -32,9 +32,12 @@ public:
     void removeItem(QGraphicsItem* item);
     void clear();
 
-    graphicsItems::PlotCurveItem* plot(std::span<const double> y, const QString& name = QString{});
-    graphicsItems::PlotCurveItem* plot(std::span<const double> x, std::span<const double> y,
-                                       const QString& name = QString{});
+    graphicsItems::PlotDataItem* plot(std::span<const double> y, const QString& name = QString{});
+    graphicsItems::PlotDataItem* plot(std::span<const double> x, std::span<const double> y,
+                                     const QString& name = QString{});
+    graphicsItems::PlotDataItem* plot(std::span<const double> y, graphicsItems::PlotItem::PlotOptions options);
+    graphicsItems::PlotDataItem* plot(std::span<const double> x, std::span<const double> y,
+                                     graphicsItems::PlotItem::PlotOptions options);
 
     graphicsItems::LegendItem* addLegend(std::optional<QPointF> offset = QPointF(30.0, 30.0));
     [[nodiscard]] graphicsItems::AxisItem* getAxis(const QString& name);

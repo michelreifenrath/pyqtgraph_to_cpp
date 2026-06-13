@@ -334,6 +334,22 @@ std::optional<QRectF> PlotDataItem::autoRangeBoundsRect() const
         return std::nullopt;
     }
 
+    std::optional<QRectF> bounds;
+    if (curve_ != nullptr && lineVisible_) {
+        const QRectF curveBounds = curve_->boundingRect();
+        if (!curveBounds.isNull()) {
+            bounds = curveBounds;
+        }
+    }
+    if (scatter_ != nullptr && symbolsVisible_) {
+        if (const std::optional<QRectF> scatterBounds = scatter_->autoRangeBoundsRect(); scatterBounds.has_value()) {
+            bounds = bounds.has_value() ? bounds->united(*scatterBounds) : scatterBounds;
+        }
+    }
+    if (bounds.has_value()) {
+        return bounds;
+    }
+
     bool havePoint = false;
     double xMin = 0.0;
     double xMax = 0.0;

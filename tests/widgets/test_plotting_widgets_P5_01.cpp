@@ -1,5 +1,6 @@
 #include <cppqtgraph/graphicsItems/HistogramLUTItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotCurveItem.hpp>
+#include <cppqtgraph/graphicsItems/PlotDataItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 #include <cppqtgraph/widgets/GraphicsLayoutWidget.hpp>
 #include <cppqtgraph/widgets/GraphicsView.hpp>
@@ -518,10 +519,10 @@ bool testApiShape()
     delete addedCurve;
 
     const std::array<double, 3> plottedY{{1.0, 2.0, 3.0}};
-    auto* ownedCurve = plotWidget.plot(std::span<const double>(plottedY.data(), plottedY.size()));
-    CHECK(ownedCurve != nullptr);
-    CHECK(ownedCurve->scene() == plotWidget.scene());
-    CHECK(ownedCurve->parentItem() != nullptr);
+    auto* ownedPlotData = plotWidget.plot(std::span<const double>(plottedY.data(), plottedY.size()));
+    CHECK(ownedPlotData != nullptr);
+    CHECK(ownedPlotData->scene() == plotWidget.scene());
+    CHECK(ownedPlotData->parentItem() != nullptr);
     plotWidget.clear();
 
     GraphicsView graphicsView;
