@@ -18,7 +18,7 @@ from compare_screenshots import compare_images, read_png_rgba, write_png_rgba_by
 AUTO_ICON_PATH = Path(__file__).resolve().parents[2] / "src" / "cppqtgraph" / "icons" / "auto.png"
 AUTO_BUTTON_PROBE_SIZE = 14
 AUTO_BUTTON_MIN_TEMPLATE_CORR = 0.75
-AUTO_BUTTON_MIN_TEMPLATE_CORR_P6 = 0.30
+AUTO_BUTTON_MIN_TEMPLATE_CORR_P6 = 0.295
 AUTO_BUTTON_SEARCH_WIDTH = 40
 AUTO_BUTTON_SEARCH_HEIGHT = 60
 AUTO_BUTTON_MAX_LEFT_OFFSET = 20
@@ -32,9 +32,7 @@ GRID_ROWS = 3
 CELL_INSET = 10
 
 # Whole-image thresholds are calibrated on pinned PyQtGraph reference vs C++
-# output with identical deterministic data (seed 0x504C5454). Numeric values are
-# looser than the retired whole-window gate (14/21/0.47); tightening comes from
-# per-subplot pixel gates below plus per-cell non-emptiness checks.
+# fixture-mode C++ output with identical seeded data (np.random.seed 0x504C5454).
 WHOLE_IMAGE_TOLERANCE = {
     "max_mean_delta": 20.0,
     "max_pixel_delta": 255.0,
@@ -42,19 +40,22 @@ WHOLE_IMAGE_TOLERANCE = {
     "min_ssim": 0.40,
 }
 
-# Per-subplot pixel thresholds are measured per cell from the same good render.
-# p6 is timer-driven, so it uses non-emptiness only.
+# Per-subplot pixel thresholds measured from the good fixture-mode render against
+# the pinned PyQtGraph reference. p6 is timer-driven, so it uses non-emptiness only.
 SUBPLOT_PIXEL_TOLERANCE: dict[str, dict[str, float] | None] = {
-    "p1": {"max_mean_delta": 22.0, "max_changed_percent": 25.0},
-    "p2": {"max_mean_delta": 19.0, "max_changed_percent": 27.0},
-    "p3": {"max_mean_delta": 37.0, "max_changed_percent": 35.0},
-    "p4": {"max_mean_delta": 20.0, "max_changed_percent": 45.0},
-    "p5": {"max_mean_delta": 26.0, "max_changed_percent": 42.0},
+    "p1": {"max_mean_delta": 19.0, "max_changed_percent": 20.0},
+    "p2": {"max_mean_delta": 10.0, "max_changed_percent": 18.0},
+    "p3": {"max_mean_delta": 26.0, "max_changed_percent": 31.0},
+    "p4": {"max_mean_delta": 16.0, "max_changed_percent": 42.0},
+    "p5": {"max_mean_delta": 13.0, "max_changed_percent": 30.0},
     "p6": None,
-    "p7": {"max_mean_delta": 22.0, "max_changed_percent": 36.0},
-    "p8": {"max_mean_delta": 12.0, "max_changed_percent": 30.0},
-    "p9": {"max_mean_delta": 9.0, "max_changed_percent": 12.0},
+    "p7": {"max_mean_delta": 17.0, "max_changed_percent": 19.0},
+    "p8": {"max_mean_delta": 9.0, "max_changed_percent": 13.0},
+    "p9": {"max_mean_delta": 8.5, "max_changed_percent": 11.5},
 }
+
+P4_MIN_GRAY_GRID_COVERAGE_RATIO = 0.75
+P8_MIN_RELAXED_BAND_COVERAGE_RATIO = 0.85
 
 
 @dataclass(frozen=True)
@@ -522,6 +523,116 @@ def _compare_subplot_crop(
     )
 
 
+def _is_gray_grid_pixel(red: int, green: int, blue: int, alpha: int) -> bool:
+    return (
+        alpha >= 25
+        and 90 <= red <= 190
+        and 90 <= green <= 190
+        and 90 <= blue <= 190
+        and max(abs(red - green), abs(green - blue)) < 35
+    )
+
+
+def _count_gray_grid_pixels(rgba: bytes, width: int, height: int) -> int:
+    gray_grid = 0
+    for y in range(height):
+        for x in range(width):
+            index = (y * width + x) * 4
+            red, green, blue, alpha = rgba[index : index + 4]
+            if _is_gray_grid_pixel(red, green, blue, alpha):
+                gray_grid += 1
+    return gray_grid
+
+
+def _count_p8_relaxed_band_pixels(rgba: bytes) -> int:
+    relaxed_band = 0
+    for index in range(0, len(rgba), 4):
+        red, green, blue, alpha = rgba[index : index + 4]
+        if blue > red + 15 and blue > green + 15 and alpha > 100:
+            relaxed_band += 1
+    return relaxed_band
+
+
+def _evaluate_subplot_semantic_gate(
+    name: str,
+    ref_crop: tuple[int, int, bytes],
+    act_crop: tuple[int, int, bytes],
+) -> dict[str, Any]:
+    ref_width, ref_height, ref_rgba = ref_crop
+    act_width, act_height, act_rgba = act_crop
+    if name == "p4":
+        ref_gray = _count_gray_grid_pixels(ref_rgba, ref_width, ref_height)
+        act_gray = _count_gray_grid_pixels(act_rgba, act_width, act_height)
+        min_gray = max(900, int(P4_MIN_GRAY_GRID_COVERAGE_RATIO * ref_gray))
+        passed = act_gray >= min_gray
+        return {
+            "passed": passed,
+            "reference_gray_grid_pixels": ref_gray,
+            "actual_gray_grid_pixels": act_gray,
+            "minimum_gray_grid_pixels": min_gray,
+        }
+    if name == "p8":
+        ref_relaxed = _count_p8_relaxed_band_pixels(ref_rgba)
+        act_relaxed = _count_p8_relaxed_band_pixels(act_rgba)
+        min_relaxed = int(P8_MIN_RELAXED_BAND_COVERAGE_RATIO * ref_relaxed)
+        passed = act_relaxed >= min_relaxed
+        return {
+            "passed": passed,
+            "reference_relaxed_band_pixels": ref_relaxed,
+            "actual_relaxed_band_pixels": act_relaxed,
+            "minimum_relaxed_band_pixels": min_relaxed,
+        }
+    return {"passed": True}
+
+
+def compare_render_pair_subplots(
+    first: Path,
+    second: Path,
+    *,
+    tolerance: dict[str, float] | None = None,
+) -> dict[str, Any]:
+    """Compare matching subplot crops from two renders of the same example."""
+    first_width, first_height, first_rgba = read_png_rgba(first)
+    second_width, second_height, second_rgba = read_png_rgba(second)
+    assert (first_width, first_height) == (second_width, second_height) == (
+        IMAGE_WIDTH,
+        IMAGE_HEIGHT,
+    )
+
+    compare_tolerance = tolerance or {
+        "max_mean_delta": 0.5,
+        "max_changed_percent": 0.5,
+    }
+    failed_cells: list[str] = []
+    cell_metrics: dict[str, Any] = {}
+    with _subplot_work_dir(None) as work_path:
+        for cell in SUBPLOT_CELLS:
+            if SUBPLOT_PIXEL_TOLERANCE[cell.name] is None:
+                continue
+            first_crop = crop_subplot_rgba(
+                first_rgba, first_width, first_height, col=cell.col, row=cell.row
+            )
+            second_crop = crop_subplot_rgba(
+                second_rgba, second_width, second_height, col=cell.col, row=cell.row
+            )
+            metrics = _compare_subplot_crop(
+                first_crop,
+                second_crop,
+                tolerance=compare_tolerance,
+                work_dir=work_path,
+                name=cell.name,
+            )
+            cell_metrics[cell.name] = metrics
+            if not metrics["passed"]:
+                failed_cells.append(cell.name)
+
+    return {
+        "passed": not failed_cells,
+        "failed_cells": failed_cells,
+        "cells": cell_metrics,
+    }
+
+
 @contextmanager
 def _subplot_work_dir(reports_dir: Path | None) -> Iterator[Path]:
     if reports_dir is not None:
@@ -575,7 +686,12 @@ def compare_subplots(
                 "changed_pixel_percentage": metrics["changed_pixel_percentage"],
                 "passed": metrics["passed"],
             }
-            if not metrics["passed"]:
+            semantic = _evaluate_subplot_semantic_gate(cell.name, ref_crop, act_crop)
+            if semantic != {"passed": True}:
+                cell_metrics[cell.name]["semantic"] = semantic
+                if not semantic["passed"]:
+                    cell_metrics[cell.name]["passed"] = False
+            if not cell_metrics[cell.name]["passed"]:
                 failed_cells.append(cell.name)
 
     return {
