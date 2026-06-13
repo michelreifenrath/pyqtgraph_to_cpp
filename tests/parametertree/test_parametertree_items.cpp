@@ -464,6 +464,31 @@ bool testColorParameterUsesColorButtonAndParsesShortHex()
     return true;
 }
 
+bool testColorParameterButtonChangeUpdatesParameter()
+{
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("brush")},
+                    {QStringLiteral("type"), QStringLiteral("color")},
+                    {QStringLiteral("value"), QStringLiteral("#f00")}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("brush"));
+    CHECK(item != nullptr);
+
+    auto* button = qobject_cast<cppqtgraph::widgets::ColorButton*>(editorForItem(item));
+    CHECK(button != nullptr);
+    CHECK(param->value().value<QColor>() == QColor(Qt::red));
+
+    button->setColor(QColor(Qt::green), true);
+    QTest::qWait(0);
+    CHECK(param->value().value<QColor>() == QColor(Qt::green));
+    return true;
+}
+
 bool testTextParameterUsesReadonlyMultilineTextEdit()
 {
     const QString text = QStringLiteral("x=first\ny=second");
@@ -546,6 +571,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testColorParameterUsesColorButtonAndParsesShortHex()) {
+        return 1;
+    }
+    if (!testColorParameterButtonChangeUpdatesParameter()) {
         return 1;
     }
     if (!testTextParameterUsesReadonlyMultilineTextEdit()) {
