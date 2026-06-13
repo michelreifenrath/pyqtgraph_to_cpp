@@ -44,6 +44,12 @@ std::uint8_t byteFromUnit(double value) noexcept
     return static_cast<std::uint8_t>(byte);
 }
 
+std::uint8_t roundedByteFromUnit(double value) noexcept
+{
+    const long rounded = std::lround(std::clamp(value * 255.0, 0.0, 255.0));
+    return static_cast<std::uint8_t>(std::clamp(rounded, 0L, 255L));
+}
+
 RgbaB bytesFromFloat(const RgbaF& color) noexcept
 {
     return {
@@ -210,7 +216,9 @@ std::optional<ColorMap> buildLocalMap(const QString& name)
             positions.push_back(detail::kViridisStopCount == 1
                 ? 0.0
                 : static_cast<double>(index) / static_cast<double>(detail::kViridisStopCount - 1));
-            colors.push_back(QColor(byteFromUnit(stop[0]), byteFromUnit(stop[1]), byteFromUnit(stop[2])));
+            colors.push_back(QColor(roundedByteFromUnit(stop[0]),
+                                    roundedByteFromUnit(stop[1]),
+                                    roundedByteFromUnit(stop[2])));
         }
         return ColorMap(std::move(positions), std::move(colors), name);
     }

@@ -7,11 +7,11 @@
 #include <cppqtgraph/widgets/ColorMapButton.hpp>
 #include <cppqtgraph/widgets/GradientWidget.hpp>
 
+#include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QJsonArray>
 #include <QtCore/QJsonDocument>
 #include <QtGui/QImage>
-#include <QtGui/QPainter>
 #include <QtTest/QSignalSpy>
 #include <QtTest/QTest>
 #include <QtWidgets/QApplication>
@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string_view>
 
 #ifndef CPPQTGRAPH_PARAMETERTREE_FIXTURE_DIR
@@ -350,6 +351,80 @@ bool testColorMapLutParameterViridisValue()
     return true;
 }
 
+QImage lookupImageFromColorMap(const cppqtgraph::ColorMap& colorMap, int width, int height)
+{
+    const auto lut = colorMap.getLookupTable(
+        0.0, 1.0, static_cast<std::size_t>(width), true, cppqtgraph::ColorMap::OutputMode::Byte);
+    QImage image(width, height, QImage::Format_RGBA8888);
+    for (std::size_t row = 0; row < lut.rows(); ++row) {
+        const std::size_t offset = row * lut.channels;
+        image.setPixelColor(static_cast<int>(row),
+                            0,
+                            QColor(lut.bytes[offset],
+                                   lut.bytes[offset + 1],
+                                   lut.bytes[offset + 2],
+                                   lut.channels >= 4 ? lut.bytes[offset + 3] : 255));
+    }
+    return image;
+}
+
+bool compareColorMapRenderToReference(const cppqtgraph::ColorMap& colorMap,
+                                      const QString& referenceName,
+                                      const QSize& size)
+{
+    const QString path = fixturePath(referenceName);
+    if (!QFile::exists(path)) {
+        std::cerr << "missing visual reference: " << path.toStdString() << '\n';
+        return false;
+    }
+    QImage reference(path);
+    CHECK(!reference.isNull());
+    const QImage actual = lookupImageFromColorMap(colorMap, size.width(), size.height());
+    const PixelMetrics metrics = compareImages(reference, actual);
+    const bool passed = referenceName.contains(QStringLiteral("color_button"))
+        ? (metrics.changedPercent <= 1.5 && metrics.maxDelta <= 24)
+        : (metrics.changedPercent <= 12.0 && metrics.maxDelta <= 1);
+    if (!passed) {
+        std::cerr << referenceName.toStdString() << " visual mismatch changed%=" << metrics.changedPercent
+                  << " maxDelta=" << metrics.maxDelta << '\n';
+    }
+    CHECK(passed);
+    return true;
+}
+
+bool loadViridisFixture(QJsonArray& rows)
+{
+    QFile file(fixturePath(QStringLiteral("viridis_lut.json")));
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+    const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    if (!doc.isArray()) {
+        return false;
+    }
+    rows = doc.array();
+    return rows.size() > 0;
+}
+
+bool compareViridisLookupTableToFixture()
+{
+    QJsonArray rows;
+    CHECK(loadViridisFixture(rows));
+    const std::optional<cppqtgraph::ColorMap> viridis = cppqtgraph::get(QStringLiteral("viridis"));
+    CHECK(viridis.has_value());
+    const auto lut = viridis->getLookupTable(
+        0.0, 1.0, static_cast<std::size_t>(rows.size()), true, cppqtgraph::ColorMap::OutputMode::Byte);
+    CHECK(static_cast<int>(lut.rows()) == rows.size());
+    for (int index = 0; index < rows.size(); ++index) {
+        const QJsonArray rgb = rows.at(index).toArray();
+        const std::size_t offset = static_cast<std::size_t>(index) * lut.channels;
+        CHECK(lut.bytes[offset] == static_cast<std::uint8_t>(rgb.at(0).toInt()));
+        CHECK(lut.bytes[offset + 1] == static_cast<std::uint8_t>(rgb.at(1).toInt()));
+        CHECK(lut.bytes[offset + 2] == static_cast<std::uint8_t>(rgb.at(2).toInt()));
+    }
+    return true;
+}
+
 bool testVisualWidgetMatchesPinnedReference(const QString& referenceName, QWidget& widget, const QSize& size)
 {
     const QString path = fixturePath(referenceName);
@@ -379,93 +454,55 @@ bool testColorButtonVisualReference()
     return testVisualWidgetMatchesPinnedReference(QStringLiteral("color_button.reference.png"), button, QSize(120, 30));
 }
 
-class ReferenceColorMapStripWidget : public QWidget {
-public:
-    explicit ReferenceColorMapStripWidget(const cppqtgraph::ColorMap& colorMap)
-        : colorMap_(colorMap)
-    {
-    }
-
-protected:
-    void paintEvent(QPaintEvent* /*event*/) override
-    {
-        QPainter painter(this);
-        const auto lut = colorMap_.getLookupTable(0.0, 1.0, 256, true, cppqtgraph::ColorMap::OutputMode::Byte);
-        QImage image(static_cast<int>(lut.rows()), 1, QImage::Format_RGBA8888);
-        for (std::size_t row = 0; row < lut.rows(); ++row) {
-            const std::size_t offset = row * lut.channels;
-            image.setPixelColor(static_cast<int>(row),
-                                0,
-                                QColor(lut.bytes[offset],
-                                       lut.bytes[offset + 1],
-                                       lut.bytes[offset + 2],
-                                       lut.channels >= 4 ? lut.bytes[offset + 3] : 255));
-        }
-        painter.drawImage(contentsRect(), image);
-    }
-
-private:
-    cppqtgraph::ColorMap colorMap_;
-};
-
 bool testColormapGradientVisualReference()
 {
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("gradient")},
+                    {QStringLiteral("type"), QStringLiteral("colormap")},
+                    {QStringLiteral("value"), QVariant()}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("gradient"));
+    CHECK(item != nullptr);
+    auto* gradient = qobject_cast<cppqtgraph::widgets::GradientWidget*>(editorForItem(item));
+    CHECK(gradient != nullptr);
+
     const cppqtgraph::ColorMap fixedMap(
         {0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 0, 0)}, QStringLiteral("fixed"));
-    ReferenceColorMapStripWidget widget(fixedMap);
-    return testVisualWidgetMatchesPinnedReference(
-        QStringLiteral("colormap_gradient.reference.png"), widget, QSize(256, 1));
+    gradient->setColorMap(fixedMap);
+    return compareColorMapRenderToReference(
+        gradient->colorMap(), QStringLiteral("colormap_gradient.reference.png"), QSize(256, 1));
 }
 
-QImage imageFromLookupRows(const QJsonArray& rows)
+bool testCmapLutViridisLutMatchesFixture()
 {
-    QImage image(rows.size(), 1, QImage::Format_RGBA8888);
-    for (int index = 0; index < rows.size(); ++index) {
-        const QJsonArray rgb = rows.at(index).toArray();
-        image.setPixelColor(index, 0, QColor(rgb.at(0).toInt(), rgb.at(1).toInt(), rgb.at(2).toInt()));
-    }
-    return image;
-}
-
-class FixtureColorMapStripWidget : public QWidget {
-public:
-    explicit FixtureColorMapStripWidget(const QJsonArray& rows)
-        : rows_(rows)
-    {
-    }
-
-protected:
-    void paintEvent(QPaintEvent* /*event*/) override
-    {
-        QPainter painter(this);
-        painter.drawImage(contentsRect(), imageFromLookupRows(rows_));
-    }
-
-private:
-    QJsonArray rows_;
-};
-
-bool loadViridisFixture(QJsonArray& rows)
-{
-    QFile file(fixturePath(QStringLiteral("viridis_lut.json")));
-    if (!file.open(QIODevice::ReadOnly)) {
-        return false;
-    }
-    const QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    if (!doc.isArray()) {
-        return false;
-    }
-    rows = doc.array();
-    return rows.size() > 0;
+    return compareViridisLookupTableToFixture();
 }
 
 bool testCmapLutViridisVisualReference()
 {
-    QJsonArray rows;
-    CHECK(loadViridisFixture(rows));
-    FixtureColorMapStripWidget widget(rows);
-    return testVisualWidgetMatchesPinnedReference(
-        QStringLiteral("cmaplut_viridis.reference.png"), widget, QSize(256, 1));
+    CHECK(compareViridisLookupTableToFixture());
+
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("lut")},
+                    {QStringLiteral("type"), QStringLiteral("cmaplut")},
+                    {QStringLiteral("value"), QStringLiteral("viridis")}});
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* button = qobject_cast<cppqtgraph::widgets::ColorMapButton*>(
+        editorForItem(findItemByName(tree.invisibleRootItem(), QStringLiteral("lut"))));
+    CHECK(button != nullptr);
+    CHECK(button->colorMap().name() == QStringLiteral("viridis"));
+    return compareColorMapRenderToReference(
+        button->colorMap(), QStringLiteral("cmaplut_viridis.reference.png"), QSize(256, 1));
 }
 
 struct TestCase {
@@ -485,6 +522,7 @@ bool runAllTests()
         {"cmaplut viridis value", testColorMapLutParameterViridisValue},
         {"visual color button", testColorButtonVisualReference},
         {"visual colormap gradient", testColormapGradientVisualReference},
+        {"cmaplut viridis lut fixture", testCmapLutViridisLutMatchesFixture},
         {"visual cmaplut viridis", testCmapLutViridisVisualReference},
     };
 

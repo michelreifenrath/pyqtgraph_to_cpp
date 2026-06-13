@@ -6,10 +6,12 @@
 #include "../../../../include/cppqtgraph/parametertree/parameterTypes/FileParameter.hpp"
 
 #include "../../../../include/cppqtgraph/parametertree/Parameter.hpp"
+#include "../../../../include/cppqtgraph/widgets/FileDialog.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QMetaEnum>
+#include <QtCore/QRegularExpression>
 #include <QtGui/QFontMetrics>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -21,9 +23,11 @@
 namespace cppqtgraph::parametertree {
 namespace {
 
+QVariant defaultFilePickerDialog(const FilePickerRequest& request);
+
 FilePickerProvider& mutableFilePickerProvider()
 {
-    static FilePickerProvider provider;
+    static FilePickerProvider provider = defaultFilePickerDialog;
     return provider;
 }
 
@@ -97,6 +101,54 @@ QStringList applyRelativeTo(const QStringList& paths, const QString& relativeTo)
         relative.append(QDir(relativeTo).relativeFilePath(path));
     }
     return relative;
+}
+
+void applyFilePickerRequest(cppqtgraph::widgets::FileDialog& dialog, const FilePickerRequest& request)
+{
+    dialog.setModal(true);
+    dialog.setWindowTitle(request.windowTitle);
+    dialog.setNameFilter(request.nameFilter);
+    if (!request.directory.isEmpty()) {
+        dialog.setDirectory(request.directory);
+    }
+    if (!request.selectFile.isEmpty()) {
+        dialog.selectFile(request.selectFile);
+    }
+    dialog.setAcceptMode(request.acceptMode);
+    dialog.setFileMode(request.fileMode);
+    dialog.setViewMode(request.viewMode);
+    dialog.setOptions(request.options);
+}
+
+QVariant defaultFilePickerDialog(const FilePickerRequest& request)
+{
+    cppqtgraph::widgets::FileDialog dialog;
+    applyFilePickerRequest(dialog, request);
+    if (!dialog.exec()) {
+        if (request.fileMode == QFileDialog::ExistingFiles) {
+            return QVariant::fromValue(QStringList{});
+        }
+        return QVariant();
+    }
+
+    const QRegularExpression suffixPattern(QStringLiteral("(\\.\\w+)+"));
+    const QRegularExpressionMatch match = suffixPattern.match(dialog.selectedNameFilter());
+    if (match.hasMatch()) {
+        QString extension = match.captured(1);
+        if (extension.startsWith(QLatin1Char('.'))) {
+            extension = extension.mid(1);
+        }
+        dialog.setDefaultSuffix(extension);
+    }
+
+    QStringList files = dialog.selectedFiles();
+    if (request.fileMode == QFileDialog::ExistingFiles) {
+        return QVariant::fromValue(files);
+    }
+    if (files.isEmpty()) {
+        return QVariant();
+    }
+    return files.front();
 }
 
 } // namespace
