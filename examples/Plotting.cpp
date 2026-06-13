@@ -11,6 +11,10 @@
 #include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 #include <cppqtgraph/widgets/GraphicsLayoutWidget.hpp>
 
+#include <QtCore/QFile>
+#include <QtCore/QJsonArray>
+#include <QtCore/QJsonDocument>
+#include <QtCore/QJsonObject>
 #include <QtCore/QTimer>
 #include <QtWidgets/QApplication>
 
@@ -19,6 +23,7 @@
 #include <cstddef>
 #include <memory>
 #include <random>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -100,6 +105,13 @@ struct PlottingState {
     bool regionZoomSyncBlocked = false;
 };
 
+struct PlottingOptions {
+    QString dataFixturePath;
+    bool wrongSymbolP3 = false;
+    bool disableGridP4 = false;
+    bool hideRegionP8 = false;
+};
+
 struct PlottingExample {
     std::unique_ptr<widgets::GraphicsLayoutWidget> widget;
     std::array<graphicsItems::PlotItem*, 9> plots{};
@@ -143,31 +155,79 @@ int plottingTimerIntervalMs() noexcept
     return kTimerIntervalMs;
 }
 
-PlottingExample createPlottingExample()
+std::vector<double> jsonToDoubleVector(const QJsonArray& array)
 {
-    setConfigOptions({{"antialias", true}});
+    std::vector<double> values;
+    values.reserve(static_cast<std::size_t>(array.size()));
+    for (const QJsonValue& value : array) {
+        values.push_back(value.toDouble());
+    }
+    return values;
+}
 
-    auto state = std::make_shared<PlottingState>();
+bool populatePlottingStateFromFixture(const QString& fixturePath, PlottingState& state)
+{
+    QFile file(fixturePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+
+    QJsonParseError parseError{};
+    const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        return false;
+    }
+
+    const QJsonObject root = document.object();
+    const QJsonObject arrays = root.value(QStringLiteral("arrays")).toObject();
+    if (arrays.isEmpty()) {
+        return false;
+    }
+
+    state.p1Y = jsonToDoubleVector(arrays.value(QStringLiteral("p1_y")).toArray());
+    state.p2Red = jsonToDoubleVector(arrays.value(QStringLiteral("p2_red")).toArray());
+    state.p2Green = jsonToDoubleVector(arrays.value(QStringLiteral("p2_green")).toArray());
+    state.p2Blue = jsonToDoubleVector(arrays.value(QStringLiteral("p2_blue")).toArray());
+    state.p3Y = jsonToDoubleVector(arrays.value(QStringLiteral("p3_y")).toArray());
+    state.p4X = jsonToDoubleVector(arrays.value(QStringLiteral("p4_x")).toArray());
+    state.p4Y = jsonToDoubleVector(arrays.value(QStringLiteral("p4_y")).toArray());
+    state.p5X = jsonToDoubleVector(arrays.value(QStringLiteral("p5_x")).toArray());
+    state.p5Y = jsonToDoubleVector(arrays.value(QStringLiteral("p5_y")).toArray());
+    state.p7Y = jsonToDoubleVector(arrays.value(QStringLiteral("p7_y")).toArray());
+    state.sincData = jsonToDoubleVector(arrays.value(QStringLiteral("sinc_data")).toArray());
+
+    state.p6Rows.clear();
+    const QJsonArray p6Rows = arrays.value(QStringLiteral("p6_rows")).toArray();
+    state.p6Rows.reserve(static_cast<std::size_t>(p6Rows.size()));
+    for (const QJsonValue& rowValue : p6Rows) {
+        state.p6Rows.push_back(jsonToDoubleVector(rowValue.toArray()));
+    }
+
+    return !state.p1Y.empty() && !state.p6Rows.empty() && !state.sincData.empty();
+}
+
+void populatePlottingStateFromGenerator(PlottingState& state)
+{
     std::mt19937 generator(kPlottingDeterministicSeed);
 
-    state->p1Y = makeNormalVector(100, generator);
-    state->p2Red = makeNormalVector(100, generator);
-    state->p2Green = makeNormalVector(110, generator);
-    for (double& value : state->p2Green) {
+    state.p1Y = makeNormalVector(100, generator);
+    state.p2Red = makeNormalVector(100, generator);
+    state.p2Green = makeNormalVector(110, generator);
+    for (double& value : state.p2Green) {
         value += 5.0;
     }
-    state->p2Blue = makeNormalVector(120, generator);
-    for (double& value : state->p2Blue) {
+    state.p2Blue = makeNormalVector(120, generator);
+    for (double& value : state.p2Blue) {
         value += 10.0;
     }
-    state->p3Y = makeNormalVector(100, generator);
+    state.p3Y = makeNormalVector(100, generator);
 
-    state->p4X.reserve(1000);
-    state->p4Y.reserve(1000);
+    state.p4X.reserve(1000);
+    state.p4Y.reserve(1000);
     for (int index = 0; index < 1000; ++index) {
         const double phase = static_cast<double>(index) / 999.0;
-        state->p4X.push_back(std::cos(phase * 2.0 * M_PI));
-        state->p4Y.push_back(std::sin(phase * 4.0 * M_PI));
+        state.p4X.push_back(std::cos(phase * 2.0 * M_PI));
+        state.p4Y.push_back(std::sin(phase * 4.0 * M_PI));
     }
 
     {
@@ -181,33 +241,48 @@ PlottingExample createPlottingExample()
         for (double& value : y) {
             value -= minimum - 1.0;
         }
-        state->p5X.clear();
-        state->p5Y.clear();
-        state->p5X.reserve(x.size());
-        state->p5Y.reserve(y.size());
+        state.p5X.clear();
+        state.p5Y.clear();
+        state.p5X.reserve(x.size());
+        state.p5Y.reserve(y.size());
         for (std::size_t index = 0; index < x.size(); ++index) {
             if (x[index] > 1.0e-15) {
-                state->p5X.push_back(x[index]);
-                state->p5Y.push_back(y[index]);
+                state.p5X.push_back(x[index]);
+                state.p5Y.push_back(y[index]);
             }
         }
     }
 
-    state->p6Rows.reserve(kUpdateRowCount);
+    state.p6Rows.reserve(kUpdateRowCount);
     for (std::size_t row = 0; row < kUpdateRowCount; ++row) {
-        state->p6Rows.push_back(makeNormalVector(kUpdateColumnCount, generator));
+        state.p6Rows.push_back(makeNormalVector(kUpdateColumnCount, generator));
     }
 
     {
         const auto x = makeLinspace(0.0, 10.0, 1000);
         std::vector<double> noise = makeNormalVector(1000, generator);
-        state->p7Y.reserve(1000);
+        state.p7Y.reserve(1000);
         for (std::size_t index = 0; index < 1000; ++index) {
-            state->p7Y.push_back(std::sin(x[index]) + 0.1 * noise[index]);
+            state.p7Y.push_back(std::sin(x[index]) + 0.1 * noise[index]);
         }
     }
 
-    state->sincData = makeSincData();
+    state.sincData = makeSincData();
+}
+
+PlottingExample createPlottingExample(const PlottingOptions& options = {})
+{
+    setConfigOptions({{"antialias", true}});
+
+    auto state = std::make_shared<PlottingState>();
+    if (!options.dataFixturePath.isEmpty()) {
+        if (!populatePlottingStateFromFixture(options.dataFixturePath, *state)) {
+            throw std::runtime_error(
+                ("failed to load Plotting data fixture: " + options.dataFixturePath.toStdString()).c_str());
+        }
+    } else {
+        populatePlottingStateFromGenerator(*state);
+    }
 
     auto widget = std::make_unique<widgets::GraphicsLayoutWidget>(
         nullptr, true, QSize(1000, 600), QStringLiteral("Basic plotting examples"));
@@ -236,7 +311,7 @@ PlottingExample createPlottingExample()
     p3->setTitle(QStringLiteral("Drawing with points"));
     auto* p3Data = new graphicsItems::PlotDataItem(example.state->p3Y);
     p3Data->setPen(makeRgbPen(200, 200, 200));
-    p3Data->setSymbol(QStringLiteral("o"));
+    p3Data->setSymbol(options.wrongSymbolP3 ? QStringLiteral("s") : QStringLiteral("o"));
     p3Data->setSymbolBrush(QBrush(QColor(255, 0, 0)));
     p3Data->setSymbolPen(QPen(Qt::white));
     p3->addItem(p3Data);
@@ -248,7 +323,7 @@ PlottingExample createPlottingExample()
     auto* p4 = example.widget->addPlot();
     p4->setTitle(QStringLiteral("Parametric, grid enabled"));
     p4->plot(example.state->p4X, example.state->p4Y);
-    p4->showGrid(true, true);
+    p4->showGrid(!options.disableGridP4, !options.disableGridP4);
     example.plots[3] = p4;
 
     auto* p5 = example.widget->addPlot();
@@ -287,9 +362,12 @@ PlottingExample createPlottingExample()
     p8->setTitle(QStringLiteral("Region Selection"));
     example.p8Curve = p8->plot(example.state->sincData);
     example.p8Curve->setPen(makeRgbPen(255, 255, 255, 200));
-    auto* region = new graphicsItems::LinearRegionItem(std::make_pair(400.0, 700.0));
-    region->setZValue(-10.0);
-    p8->addItem(region);
+    graphicsItems::LinearRegionItem* region = nullptr;
+    if (!options.hideRegionP8) {
+        region = new graphicsItems::LinearRegionItem(std::make_pair(400.0, 700.0));
+        region->setZValue(-10.0);
+        p8->addItem(region);
+    }
     example.region = region;
     example.plots[7] = p8;
 
@@ -299,7 +377,7 @@ PlottingExample createPlottingExample()
     example.plots[8] = p9;
 
     const auto updatePlotFromRegion = [p9, region, state = example.state]() {
-        if (state->regionZoomSyncBlocked) {
+        if (region == nullptr || state->regionZoomSyncBlocked) {
             return;
         }
         state->regionZoomSyncBlocked = true;
@@ -308,7 +386,7 @@ PlottingExample createPlottingExample()
         state->regionZoomSyncBlocked = false;
     };
     const auto updateRegionFromPlot = [p9, region, state = example.state]() {
-        if (state->regionZoomSyncBlocked) {
+        if (region == nullptr || state->regionZoomSyncBlocked) {
             return;
         }
         state->regionZoomSyncBlocked = true;
@@ -317,10 +395,12 @@ PlottingExample createPlottingExample()
         state->regionZoomSyncBlocked = false;
     };
 
-    QObject::connect(region, &graphicsItems::LinearRegionItem::sigRegionChanged, region, updatePlotFromRegion);
-    QObject::connect(
-        p9->getViewBox(), &graphicsItems::ViewBox::sigXRangeChanged, p9->getViewBox(), updateRegionFromPlot);
-    updatePlotFromRegion();
+    if (region != nullptr) {
+        QObject::connect(region, &graphicsItems::LinearRegionItem::sigRegionChanged, region, updatePlotFromRegion);
+        QObject::connect(
+            p9->getViewBox(), &graphicsItems::ViewBox::sigXRangeChanged, p9->getViewBox(), updateRegionFromPlot);
+        updatePlotFromRegion();
+    }
 
     const auto performTimerUpdate = [p6, curve = example.p6Curve, state = example.state]() {
         curve->setData(state->p6Rows[state->updatePtr % kUpdateRowCount]);

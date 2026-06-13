@@ -20,6 +20,7 @@ from plotting_subplot_visual import (  # noqa: E402
     assert_all_subplots_nonempty,
     assert_plotting_auto_button_layout,
     blank_subplot,
+    compare_render_pair_subplots,
     compare_subplots,
     crop_subplot_rgba,
     degenerate_axis_subplots,
@@ -29,6 +30,7 @@ from test_P1_08_cpp_visual_renderer import _assert_semantic_plot_image  # noqa: 
 from compare_screenshots import read_png_rgba  # noqa: E402
 
 REFERENCE = ROOT / "oracle" / "fixtures" / "screenshots" / "Plotting.reference.png"
+PLOTTING_DATA_FIXTURE = ROOT / "oracle" / "fixtures" / "P372" / "plotting_data.json"
 P8_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p8.reference.png"
 P3_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p3.reference.png"
 P5_REFERENCE = ROOT / "oracle" / "fixtures" / "P372" / "screenshots" / "Plotting.p5.reference.png"
@@ -294,18 +296,28 @@ def _review_source(tmp_path: Path) -> Path:
     return review_copy
 
 
-def _run_renderer(renderer: Path, output: Path) -> dict[str, Any]:
+def _render_plotting(
+    renderer: Path,
+    output: Path,
+    *,
+    extra_args: list[str] | None = None,
+) -> dict[str, Any]:
+    command = [
+        str(renderer),
+        "Plotting",
+        "--output",
+        str(output),
+        "--width",
+        "1000",
+        "--height",
+        "600",
+        "--data-fixture",
+        str(PLOTTING_DATA_FIXTURE),
+    ]
+    if extra_args:
+        command.extend(extra_args)
     result = subprocess.run(
-        [
-            str(renderer),
-            "Plotting",
-            "--output",
-            str(output),
-            "--width",
-            "1000",
-            "--height",
-            "600",
-        ],
+        command,
         cwd=ROOT,
         env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
         text=True,
@@ -320,6 +332,16 @@ def _run_renderer(renderer: Path, output: Path) -> dict[str, Any]:
     assert status["render_path"] == "QWidget::grab"
     assert Path(str(status["output"])).resolve() == output.resolve()
     assert output.is_file()
+    return status
+
+
+def _run_renderer(
+    renderer: Path,
+    output: Path,
+    *,
+    extra_args: list[str] | None = None,
+) -> dict[str, Any]:
+    status = _render_plotting(renderer, output, extra_args=extra_args)
     _assert_semantic_plot_image(output, width=1000, height=600)
     _assert_p3_region_markers(output)
     _assert_p4_grid_region(output)
@@ -415,11 +437,12 @@ def _write_example_report(example_root: Path, metrics: dict[str, Any]) -> None:
                 "pass": True,
                 "not_applicable": {},
                 "manual_agent_image_inspection": (
-                    "Reference comes from pinned PyQtGraph rendering with data arrays "
-                    "from examples/Plotting.cpp (seed 0x504C5454). Whole-image "
-                    "thresholds are looser than the retired gate; tightening is "
-                    "per-subplot pixel gates for p1-p5/p7-p9 plus per-cell "
-                    "non-emptiness for all nine panels (p6 skips pixel compare)."
+                    "Reference comes from pinned PyQtGraph rendering with seeded data "
+                    "arrays exported from reference/pyqtgraph/examples/Plotting.py "
+                    f"(np.random.seed(0x504C5454)). C++ visual tests load the same "
+                    "fixture via --data-fixture. Whole-image thresholds stay loose; "
+                    "tightening is per-subplot pixel gates for p1-p5/p7-p9 plus "
+                    "p4/p8 semantic min-coverage checks and p6 non-emptiness."
                 ),
             }
         ],
@@ -493,6 +516,15 @@ def _assert_visual_gate_fails(actual: Path, tmp_path: Path) -> None:
     assert whole_failed or not subplot_metrics["passed"] or nonempty_failed
 
 
+def _assert_subplot_gate_fails(actual: Path, expected_cells: set[str]) -> None:
+    subplot_metrics = compare_subplots(REFERENCE, actual)
+    assert not subplot_metrics["passed"], subplot_metrics
+    assert expected_cells.issubset(set(subplot_metrics["failed_cells"])), (
+        f"expected failures in {sorted(expected_cells)}, "
+        f"got {subplot_metrics['failed_cells']}"
+    )
+
+
 def test_P372_plotting_builds_renders_and_writes_example_report(tmp_path: Path) -> None:
     renderer = _renderer()
     actual = tmp_path / "Plotting.actual.png"
@@ -513,6 +545,38 @@ def test_P372_plotting_builds_renders_and_writes_example_report(tmp_path: Path) 
     assert report["owned_examples"][0]["validation_level"]["interaction"] == "required"
     assert report["owned_examples"][0]["pass"] is True
     assert (example_root / "README.md").is_file()
+
+
+def test_P372_plotting_consecutive_fixture_renders_are_deterministic(tmp_path: Path) -> None:
+    renderer = _renderer()
+    first = tmp_path / "Plotting.first.png"
+    second = tmp_path / "Plotting.second.png"
+    _render_plotting(renderer, first)
+    _render_plotting(renderer, second)
+
+    determinism_metrics = compare_render_pair_subplots(first, second)
+    assert determinism_metrics["passed"] is True, determinism_metrics["failed_cells"]
+
+
+def test_P372_plotting_wrong_symbol_fixture_fails_p3_cell(tmp_path: Path) -> None:
+    renderer = _renderer()
+    actual = tmp_path / "Plotting.wrong_symbol.png"
+    _render_plotting(renderer, actual, extra_args=["--plotting-wrong-symbol"])
+    _assert_subplot_gate_fails(actual, {"p3"})
+
+
+def test_P372_plotting_disabled_grid_fixture_fails_p4_cell(tmp_path: Path) -> None:
+    renderer = _renderer()
+    actual = tmp_path / "Plotting.no_grid.png"
+    _render_plotting(renderer, actual, extra_args=["--plotting-no-grid"])
+    _assert_subplot_gate_fails(actual, {"p4"})
+
+
+def test_P372_plotting_hidden_region_fixture_fails_p8_cell(tmp_path: Path) -> None:
+    renderer = _renderer()
+    actual = tmp_path / "Plotting.hide_region.png"
+    _render_plotting(renderer, actual, extra_args=["--plotting-hide-region"])
+    _assert_subplot_gate_fails(actual, {"p8"})
 
 
 def test_P372_plotting_blank_p5_fixture_fails_visual_gate(tmp_path: Path) -> None:

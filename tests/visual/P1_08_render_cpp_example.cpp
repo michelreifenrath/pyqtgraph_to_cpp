@@ -27,16 +27,27 @@
 
 namespace {
 
+struct PlottingRenderOptions {
+    QString dataFixturePath;
+    bool wrongSymbolP3 = false;
+    bool disableGridP4 = false;
+    bool hideRegionP8 = false;
+};
+
 struct Options {
     QString example;
     QString output;
     int width = 800;
     int height = 600;
+    PlottingRenderOptions plotting;
 };
 
 void printUsage(const char* program)
 {
-    std::cerr << "usage: " << program << " <SimplePlot|Plotting|ImageView> --output PATH [--width N] [--height N]\n";
+    std::cerr << "usage: " << program
+              << " <SimplePlot|Plotting|ImageView> --output PATH [--width N] [--height N]\n"
+              << "       Plotting-only: [--data-fixture PATH] [--plotting-wrong-symbol] "
+                 "[--plotting-no-grid] [--plotting-hide-region]\n";
 }
 
 bool parsePositiveInt(const std::string& text, int& value)
@@ -86,6 +97,18 @@ bool parseOptions(int argc, char** argv, Options& options)
                 std::cerr << "error: --height must be a positive integer\n";
                 return false;
             }
+        } else if (options.example == QStringLiteral("Plotting") && argument == "--data-fixture") {
+            if (++index >= argc) {
+                std::cerr << "error: --data-fixture requires a path\n";
+                return false;
+            }
+            options.plotting.dataFixturePath = QString::fromLocal8Bit(argv[index]);
+        } else if (options.example == QStringLiteral("Plotting") && argument == "--plotting-wrong-symbol") {
+            options.plotting.wrongSymbolP3 = true;
+        } else if (options.example == QStringLiteral("Plotting") && argument == "--plotting-no-grid") {
+            options.plotting.disableGridP4 = true;
+        } else if (options.example == QStringLiteral("Plotting") && argument == "--plotting-hide-region") {
+            options.plotting.hideRegionP8 = true;
         } else {
             std::cerr << "error: unknown argument: " << argument << "\n";
             return false;
@@ -174,7 +197,16 @@ bool renderImageView(const Options& options, QJsonObject* imageCrop)
 
 bool renderPlotting(const Options& options)
 {
-    auto example = cppqtgraph::examples::createPlottingExample();
+    cppqtgraph::examples::PlottingOptions plottingOptions;
+    plottingOptions.dataFixturePath = options.plotting.dataFixturePath;
+    plottingOptions.wrongSymbolP3 = options.plotting.wrongSymbolP3;
+    plottingOptions.disableGridP4 = options.plotting.disableGridP4;
+    plottingOptions.hideRegionP8 = options.plotting.hideRegionP8;
+
+    auto example = cppqtgraph::examples::createPlottingExample(plottingOptions);
+    if (example.timer != nullptr) {
+        example.timer->stop();
+    }
     example.widget->resize(options.width, options.height);
     example.widget->show();
     processEvents();

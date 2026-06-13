@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the Plotting visual reference from pinned PyQtGraph with C++ data."""
+"""Generate the Plotting visual reference from pinned PyQtGraph with seeded data."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ DEFAULT_OUTPUT = ROOT / "oracle" / "fixtures" / "screenshots" / "Plotting.refere
 CROP_DIR = ROOT / "oracle" / "fixtures" / "P372" / "screenshots"
 PINNED_REF = "pyqtgraph-0.14.0"
 PINNED_COMMIT = "a20028b98294b9cc8770f2015a92eb342224b788"
+PLOTTING_SEED = 0x504C5454
 IMAGE_WIDTH = 1000
 IMAGE_HEIGHT = 600
 
@@ -52,11 +53,74 @@ def _load_pyqtgraph():
     return pg, QtCore
 
 
+def build_plotting_data() -> dict[str, Any]:
+    """Build Plotting arrays using the pinned upstream call order and a fixed NumPy seed."""
+    np.random.seed(PLOTTING_SEED)
+
+    p1_y = np.random.normal(size=100)
+    p2_red = np.random.normal(size=100)
+    p2_green = np.random.normal(size=110) + 5.0
+    p2_blue = np.random.normal(size=120) + 10.0
+    p3_y = np.random.normal(size=100)
+
+    p4_x = np.cos(np.linspace(0, 2 * np.pi, 1000))
+    p4_y = np.sin(np.linspace(0, 4 * np.pi, 1000))
+
+    x5 = np.random.normal(size=1000) * 1.0e-5
+    y5 = x5 * 1000.0 + 0.005 * np.random.normal(size=1000)
+    y5 -= y5.min() - 1.0
+    mask = x5 > 1.0e-15
+    p5_x = x5[mask]
+    p5_y = y5[mask]
+
+    p6_rows = np.random.normal(size=(10, 1000))
+
+    p7_y = np.sin(np.linspace(0, 10, 1000)) + np.random.normal(size=1000, scale=0.1)
+
+    x2 = np.linspace(-100.0, 100.0, 1000)
+    sinc_data = np.sin(x2) / x2
+
+    return {
+        "description": (
+            "Deterministic Plotting data arrays from pinned PyQtGraph examples/Plotting.py "
+            f"(np.random.seed({PLOTTING_SEED})). Used by the visual oracle and C++ test-mode "
+            "fixture loader; never derived from C++ output."
+        ),
+        "source": "reference/pyqtgraph/pyqtgraph/examples/Plotting.py",
+        "pyqtgraph_ref": PINNED_REF,
+        "pinned_commit": PINNED_COMMIT,
+        "seed": PLOTTING_SEED,
+        "arrays": {
+            "p1_y": p1_y.tolist(),
+            "p2_red": p2_red.tolist(),
+            "p2_green": p2_green.tolist(),
+            "p2_blue": p2_blue.tolist(),
+            "p3_y": p3_y.tolist(),
+            "p4_x": p4_x.tolist(),
+            "p4_y": p4_y.tolist(),
+            "p5_x": p5_x.tolist(),
+            "p5_y": p5_y.tolist(),
+            "p6_rows": p6_rows.tolist(),
+            "p6_initial_row": p6_rows[0].tolist(),
+            "p7_y": p7_y.tolist(),
+            "sinc_data": sinc_data.tolist(),
+        },
+        "region_initial": [400.0, 700.0],
+    }
+
+
+def write_plotting_data_fixture(path: Path = PLOTTING_DATA_FIXTURE) -> dict[str, Any]:
+    fixture = build_plotting_data()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
+    return fixture
+
+
 def load_plotting_data_fixture(fixture_path: Path = PLOTTING_DATA_FIXTURE) -> dict[str, Any]:
     if not fixture_path.is_file():
         raise SystemExit(
             f"Missing Plotting data fixture: {fixture_path}. "
-            "Regenerate from examples/Plotting.cpp std::mt19937 data (see fixture provenance)."
+            "Regenerate with --export-data-fixture from pinned PyQtGraph."
         )
     fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
     if fixture.get("pinned_commit") != PINNED_COMMIT:
@@ -189,8 +253,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Render the Plotting visual reference from pinned PyQtGraph while "
-            "injecting the deterministic data used by examples/Plotting.cpp."
+            "injecting seeded Plotting data exported from the pinned upstream example."
         )
+    )
+    parser.add_argument(
+        "--export-data-fixture",
+        action="store_true",
+        help="Write oracle/fixtures/P372/plotting_data.json from pinned PyQtGraph seed logic",
     )
     parser.add_argument(
         "--output",
@@ -213,7 +282,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--data-fixture",
         type=Path,
         default=PLOTTING_DATA_FIXTURE,
-        help="Plotting data arrays exported from examples/Plotting.cpp",
+        help="Plotting data arrays exported from pinned PyQtGraph seed logic",
     )
     return parser
 
@@ -222,6 +291,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     require_pinned_sources()
+    if args.export_data_fixture:
+        write_plotting_data_fixture(args.data_fixture)
+        print(f"wrote Plotting data fixture: {args.data_fixture}")
     render_deterministic_plotting(
         args.output,
         crop_dir=None if args.no_crops else args.crop_dir,
