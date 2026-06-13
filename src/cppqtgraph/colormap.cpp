@@ -4,6 +4,7 @@
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
 #include "../../include/cppqtgraph/colormap.hpp"
+#include "../../include/cppqtgraph/detail/viridis_colormap_data.hpp"
 
 #include <QGradient>
 #include <QGradientStops>
@@ -199,6 +200,20 @@ std::optional<ColorMap> buildLocalMap(const QString& name)
                 hexColor("#ff9d47"),
             });
     }
+    if (name == QStringLiteral("viridis")) {
+        std::vector<double> positions;
+        std::vector<QColor> colors;
+        positions.reserve(detail::kViridisStopCount);
+        colors.reserve(detail::kViridisStopCount);
+        for (std::size_t index = 0; index < detail::kViridisStopCount; ++index) {
+            const auto& stop = detail::kViridisStops[index];
+            positions.push_back(detail::kViridisStopCount == 1
+                ? 0.0
+                : static_cast<double>(index) / static_cast<double>(detail::kViridisStopCount - 1));
+            colors.push_back(QColor(byteFromUnit(stop[0]), byteFromUnit(stop[1]), byteFromUnit(stop[2])));
+        }
+        return ColorMap(std::move(positions), std::move(colors), name);
+    }
     return std::nullopt;
 }
 
@@ -221,6 +236,11 @@ std::size_t ColorMap::LookupTable::rows() const noexcept
 std::size_t ColorMap::Stops::rows() const noexcept
 {
     return positions.size();
+}
+
+ColorMap::ColorMap()
+    : ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)})
+{
 }
 
 ColorMap::ColorMap(std::vector<double> positions, std::vector<QColor> colors, QString name, MappingMode mappingMode)
@@ -450,7 +470,7 @@ std::vector<QString> listMaps(const QString& source)
     if (!source.isEmpty()) {
         return {};
     }
-    return {QStringLiteral("PAL-relaxed"), QStringLiteral("PAL-relaxed_bright")};
+    return {QStringLiteral("PAL-relaxed"), QStringLiteral("PAL-relaxed_bright"), QStringLiteral("viridis")};
 }
 
 std::optional<ColorMap> get(const QString& name, const QString& source, bool skipCache)
@@ -461,6 +481,7 @@ std::optional<ColorMap> get(const QString& name, const QString& source, bool ski
 
     static std::optional<ColorMap> relaxed;
     static std::optional<ColorMap> relaxedBright;
+    static std::optional<ColorMap> viridis;
     if (name == QStringLiteral("PAL-relaxed")) {
         if (skipCache || !relaxed.has_value()) {
             relaxed = buildLocalMap(name);
@@ -472,6 +493,12 @@ std::optional<ColorMap> get(const QString& name, const QString& source, bool ski
             relaxedBright = buildLocalMap(name);
         }
         return relaxedBright;
+    }
+    if (name == QStringLiteral("viridis")) {
+        if (skipCache || !viridis.has_value()) {
+            viridis = buildLocalMap(name);
+        }
+        return viridis;
     }
 
     return std::nullopt;

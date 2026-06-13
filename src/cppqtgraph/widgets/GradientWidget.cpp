@@ -107,6 +107,14 @@ cppqtgraph::ColorMap GradientWidget::colorMap() const
     return item_ != nullptr ? item_->colorMap() : cppqtgraph::ColorMap({0.0, 1.0}, {QColor(0, 0, 0), QColor(255, 255, 255)});
 }
 
+void GradientWidget::setColorMap(const cppqtgraph::ColorMap& colorMap)
+{
+    if (item_ != nullptr) {
+        item_->setColorMap(colorMap);
+        updateViewRange();
+    }
+}
+
 graphicsItems::GradientEditorState GradientWidget::saveState() const
 {
     return item_ != nullptr ? item_->saveState() : graphicsItems::GradientEditorState{};

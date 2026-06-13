@@ -287,6 +287,46 @@ std::shared_ptr<Parameter> makeActionSampleGroup()
         });
 }
 
+std::shared_ptr<Parameter> makeFileSampleGroup()
+{
+    return makeSampleGroup(
+        QStringLiteral("file"),
+        QVariantList{
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("widget")},
+                                            {QStringLiteral("type"), QStringLiteral("file")},
+                                            {QStringLiteral("value"), QVariant()}}),
+            QVariant::fromValue(
+                QVariantMap{{QStringLiteral("name"), QStringLiteral("acceptMode")},
+                            {QStringLiteral("type"), QStringLiteral("list")},
+                            {QStringLiteral("limits"),
+                             QVariantList{QStringLiteral("AcceptOpen"), QStringLiteral("AcceptSave")}}}),
+            QVariant::fromValue(
+                QVariantMap{{QStringLiteral("name"), QStringLiteral("fileMode")},
+                            {QStringLiteral("type"), QStringLiteral("list")},
+                            {QStringLiteral("limits"),
+                             QVariantList{QStringLiteral("AnyFile"),
+                                          QStringLiteral("ExistingFile"),
+                                          QStringLiteral("Directory"),
+                                          QStringLiteral("ExistingFiles")}}}),
+            QVariant::fromValue(
+                QVariantMap{{QStringLiteral("name"), QStringLiteral("viewMode")},
+                            {QStringLiteral("type"), QStringLiteral("list")},
+                            {QStringLiteral("limits"), QVariantList{QStringLiteral("Detail"), QStringLiteral("List")}}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("relativeTo")},
+                                            {QStringLiteral("type"), QStringLiteral("str")},
+                                            {QStringLiteral("value"), QVariant()}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("directory")},
+                                            {QStringLiteral("type"), QStringLiteral("str")},
+                                            {QStringLiteral("value"), QVariant()}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("windowTitle")},
+                                            {QStringLiteral("type"), QStringLiteral("str")},
+                                            {QStringLiteral("value"), QVariant()}}),
+            QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("nameFilter")},
+                                            {QStringLiteral("type"), QStringLiteral("str")},
+                                            {QStringLiteral("value"), QVariant()}}),
+        });
+}
+
 std::shared_ptr<Parameter> makeNoExtraOptionsGroup()
 {
     return makeMetaGroup(QStringLiteral("No Extra Options"),
@@ -297,9 +337,18 @@ std::shared_ptr<Parameter> makeNoExtraOptionsGroup()
                              QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("str")},
                                                              {QStringLiteral("type"), QStringLiteral("str")},
                                                              {QStringLiteral("value"), QStringLiteral("Hi, world!")}}),
+                             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("color")},
+                                                             {QStringLiteral("type"), QStringLiteral("color")},
+                                                             {QStringLiteral("value"), QStringLiteral("#fff")}}),
                              QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("bool")},
                                                              {QStringLiteral("type"), QStringLiteral("bool")},
                                                              {QStringLiteral("value"), false}}),
+                             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("colormap")},
+                                                             {QStringLiteral("type"), QStringLiteral("colormap")},
+                                                             {QStringLiteral("value"), QVariant()}}),
+                             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("cmaplut")},
+                                                             {QStringLiteral("type"), QStringLiteral("cmaplut")},
+                                                             {QStringLiteral("value"), QStringLiteral("viridis")}}),
                          });
 }
 
@@ -337,6 +386,7 @@ std::shared_ptr<Parameter> buildExampleParametersGroup()
     exampleParams->addChild(makeChecklistSampleGroup());
     exampleParams->addChild(makeSliderSampleGroup());
     exampleParams->addChild(makeActionSampleGroup());
+    exampleParams->addChild(makeFileSampleGroup());
     exampleParams->addChild(makeNoExtraOptionsGroup());
     connectExpandCollapseActions(exampleParams.get());
     return exampleParams;

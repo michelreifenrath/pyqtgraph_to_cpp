@@ -9,7 +9,7 @@
 
 namespace cppqtgraph::parametertree {
 
-class StrParameterItem final : public WidgetParameterItem {
+class StrParameterItem : public WidgetParameterItem {
 public:
     StrParameterItem(Parameter* param, int depth);
 

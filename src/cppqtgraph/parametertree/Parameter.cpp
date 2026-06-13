@@ -7,6 +7,8 @@
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/BoolParameterItem.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/ChecklistParameter.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/ColorMapParameter.hpp"
+#include "../../../include/cppqtgraph/parametertree/parameterTypes/FileParameter.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/NumericParameterItem.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/RadioParameterItem.hpp"
 #include "../../../include/cppqtgraph/parametertree/parameterTypes/SliderParameter.hpp"
@@ -599,13 +601,13 @@ void registerBuiltinParameterTypes()
     registerParameterType(QStringLiteral("checklist"),
                           [](const QVariantMap& opts) { return std::make_shared<ChecklistParameter>(opts); });
     registerParameterType(QStringLiteral("cmaplut"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<ColorMapLutParameter>(opts); });
     registerParameterType(QStringLiteral("color"),
                           [](const QVariantMap& opts) { return std::make_shared<ColorParameter>(opts); });
     registerParameterType(QStringLiteral("colormap"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<ColorMapParameter>(opts); });
     registerParameterType(QStringLiteral("file"),
-                          [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
+                          [](const QVariantMap& opts) { return std::make_shared<FileParameter>(opts); });
     registerParameterType(QStringLiteral("float"),
                           [](const QVariantMap& opts) { return std::make_shared<SimpleParameter>(opts); });
     registerParameterType(QStringLiteral("font"),
