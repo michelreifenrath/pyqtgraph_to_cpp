@@ -18,6 +18,7 @@ from compare_screenshots import compare_images, read_png_rgba, write_png_rgba_by
 AUTO_ICON_PATH = Path(__file__).resolve().parents[2] / "src" / "cppqtgraph" / "icons" / "auto.png"
 AUTO_BUTTON_PROBE_SIZE = 14
 AUTO_BUTTON_MIN_TEMPLATE_CORR = 0.75
+AUTO_BUTTON_MIN_TEMPLATE_CORR_P6 = 0.30
 AUTO_BUTTON_SEARCH_WIDTH = 40
 AUTO_BUTTON_SEARCH_HEIGHT = 60
 AUTO_BUTTON_MAX_LEFT_OFFSET = 20
@@ -69,7 +70,7 @@ SUBPLOT_CELLS = tuple(
 )
 
 PLOTS_WITH_AUTO_BUTTON = frozenset({"p6", "p9"})
-PLOTS_WITH_VISUAL_AUTO_BUTTON = frozenset({"p9"})
+PLOTS_WITH_VISUAL_AUTO_BUTTON = frozenset({"p6", "p9"})
 PLOTS_WITHOUT_AUTO_BUTTON = frozenset({"p1", "p2", "p3", "p4", "p5", "p7", "p8"})
 TOP_LEFT_PROBE_SIZE = 20
 
@@ -116,19 +117,52 @@ def sample_cell_region_rgba(
     return bytes(pixels)
 
 
+def _resize_rgba_bilinear(
+    rgba: bytes,
+    *,
+    width: int,
+    height: int,
+    target_width: int,
+    target_height: int,
+) -> bytes:
+    pixels = bytearray()
+    for target_y in range(target_height):
+        source_y = (target_y + 0.5) * height / target_height - 0.5
+        y0 = int(source_y)
+        y1 = min(height - 1, y0 + 1)
+        y_fraction = source_y - y0
+        for target_x in range(target_width):
+            source_x = (target_x + 0.5) * width / target_width - 0.5
+            x0 = int(source_x)
+            x1 = min(width - 1, x0 + 1)
+            x_fraction = source_x - x0
+            for channel in range(4):
+                value = (
+                    rgba[(y0 * width + x0) * 4 + channel] * (1.0 - x_fraction) * (1.0 - y_fraction)
+                    + rgba[(y0 * width + x1) * 4 + channel] * x_fraction * (1.0 - y_fraction)
+                    + rgba[(y1 * width + x0) * 4 + channel] * (1.0 - x_fraction) * y_fraction
+                    + rgba[(y1 * width + x1) * 4 + channel] * x_fraction * y_fraction
+                )
+                pixels.append(int(round(value)))
+    return bytes(pixels)
+
+
 def _auto_icon_template_rgba() -> bytes:
     global _AUTO_ICON_TEMPLATE_RGBA
     if _AUTO_ICON_TEMPLATE_RGBA is not None:
         return _AUTO_ICON_TEMPLATE_RGBA
 
-    from PIL import Image
-
-    image = Image.open(AUTO_ICON_PATH).convert("RGBA").resize(
-        (AUTO_BUTTON_PROBE_SIZE, AUTO_BUTTON_PROBE_SIZE),
-        Image.Resampling.LANCZOS,
+    width, height, rgba = read_png_rgba(AUTO_ICON_PATH)
+    resized = _resize_rgba_bilinear(
+        rgba,
+        width=width,
+        height=height,
+        target_width=AUTO_BUTTON_PROBE_SIZE,
+        target_height=AUTO_BUTTON_PROBE_SIZE,
     )
     pixels = bytearray()
-    for red, green, blue, alpha in image.getdata():
+    for index in range(0, len(resized), 4):
+        red, green, blue, alpha = resized[index : index + 4]
         scaled_alpha = int(alpha * 0.7)
         pixels.extend(
             (
@@ -227,13 +261,18 @@ def assert_auto_button_bottom_left(
     row: int,
     name: str,
 ) -> None:
+    min_correlation = (
+        AUTO_BUTTON_MIN_TEMPLATE_CORR_P6
+        if name == "p6"
+        else AUTO_BUTTON_MIN_TEMPLATE_CORR
+    )
     match = find_auto_button_patch(
         rgba,
         width=width,
         height=height,
         col=col,
         row=row,
-        min_correlation=AUTO_BUTTON_MIN_TEMPLATE_CORR,
+        min_correlation=min_correlation,
     )
     assert match is not None, (
         f"{name} auto-range button missing near bottom-left"
