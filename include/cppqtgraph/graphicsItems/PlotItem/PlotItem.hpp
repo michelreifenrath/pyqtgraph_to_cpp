@@ -151,6 +151,7 @@ private:
     void updateDownsampling();
     void updateAlpha();
     void updateAutoButtonVisibility();
+    void syncAutoButtonPosition();
 
     QGraphicsGridLayout* layout_ = nullptr;
     ViewBox* vb_ = nullptr;

@@ -7,6 +7,7 @@
 
 #include "../../../../include/cppqtgraph/graphicsItems/AxisItem.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/ButtonItem.hpp"
+#include "../../../../include/cppqtgraph/icons/graphIcons.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/LegendItem.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/PlotCurveItem.hpp"
 #include "../../../../include/cppqtgraph/graphicsItems/PlotDataItem.hpp"
@@ -14,6 +15,7 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
+#include <QtCore/QTimer>
 #include <QtCore/Qt>
 #include <QtCore/QVariant>
 #include <QtGui/QColor>
@@ -355,9 +357,8 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu
     titleLabel_ = new TitleLabel(this);
     layout_->addItem(titleLabel_, 0, 1);
 
-    QPixmap autoPixmap(14, 14);
-    autoPixmap.fill(QColor(60, 60, 60, 200));
-    autoBtn_ = new ButtonItem(autoPixmap, 14.0, this);
+    autoBtn_ = new ButtonItem(icons::getGraphPixmap(QStringLiteral("auto")), 14.0, this);
+    autoBtn_->setZValue(2.0);
     autoBtn_->hide();
     QObject::connect(autoBtn_, &ButtonItem::clicked, vb_, [this](ButtonItem*) {
         vb_->enableAutoRange(ViewBox::XYAxes, true);
@@ -366,6 +367,8 @@ PlotItem::PlotItem(QGraphicsItem* parent, Qt::WindowFlags flags, bool enableMenu
     QObject::connect(vb_, &ViewBox::sigStateChanged, vb_, [this](ViewBox*) {
         updateAutoButtonVisibility();
     });
+
+    syncAutoButtonPosition();
 
     setupConfigMenu(enableMenu);
 
@@ -763,6 +766,16 @@ void PlotItem::showButtons()
     updateAutoButtonVisibility();
 }
 
+void PlotItem::syncAutoButtonPosition()
+{
+    if (autoBtn_ == nullptr) {
+        return;
+    }
+    const QRectF buttonRect = mapRectFromItem(autoBtn_, autoBtn_->boundingRect());
+    const qreal y = height() - buttonRect.height();
+    autoBtn_->setPos(0.0, y);
+}
+
 void PlotItem::updateAutoButtonVisibility()
 {
     if (autoBtn_ == nullptr || vb_ == nullptr) {
@@ -776,7 +789,11 @@ void PlotItem::updateAutoButtonVisibility()
     const auto autoRange = vb_->autoRangeEnabled();
     const bool showButton = !autoRange[ViewBox::XAxis] || !autoRange[ViewBox::YAxis];
     if (showButton) {
+        syncAutoButtonPosition();
         autoBtn_->show();
+        QTimer::singleShot(0, this, [this]() {
+            syncAutoButtonPosition();
+        });
     } else {
         autoBtn_->hide();
     }
@@ -827,6 +844,10 @@ void PlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     Q_UNUSED(widget);
     if (painter == nullptr) {
         return;
+    }
+
+    if (autoBtn_ != nullptr && autoBtn_->isVisible()) {
+        syncAutoButtonPosition();
     }
 
     const QRectF itemBounds = boundingRect();
@@ -1096,6 +1117,7 @@ void PlotItem::resizeEvent(QGraphicsSceneResizeEvent* event)
 {
     GraphicsWidget::resizeEvent(event);
     syncAxisRanges();
+    syncAutoButtonPosition();
 }
 
 } // namespace cppqtgraph::graphicsItems

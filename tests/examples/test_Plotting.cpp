@@ -2,7 +2,9 @@
 #include "../../examples/Plotting.cpp"
 
 #include <cppqtgraph/graphicsItems/AxisItem.hpp>
+#include <cppqtgraph/graphicsItems/ButtonItem.hpp>
 #include <cppqtgraph/graphicsItems/ScatterPlotItem.hpp>
+#include <cppqtgraph/graphicsItems/ViewBox/ViewBox.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QRectF>
@@ -438,6 +440,41 @@ bool testPlottingGrab(cppqtgraph::examples::PlottingExample& example)
     return true;
 }
 
+cppqtgraph::graphicsItems::ButtonItem* findAutoButton(
+    const cppqtgraph::graphicsItems::PlotItem& plot)
+{
+    for (QGraphicsItem* child : plot.childItems()) {
+        if (auto* button = dynamic_cast<cppqtgraph::graphicsItems::ButtonItem*>(child)) {
+            return button;
+        }
+    }
+    return nullptr;
+}
+
+bool testPlottingP6AutoButtonVisible(cppqtgraph::examples::PlottingExample& example)
+{
+    using cppqtgraph::graphicsItems::ButtonItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+    using cppqtgraph::graphicsItems::ViewBox;
+
+    example.widget->show();
+    QApplication::processEvents();
+
+    PlotItem* p6 = example.plots[5];
+    CHECK(p6 != nullptr);
+    const auto autoRange = p6->getViewBox()->autoRangeEnabled();
+    CHECK(!autoRange[ViewBox::XAxis] || !autoRange[ViewBox::YAxis]);
+
+    ButtonItem* autoButton = findAutoButton(*p6);
+    CHECK(autoButton != nullptr);
+    CHECK(autoButton->isVisible());
+    CHECK(std::abs(autoButton->pos().x()) < 1.0e-6);
+    const qreal expectedY = p6->height() - autoButton->boundingRect().height();
+    CHECK(std::abs(autoButton->pos().y() - expectedY) < 1.0);
+
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -475,6 +512,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testPlottingP3AutorangeAndSymbolRender(example)) {
+        return 1;
+    }
+    if (!testPlottingP6AutoButtonVisible(example)) {
         return 1;
     }
     if (!testPlottingGrab(example)) {

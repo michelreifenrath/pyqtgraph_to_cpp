@@ -18,6 +18,7 @@ if str(VISUAL_TESTS) not in sys.path:
 from plotting_subplot_visual import (  # noqa: E402
     WHOLE_IMAGE_TOLERANCE,
     assert_all_subplots_nonempty,
+    assert_plotting_auto_button_layout,
     blank_subplot,
     compare_subplots,
     crop_subplot_rgba,
@@ -325,6 +326,7 @@ def _run_renderer(renderer: Path, output: Path) -> dict[str, Any]:
     _assert_p1_no_grid_region(output)
     _assert_p5_region_triangles(output)
     _assert_p8_region_band(output)
+    assert_plotting_auto_button_layout(output)
     assert_all_subplots_nonempty(output)
     return status
 

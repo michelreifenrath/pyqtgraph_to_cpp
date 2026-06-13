@@ -141,6 +141,8 @@ if(_cppqtgraph_has_graphicsitem)
             src/cppqtgraph/graphicsItems/GraphicsWidgetAnchor.cpp
             include/cppqtgraph/graphicsItems/ButtonItem.hpp
             src/cppqtgraph/graphicsItems/ButtonItem.cpp
+            include/cppqtgraph/icons/graphIcons.hpp
+            src/cppqtgraph/icons/graphIcons.cpp
             include/cppqtgraph/graphicsItems/GraphicsLayout.hpp
             src/cppqtgraph/graphicsItems/AxisItem.cpp
             include/cppqtgraph/graphicsItems/DateAxisItem.hpp
