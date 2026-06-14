@@ -303,7 +303,13 @@ void applyPlotOptions(PlotDataItem& item, const PlotItem::PlotOptions& options)
     }
 }
 
-void applyPlotDataItemOptions(const PlotItem& plot, PlotDataItem& item)
+enum class AlphaApplication {
+    Preserve,
+    Initial,
+    Update,
+};
+
+void applyPlotDataItemOptions(const PlotItem& plot, PlotDataItem& item, AlphaApplication alphaApplication)
 {
     item.setLogMode(plot.logMode()[0], plot.logMode()[1]);
 
@@ -321,8 +327,14 @@ void applyPlotDataItemOptions(const PlotItem& plot, PlotDataItem& item)
         }
     }
     item.setClipToView(plot.clipToViewMode(), clipRange);
-    const double alpha = plot.alphaState().alpha;
-    item.setAlpha(alpha * alpha);
+
+    if (alphaApplication != AlphaApplication::Preserve) {
+        double alpha = plot.alphaState().alpha;
+        if (alphaApplication == AlphaApplication::Update) {
+            alpha *= alpha;
+        }
+        item.setAlpha(alpha);
+    }
 }
 
 } // namespace
@@ -476,7 +488,7 @@ void PlotItem::addItem(QGraphicsItem* item, bool ignoreBounds, const QString& na
 
     items_.push_back(item);
     if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
-        applyPlotDataItemOptions(*this, *plotData);
+        applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Initial);
     }
     {
         ScopedBool guard(forwardingChild_);
@@ -1090,7 +1102,7 @@ void PlotItem::updateLogMode()
     logMode_ = {ctrl_->logXCheck->isChecked(), ctrl_->logYCheck->isChecked()};
     for (QGraphicsItem* item : items_) {
         if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
-            applyPlotDataItemOptions(*this, *plotData);
+            applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Preserve);
         }
     }
     for (AxisItem* axisItem : axes_) {
@@ -1146,7 +1158,7 @@ void PlotItem::updateDownsampling()
 {
     for (QGraphicsItem* item : items_) {
         if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
-            applyPlotDataItemOptions(*this, *plotData);
+            applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Preserve);
         }
     }
     update();
@@ -1156,7 +1168,7 @@ void PlotItem::updateAlpha()
 {
     for (QGraphicsItem* item : items_) {
         if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
-            applyPlotDataItemOptions(*this, *plotData);
+            applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Update);
         }
     }
     update();

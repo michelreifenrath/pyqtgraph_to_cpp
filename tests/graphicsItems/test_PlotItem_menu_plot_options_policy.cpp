@@ -187,6 +187,25 @@ bool spanEquals(std::span<const double> values, const std::vector<double>& expec
     return true;
 }
 
+bool testAlphaBeforeAddUsesInitialAlpha()
+{
+    using cppqtgraph::graphicsItems::PlotDataItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+
+    PlotItem plot;
+    QMenu* menu = plot.getMenu();
+    auto* alphaSlider = findControl<QSlider>(menu, QStringLiteral("alphaSlider"));
+    CHECK(alphaSlider != nullptr);
+
+    alphaSlider->setValue(500);
+    auto data = std::make_unique<PlotDataItem>(std::vector<double>{0.0, 1.0}, std::vector<double>{0.0, 1.0});
+    plot.addItem(data.get());
+    CHECK(data->curve()->pen().color().alpha() == 128);
+
+    plot.removeItem(data.get());
+    return true;
+}
+
 bool testSupportedControlsAffectPlotDataItem()
 {
     using cppqtgraph::graphicsItems::PlotDataItem;
@@ -273,6 +292,9 @@ int main(int argc, char** argv)
     ApplicationGuard application(argc, argv);
 
     if (!testMenuTreePolicy()) {
+        return 1;
+    }
+    if (!testAlphaBeforeAddUsesInitialAlpha()) {
         return 1;
     }
     if (!testSupportedControlsAffectPlotDataItem()) {
