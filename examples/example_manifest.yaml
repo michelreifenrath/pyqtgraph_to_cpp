@@ -128,12 +128,14 @@ examples:
     title: Parameter-Function Interaction
     upstream_file: pyqtgraph/examples/InteractiveParameter.py
     cpp_file: examples/InteractiveParameter.cpp
-    status: planned
+    status: ported
     validation:
       smoke: required
       numeric: required
       visual: required
       interaction: required
+    ctest:
+      normal: cppqtgraph.examples.InteractiveParameter
 
   - order: 7
     name: crosshair

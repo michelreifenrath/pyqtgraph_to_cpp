@@ -106,6 +106,9 @@ bool testRegistryOrderAndStatus()
     CHECK(entries[5].name == QStringLiteral("MultiDataPlot"));
     CHECK(entries[5].title == QStringLiteral("Plotting Datasets"));
     CHECK(entries[5].status == cppqtgraph::examples::ExampleStatus::Ported);
+    CHECK(entries[6].name == QStringLiteral("InteractiveParameter"));
+    CHECK(entries[6].title == QStringLiteral("Parameter-Function Interaction"));
+    CHECK(entries[6].status == cppqtgraph::examples::ExampleStatus::Ported);
     CHECK(entries[10].name == QStringLiteral("DateAxisItem"));
     CHECK(entries[10].status == cppqtgraph::examples::ExampleStatus::Planned);
 
@@ -116,6 +119,7 @@ bool testRegistryOrderAndStatus()
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("ImageView")));
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("parametertree")));
     CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("MultiDataPlot")));
+    CHECK(cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("InteractiveParameter")));
     CHECK(!cppqtgraph::examples::ExampleRegistry::canLaunch(QStringLiteral("unknown")));
 
     return true;
@@ -171,8 +175,8 @@ bool testRegistryLaunchesPortedExamplesViaHook()
         CHECK(launched->executablePath.contains(entry.name));
     }
 
-    CHECK(portedCount == 6);
-    CHECK(hookCalls == 6);
+    CHECK(portedCount == 7);
+    CHECK(hookCalls == 7);
 
     cppqtgraph::examples::ExampleRegistry::clearLaunchHookForTesting();
     return true;

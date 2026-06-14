@@ -1090,6 +1090,10 @@ if(_cppqtgraph_has_graphicsitem)
         PRIVATE
             CPPQTGRAPH_P458_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P458/multidataplot_data.json"
     )
+    add_executable(cppqtgraph_examples_interactiveparameter
+        "${PROJECT_SOURCE_DIR}/examples/InteractiveParameter.cpp"
+    )
+    cppqtgraph_configure_cpp_test_target(cppqtgraph_examples_interactiveparameter)
     add_executable(cppqtgraph_examples_exampleapp
         "${PROJECT_SOURCE_DIR}/examples/ExampleRegistry.cpp"
         "${PROJECT_SOURCE_DIR}/examples/ExampleApp.cpp"
@@ -1244,6 +1248,16 @@ if(_cppqtgraph_has_graphicsitem)
     )
     add_dependencies(cppqtgraph_examples_multidataplot_test cppqtgraph_examples_multidataplot)
     cppqtgraph_add_cpp_test(
+        cppqtgraph_examples_interactiveparameter_test
+        examples/test_InteractiveParameter.cpp
+        cppqtgraph.examples.InteractiveParameter
+    )
+    target_compile_definitions(cppqtgraph_examples_interactiveparameter_test
+        PRIVATE
+            CPPQTGRAPH_INTERACTIVEPARAMETER_EXECUTABLE="$<TARGET_FILE:cppqtgraph_examples_interactiveparameter>"
+    )
+    add_dependencies(cppqtgraph_examples_interactiveparameter_test cppqtgraph_examples_interactiveparameter)
+    cppqtgraph_add_cpp_test(
         cppqtgraph_parametertree_base_test
         parametertree/test_parametertree_base.cpp
         cppqtgraph.parametertree.base
@@ -1297,6 +1311,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_imageview
         cppqtgraph_examples_parametertree
         cppqtgraph_examples_multidataplot
+        cppqtgraph_examples_interactiveparameter
     )
     add_dependencies(cppqtgraph_examples_exampleapp_test
         cppqtgraph_examples_simpleplot
@@ -1306,6 +1321,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_imageview
         cppqtgraph_examples_parametertree
         cppqtgraph_examples_multidataplot
+        cppqtgraph_examples_interactiveparameter
     )
     set_tests_properties(cppqtgraph.examples.ExampleApp PROPERTIES LABELS "interaction")
     add_test(
