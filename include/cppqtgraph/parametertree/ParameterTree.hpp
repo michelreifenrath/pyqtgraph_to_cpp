@@ -39,6 +39,7 @@ public:
 
 protected:
     void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected) override;
+    void contextMenuEvent(QContextMenuEvent* event) override;
 
 private slots:
     void itemChangedEvent(QTreeWidgetItem* item, int col);

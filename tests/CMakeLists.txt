@@ -1261,6 +1261,12 @@ if(_cppqtgraph_has_graphicsitem)
     )
     set_tests_properties(cppqtgraph.parametertree.file_color PROPERTIES LABELS "visual")
     cppqtgraph_add_cpp_test(
+        cppqtgraph_parametertree_custom_groups_test
+        parametertree/test_parametertree_custom_groups.cpp
+        cppqtgraph.parametertree.custom_groups
+    )
+    target_link_libraries(cppqtgraph_parametertree_custom_groups_test PRIVATE Qt6::Test)
+    cppqtgraph_add_cpp_test(
         cppqtgraph_examples_exampleapp_test
         examples/test_ExampleApp.cpp
         cppqtgraph.examples.ExampleApp

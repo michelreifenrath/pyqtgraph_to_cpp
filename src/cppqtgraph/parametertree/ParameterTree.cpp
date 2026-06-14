@@ -7,6 +7,7 @@
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
 
 #include <QtWidgets/QHeaderView>
+#include <QtGui/QContextMenuEvent>
 
 namespace cppqtgraph::parametertree {
 
@@ -53,7 +54,11 @@ void ParameterTree::addParameters(Parameter* param, QTreeWidgetItem* root, int d
             depth -= 1;
         }
     }
-    root->addChild(item);
+    if (auto* groupParent = dynamic_cast<GroupParameterItem*>(root)) {
+        groupParent->addParameterChild(item);
+    } else {
+        root->addChild(item);
+    }
     item->treeWidgetChanged();
     widgets::TreeWidget::informTreeWidgetChange(item);
 
@@ -182,6 +187,17 @@ void ParameterTree::itemCollapsedEvent(QTreeWidgetItem* item)
     if (auto* paramItem = dynamic_cast<ParameterItem*>(item)) {
         paramItem->expandedChangedEvent(false);
     }
+}
+
+void ParameterTree::contextMenuEvent(QContextMenuEvent* event)
+{
+    if (auto* paramItem = dynamic_cast<ParameterItem*>(itemAt(event->pos()))) {
+        paramItem->contextMenuEvent(event);
+        if (event->isAccepted()) {
+            return;
+        }
+    }
+    widgets::TreeWidget::contextMenuEvent(event);
 }
 
 } // namespace cppqtgraph::parametertree

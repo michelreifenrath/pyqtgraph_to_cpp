@@ -66,6 +66,9 @@ public:
     void registerItem(ParameterItem* item);
     void unregisterItem(ParameterItem* item);
 
+    void contextMenu(const QString& name);
+    void remove();
+
 signals:
     void sigValueChanged(Parameter* param, const QVariant& value);
     void sigValueChanging(Parameter* param, const QVariant& value);
@@ -75,6 +78,8 @@ signals:
     void sigDefaultChanged(Parameter* param, const QVariant& defaultValue);
     void sigOptionsChanged(Parameter* param, const QVariantMap& changedOpts);
     void sigStateChanged(Parameter* param, const QString& changeDesc, const QVariant& data);
+    void sigContextMenu(Parameter* param, const QString& name);
+    void sigRemoved(Parameter* param);
 
 protected:
     QVariantMap opts_;
@@ -86,8 +91,16 @@ protected:
 };
 
 class GroupParameter : public Parameter {
+    Q_OBJECT
+
 public:
     explicit GroupParameter(QVariantMap opts, QObject* parent = nullptr);
+
+    virtual void addNew(const QString& typ = QString());
+    ParameterItem* makeTreeItem(int depth = 0) override;
+
+signals:
+    void sigAddNew(GroupParameter* param, const QString& typ);
 };
 
 class SimpleParameter final : public Parameter {
