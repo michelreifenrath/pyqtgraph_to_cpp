@@ -483,6 +483,18 @@ if(_cppqtgraph_has_graphicsitem)
     set_tests_properties(cppqtgraph.graphicsItems.ViewBox.interaction_linking PROPERTIES LABELS P3.06)
 
     cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_viewbox_keyboard_history
+        graphicsItems/test_ViewBox_keyboard_history.cpp
+        cppqtgraph.graphicsItems.ViewBox.keyboard_history
+    )
+    target_compile_definitions(cppqtgraph_graphicsitems_viewbox_keyboard_history
+        PRIVATE
+            CPPQTGRAPH_INTERACTION_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/oracle/fixtures/interactions"
+    )
+    target_link_libraries(cppqtgraph_graphicsitems_viewbox_keyboard_history PRIVATE Qt6::Test)
+    set_tests_properties(cppqtgraph.graphicsItems.ViewBox.keyboard_history PROPERTIES LABELS P465)
+
+    cppqtgraph_add_cpp_test(
         cppqtgraph_graphicsitems_linearregion_infline_target_p4_09
         graphicsItems/test_LinearRegion_InfiniteLine_TargetItem_P4_09.cpp
         cppqtgraph.graphicsItems.LinearRegion_InfiniteLine_TargetItem.P4_09

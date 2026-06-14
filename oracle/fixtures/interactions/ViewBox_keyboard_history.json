@@ -1,0 +1,153 @@
+{
+  "description": "Deterministic ViewBox rect-zoom keyboard history from pinned PyQtGraph ViewBox.py keyPressEvent/scaleHistory at a20028b.",
+  "source": "reference/pyqtgraph/pyqtgraph/graphicsItems/ViewBox/ViewBox.py",
+  "pyqtgraph_ref": "pyqtgraph-0.14.0",
+  "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+  "viewbox_size": [
+    200.0,
+    100.0
+  ],
+  "initial": {
+    "x": [
+      0.0,
+      10.0
+    ],
+    "y": [
+      0.0,
+      10.0
+    ]
+  },
+  "mouse_mode": "RectMode",
+  "steps": [
+    {
+      "action": "initial",
+      "range": {
+        "x": [
+          0.0,
+          10.0
+        ],
+        "y": [
+          0.0,
+          10.0
+        ]
+      }
+    },
+    {
+      "action": "rect_zoom_1",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    {
+      "action": "rect_zoom_2",
+      "range": {
+        "x": [
+          3.125,
+          6.875
+        ],
+        "y": [
+          4.0,
+          6.0
+        ]
+      }
+    },
+    {
+      "action": "key_minus",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    {
+      "action": "key_plus",
+      "range": {
+        "x": [
+          3.125,
+          6.875
+        ],
+        "y": [
+          4.0,
+          6.0
+        ]
+      }
+    },
+    {
+      "action": "key_minus_before_equals",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    {
+      "action": "key_equals",
+      "range": {
+        "x": [
+          3.125,
+          6.875
+        ],
+        "y": [
+          4.0,
+          6.0
+        ]
+      }
+    },
+    {
+      "action": "key_minus_before_backspace",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    {
+      "action": "key_minus_to_history_head",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    {
+      "action": "key_backspace",
+      "range": {
+        "x": [
+          3.125,
+          6.875
+        ],
+        "y": [
+          4.0,
+          6.0
+        ]
+      }
+    }
+  ]
+}
