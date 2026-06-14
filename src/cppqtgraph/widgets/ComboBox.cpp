@@ -48,7 +48,7 @@ QList<NormalizedItem> normalizeItems(const QVariant& items)
                 }
                 mapped.append({pair.at(0).toString(), pair.at(1)});
             } else {
-                throw std::invalid_argument("items argument must be list or dict or tuple");
+                mapped.append({entry.toString(), entry});
             }
         }
         return mapped;

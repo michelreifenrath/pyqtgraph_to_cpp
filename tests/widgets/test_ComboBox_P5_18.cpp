@@ -148,6 +148,28 @@ bool testOrderedTextValueMapping()
     return true;
 }
 
+bool testNumericScalarListLimits()
+{
+    using cppqtgraph::widgets::ComboBox;
+
+    ComboBox combo;
+    combo.setItems(QVariantList{5, 10, 20});
+    CHECK(combo.count() == 3);
+    CHECK(combo.itemText(0) == QStringLiteral("5"));
+    CHECK(combo.itemText(1) == QStringLiteral("10"));
+    CHECK(combo.itemText(2) == QStringLiteral("20"));
+    CHECK(combo.value().toInt() == 5);
+
+    combo.setValue(10);
+    CHECK(combo.currentText() == QStringLiteral("10"));
+    CHECK(combo.value().toInt() == 10);
+
+    combo.setValue(20);
+    CHECK(combo.currentText() == QStringLiteral("20"));
+    CHECK(combo.value().toInt() == 20);
+    return true;
+}
+
 bool testValueSetters()
 {
     using cppqtgraph::widgets::ComboBox;
@@ -328,6 +350,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testOrderedTextValueMapping()) {
+        return 1;
+    }
+    if (!testNumericScalarListLimits()) {
         return 1;
     }
     if (!testValueSetters()) {
