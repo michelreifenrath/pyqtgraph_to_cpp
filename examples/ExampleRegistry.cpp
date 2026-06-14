@@ -82,7 +82,7 @@ QVector<ExampleEntry> makeEntries()
          .title = QStringLiteral("Parameter-Function Interaction"),
          .upstreamFile = QStringLiteral("pyqtgraph/examples/InteractiveParameter.py"),
          .cppFile = QStringLiteral("examples/InteractiveParameter.cpp"),
-         .status = ExampleStatus::Planned,
+         .status = ExampleStatus::Ported,
          .validation = {.smoke = ValidationLevel::Required,
                         .numeric = ValidationLevel::Required,
                         .visual = ValidationLevel::Required,
