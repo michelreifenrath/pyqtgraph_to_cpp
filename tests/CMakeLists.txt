@@ -1311,6 +1311,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_imageview
         cppqtgraph_examples_parametertree
         cppqtgraph_examples_multidataplot
+        cppqtgraph_examples_interactiveparameter
     )
     add_dependencies(cppqtgraph_examples_exampleapp_test
         cppqtgraph_examples_simpleplot
@@ -1320,6 +1321,7 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph_examples_imageview
         cppqtgraph_examples_parametertree
         cppqtgraph_examples_multidataplot
+        cppqtgraph_examples_interactiveparameter
     )
     set_tests_properties(cppqtgraph.examples.ExampleApp PROPERTIES LABELS "interaction")
     add_test(
