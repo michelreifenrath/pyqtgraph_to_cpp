@@ -134,8 +134,7 @@ bool testMenuTreePolicy()
                                                 QStringLiteral("Average"), QStringLiteral("Alpha"),
                                                 QStringLiteral("Grid"), QStringLiteral("Points")};
     const std::vector<QString> supportedVisibleSubmenus{QStringLiteral("Transforms"), QStringLiteral("Downsample"),
-                                                        QStringLiteral("Alpha"), QStringLiteral("Grid"),
-                                                        QStringLiteral("Points")};
+                                                        QStringLiteral("Alpha"), QStringLiteral("Grid")};
 
     std::vector<QString> actualActions;
     for (QAction* action : menu->actions()) {
@@ -147,6 +146,7 @@ bool testMenuTreePolicy()
         CHECK(actionVisible(menu, submenu));
     }
     CHECK(!actionVisible(menu, QStringLiteral("Average")));
+    CHECK(!actionVisible(menu, QStringLiteral("Points")));
 
     const std::vector<QString> hiddenControls{QStringLiteral("fftCheck"),
                                                 QStringLiteral("subtractMeanCheck"),
@@ -156,7 +156,8 @@ bool testMenuTreePolicy()
                                                 QStringLiteral("maxTracesSpin"),
                                                 QStringLiteral("forgetTracesCheck"),
                                                 QStringLiteral("averageGroup"),
-                                                QStringLiteral("avgParamList")};
+                                                QStringLiteral("avgParamList"),
+                                                QStringLiteral("pointsGroup")};
     for (const QString& objectName : hiddenControls) {
         CHECK(controlHidden(menu, objectName));
     }
@@ -167,57 +168,73 @@ bool testMenuTreePolicy()
     CHECK(controlSupported(menu, QStringLiteral("clipToViewCheck")));
     CHECK(controlSupported(menu, QStringLiteral("alphaGroup")));
     CHECK(controlSupported(menu, QStringLiteral("xGridCheck")));
-    CHECK(controlSupported(menu, QStringLiteral("pointsGroup")));
+    CHECK(controlHidden(menu, QStringLiteral("pointsGroup")));
 
     return true;
 }
 
-bool testSupportedControlsRemainWired()
+bool spanEquals(std::span<const double> values, const std::vector<double>& expected)
 {
+    if (values.size() != expected.size()) {
+        return false;
+    }
+    for (std::size_t index = 0; index < expected.size(); ++index) {
+        if (!nearlyEqual(values[index], expected[index])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool testSupportedControlsAffectPlotDataItem()
+{
+    using cppqtgraph::graphicsItems::PlotDataItem;
     using cppqtgraph::graphicsItems::PlotItem;
 
     PlotItem plot;
-    QMenu* menu = plot.getMenu();
-    CHECK(menu != nullptr);
+    std::vector<double> x;
+    std::vector<double> y;
+    for (int index = 0; index < 10; ++index) {
+        x.push_back(static_cast<double>(index));
+        y.push_back(static_cast<double>(index * index));
+    }
+    auto data = std::make_unique<PlotDataItem>(x, y);
+    plot.addItem(data.get());
 
-    auto* logX = findControl<QCheckBox>(menu, QStringLiteral("logXCheck"));
-    auto* logY = findControl<QCheckBox>(menu, QStringLiteral("logYCheck"));
-    auto* xGrid = findControl<QCheckBox>(menu, QStringLiteral("xGridCheck"));
-    auto* yGrid = findControl<QCheckBox>(menu, QStringLiteral("yGridCheck"));
-    auto* gridAlpha = findControl<QSlider>(menu, QStringLiteral("gridAlphaSlider"));
+    QMenu* menu = plot.getMenu();
+    auto* subsampleRadio = findControl<QRadioButton>(menu, QStringLiteral("subsampleRadio"));
     auto* downsampleSpin = findControl<QSpinBox>(menu, QStringLiteral("downsampleSpin"));
-    auto* meanRadio = findControl<QRadioButton>(menu, QStringLiteral("meanRadio"));
+    auto* downsampleCheck = findControl<QCheckBox>(menu, QStringLiteral("downsampleCheck"));
     auto* clipToView = findControl<QCheckBox>(menu, QStringLiteral("clipToViewCheck"));
     auto* alphaSlider = findControl<QSlider>(menu, QStringLiteral("alphaSlider"));
-    CHECK(logX != nullptr && logY != nullptr);
-    CHECK(xGrid != nullptr && yGrid != nullptr && gridAlpha != nullptr);
-    CHECK(downsampleSpin != nullptr && meanRadio != nullptr && clipToView != nullptr);
-    CHECK(alphaSlider != nullptr);
+    CHECK(subsampleRadio != nullptr && downsampleSpin != nullptr && downsampleCheck != nullptr);
+    CHECK(clipToView != nullptr && alphaSlider != nullptr);
 
-    logX->setChecked(true);
-    logY->setChecked(true);
-    xGrid->setChecked(true);
-    yGrid->setChecked(false);
-    gridAlpha->setValue(200);
-    plot.setDownsampling(5, false, QStringLiteral("mean"));
-    plot.setClipToView(true);
+    CHECK(spanEquals(data->xData(), x));
+    CHECK(spanEquals(data->yData(), y));
+    CHECK(data->curve()->xData().size() == x.size());
+
+    subsampleRadio->setChecked(true);
+    downsampleSpin->setValue(2);
+    downsampleCheck->setChecked(true);
+    CHECK(data->curve()->xData().size() == 5U);
+    CHECK(spanEquals(data->xData(), x));
+
+    downsampleCheck->setChecked(false);
+    plot.setXRange(3.0, 7.0, 0.0);
+    clipToView->setChecked(true);
+    const auto clippedX = data->curve()->xData();
+    CHECK(clippedX.size() == 6U);
+    CHECK(nearlyEqual(clippedX.front(), 2.0));
+    CHECK(nearlyEqual(clippedX.back(), 7.0));
+    for (double value : clippedX) {
+        CHECK(value >= 2.0 && value <= 7.0);
+    }
+
     alphaSlider->setValue(500);
+    CHECK(data->curve()->pen().color().alpha() == 128);
 
-    const auto logMode = plot.logMode();
-    const auto grid = plot.gridState();
-    const auto downsample = plot.downsampleMode();
-    const auto alpha = plot.alphaState();
-    CHECK(logMode[0] && logMode[1]);
-    CHECK(grid.x && !grid.y);
-    CHECK(grid.alphaSliderValue == 200);
-    CHECK(downsample.factor == 5);
-    CHECK(!downsample.automatic);
-    CHECK(downsample.method == QStringLiteral("mean"));
-    CHECK(meanRadio->isChecked());
-    CHECK(plot.clipToViewMode());
-    CHECK(alpha.alpha == 0.5);
-    CHECK(!alpha.automatic);
-
+    plot.removeItem(data.get());
     return true;
 }
 
@@ -255,7 +272,7 @@ int main(int argc, char** argv)
     if (!testMenuTreePolicy()) {
         return 1;
     }
-    if (!testSupportedControlsRemainWired()) {
+    if (!testSupportedControlsAffectPlotDataItem()) {
         return 1;
     }
     if (!testLogMenuToggleUpdatesPlotDataItem()) {

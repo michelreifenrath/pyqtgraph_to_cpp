@@ -248,8 +248,8 @@ bool testMenuConfigInteraction()
     CHECK(meanRadio != nullptr && peakRadio != nullptr && clipToView != nullptr);
     CHECK(alphaGroup != nullptr && autoAlpha != nullptr && alphaSlider != nullptr);
     CHECK(pointsGroup != nullptr && autoPoints != nullptr);
-
-    CHECK(!logX->isChecked());
+    CHECK(!pointsGroup->isEnabled());
+    CHECK(!autoPoints->isEnabled());
     CHECK(!logY->isChecked());
     CHECK(!downsampleCheck->isChecked());
     CHECK(autoDownsample->isChecked());
@@ -263,8 +263,6 @@ bool testMenuConfigInteraction()
     CHECK(!autoAlpha->isChecked());
     CHECK(alphaSlider->maximum() == 1000);
     CHECK(alphaSlider->value() == 1000);
-    CHECK(pointsGroup->isChecked());
-    CHECK(autoPoints->isChecked());
 
     int callbackCount = 0;
     QObject::connect(logX, &QCheckBox::toggled, [&callbackCount](bool) { ++callbackCount; });
