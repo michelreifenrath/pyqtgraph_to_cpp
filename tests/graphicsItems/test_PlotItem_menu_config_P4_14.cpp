@@ -203,7 +203,26 @@ bool testMenuConfigInteraction()
     }
     CHECK(actualActions == expectedActions);
     for (const QString& actionText : expectedActions) {
+        if (actionText == QStringLiteral("Average")) {
+            CHECK(!actionVisible(menu, actionText));
+            continue;
+        }
         CHECK(defaultWidgetFor(menu, actionText) != nullptr);
+    }
+
+    const std::vector<QString> hiddenControls{QStringLiteral("fftCheck"),
+                                                QStringLiteral("subtractMeanCheck"),
+                                                QStringLiteral("derivativeCheck"),
+                                                QStringLiteral("phasemapCheck"),
+                                                QStringLiteral("maxTracesCheck"),
+                                                QStringLiteral("maxTracesSpin"),
+                                                QStringLiteral("forgetTracesCheck")};
+    for (const QString& objectName : hiddenControls) {
+        if (auto* checkbox = findControl<QCheckBox>(menu, objectName); checkbox != nullptr) {
+            CHECK(!checkbox->isEnabled());
+        } else if (auto* spin = findControl<QSpinBox>(menu, objectName); spin != nullptr) {
+            CHECK(!spin->isEnabled());
+        }
     }
 
     auto* logX = findControl<QCheckBox>(menu, QStringLiteral("logXCheck"));

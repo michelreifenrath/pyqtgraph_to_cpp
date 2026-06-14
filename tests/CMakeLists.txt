@@ -636,6 +636,11 @@ if(_cppqtgraph_has_graphicsitem)
         cppqtgraph.graphicsItems.PlotItem.menu_config.P4_14
     )
     cppqtgraph_add_cpp_test(
+        cppqtgraph_graphicsitems_plotitem_menu_plot_options_policy
+        graphicsItems/test_PlotItem_menu_plot_options_policy.cpp
+        cppqtgraph.graphicsItems.PlotItem.menu_plot_options_policy
+    )
+    cppqtgraph_add_cpp_test(
         cppqtgraph_graphicsitems_plotitem_autorange_button
         graphicsItems/test_PlotItem_autorange_button.cpp
         cppqtgraph.graphicsItems.PlotItem.autorange_button

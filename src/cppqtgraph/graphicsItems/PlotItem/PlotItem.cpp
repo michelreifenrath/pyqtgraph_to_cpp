@@ -1016,6 +1016,22 @@ void PlotItem::setupConfigMenu(bool enableMenu)
         submenu->addAction(action);
     }
 
+    const auto hideUnsupportedControl = [](QWidget* widget) {
+        if (widget != nullptr) {
+            widget->setVisible(false);
+            widget->setEnabled(false);
+        }
+    };
+    hideUnsupportedControl(ctrl_->fftCheck);
+    hideUnsupportedControl(ctrl_->subtractMeanCheck);
+    hideUnsupportedControl(ctrl_->derivativeCheck);
+    hideUnsupportedControl(ctrl_->phasemapCheck);
+    hideUnsupportedControl(ctrl_->maxTracesCheck);
+    hideUnsupportedControl(ctrl_->maxTracesSpin);
+    hideUnsupportedControl(ctrl_->forgetTracesCheck);
+    hideUnsupportedControl(ctrl_->averageGroup);
+    setContextMenuActionVisible(QStringLiteral("Average"), false);
+
     QObject::connect(ctrl_->logXCheck, &QCheckBox::toggled, [this](bool) { updateLogMode(); });
     QObject::connect(ctrl_->logYCheck, &QCheckBox::toggled, [this](bool) { updateLogMode(); });
     QObject::connect(ctrl_->xGridCheck, &QCheckBox::toggled, [this](bool) { updateGrid(); });
