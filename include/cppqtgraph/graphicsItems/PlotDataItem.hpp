@@ -80,6 +80,10 @@ public:
     void setLogMode(bool xEnabled, bool yEnabled);
     [[nodiscard]] std::array<bool, 2> logMode() const noexcept;
 
+    void setDownsampling(int factor, const QString& method);
+    void setClipToView(bool enabled, std::optional<std::pair<double, double>> xViewRange = std::nullopt);
+    void setAlpha(double alpha);
+
     [[nodiscard]] QRectF boundingRect() const override;
     [[nodiscard]] std::optional<QRectF> autoRangeBoundsRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
@@ -95,6 +99,11 @@ private:
     std::vector<double> displayX_;
     std::vector<double> displayY_;
     std::array<bool, 2> logMode_{{false, false}};
+    int downsampleFactor_ = 1;
+    QString downsampleMethod_ = QStringLiteral("peak");
+    bool clipToView_ = false;
+    std::optional<std::pair<double, double>> clipXRange_;
+    double dataAlpha_ = 1.0;
     bool hasData_ = false;
     bool lineVisible_ = true;
     bool symbolsVisible_ = false;

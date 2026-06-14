@@ -290,6 +290,53 @@ void applyDirectCurveTransforms(const QList<QGraphicsItem*>& items, const QRectF
     }
 }
 
+void applyPlotOptions(PlotDataItem& item, const PlotItem::PlotOptions& options)
+{
+    if (options.pen.has_value()) {
+        item.setPen(*options.pen);
+    }
+    if (options.symbol.has_value()) {
+        item.setSymbol(*options.symbol);
+    }
+    if (options.symbolBrush.has_value()) {
+        item.setSymbolBrush(*options.symbolBrush);
+    }
+}
+
+enum class AlphaApplication {
+    Preserve,
+    Initial,
+    Update,
+};
+
+void applyPlotDataItemOptions(const PlotItem& plot, PlotDataItem& item, AlphaApplication alphaApplication)
+{
+    item.setLogMode(plot.logMode()[0], plot.logMode()[1]);
+
+    const PlotItem::DownsampleState downsample = plot.downsampleMode();
+    item.setDownsampling(downsample.factor, downsample.method);
+
+    std::optional<std::pair<double, double>> clipRange;
+    if (plot.clipToViewMode()) {
+        if (const ViewBox* viewBox = plot.getViewBox(); viewBox != nullptr) {
+            const auto autoRange = viewBox->autoRangeEnabled();
+            if (!autoRange[ViewBox::XAxis]) {
+                const QRectF view = viewBox->viewRect();
+                clipRange = std::make_pair(view.left(), view.right());
+            }
+        }
+    }
+    item.setClipToView(plot.clipToViewMode(), clipRange);
+
+    if (alphaApplication != AlphaApplication::Preserve) {
+        double alpha = plot.alphaState().alpha;
+        if (alphaApplication == AlphaApplication::Update) {
+            alpha *= alpha;
+        }
+        item.setAlpha(alpha);
+    }
+}
+
 } // namespace
 
 class TitleLabel : public QGraphicsWidget {
@@ -441,7 +488,7 @@ void PlotItem::addItem(QGraphicsItem* item, bool ignoreBounds, const QString& na
 
     items_.push_back(item);
     if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
-        plotData->setLogMode(logMode_[0], logMode_[1]);
+        applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Initial);
     }
     {
         ScopedBool guard(forwardingChild_);
@@ -488,23 +535,6 @@ void PlotItem::clear()
     syncAxisRanges();
     update();
 }
-
-namespace {
-
-void applyPlotOptions(PlotDataItem& item, const PlotItem::PlotOptions& options)
-{
-    if (options.pen.has_value()) {
-        item.setPen(*options.pen);
-    }
-    if (options.symbol.has_value()) {
-        item.setSymbol(*options.symbol);
-    }
-    if (options.symbolBrush.has_value()) {
-        item.setSymbolBrush(*options.symbolBrush);
-    }
-}
-
-} // namespace
 
 PlotDataItem* PlotItem::plot(std::span<const double> y, const QString& name)
 {
@@ -942,6 +972,9 @@ void PlotItem::connectAxisRanges()
     QObject::connect(vb_, &ViewBox::sigXRangeChanged, vb_, [this](ViewBox*, ViewBox::AxisRange range) {
         axes_[topIndex]->setRange(range[0], range[1]);
         axes_[bottomIndex]->setRange(range[0], range[1]);
+        if (clipToViewMode()) {
+            updateDownsampling();
+        }
     });
     QObject::connect(vb_, &ViewBox::sigYRangeChanged, vb_, [this](ViewBox*, ViewBox::AxisRange range) {
         axes_[leftIndex]->setRange(range[0], range[1]);
@@ -949,6 +982,9 @@ void PlotItem::connectAxisRanges()
     });
     QObject::connect(vb_, &ViewBox::sigRangeChanged, vb_, [this](ViewBox*, ViewBox::Range2D, std::array<bool, 2>) {
         syncAxisRanges();
+        if (clipToViewMode()) {
+            updateDownsampling();
+        }
     });
 }
 
@@ -1016,6 +1052,25 @@ void PlotItem::setupConfigMenu(bool enableMenu)
         submenu->addAction(action);
     }
 
+    const auto hideUnsupportedControl = [](QWidget* widget) {
+        if (widget != nullptr) {
+            widget->setVisible(false);
+            widget->setEnabled(false);
+        }
+    };
+    hideUnsupportedControl(ctrl_->fftCheck);
+    hideUnsupportedControl(ctrl_->subtractMeanCheck);
+    hideUnsupportedControl(ctrl_->derivativeCheck);
+    hideUnsupportedControl(ctrl_->phasemapCheck);
+    hideUnsupportedControl(ctrl_->maxTracesCheck);
+    hideUnsupportedControl(ctrl_->maxTracesSpin);
+    hideUnsupportedControl(ctrl_->forgetTracesCheck);
+    hideUnsupportedControl(ctrl_->autoDownsampleCheck);
+    hideUnsupportedControl(ctrl_->averageGroup);
+    hideUnsupportedControl(ctrl_->pointsGroup);
+    setContextMenuActionVisible(QStringLiteral("Average"), false);
+    setContextMenuActionVisible(QStringLiteral("Points"), false);
+
     QObject::connect(ctrl_->logXCheck, &QCheckBox::toggled, [this](bool) { updateLogMode(); });
     QObject::connect(ctrl_->logYCheck, &QCheckBox::toggled, [this](bool) { updateLogMode(); });
     QObject::connect(ctrl_->xGridCheck, &QCheckBox::toggled, [this](bool) { updateGrid(); });
@@ -1047,7 +1102,7 @@ void PlotItem::updateLogMode()
     logMode_ = {ctrl_->logXCheck->isChecked(), ctrl_->logYCheck->isChecked()};
     for (QGraphicsItem* item : items_) {
         if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
-            plotData->setLogMode(logMode_[0], logMode_[1]);
+            applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Preserve);
         }
     }
     for (AxisItem* axisItem : axes_) {
@@ -1101,11 +1156,21 @@ void PlotItem::updateGrid()
 
 void PlotItem::updateDownsampling()
 {
+    for (QGraphicsItem* item : items_) {
+        if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
+            applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Preserve);
+        }
+    }
     update();
 }
 
 void PlotItem::updateAlpha()
 {
+    for (QGraphicsItem* item : items_) {
+        if (auto* plotData = dynamic_cast<PlotDataItem*>(item)) {
+            applyPlotDataItemOptions(*this, *plotData, AlphaApplication::Update);
+        }
+    }
     update();
 }
 

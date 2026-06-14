@@ -203,7 +203,27 @@ bool testMenuConfigInteraction()
     }
     CHECK(actualActions == expectedActions);
     for (const QString& actionText : expectedActions) {
+        if (actionText == QStringLiteral("Average")) {
+            CHECK(!actionVisible(menu, actionText));
+            continue;
+        }
         CHECK(defaultWidgetFor(menu, actionText) != nullptr);
+    }
+
+    const std::vector<QString> hiddenControls{QStringLiteral("fftCheck"),
+                                                QStringLiteral("subtractMeanCheck"),
+                                                QStringLiteral("derivativeCheck"),
+                                                QStringLiteral("phasemapCheck"),
+                                                QStringLiteral("maxTracesCheck"),
+                                                QStringLiteral("maxTracesSpin"),
+                                                QStringLiteral("forgetTracesCheck"),
+                                                QStringLiteral("autoDownsampleCheck")};
+    for (const QString& objectName : hiddenControls) {
+        if (auto* checkbox = findControl<QCheckBox>(menu, objectName); checkbox != nullptr) {
+            CHECK(!checkbox->isEnabled());
+        } else if (auto* spin = findControl<QSpinBox>(menu, objectName); spin != nullptr) {
+            CHECK(!spin->isEnabled());
+        }
     }
 
     auto* logX = findControl<QCheckBox>(menu, QStringLiteral("logXCheck"));
@@ -229,8 +249,8 @@ bool testMenuConfigInteraction()
     CHECK(meanRadio != nullptr && peakRadio != nullptr && clipToView != nullptr);
     CHECK(alphaGroup != nullptr && autoAlpha != nullptr && alphaSlider != nullptr);
     CHECK(pointsGroup != nullptr && autoPoints != nullptr);
-
-    CHECK(!logX->isChecked());
+    CHECK(!pointsGroup->isEnabled());
+    CHECK(!autoPoints->isEnabled());
     CHECK(!logY->isChecked());
     CHECK(!downsampleCheck->isChecked());
     CHECK(autoDownsample->isChecked());
@@ -244,8 +264,6 @@ bool testMenuConfigInteraction()
     CHECK(!autoAlpha->isChecked());
     CHECK(alphaSlider->maximum() == 1000);
     CHECK(alphaSlider->value() == 1000);
-    CHECK(pointsGroup->isChecked());
-    CHECK(autoPoints->isChecked());
 
     int callbackCount = 0;
     QObject::connect(logX, &QCheckBox::toggled, [&callbackCount](bool) { ++callbackCount; });

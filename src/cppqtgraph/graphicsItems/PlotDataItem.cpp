@@ -18,6 +18,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <vector>
+#include <algorithm>
 
 namespace cppqtgraph::graphicsItems {
 
@@ -63,6 +64,160 @@ QPen normalizeSymbolPen(const QPen& pen)
 QBrush defaultPlotDataSymbolBrush()
 {
     return QBrush(QColor(50, 50, 150));
+}
+
+void clipDataToView(std::vector<double>& x, std::vector<double>& y, double left, double right, int downsampleFactor)
+{
+    if (x.size() <= 1) {
+        return;
+    }
+
+    const int ds = std::max(1, downsampleFactor);
+    const auto lowerBound = std::lower_bound(x.begin(), x.end(), left);
+    std::size_t x0 = static_cast<std::size_t>(lowerBound - x.begin());
+    if (x0 >= static_cast<std::size_t>(ds)) {
+        x0 -= static_cast<std::size_t>(ds);
+    } else {
+        x0 = 0;
+    }
+
+    const auto upperBound = std::lower_bound(x.begin(), x.end(), right);
+    std::size_t x1 = static_cast<std::size_t>(upperBound - x.begin()) + static_cast<std::size_t>(ds);
+    x1 = std::min(x1, x.size());
+    x0 = std::min(x0, x1);
+
+    x.assign(x.begin() + static_cast<std::ptrdiff_t>(x0), x.begin() + static_cast<std::ptrdiff_t>(x1));
+    y.assign(y.begin() + static_cast<std::ptrdiff_t>(x0), y.begin() + static_cast<std::ptrdiff_t>(x1));
+}
+
+void downsampleSubsample(std::vector<double>& x, std::vector<double>& y, int factor)
+{
+    if (factor <= 1 || x.empty()) {
+        return;
+    }
+
+    std::vector<double> newX;
+    std::vector<double> newY;
+    newX.reserve((x.size() + static_cast<std::size_t>(factor) - 1) / static_cast<std::size_t>(factor));
+    newY.reserve(newX.capacity());
+    for (std::size_t index = 0; index < x.size(); index += static_cast<std::size_t>(factor)) {
+        newX.push_back(x[index]);
+        newY.push_back(y[index]);
+    }
+    x.swap(newX);
+    y.swap(newY);
+}
+
+void downsampleMean(std::vector<double>& x, std::vector<double>& y, int factor)
+{
+    if (factor <= 1 || x.empty()) {
+        return;
+    }
+
+    const int n = static_cast<int>(x.size()) / factor;
+    if (n <= 0) {
+        x.clear();
+        y.clear();
+        return;
+    }
+
+    const int start = factor / 2;
+    std::vector<double> newX;
+    std::vector<double> newY;
+    newX.reserve(static_cast<std::size_t>(n));
+    newY.reserve(static_cast<std::size_t>(n));
+    for (int block = 0; block < n; ++block) {
+        const std::size_t offset = static_cast<std::size_t>(block * factor);
+        newX.push_back(x[static_cast<std::size_t>(start) + offset]);
+        double sum = 0.0;
+        for (int sample = 0; sample < factor; ++sample) {
+            sum += y[offset + static_cast<std::size_t>(sample)];
+        }
+        newY.push_back(sum / static_cast<double>(factor));
+    }
+    x.swap(newX);
+    y.swap(newY);
+}
+
+void downsamplePeak(std::vector<double>& x, std::vector<double>& y, int factor)
+{
+    if (factor <= 1 || x.empty()) {
+        return;
+    }
+
+    const int n = static_cast<int>(x.size()) / factor;
+    if (n <= 0) {
+        x.clear();
+        y.clear();
+        return;
+    }
+
+    const int start = factor / 2;
+    std::vector<double> newX;
+    std::vector<double> newY;
+    newX.reserve(static_cast<std::size_t>(n) * 2U);
+    newY.reserve(static_cast<std::size_t>(n) * 2U);
+    for (int block = 0; block < n; ++block) {
+        const std::size_t offset = static_cast<std::size_t>(block * factor);
+        const double xValue = x[static_cast<std::size_t>(start) + offset];
+        double yMax = y[offset];
+        double yMin = y[offset];
+        bool hasNaN = std::isnan(y[offset]);
+        for (int sample = 1; sample < factor; ++sample) {
+            const double value = y[offset + static_cast<std::size_t>(sample)];
+            hasNaN = hasNaN || std::isnan(value);
+            yMax = std::max(yMax, value);
+            yMin = std::min(yMin, value);
+        }
+        if (hasNaN) {
+            yMax = std::numeric_limits<double>::quiet_NaN();
+            yMin = std::numeric_limits<double>::quiet_NaN();
+        }
+        newX.push_back(xValue);
+        newY.push_back(yMax);
+        newX.push_back(xValue);
+        newY.push_back(yMin);
+    }
+    x.swap(newX);
+    y.swap(newY);
+}
+
+void applyDownsample(std::vector<double>& x, std::vector<double>& y, int factor, const QString& method)
+{
+    if (factor <= 1) {
+        return;
+    }
+    if (method == QStringLiteral("subsample")) {
+        downsampleSubsample(x, y, factor);
+    } else if (method == QStringLiteral("mean")) {
+        downsampleMean(x, y, factor);
+    } else if (method == QStringLiteral("peak")) {
+        downsamplePeak(x, y, factor);
+    }
+}
+
+QPen applyAlphaToPen(const QPen& pen, double alpha)
+{
+    if (pen.style() == Qt::NoPen) {
+        return pen;
+    }
+    QPen adjusted(pen);
+    QColor color = adjusted.color();
+    color.setAlpha(static_cast<int>(std::lround(color.alpha() * alpha)));
+    adjusted.setColor(color);
+    return adjusted;
+}
+
+QBrush applyAlphaToBrush(const QBrush& brush, double alpha)
+{
+    if (brush.style() == Qt::NoBrush) {
+        return brush;
+    }
+    QBrush adjusted(brush);
+    QColor color = adjusted.color();
+    color.setAlpha(static_cast<int>(std::lround(color.alpha() * alpha)));
+    adjusted.setColor(color);
+    return adjusted;
 }
 
 } // namespace
@@ -306,6 +461,37 @@ std::array<bool, 2> PlotDataItem::logMode() const noexcept
     return logMode_;
 }
 
+void PlotDataItem::setDownsampling(int factor, const QString& method)
+{
+    const int clampedFactor = std::max(1, factor);
+    if (downsampleFactor_ == clampedFactor && downsampleMethod_ == method) {
+        return;
+    }
+    downsampleFactor_ = clampedFactor;
+    downsampleMethod_ = method;
+    updateItems();
+}
+
+void PlotDataItem::setClipToView(bool enabled, std::optional<std::pair<double, double>> xViewRange)
+{
+    if (clipToView_ == enabled && clipXRange_ == xViewRange) {
+        return;
+    }
+    clipToView_ = enabled;
+    clipXRange_ = std::move(xViewRange);
+    updateItems();
+}
+
+void PlotDataItem::setAlpha(double alpha)
+{
+    const double clamped = std::clamp(alpha, 0.0, 1.0);
+    if (dataAlpha_ == clamped) {
+        return;
+    }
+    dataAlpha_ = clamped;
+    updateItems();
+}
+
 void PlotDataItem::updateMappedData()
 {
     if (!hasData_) {
@@ -314,18 +500,28 @@ void PlotDataItem::updateMappedData()
         return;
     }
 
-    displayX_.assign(xData_.begin(), xData_.end());
-    displayY_.assign(yData_.begin(), yData_.end());
+    std::vector<double> x(xData_.begin(), xData_.end());
+    std::vector<double> y(yData_.begin(), yData_.end());
+
     if (logMode_[0]) {
-        for (double& value : displayX_) {
+        for (double& value : x) {
             value = mapLogAxisValue(value);
         }
     }
     if (logMode_[1]) {
-        for (double& value : displayY_) {
+        for (double& value : y) {
             value = mapLogAxisValue(value);
         }
     }
+
+    if (clipToView_ && clipXRange_.has_value() && x.size() > 1) {
+        clipDataToView(x, y, clipXRange_->first, clipXRange_->second, downsampleFactor_);
+    }
+
+    applyDownsample(x, y, downsampleFactor_, downsampleMethod_);
+
+    displayX_.assign(x.begin(), x.end());
+    displayY_.assign(y.begin(), y.end());
 }
 
 std::optional<QRectF> PlotDataItem::autoRangeBoundsRect() const
@@ -414,7 +610,7 @@ void PlotDataItem::updateItems()
     const std::span<const double> displayY = displayY_;
 
     if (curve_ != nullptr) {
-        curve_->setPen(pen_);
+        curve_->setPen(applyAlphaToPen(pen_, dataAlpha_));
         if (hasData_ && lineVisible_) {
             curve_->setData(displayX, displayY);
             curve_->show();
@@ -433,8 +629,8 @@ void PlotDataItem::updateItems()
     if (hasData_ && symbolsVisible_) {
         scatter_->setSymbol(symbol_);
         scatter_->setSize(symbolSize_);
-        scatter_->setPen(symbolPen_);
-        scatter_->setBrush(symbolBrush_);
+        scatter_->setPen(applyAlphaToPen(symbolPen_, dataAlpha_));
+        scatter_->setBrush(applyAlphaToBrush(symbolBrush_, dataAlpha_));
         scatter_->setData(displayX, displayY);
         scatter_->show();
         return;
