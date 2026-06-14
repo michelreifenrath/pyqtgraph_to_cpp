@@ -1,3 +1,4 @@
+#include <cppqtgraph/graphicsItems/AxisItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotDataItem.hpp>
 #include <cppqtgraph/graphicsItems/PlotItem/PlotItem.hpp>
 
@@ -206,6 +207,81 @@ bool testAlphaBeforeAddUsesInitialAlpha()
     return true;
 }
 
+bool testGridControlsAffectAxes()
+{
+    using cppqtgraph::graphicsItems::PlotItem;
+
+    PlotItem plot;
+    QMenu* menu = plot.getMenu();
+    auto* xGrid = findControl<QCheckBox>(menu, QStringLiteral("xGridCheck"));
+    auto* yGrid = findControl<QCheckBox>(menu, QStringLiteral("yGridCheck"));
+    auto* gridAlpha = findControl<QSlider>(menu, QStringLiteral("gridAlphaSlider"));
+    CHECK(xGrid != nullptr && yGrid != nullptr && gridAlpha != nullptr);
+
+    auto* top = plot.getAxis(QStringLiteral("top"));
+    auto* bottom = plot.getAxis(QStringLiteral("bottom"));
+    auto* left = plot.getAxis(QStringLiteral("left"));
+    auto* right = plot.getAxis(QStringLiteral("right"));
+    CHECK(top != nullptr && bottom != nullptr && left != nullptr && right != nullptr);
+
+    gridAlpha->setValue(200);
+    xGrid->setChecked(true);
+    CHECK(top->grid().has_value() && *top->grid() == 200);
+    CHECK(bottom->grid().has_value() && *bottom->grid() == 200);
+    CHECK(!left->grid().has_value());
+    CHECK(!right->grid().has_value());
+
+    yGrid->setChecked(true);
+    CHECK(left->grid().has_value() && *left->grid() == 200);
+    CHECK(right->grid().has_value() && *right->grid() == 200);
+
+    xGrid->setChecked(false);
+    yGrid->setChecked(false);
+    CHECK(!top->grid().has_value());
+    CHECK(!bottom->grid().has_value());
+    CHECK(!left->grid().has_value());
+    CHECK(!right->grid().has_value());
+
+    return true;
+}
+
+bool testLogMappingPrecedesClipAndDownsample()
+{
+    using cppqtgraph::graphicsItems::PlotDataItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+
+    PlotItem plot;
+    auto data = std::make_unique<PlotDataItem>(std::vector<double>{1.0, 10.0, 100.0, 1000.0},
+                                              std::vector<double>{10.0, 1000.0, 100.0, 10000.0});
+    plot.addItem(data.get());
+
+    QMenu* menu = plot.getMenu();
+    auto* logX = findControl<QCheckBox>(menu, QStringLiteral("logXCheck"));
+    auto* logY = findControl<QCheckBox>(menu, QStringLiteral("logYCheck"));
+    auto* downsampleCheck = findControl<QCheckBox>(menu, QStringLiteral("downsampleCheck"));
+    auto* downsampleSpin = findControl<QSpinBox>(menu, QStringLiteral("downsampleSpin"));
+    auto* meanRadio = findControl<QRadioButton>(menu, QStringLiteral("meanRadio"));
+    auto* clipToView = findControl<QCheckBox>(menu, QStringLiteral("clipToViewCheck"));
+    CHECK(logX != nullptr && logY != nullptr && downsampleCheck != nullptr);
+    CHECK(downsampleSpin != nullptr && meanRadio != nullptr && clipToView != nullptr);
+
+    logY->setChecked(true);
+    meanRadio->setChecked(true);
+    downsampleSpin->setValue(2);
+    downsampleCheck->setChecked(true);
+    CHECK(spanEquals(data->curve()->yData(), {2.0, 3.0}));
+
+    downsampleCheck->setChecked(false);
+    logY->setChecked(false);
+    logX->setChecked(true);
+    plot.setXRange(1.5, 2.5, 0.0);
+    clipToView->setChecked(true);
+    CHECK(spanEquals(data->curve()->xData(), {1.0, 2.0, 3.0}));
+
+    plot.removeItem(data.get());
+    return true;
+}
+
 bool testSupportedControlsAffectPlotDataItem()
 {
     using cppqtgraph::graphicsItems::PlotDataItem;
@@ -295,6 +371,12 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testAlphaBeforeAddUsesInitialAlpha()) {
+        return 1;
+    }
+    if (!testGridControlsAffectAxes()) {
+        return 1;
+    }
+    if (!testLogMappingPrecedesClipAndDownsample()) {
         return 1;
     }
     if (!testSupportedControlsAffectPlotDataItem()) {

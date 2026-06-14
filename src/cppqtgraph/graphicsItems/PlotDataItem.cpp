@@ -497,6 +497,17 @@ void PlotDataItem::updateMappedData()
     std::vector<double> x(xData_.begin(), xData_.end());
     std::vector<double> y(yData_.begin(), yData_.end());
 
+    if (logMode_[0]) {
+        for (double& value : x) {
+            value = mapLogAxisValue(value);
+        }
+    }
+    if (logMode_[1]) {
+        for (double& value : y) {
+            value = mapLogAxisValue(value);
+        }
+    }
+
     if (clipToView_ && clipXRange_.has_value() && x.size() > 1) {
         clipDataToView(x, y, clipXRange_->first, clipXRange_->second, downsampleFactor_);
     }
@@ -505,16 +516,6 @@ void PlotDataItem::updateMappedData()
 
     displayX_.assign(x.begin(), x.end());
     displayY_.assign(y.begin(), y.end());
-    if (logMode_[0]) {
-        for (double& value : displayX_) {
-            value = mapLogAxisValue(value);
-        }
-    }
-    if (logMode_[1]) {
-        for (double& value : displayY_) {
-            value = mapLogAxisValue(value);
-        }
-    }
 }
 
 std::optional<QRectF> PlotDataItem::autoRangeBoundsRect() const
