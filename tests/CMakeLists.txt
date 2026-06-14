@@ -1254,6 +1254,7 @@ if(_cppqtgraph_has_graphicsitem)
     )
     target_compile_definitions(cppqtgraph_examples_interactiveparameter_test
         PRIVATE
+            CPPQTGRAPH_P479_FIXTURE="${PROJECT_SOURCE_DIR}/oracle/fixtures/P479/interactive_parameter_tree.json"
             CPPQTGRAPH_INTERACTIVEPARAMETER_EXECUTABLE="$<TARGET_FILE:cppqtgraph_examples_interactiveparameter>"
     )
     add_dependencies(cppqtgraph_examples_interactiveparameter_test cppqtgraph_examples_interactiveparameter)
