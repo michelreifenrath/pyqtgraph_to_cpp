@@ -16,6 +16,99 @@
 
 namespace cppqtgraph::examples {
 
+namespace {
+
+std::shared_ptr<parametertree::Parameter> makeReciprocalGroup()
+{
+    auto group = parametertree::Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("Custom parameter group (reciprocal values)")},
+        {QStringLiteral("type"), QStringLiteral("group")},
+        {QStringLiteral("children"),
+         QVariantList{
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("A = 1/B")},
+                                             {QStringLiteral("type"), QStringLiteral("float")},
+                                             {QStringLiteral("value"), 7.0}}),
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("B = 1/A")},
+                                             {QStringLiteral("type"), QStringLiteral("float")},
+                                             {QStringLiteral("value"), 1.0 / 7.0}}),
+         }},
+    });
+
+    auto* a = group->child(QStringLiteral("A = 1/B"));
+    auto* b = group->child(QStringLiteral("B = 1/A"));
+    QObject::connect(a,
+                     &parametertree::Parameter::sigValueChanged,
+                     group.get(),
+                     [b](parametertree::Parameter*, const QVariant& value) {
+                         const double numeric = value.toDouble();
+                         if (numeric != 0.0) {
+                             b->setValue(1.0 / numeric, true);
+                         }
+                     });
+    QObject::connect(b,
+                     &parametertree::Parameter::sigValueChanged,
+                     group.get(),
+                     [a](parametertree::Parameter*, const QVariant& value) {
+                         const double numeric = value.toDouble();
+                         if (numeric != 0.0) {
+                             a->setValue(1.0 / numeric, true);
+                         }
+                     });
+    return group;
+}
+
+std::shared_ptr<parametertree::Parameter> makeScalableGroup()
+{
+    auto group = parametertree::Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("Expandable Parameter Group")},
+        {QStringLiteral("type"), QStringLiteral("group")},
+        {QStringLiteral("tip"), QStringLiteral("Click to add children")},
+        {QStringLiteral("addText"), QStringLiteral("Add")},
+        {QStringLiteral("addList"),
+         QVariantList{QStringLiteral("str"), QStringLiteral("float"), QStringLiteral("int")}},
+        {QStringLiteral("children"),
+         QVariantList{
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 1")},
+                                             {QStringLiteral("type"), QStringLiteral("str")},
+                                             {QStringLiteral("value"), QStringLiteral("default param 1")}}),
+             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 2")},
+                                             {QStringLiteral("type"), QStringLiteral("str")},
+                                             {QStringLiteral("value"), QStringLiteral("default param 2")}}),
+         }},
+    });
+
+    auto* scalable = dynamic_cast<parametertree::GroupParameter*>(group.get());
+    if (scalable != nullptr) {
+        QObject::connect(scalable,
+                         &parametertree::GroupParameter::sigAddNew,
+                         scalable,
+                         [](parametertree::GroupParameter* self, const QString& typ) {
+                             QVariant defaultValue;
+                             if (typ == QStringLiteral("str")) {
+                                 defaultValue = QString();
+                             } else if (typ == QStringLiteral("float")) {
+                                 defaultValue = 0.0;
+                             } else if (typ == QStringLiteral("int")) {
+                                 defaultValue = 0;
+                             } else {
+                                 return;
+                             }
+                             const int nextIndex = static_cast<int>(self->children().size()) + 1;
+                             self->addChild(parametertree::Parameter::create(QVariantMap{
+                                 {QStringLiteral("name"),
+                                  QStringLiteral("ScalableParam %1").arg(nextIndex)},
+                                 {QStringLiteral("type"), typ},
+                                 {QStringLiteral("value"), defaultValue},
+                                 {QStringLiteral("removable"), true},
+                                 {QStringLiteral("renamable"), true},
+                             }));
+                         });
+    }
+    return group;
+}
+
+} // namespace
+
 std::shared_ptr<parametertree::Parameter> buildParametertreeRoot()
 {
     auto root = parametertree::Parameter::create(QVariantMap{
@@ -54,39 +147,20 @@ std::shared_ptr<parametertree::Parameter> buildParametertreeRoot()
          QVariantList{
              QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("List contextMenu")},
                                              {QStringLiteral("type"), QStringLiteral("float")},
-                                             {QStringLiteral("value"), 0}}),
+                                             {QStringLiteral("value"), 0},
+                                             {QStringLiteral("context"),
+                                              QVariantList{QStringLiteral("menu1"), QStringLiteral("menu2")}}}),
              QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("Dict contextMenu")},
                                              {QStringLiteral("type"), QStringLiteral("float")},
-                                             {QStringLiteral("value"), 0}}),
+                                             {QStringLiteral("value"), 0},
+                                             {QStringLiteral("context"),
+                                              QVariantMap{{QStringLiteral("changeName"), QStringLiteral("Title")},
+                                                          {QStringLiteral("internal"),
+                                                           QStringLiteral("What the user sees")}}}}),
          }},
     }));
-    root->addChild(parametertree::Parameter::create(QVariantMap{
-        {QStringLiteral("name"), QStringLiteral("Custom parameter group (reciprocal values)")},
-        {QStringLiteral("type"), QStringLiteral("group")},
-        {QStringLiteral("children"),
-         QVariantList{
-             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("A = 1/B")},
-                                             {QStringLiteral("type"), QStringLiteral("float")},
-                                             {QStringLiteral("value"), 7.0}}),
-             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("B = 1/A")},
-                                             {QStringLiteral("type"), QStringLiteral("float")},
-                                             {QStringLiteral("value"), 1.0 / 7.0}}),
-         }},
-    }));
-    root->addChild(parametertree::Parameter::create(QVariantMap{
-        {QStringLiteral("name"), QStringLiteral("Expandable Parameter Group")},
-        {QStringLiteral("type"), QStringLiteral("group")},
-        {QStringLiteral("tip"), QStringLiteral("Click to add children")},
-        {QStringLiteral("children"),
-         QVariantList{
-             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 1")},
-                                             {QStringLiteral("type"), QStringLiteral("str")},
-                                             {QStringLiteral("value"), QStringLiteral("default param 1")}}),
-             QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("ScalableParam 2")},
-                                             {QStringLiteral("type"), QStringLiteral("str")},
-                                             {QStringLiteral("value"), QStringLiteral("default param 2")}}),
-         }},
-    }));
+    root->addChild(makeReciprocalGroup());
+    root->addChild(makeScalableGroup());
     return root;
 }
 

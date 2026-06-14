@@ -9,6 +9,8 @@
 
 #include <QVariant>
 
+class QComboBox;
+class QContextMenuEvent;
 class QLabel;
 class QPushButton;
 class QKeyEvent;
@@ -43,6 +45,7 @@ public:
     virtual void columnChangedEvent(int col);
     virtual void expandedChangedEvent(bool expanded);
     virtual void selected(bool sel);
+    virtual void contextMenuEvent(QContextMenuEvent* event);
 
     [[nodiscard]] virtual bool isFocusable() const;
     virtual void setFocus();
@@ -51,6 +54,8 @@ public:
 protected:
     void updateFlags();
     void titleChanged();
+    void requestRemove();
+    void editName();
 
     Parameter* param_ = nullptr;
     int depth_ = 0;
@@ -146,6 +151,30 @@ protected:
     QVariant readEditorValue() const override;
     void writeEditorValue(const QVariant& val) override;
     void configureEditor(QWidget* editor) override;
+};
+
+class GroupParameterItem : public ParameterItem {
+public:
+    GroupParameterItem(Parameter* param, int depth);
+    ~GroupParameterItem() override;
+
+    void treeWidgetChanged() override;
+    void childAdded(Parameter* param, Parameter* child, int pos) override;
+    void optsChanged(Parameter* param, const QVariantMap& opts) override;
+
+    [[nodiscard]] QComboBox* addComboWidget() const { return addCombo_; }
+
+private:
+    void ensureAddRow();
+    void updateAddList();
+    void addClicked();
+    void addChanged(int index);
+
+    QComboBox* addCombo_ = nullptr;
+    QPushButton* addButton_ = nullptr;
+    QWidget* addWidgetBox_ = nullptr;
+    QTreeWidgetItem* addItem_ = nullptr;
+    int initialFontPointSize_ = 0;
 };
 
 class ActionParameterItem final : public ParameterItem {

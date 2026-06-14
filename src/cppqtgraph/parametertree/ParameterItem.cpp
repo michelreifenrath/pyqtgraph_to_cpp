@@ -13,7 +13,9 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QSignalBlocker>
+#include <QtCore/QTimer>
 #include <QtGui/QColor>
+#include <QtGui/QContextMenuEvent>
 #include <QtGui/QIcon>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QKeySequence>
@@ -22,6 +24,7 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QMenu>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QTreeWidgetItem>
@@ -281,6 +284,70 @@ void ParameterItem::expandedChangedEvent(bool expanded)
 
 void ParameterItem::selected(bool /*sel*/)
 {
+}
+
+void ParameterItem::contextMenuEvent(QContextMenuEvent* event)
+{
+    if (param_ == nullptr) {
+        return;
+    }
+
+    const QVariantMap& opts = param_->options();
+    const bool hasContext = opts.contains(QStringLiteral("context"));
+    if (!opts.value(QStringLiteral("removable"), false).toBool()
+        && !opts.value(QStringLiteral("renamable"), false).toBool() && !hasContext) {
+        return;
+    }
+
+    QMenu menu;
+    menu.addSeparator();
+    if (opts.value(QStringLiteral("renamable"), false).toBool()) {
+        QObject::connect(menu.addAction(QStringLiteral("Rename")), &QAction::triggered, [this]() { editName(); });
+    }
+    if (opts.value(QStringLiteral("removable"), false).toBool()) {
+        QObject::connect(menu.addAction(QStringLiteral("Remove")), &QAction::triggered, [this]() { requestRemove(); });
+    }
+
+    const QVariant context = opts.value(QStringLiteral("context"));
+    if (context.canConvert<QVariantList>()) {
+        for (const QVariant& entry : context.toList()) {
+            const QString name = entry.toString();
+            QObject::connect(menu.addAction(name), &QAction::triggered, [this, name]() {
+                if (param_ != nullptr) {
+                    param_->contextMenu(name);
+                }
+            });
+        }
+    } else if (context.canConvert<QVariantMap>()) {
+        const QVariantMap contextMap = context.toMap();
+        for (auto it = contextMap.constBegin(); it != contextMap.constEnd(); ++it) {
+            const QString internalName = it.key();
+            const QString title = it.value().toString();
+            QObject::connect(menu.addAction(title), &QAction::triggered, [this, internalName]() {
+                if (param_ != nullptr) {
+                    param_->contextMenu(internalName);
+                }
+            });
+        }
+    }
+
+    menu.exec(event->globalPos());
+    event->accept();
+}
+
+void ParameterItem::requestRemove()
+{
+    if (param_ == nullptr) {
+        return;
+    }
+    QTimer::singleShot(0, param_, [param = param_]() { param->remove(); });
+}
+
+void ParameterItem::editName()
+{
+    if (auto* tree = treeWidget()) {
+        tree->editItem(this, 0);
+    }
 }
 
 bool ParameterItem::isFocusable() const
@@ -928,6 +995,162 @@ void ActionParameterItem::updateShortcut()
             action->activate();
         }
     });
+}
+
+GroupParameterItem::GroupParameterItem(Parameter* param, int depth)
+    : ParameterItem(param, depth)
+    , initialFontPointSize_(font(0).pointSize())
+{
+    for (int column = 0; column < 2; ++column) {
+        QFont groupFont = font(column);
+        groupFont.setBold(true);
+        if (depth == 0) {
+            groupFont.setPointSize(initialFontPointSize_ + 1);
+        }
+        setFont(column, groupFont);
+    }
+    titleChanged();
+}
+
+GroupParameterItem::~GroupParameterItem() = default;
+
+void GroupParameterItem::ensureAddRow()
+{
+    if (param_ == nullptr || addItem_ != nullptr) {
+        return;
+    }
+    if (!param_->options().contains(QStringLiteral("addText"))) {
+        return;
+    }
+
+    const QString addText = param_->options().value(QStringLiteral("addText")).toString();
+    auto* layout = new QHBoxLayout();
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    if (param_->options().contains(QStringLiteral("addList"))) {
+        addCombo_ = new QComboBox();
+        addCombo_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+        updateAddList();
+        QObject::connect(addCombo_, qOverload<int>(&QComboBox::currentIndexChanged), addCombo_, [this](int index) {
+            addChanged(index);
+        });
+        layout->addWidget(addCombo_);
+    } else {
+        addButton_ = new QPushButton(addText);
+        QObject::connect(addButton_, &QPushButton::clicked, addButton_, [this]() { addClicked(); });
+        layout->addWidget(addButton_);
+    }
+    layout->addStretch();
+
+    addWidgetBox_ = new QWidget();
+    addWidgetBox_->setLayout(layout);
+
+    addItem_ = new QTreeWidgetItem();
+    addItem_->setFlags(Qt::ItemIsEnabled);
+    addChild(addItem_);
+    addItem_->setSizeHint(0, addWidgetBox_->sizeHint());
+
+    optsChanged(param_, param_->options());
+}
+
+void GroupParameterItem::treeWidgetChanged()
+{
+    ParameterItem::treeWidgetChanged();
+    ensureAddRow();
+
+    setFirstColumnSpanned(true);
+    if (auto* tree = treeWidget()) {
+        if (addItem_ != nullptr && addWidgetBox_ != nullptr) {
+            tree->setItemWidget(addItem_, 0, addWidgetBox_);
+            addItem_->setFirstColumnSpanned(true);
+        }
+    }
+}
+
+void GroupParameterItem::childAdded(Parameter* param, Parameter* child, int pos)
+{
+    if (child == nullptr) {
+        return;
+    }
+
+    ParameterItem* item = child->makeTreeItem(depth_ + 1);
+    if (addItem_ != nullptr) {
+        insertChild(childCount() - 1, item);
+    } else {
+        insertChild(pos, item);
+    }
+    item->treeWidgetChanged();
+
+    const auto& grandchildren = child->children();
+    for (int i = 0; i < static_cast<int>(grandchildren.size()); ++i) {
+        item->childAdded(child, grandchildren[static_cast<std::size_t>(i)].get(), i);
+    }
+}
+
+void GroupParameterItem::optsChanged(Parameter* param, const QVariantMap& opts)
+{
+    ParameterItem::optsChanged(param, opts);
+
+    if (opts.contains(QStringLiteral("addList"))) {
+        updateAddList();
+    }
+
+    if (addCombo_ != nullptr || addButton_ != nullptr) {
+        if (opts.contains(QStringLiteral("enabled"))) {
+            const bool enabled = opts.value(QStringLiteral("enabled")).toBool();
+            if (addCombo_ != nullptr) {
+                addCombo_->setEnabled(enabled);
+            }
+            if (addButton_ != nullptr) {
+                addButton_->setEnabled(enabled);
+            }
+        }
+        if (opts.contains(QStringLiteral("tip"))) {
+            const QString tip = opts.value(QStringLiteral("tip")).toString();
+            if (addCombo_ != nullptr) {
+                addCombo_->setToolTip(tip);
+            }
+            if (addButton_ != nullptr) {
+                addButton_->setToolTip(tip);
+            }
+        }
+    }
+}
+
+void GroupParameterItem::updateAddList()
+{
+    if (addCombo_ == nullptr || param_ == nullptr) {
+        return;
+    }
+
+    const QSignalBlocker blocker(addCombo_);
+    addCombo_->clear();
+    addCombo_->addItem(param_->options().value(QStringLiteral("addText")).toString());
+    const QVariant addList = param_->options().value(QStringLiteral("addList"));
+    if (addList.canConvert<QVariantList>()) {
+        for (const QVariant& entry : addList.toList()) {
+            addCombo_->addItem(entry.toString());
+        }
+    }
+}
+
+void GroupParameterItem::addClicked()
+{
+    if (auto* group = dynamic_cast<GroupParameter*>(param_)) {
+        group->addNew();
+    }
+}
+
+void GroupParameterItem::addChanged(int index)
+{
+    if (index == 0 || addCombo_ == nullptr) {
+        return;
+    }
+    const QString typ = addCombo_->currentText();
+    if (auto* group = dynamic_cast<GroupParameter*>(param_)) {
+        group->addNew(typ);
+    }
+    addCombo_->setCurrentIndex(0);
 }
 
 } // namespace cppqtgraph::parametertree

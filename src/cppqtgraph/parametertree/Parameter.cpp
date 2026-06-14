@@ -465,9 +465,33 @@ void Parameter::unregisterItem(ParameterItem* item)
     items_.erase(std::remove(items_.begin(), items_.end(), item), items_.end());
 }
 
+void Parameter::contextMenu(const QString& name)
+{
+    emit sigContextMenu(this, name);
+}
+
+void Parameter::remove()
+{
+    if (parent_ == nullptr) {
+        throw std::runtime_error("Cannot remove; no parent.");
+    }
+    parent_->removeChild(this);
+    emit sigRemoved(this);
+}
+
 GroupParameter::GroupParameter(QVariantMap opts, QObject* parent)
     : Parameter(std::move(opts), parent)
 {
+}
+
+void GroupParameter::addNew(const QString& typ)
+{
+    emit sigAddNew(this, typ);
+}
+
+ParameterItem* GroupParameter::makeTreeItem(int depth)
+{
+    return new GroupParameterItem(this, depth);
 }
 
 SimpleParameter::SimpleParameter(QVariantMap opts, QObject* parent)

@@ -7,6 +7,7 @@
 #include "../../../include/cppqtgraph/parametertree/ParameterItem.hpp"
 
 #include <QtWidgets/QHeaderView>
+#include <QtGui/QContextMenuEvent>
 
 namespace cppqtgraph::parametertree {
 
@@ -182,6 +183,17 @@ void ParameterTree::itemCollapsedEvent(QTreeWidgetItem* item)
     if (auto* paramItem = dynamic_cast<ParameterItem*>(item)) {
         paramItem->expandedChangedEvent(false);
     }
+}
+
+void ParameterTree::contextMenuEvent(QContextMenuEvent* event)
+{
+    if (auto* paramItem = dynamic_cast<ParameterItem*>(itemAt(event->pos()))) {
+        paramItem->contextMenuEvent(event);
+        if (event->isAccepted()) {
+            return;
+        }
+    }
+    widgets::TreeWidget::contextMenuEvent(event);
 }
 
 } // namespace cppqtgraph::parametertree
