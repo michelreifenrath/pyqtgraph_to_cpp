@@ -10,6 +10,7 @@
 
 #include <QtCore/QList>
 #include <QtCore/QObject>
+#include <QtGui/QKeyEvent>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGraphicsScene>
 #include <QtWidgets/QGraphicsSceneMouseEvent>
@@ -619,6 +620,7 @@ ViewBox::ViewBox(QGraphicsItem* parent, Qt::WindowFlags flags)
     , childGroup_(this)
 {
     setFlag(QGraphicsItem::ItemClipsChildrenToShape, true);
+    setFlag(QGraphicsItem::ItemIsFocusable, true);
     setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     setAcceptHoverEvents(true);
     childGroup_.setHandlesChildEvents(false);
@@ -1474,10 +1476,10 @@ void ViewBox::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         if (dragButton_ == Qt::LeftButton && mouseMode_ == RectMode) {
             const QRectF zoomRect = QRectF(mapToView(dragButtonDownPos_), mapToView(event->pos())).normalized();
             if (!zoomRect.isEmpty()) {
-                applyInteractiveRange(AxisRange{zoomRect.left(), zoomRect.right()},
-                                      AxisRange{zoomRect.top(), zoomRect.bottom()},
-                                      0.0);
-                emit sigRangeChangedManually(mouseEnabled_);
+                showAxRect(zoomRect);
+                axHistoryPointer_ += 1;
+                axHistory_.resize(static_cast<std::size_t>(axHistoryPointer_));
+                axHistory_.push_back(zoomRect);
             }
         }
         dragActive_ = false;
@@ -1487,6 +1489,52 @@ void ViewBox::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         return;
     }
     GraphicsWidget::mouseReleaseEvent(event);
+}
+
+void ViewBox::keyPressEvent(QKeyEvent* event)
+{
+    if (event == nullptr) {
+        return;
+    }
+
+    event->accept();
+    const QString text = event->text();
+    if (text == QLatin1String("-")) {
+        scaleHistory(-1);
+    } else if (text == QLatin1String("+") || text == QLatin1String("=")) {
+        scaleHistory(1);
+    } else if (event->key() == Qt::Key_Backspace) {
+        scaleHistory(static_cast<int>(axHistory_.size()));
+    } else {
+        event->ignore();
+    }
+}
+
+void ViewBox::scaleHistory(int delta)
+{
+    if (axHistory_.empty()) {
+        return;
+    }
+
+    const int lastIndex = static_cast<int>(axHistory_.size()) - 1;
+    const int nextPointer = std::max(0, std::min(lastIndex, axHistoryPointer_ + delta));
+    if (nextPointer != axHistoryPointer_) {
+        axHistoryPointer_ = nextPointer;
+        showAxRect(axHistory_[static_cast<std::size_t>(axHistoryPointer_)]);
+    }
+}
+
+void ViewBox::showAxRect(const QRectF& rect)
+{
+    const QRectF normalized = rect.normalized();
+    if (normalized.isEmpty()) {
+        return;
+    }
+
+    applyInteractiveRange(AxisRange{normalized.left(), normalized.right()},
+                          AxisRange{normalized.top(), normalized.bottom()},
+                          0.0);
+    emit sigRangeChangedManually(mouseEnabled_);
 }
 
 void ViewBox::resizeEvent(QGraphicsSceneResizeEvent* event)

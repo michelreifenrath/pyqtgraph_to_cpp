@@ -16,6 +16,7 @@
 #include <QtCore/QSizeF>
 #include <QtCore/Qt>
 #include <QtCore/QVariant>
+#include <QtGui/QKeyEvent>
 #include <QtGui/QTransform>
 #include <QtWidgets/QGraphicsItem>
 #include <QtWidgets/QGraphicsItemGroup>
@@ -152,6 +153,7 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void resizeEvent(QGraphicsSceneResizeEvent* event) override;
     QVariant itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value) override;
 
@@ -172,6 +174,8 @@ private:
     void emitRangeChanges(const std::array<bool, 2>& changed);
     void notifyLinkedViews(const std::array<bool, 2>& changed);
     void ensureMenu();
+    void scaleHistory(int delta);
+    void showAxRect(const QRectF& rect);
     [[nodiscard]] int dragThresholdPixels() const;
     [[nodiscard]] QRectF screenGeometry() const;
     [[nodiscard]] qreal currentAspectRatio() const;
@@ -204,6 +208,8 @@ private:
     std::array<std::array<QMetaObject::Connection, 2>, 2> linkConnections_{};
     bool linksBlocked_ = false;
     QMetaObject::Connection sceneChangedConnection_;
+    std::vector<QRectF> axHistory_;
+    int axHistoryPointer_ = -1;
 };
 
 } // namespace cppqtgraph::graphicsItems
