@@ -162,10 +162,16 @@ void downsamplePeak(std::vector<double>& x, std::vector<double>& y, int factor)
         const double xValue = x[static_cast<std::size_t>(start) + offset];
         double yMax = y[offset];
         double yMin = y[offset];
+        bool hasNaN = std::isnan(y[offset]);
         for (int sample = 1; sample < factor; ++sample) {
             const double value = y[offset + static_cast<std::size_t>(sample)];
+            hasNaN = hasNaN || std::isnan(value);
             yMax = std::max(yMax, value);
             yMin = std::min(yMin, value);
+        }
+        if (hasNaN) {
+            yMax = std::numeric_limits<double>::quiet_NaN();
+            yMin = std::numeric_limits<double>::quiet_NaN();
         }
         newX.push_back(xValue);
         newY.push_back(yMax);

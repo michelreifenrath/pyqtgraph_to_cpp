@@ -15,6 +15,7 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string_view>
@@ -282,6 +283,36 @@ bool testLogMappingPrecedesClipAndDownsample()
     return true;
 }
 
+bool testPeakDownsamplePropagatesNaN()
+{
+    using cppqtgraph::graphicsItems::PlotDataItem;
+    using cppqtgraph::graphicsItems::PlotItem;
+
+    PlotItem plot;
+    auto data = std::make_unique<PlotDataItem>(std::vector<double>{0.0, 1.0, 2.0, 3.0},
+                                              std::vector<double>{1.0, std::numeric_limits<double>::quiet_NaN(), 2.0, 3.0});
+    plot.addItem(data.get());
+
+    QMenu* menu = plot.getMenu();
+    auto* downsampleCheck = findControl<QCheckBox>(menu, QStringLiteral("downsampleCheck"));
+    auto* downsampleSpin = findControl<QSpinBox>(menu, QStringLiteral("downsampleSpin"));
+    auto* peakRadio = findControl<QRadioButton>(menu, QStringLiteral("peakRadio"));
+    CHECK(downsampleCheck != nullptr && downsampleSpin != nullptr && peakRadio != nullptr);
+
+    peakRadio->setChecked(true);
+    downsampleSpin->setValue(2);
+    downsampleCheck->setChecked(true);
+    const auto displayY = data->curve()->yData();
+    CHECK(displayY.size() == 4U);
+    CHECK(std::isnan(displayY[0]));
+    CHECK(std::isnan(displayY[1]));
+    CHECK(nearlyEqual(displayY[2], 3.0));
+    CHECK(nearlyEqual(displayY[3], 2.0));
+
+    plot.removeItem(data.get());
+    return true;
+}
+
 bool testSupportedControlsAffectPlotDataItem()
 {
     using cppqtgraph::graphicsItems::PlotDataItem;
@@ -302,9 +333,11 @@ bool testSupportedControlsAffectPlotDataItem()
     auto* downsampleSpin = findControl<QSpinBox>(menu, QStringLiteral("downsampleSpin"));
     auto* downsampleCheck = findControl<QCheckBox>(menu, QStringLiteral("downsampleCheck"));
     auto* clipToView = findControl<QCheckBox>(menu, QStringLiteral("clipToViewCheck"));
+    auto* alphaGroup = findControl<QGroupBox>(menu, QStringLiteral("alphaGroup"));
+    auto* autoAlpha = findControl<QCheckBox>(menu, QStringLiteral("autoAlphaCheck"));
     auto* alphaSlider = findControl<QSlider>(menu, QStringLiteral("alphaSlider"));
     CHECK(subsampleRadio != nullptr && downsampleSpin != nullptr && downsampleCheck != nullptr);
-    CHECK(clipToView != nullptr && alphaSlider != nullptr);
+    CHECK(clipToView != nullptr && alphaGroup != nullptr && autoAlpha != nullptr && alphaSlider != nullptr);
 
     CHECK(spanEquals(data->xData(), x));
     CHECK(spanEquals(data->yData(), y));
@@ -331,6 +364,12 @@ bool testSupportedControlsAffectPlotDataItem()
 
     alphaSlider->setValue(500);
     CHECK(data->curve()->pen().color().alpha() == 64);
+    autoAlpha->setChecked(true);
+    CHECK(data->curve()->pen().color().alpha() == 255);
+    autoAlpha->setChecked(false);
+    CHECK(data->curve()->pen().color().alpha() == 64);
+    alphaGroup->setChecked(false);
+    CHECK(data->curve()->pen().color().alpha() == 255);
 
     plot.removeItem(data.get());
     return true;
@@ -377,6 +416,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testLogMappingPrecedesClipAndDownsample()) {
+        return 1;
+    }
+    if (!testPeakDownsamplePropagatesNaN()) {
         return 1;
     }
     if (!testSupportedControlsAffectPlotDataItem()) {
