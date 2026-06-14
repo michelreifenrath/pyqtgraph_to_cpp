@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -57,31 +59,49 @@ def _serialize_parameter(param: Any) -> dict[str, Any]:
     return node
 
 
-def build_interactive_parameter_tree() -> dict[str, Any]:
-    """Mirror in-scope InteractiveParameter.py interactor groups only."""
+def _load_pinned_interactive_parameter_host() -> Any:
+    """Execute pinned InteractiveParameter.py and return its host Parameter."""
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     if str(PINNED_CHECKOUT) not in sys.path:
         sys.path.insert(0, str(PINNED_CHECKOUT))
 
-    from pyqtgraph.parametertree import Interactor, Parameter, RunOptions
+    spec = importlib.util.spec_from_file_location(
+        "interactive_parameter_example",
+        INTERACTIVE_EXAMPLE,
+    )
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"Failed to load pinned example: {INTERACTIVE_EXAMPLE}")
 
-    host = Parameter.create(name="Interactive Parameter Use", type="group")
-    interactor = Interactor(parent=host, runOptions=RunOptions.ON_CHANGED)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
-    def easySample(a: int = 5, b: int = 6) -> int:
-        return a + b
+    host = getattr(module, "host", None)
+    if host is None:
+        raise SystemExit("Pinned InteractiveParameter.py did not define host")
+    return host
 
-    def stringParams(a: str = "5", b: str = "6") -> str:
-        return a + b
 
-    interactor.interact(easySample)
-    interactor.interact(stringParams)
+def build_interactive_parameter_tree() -> dict[str, Any]:
+    """Mirror in-scope InteractiveParameter.py interactor groups only."""
+    host = _load_pinned_interactive_parameter_host()
 
-    child_names = [child.name() for child in host]
-    if child_names != list(IN_SCOPE_FUNCTIONS):
+    child_by_name = {child.name(): child for child in host}
+    missing = [name for name in IN_SCOPE_FUNCTIONS if name not in child_by_name]
+    if missing:
         raise SystemExit(
-            "Unexpected InteractiveParameter host children; "
-            f"expected {list(IN_SCOPE_FUNCTIONS)}, got {child_names}"
+            "Pinned InteractiveParameter.py missing in-scope functions: "
+            f"{missing}; available={[child.name() for child in host]}"
         )
+
+    in_scope_children = [
+        _serialize_parameter(child_by_name[name]) for name in IN_SCOPE_FUNCTIONS
+    ]
+    tree = {
+        "name": host.name(),
+        "title": host.title(),
+        "type": host.type(),
+        "children": in_scope_children,
+    }
 
     return {
         "description": (
@@ -93,7 +113,7 @@ def build_interactive_parameter_tree() -> dict[str, Any]:
         "pyqtgraph_ref": PINNED_REF,
         "pinned_commit": PINNED_COMMIT,
         "in_scope_functions": list(IN_SCOPE_FUNCTIONS),
-        "tree": _serialize_parameter(host),
+        "tree": tree,
     }
 
 
