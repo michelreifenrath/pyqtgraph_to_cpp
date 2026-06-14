@@ -496,6 +496,28 @@ GroupParameter::GroupParameter(QVariantMap opts, QObject* parent)
 {
 }
 
+ActionGroupParameter::ActionGroupParameter(QVariantMap opts, QObject* parent)
+    : GroupParameter([&opts]() {
+          if (!opts.contains(QStringLiteral("button"))) {
+              opts.insert(QStringLiteral("button"), QVariantMap{});
+          }
+          return opts;
+      }(),
+      parent)
+{
+}
+
+void ActionGroupParameter::activate()
+{
+    emit sigActivated(this);
+    emitStateChanged(QStringLiteral("activated"));
+}
+
+ParameterItem* ActionGroupParameter::makeTreeItem(int depth)
+{
+    return new GroupParameterItem(this, depth);
+}
+
 void GroupParameter::addNew(const QString& typ)
 {
     emit sigAddNew(this, typ);
@@ -628,6 +650,8 @@ void registerBuiltinParameterTypes()
 
     registerParameterType(QStringLiteral("group"),
                           [](const QVariantMap& opts) { return std::make_shared<GroupParameter>(opts); });
+    registerParameterType(QStringLiteral("_actiongroup"),
+                          [](const QVariantMap& opts) { return std::make_shared<ActionGroupParameter>(opts); });
     registerParameterType(QStringLiteral("action"),
                           [](const QVariantMap& opts) { return std::make_shared<ActionParameter>(opts); });
     registerParameterType(QStringLiteral("bool"),

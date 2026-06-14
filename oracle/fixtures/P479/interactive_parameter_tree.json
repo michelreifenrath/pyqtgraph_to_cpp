@@ -1,0 +1,71 @@
+{
+  "description": "InteractiveParameter in-scope tree from pinned PyQtGraph examples/InteractiveParameter.py (easySample, stringParams only). Never derived from C++ output.",
+  "source": "reference/pyqtgraph/pyqtgraph/examples/InteractiveParameter.py",
+  "pyqtgraph_ref": "pyqtgraph-0.14.0",
+  "pinned_commit": "a20028b98294b9cc8770f2015a92eb342224b788",
+  "in_scope_functions": [
+    "easySample",
+    "stringParams"
+  ],
+  "tree": {
+    "name": "Interactive Parameter Use",
+    "title": "Interactive Parameter Use",
+    "type": "group",
+    "children": [
+      {
+        "name": "easySample",
+        "title": "easySample",
+        "type": "_actiongroup",
+        "button": {
+          "type": "action",
+          "defaultName": "Run",
+          "name": "Run",
+          "visible": false
+        },
+        "children": [
+          {
+            "name": "a",
+            "title": "a",
+            "type": "int",
+            "value": 5,
+            "default": 5
+          },
+          {
+            "name": "b",
+            "title": "b",
+            "type": "int",
+            "value": 6,
+            "default": 6
+          }
+        ]
+      },
+      {
+        "name": "stringParams",
+        "title": "stringParams",
+        "type": "_actiongroup",
+        "button": {
+          "type": "action",
+          "defaultName": "Run",
+          "name": "Run",
+          "visible": false
+        },
+        "children": [
+          {
+            "name": "a",
+            "title": "a",
+            "type": "str",
+            "value": "5",
+            "default": "5"
+          },
+          {
+            "name": "b",
+            "title": "b",
+            "type": "str",
+            "value": "6",
+            "default": "6"
+          }
+        ]
+      }
+    ]
+  }
+}

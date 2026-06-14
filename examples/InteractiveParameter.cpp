@@ -3,6 +3,7 @@
 // Pinned commit: a20028b98294b9cc8770f2015a92eb342224b788
 // License: MIT; see THIRD_PARTY_NOTICES.md
 
+#include <cppqtgraph/parametertree/Interactor.hpp>
 #include <cppqtgraph/parametertree/Parameter.hpp>
 #include <cppqtgraph/parametertree/ParameterTree.hpp>
 
@@ -23,6 +24,22 @@ InteractiveParameterExample createInteractiveParameterExample()
     auto root = parametertree::Parameter::create(QVariantMap{
         {QStringLiteral("name"), QStringLiteral("Interactive Parameter Use")},
         {QStringLiteral("type"), QStringLiteral("group")},
+    });
+
+    parametertree::Interactor interactor(root);
+    interactor.addFunction(parametertree::InteractorFunctionSpec{
+        QStringLiteral("easySample"),
+        {
+            {QStringLiteral("a"), QStringLiteral("int"), 5},
+            {QStringLiteral("b"), QStringLiteral("int"), 6},
+        },
+    });
+    interactor.addFunction(parametertree::InteractorFunctionSpec{
+        QStringLiteral("stringParams"),
+        {
+            {QStringLiteral("a"), QStringLiteral("str"), QStringLiteral("5")},
+            {QStringLiteral("b"), QStringLiteral("str"), QStringLiteral("6")},
+        },
     });
 
     auto tree = std::make_unique<parametertree::ParameterTree>();

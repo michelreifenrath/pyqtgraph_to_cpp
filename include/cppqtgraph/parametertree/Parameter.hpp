@@ -103,6 +103,19 @@ signals:
     void sigAddNew(GroupParameter* param, const QString& typ);
 };
 
+class ActionGroupParameter final : public GroupParameter {
+    Q_OBJECT
+
+public:
+    explicit ActionGroupParameter(QVariantMap opts, QObject* parent = nullptr);
+
+    void activate();
+    ParameterItem* makeTreeItem(int depth) override;
+
+signals:
+    void sigActivated(Parameter* param);
+};
+
 class SimpleParameter final : public Parameter {
 public:
     explicit SimpleParameter(QVariantMap opts, QObject* parent = nullptr);
