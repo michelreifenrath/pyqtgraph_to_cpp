@@ -133,7 +133,9 @@ bool runOracleScenario(ScriptableViewBox& viewBox, const QJsonObject& fixture)
             rectZoom(viewBox, QPointF(25.0, 25.0), QPointF(175.0, 75.0));
         } else if (action == QLatin1String("rect_zoom_2")) {
             rectZoom(viewBox, QPointF(50.0, 30.0), QPointF(150.0, 70.0));
-        } else if (action == QLatin1String("key_minus")) {
+        } else if (action == QLatin1String("key_minus") || action == QLatin1String("key_minus_before_equals")
+                   || action == QLatin1String("key_minus_before_backspace")
+                   || action == QLatin1String("key_minus_to_history_head")) {
             viewBox.keyPressEvent(keyEvent(QStringLiteral("-")).get());
         } else if (action == QLatin1String("key_plus")) {
             viewBox.keyPressEvent(keyEvent(QStringLiteral("+")).get());

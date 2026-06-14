@@ -85,6 +85,19 @@
       }
     },
     {
+      "action": "key_minus_before_equals",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    {
       "action": "key_equals",
       "range": {
         "x": [
@@ -94,6 +107,32 @@
         "y": [
           4.0,
           6.0
+        ]
+      }
+    },
+    {
+      "action": "key_minus_before_backspace",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
+        ]
+      }
+    },
+    {
+      "action": "key_minus_to_history_head",
+      "range": {
+        "x": [
+          1.25,
+          8.75
+        ],
+        "y": [
+          2.5,
+          7.5
         ]
       }
     },

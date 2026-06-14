@@ -90,8 +90,17 @@ def build_oracle() -> dict[str, Any]:
     send_key(text="+")
     steps.append({"action": "key_plus", "range": range_dict(view_box)})
 
+    send_key(text="-")
+    steps.append({"action": "key_minus_before_equals", "range": range_dict(view_box)})
+
     send_key(text="=")
     steps.append({"action": "key_equals", "range": range_dict(view_box)})
+
+    send_key(text="-")
+    steps.append({"action": "key_minus_before_backspace", "range": range_dict(view_box)})
+
+    send_key(text="-")
+    steps.append({"action": "key_minus_to_history_head", "range": range_dict(view_box)})
 
     send_key(key=QtCore.Qt.Key.Key_Backspace)
     steps.append({"action": "key_backspace", "range": range_dict(view_box)})
