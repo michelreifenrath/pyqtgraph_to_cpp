@@ -475,8 +475,20 @@ void Parameter::remove()
     if (parent_ == nullptr) {
         throw std::runtime_error("Cannot remove; no parent.");
     }
+
+    std::shared_ptr<Parameter> retained;
+    auto& siblings = parent_->children_;
+    const auto it = std::find_if(siblings.begin(),
+                                 siblings.end(),
+                                 [this](const std::shared_ptr<Parameter>& entry) {
+                                     return entry.get() == this;
+                                 });
+    if (it != siblings.end()) {
+        retained = *it;
+    }
+
     parent_->removeChild(this);
-    emit sigRemoved(this);
+    emit sigRemoved(retained.get());
 }
 
 GroupParameter::GroupParameter(QVariantMap opts, QObject* parent)

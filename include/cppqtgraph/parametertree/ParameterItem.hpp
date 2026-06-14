@@ -163,6 +163,7 @@ public:
     void optsChanged(Parameter* param, const QVariantMap& opts) override;
 
     [[nodiscard]] QComboBox* addComboWidget() const { return addCombo_; }
+    void addParameterChild(QTreeWidgetItem* child);
 
 private:
     void ensureAddRow();

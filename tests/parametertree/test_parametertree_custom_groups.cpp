@@ -239,6 +239,70 @@ bool testContextMenuEmitsInternalNames()
     return true;
 }
 
+bool testRemoveSignalKeepsParameterAlive()
+{
+    auto group = cppqtgraph::parametertree::Parameter::create(QVariantMap{
+        {QStringLiteral("name"), QStringLiteral("group")},
+        {QStringLiteral("type"), QStringLiteral("group")},
+        {QStringLiteral("children"),
+         QVariantList{QVariant::fromValue(QVariantMap{{QStringLiteral("name"), QStringLiteral("child")},
+                                                       {QStringLiteral("type"), QStringLiteral("str")},
+                                                       {QStringLiteral("value"), QStringLiteral("x")},
+                                                       {QStringLiteral("removable"), true}})}},
+    });
+
+    auto* child = group->child(QStringLiteral("child"));
+    CHECK(child != nullptr);
+
+    QString nameAtSignal;
+    QObject::connect(child,
+                     &cppqtgraph::parametertree::Parameter::sigRemoved,
+                     child,
+                     [&nameAtSignal](cppqtgraph::parametertree::Parameter* removed) {
+                         nameAtSignal = removed->name();
+                     });
+
+    child->remove();
+    CHECK(nameAtSignal == QStringLiteral("child"));
+    CHECK(group->child(QStringLiteral("child")) == nullptr);
+    return true;
+}
+
+bool testScalableGroupKeepsAddRowLast()
+{
+    auto group = makeScalableGroup();
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(group, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* groupItem = dynamic_cast<cppqtgraph::parametertree::GroupParameterItem*>(tree.topLevelItem(0));
+    CHECK(groupItem != nullptr);
+    CHECK(groupItem->childCount() >= 2);
+
+    auto* firstChild = dynamic_cast<cppqtgraph::parametertree::ParameterItem*>(groupItem->child(0));
+    CHECK(firstChild != nullptr);
+    CHECK(firstChild->parameter()->name() == QStringLiteral("ScalableParam 1"));
+
+    auto* lastChild = groupItem->child(groupItem->childCount() - 1);
+    CHECK(dynamic_cast<cppqtgraph::parametertree::ParameterItem*>(lastChild) == nullptr);
+    CHECK(groupItem->addComboWidget() != nullptr);
+
+    auto* combo = groupItem->addComboWidget();
+    combo->setCurrentIndex(combo->findText(QStringLiteral("str")));
+    QTest::qWait(0);
+
+    CHECK(groupItem->childCount() >= 3);
+    auto* addedChild =
+        dynamic_cast<cppqtgraph::parametertree::ParameterItem*>(groupItem->child(groupItem->childCount() - 2));
+    CHECK(addedChild != nullptr);
+    CHECK(addedChild->parameter()->name() == QStringLiteral("ScalableParam 2"));
+
+    lastChild = groupItem->child(groupItem->childCount() - 1);
+    CHECK(dynamic_cast<cppqtgraph::parametertree::ParameterItem*>(lastChild) == nullptr);
+    return true;
+}
+
 bool testRenameAndRemoveUpdateModelAndViews()
 {
     auto group = cppqtgraph::parametertree::Parameter::create(QVariantMap{
@@ -294,6 +358,8 @@ int main(int argc, char** argv)
         {"reciprocal_edits_update_other_child", testReciprocalEditsUpdateOtherChild},
         {"scalable_add_combo_creates_typed_children", testScalableAddComboCreatesTypedChildren},
         {"context_menu_emits_internal_names", testContextMenuEmitsInternalNames},
+        {"remove_signal_keeps_parameter_alive", testRemoveSignalKeepsParameterAlive},
+        {"scalable_group_keeps_add_row_last", testScalableGroupKeepsAddRowLast},
         {"rename_and_remove_update_model_and_views", testRenameAndRemoveUpdateModelAndViews},
     };
 

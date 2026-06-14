@@ -54,7 +54,11 @@ void ParameterTree::addParameters(Parameter* param, QTreeWidgetItem* root, int d
             depth -= 1;
         }
     }
-    root->addChild(item);
+    if (auto* groupParent = dynamic_cast<GroupParameterItem*>(root)) {
+        groupParent->addParameterChild(item);
+    } else {
+        root->addChild(item);
+    }
     item->treeWidgetChanged();
     widgets::TreeWidget::informTreeWidgetChange(item);
 

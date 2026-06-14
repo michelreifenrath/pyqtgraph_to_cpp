@@ -1067,6 +1067,18 @@ void GroupParameterItem::treeWidgetChanged()
     }
 }
 
+void GroupParameterItem::addParameterChild(QTreeWidgetItem* child)
+{
+    if (child == nullptr) {
+        return;
+    }
+    if (addItem_ != nullptr) {
+        insertChild(indexOfChild(addItem_), child);
+    } else {
+        addChild(child);
+    }
+}
+
 void GroupParameterItem::childAdded(Parameter* param, Parameter* child, int pos)
 {
     if (child == nullptr) {
@@ -1075,7 +1087,7 @@ void GroupParameterItem::childAdded(Parameter* param, Parameter* child, int pos)
 
     ParameterItem* item = child->makeTreeItem(depth_ + 1);
     if (addItem_ != nullptr) {
-        insertChild(childCount() - 1, item);
+        insertChild(indexOfChild(addItem_), item);
     } else {
         insertChild(pos, item);
     }
