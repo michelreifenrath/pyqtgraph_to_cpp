@@ -427,6 +427,45 @@ bool testListParameterSetValueEnforcesLimits()
     return true;
 }
 
+bool testListParameterNumericLimits()
+{
+    const QVariantList limits = {5, 10, 20};
+    auto param = cppqtgraph::parametertree::Parameter::create(
+        QVariantMap{{QStringLiteral("name"), QStringLiteral("limit")},
+                    {QStringLiteral("type"), QStringLiteral("list")},
+                    {QStringLiteral("values"), limits},
+                    {QStringLiteral("value"), 5}});
+    CHECK(param->value().toInt() == 5);
+
+    cppqtgraph::parametertree::ParameterTree tree;
+    tree.setParameters(param, false);
+    tree.show();
+    QTest::qWait(0);
+
+    auto* item = findItemByName(tree.invisibleRootItem(), QStringLiteral("limit"));
+    CHECK(item != nullptr);
+
+    auto* combo = qobject_cast<cppqtgraph::widgets::ComboBox*>(editorForItem(item));
+    CHECK(combo != nullptr);
+    CHECK(combo->count() == 3);
+    CHECK(combo->itemText(0) == QStringLiteral("5"));
+    CHECK(combo->itemText(1) == QStringLiteral("10"));
+    CHECK(combo->itemText(2) == QStringLiteral("20"));
+    CHECK(combo->value().toInt() == 5);
+
+    combo->setCurrentIndex(1);
+    QTest::qWait(0);
+    CHECK(param->value().toInt() == 10);
+
+    combo->setCurrentIndex(2);
+    QTest::qWait(0);
+    CHECK(param->value().toInt() == 20);
+
+    param->setValue(99);
+    CHECK(param->value().toInt() == 5);
+    return true;
+}
+
 bool testListParameterSetOptsLimitsEnforcesValue()
 {
     const QVariantList initialLimits = {QStringLiteral("alpha"), QStringLiteral("beta"), QStringLiteral("gamma")};
@@ -596,6 +635,9 @@ int main(int argc, char** argv)
         return 1;
     }
     if (!testListParameterSetValueEnforcesLimits()) {
+        return 1;
+    }
+    if (!testListParameterNumericLimits()) {
         return 1;
     }
     if (!testListParameterSetOptsLimitsEnforcesValue()) {
