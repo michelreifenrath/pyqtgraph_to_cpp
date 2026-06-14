@@ -313,12 +313,16 @@ void applyPlotDataItemOptions(const PlotItem& plot, PlotDataItem& item)
     std::optional<std::pair<double, double>> clipRange;
     if (plot.clipToViewMode()) {
         if (const ViewBox* viewBox = plot.getViewBox(); viewBox != nullptr) {
-            const QRectF view = viewBox->viewRect();
-            clipRange = std::make_pair(view.left(), view.right());
+            const auto autoRange = viewBox->autoRangeEnabled();
+            if (!autoRange[ViewBox::XAxis]) {
+                const QRectF view = viewBox->viewRect();
+                clipRange = std::make_pair(view.left(), view.right());
+            }
         }
     }
     item.setClipToView(plot.clipToViewMode(), clipRange);
-    item.setAlpha(plot.alphaState().alpha);
+    const double alpha = plot.alphaState().alpha;
+    item.setAlpha(alpha * alpha);
 }
 
 } // namespace
@@ -1049,6 +1053,7 @@ void PlotItem::setupConfigMenu(bool enableMenu)
     hideUnsupportedControl(ctrl_->maxTracesCheck);
     hideUnsupportedControl(ctrl_->maxTracesSpin);
     hideUnsupportedControl(ctrl_->forgetTracesCheck);
+    hideUnsupportedControl(ctrl_->autoDownsampleCheck);
     hideUnsupportedControl(ctrl_->averageGroup);
     hideUnsupportedControl(ctrl_->pointsGroup);
     setContextMenuActionVisible(QStringLiteral("Average"), false);

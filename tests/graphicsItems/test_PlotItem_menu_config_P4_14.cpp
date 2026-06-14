@@ -216,7 +216,8 @@ bool testMenuConfigInteraction()
                                                 QStringLiteral("phasemapCheck"),
                                                 QStringLiteral("maxTracesCheck"),
                                                 QStringLiteral("maxTracesSpin"),
-                                                QStringLiteral("forgetTracesCheck")};
+                                                QStringLiteral("forgetTracesCheck"),
+                                                QStringLiteral("autoDownsampleCheck")};
     for (const QString& objectName : hiddenControls) {
         if (auto* checkbox = findControl<QCheckBox>(menu, objectName); checkbox != nullptr) {
             CHECK(!checkbox->isEnabled());

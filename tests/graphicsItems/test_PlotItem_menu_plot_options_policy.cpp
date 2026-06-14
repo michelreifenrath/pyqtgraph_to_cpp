@@ -155,6 +155,7 @@ bool testMenuTreePolicy()
                                                 QStringLiteral("maxTracesCheck"),
                                                 QStringLiteral("maxTracesSpin"),
                                                 QStringLiteral("forgetTracesCheck"),
+                                                QStringLiteral("autoDownsampleCheck"),
                                                 QStringLiteral("averageGroup"),
                                                 QStringLiteral("avgParamList"),
                                                 QStringLiteral("pointsGroup")};
@@ -221,8 +222,10 @@ bool testSupportedControlsAffectPlotDataItem()
     CHECK(spanEquals(data->xData(), x));
 
     downsampleCheck->setChecked(false);
-    plot.setXRange(3.0, 7.0, 0.0);
     clipToView->setChecked(true);
+    CHECK(spanEquals(data->curve()->xData(), x));
+
+    plot.setXRange(3.0, 7.0, 0.0);
     const auto clippedX = data->curve()->xData();
     CHECK(clippedX.size() == 6U);
     CHECK(nearlyEqual(clippedX.front(), 2.0));
@@ -232,7 +235,7 @@ bool testSupportedControlsAffectPlotDataItem()
     }
 
     alphaSlider->setValue(500);
-    CHECK(data->curve()->pen().color().alpha() == 128);
+    CHECK(data->curve()->pen().color().alpha() == 64);
 
     plot.removeItem(data.get());
     return true;
