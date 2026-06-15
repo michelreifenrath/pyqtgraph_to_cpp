@@ -284,6 +284,14 @@ void GraphicsScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event)
     }
 }
 
+QGraphicsItem* GraphicsScene::dragClaimantForButton(Qt::MouseButton button) const
+{
+    if (lastHoverEvent_ == nullptr) {
+        return nullptr;
+    }
+    return lastHoverEvent_->dragItems().value(button, nullptr);
+}
+
 void GraphicsScene::sendHoverEvents(QGraphicsSceneMouseEvent* event, bool exitOnly)
 {
     std::unique_ptr<HoverEvent> hoverEvent;

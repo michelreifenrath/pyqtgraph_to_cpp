@@ -319,6 +319,13 @@ void InfiniteLine::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
     const QRectF rect = boundingRect();
     QPen drawPen = currentPen_;
     drawPen.setJoinStyle(Qt::MiterJoin);
+    // Draw with a cosmetic pen so the line keeps a fixed device-pixel width regardless of the
+    // view's data->pixel scale. Otherwise the pen width is in data units: when the axis scale
+    // is small (wide data range in a small viewport) the line becomes sub-pixel-thin and
+    // antialiasing renders it nearly invisible at certain screen positions — making it appear
+    // and disappear depending on where on screen it lands and vanish until the window is
+    // resized larger. Matches the cosmetic-pen treatment used elsewhere (e.g. symbol pens).
+    drawPen.setCosmetic(true);
     painter->setPen(drawPen);
     painter->drawLine(QPointF(rect.left(), 0.0), QPointF(rect.right(), 0.0));
 }

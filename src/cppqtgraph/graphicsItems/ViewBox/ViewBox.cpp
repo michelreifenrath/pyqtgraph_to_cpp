@@ -1394,6 +1394,20 @@ void ViewBox::mousePressEvent(QGraphicsSceneMouseEvent* event)
         return;
     }
 
+    // Yield to a custom GraphicsSceneEventHandler item (LinearRegionItem, InfiniteLine, ROI)
+    // that claimed this button's drag during hover. Accepting/grabbing the native press here
+    // makes the ViewBox the scene's mouseGrabberItem, which short-circuits GraphicsScene's
+    // custom drag dispatch (mousePressEvent/mouseMoveEvent bail on a non-null grabber) so the
+    // view would pan instead of the item being dragged. Matches PyQtGraph, where the ViewBox
+    // is itself a custom drag handler that only acts when no item above it accepted the drag.
+    if (auto* graphicsScene = dynamic_cast<cppqtgraph::GraphicsScene::GraphicsScene*>(scene())) {
+        QGraphicsItem* claimant = graphicsScene->dragClaimantForButton(button);
+        if (claimant != nullptr && claimant != this) {
+            event->ignore();
+            return;
+        }
+    }
+
     dragActive_ = true;
     dragButton_ = button;
     rightDragExceededThreshold_ = false;

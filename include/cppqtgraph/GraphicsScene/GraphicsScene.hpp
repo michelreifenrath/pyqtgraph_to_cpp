@@ -55,6 +55,12 @@ public:
     [[nodiscard]] QList<QGraphicsItem*> itemsNearEvent(const MouseDragEvent& event, bool hoverable = false) const;
     [[nodiscard]] QList<QGraphicsItem*> itemsNearEvent(const HoverEvent& event, bool hoverable = false) const;
 
+    // Item (if any) that claimed the drag for `button` during the most recent hover
+    // (via HoverEvent::acceptDrags). Lets a native-event panner such as ViewBox yield
+    // the press to a custom GraphicsSceneEventHandler item (LinearRegionItem, ROI, ...)
+    // instead of grabbing the mouse and short-circuiting the custom drag dispatch.
+    [[nodiscard]] QGraphicsItem* dragClaimantForButton(Qt::MouseButton button) const;
+
     void addItem(QGraphicsItem* item);
     void removeItem(QGraphicsItem* item);
 
